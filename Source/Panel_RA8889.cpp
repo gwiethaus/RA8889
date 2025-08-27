@@ -1,4 +1,4 @@
-//Notas 1:
+//Notas:
 // substitua "unsigned char" por "uint8_t", embora ambos funcionam do mesmo jeito
 
 /*----------------------------------------------------------------------------/
@@ -32,9 +32,9 @@ Contributors:
 //================================================================================
 
 //Construtor da classe
-Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t reset) {
+Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst) {
   _cs = cs;
-  _rst = reset;
+  _rst = rst;
   _width = 800;
   _height = 480;
   
@@ -43,13 +43,25 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t reset) {
 
 //tabalhan do nesta funcao....
 //inicializa o display
-unint8_t init() {
+uint8_t Panel_RA8889::init(void) {
 
   SPIInit();
-  HW_Reset();
-  
+  ChipHardwareReset();
+  CheckPLLReady();  
   delay(100);
-
+  // Aguarda até que a inicialização interna do RA8889 termine
+  // Bit 1 do STSR (0x02) = 1 → inicialização em andamento
+  // Bit 1 do STSR (0x02) = 0 → inicialização concluída
+  while(StatusRead() & 0x02);
+  
+  //Funcao aberta de void ER_TFTBasic::initial(void)
+  //colcoar aqui abaixo as partes  
+  PLL_ConfigClocks();                 //Configura clock Pixel/SDRAM/Core PLL
+  
+  //proximo...
+  //ER_TFT.SDRAM_initail();
+  
+  
   
 }
 
@@ -198,7 +210,7 @@ uint8_t Panel_RA8889::RegisterRead(uint8_t Cmd)
 
 
 //================================================================================
-// Comandos para o Display
+// Funcoes Base para o Display
 //================================================================================
 
 
@@ -217,14 +229,254 @@ void Panel_RA8889::Check_SDRAM_Ready(void)
 }
 
 
-//
-void Panel_RA8889::HW_Reset(void)
+//Antigo HW_Reset(void)
+/**
+ * Executa um reset de hardware no RA8889 através do pino RESET.
+ *
+ * Mantém o pino de reset (configurado em _rst) em nível baixo por 500 ms para
+ * garantir que o chip seja reinicializado, depois volta a nível
+ * alto por mais 500 ms para concluir o processo de reset.
+ *
+ * Aplicação:
+ * Esse procedimento força o RA8889 a retornar ao estado inicial,
+ * sendo útil quando o PLL ou a inicialização interna falham.
+ */
+void Panel_RA8889::HardwareReset(void)
 {
   pinMode(_rst, OUTPUT);
   digitalWrite(_rst, LOW);
   delay(500);
   digitalWrite(_rst, HIGH);
   delay(500);
+}
+
+
+/**
+ * Aguarda até que o RA8889 finalize sua inicialização interna e o PLL esteja pronto.
+ * 
+ * Fluxo:
+ *  - Verifica o registrador de status (STSR) para saber se a inicialização interna terminou.
+ *  - Quando terminado, acessa o Chip Configuration Register (CCR) e checa se o PLL (bit 7) está pronto.
+ *  - Se o PLL não estiver pronto, reconfigura-o e tenta novamente.
+ *  - Caso o sistema não responda após várias tentativas, executa um reset de hardware e repete o processo.
+ * 
+ * A função só retorna quando o sistema está estável e pronto para operar.
+ */
+void Panel_RA8889::PLL_WaitReady(void)
+{
+  uint8_t count_timeout = 0;
+  uint8_t temp = 0;
+  bool system_ok = false;
+  
+  do {
+    temp = StatusRead();              //Read Status Register STSR
+    if((temp & 0x02) == 0x00)         //Veja se o bit 2 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
+    {
+      
+	  delay(2);                       //MCU too fast, necessary
+      SPI_CmdWrite(0x01);             //Access register Chip Configuration Register (CCR)
+      delay(2);                       //MCU too fast, necessary
+      temp = SPI_DataRead();          //Leia o CCR 
+      if((temp & 0x80) == 0x80)       //Check CCR register's PLL is ready or not (bit 7 = 1)
+      {
+        system_ok = true;             //PLL pronto
+        count_timeout = 0;
+      } else {
+        delay(2);                     //MCU too fast, necessary
+        SPI_CmdWrite(0x01);           //Access register Chip Configuration Register (CCR)
+        delay(2);                     //MCU too fast, necessary
+        SPI_DataWrite(0x80);          //Reconfigura a frequencia do PLL
+      }
+	  
+    } else {                          
+      system_ok = false;              //A inicialização interna ainda está sendo feita
+      count_timeout++;                //fazer outra tentativa
+    }
+	
+    if(system_ok==false && count_timeout==5)      //Sistema ainda nao está pronto e houve timeout
+    {
+      ChipHardwareReset();            //*note1, envia um reset novamente
+      count_timeout = 0;              //zera o cotnador de timeout 
+    }
+	
+  } while(system_ok==false);          //faz enquanto não ficar pronto o sistema
+}
+
+
+/**
+ * @brief Configura o PLL do RA8889 para ajustar as frequências de:
+ *        - Pixel Clock (SCAN_FREQ)
+ *        - SDRAM Clock (DRAM_FREQ)
+ *        - Core Clock (CORE_FREQ)
+ * 
+ * A função calcula automaticamente o divisor e multiplicador adequado
+ * com base no cristal externo (OSC_FREQ) e nas frequências alvo.
+ * 
+ * Fluxo seguro:
+ * 1. Desliga o PLL temporariamente
+ * 2. Configura os registros de divisores/multiplicadores
+ * 3. Habilita o PLL com os novos valores
+ */
+void ER_TFTBasic::PLL_ConfigClocks(void) 
+{
+  //REG[05h] SCLK PLL Control Register 1 (PPLLC1) - SCAN or PIXEL Clock PLL
+  //REG[07h] MCLK PLL Control Register 1 (MPLLC1) - MEMORY Clock PLL
+  //REG[09h] CCLK PLL Control Register 1 (SPLLC1) - CORE or SYSTEM Clock PLL
+
+  // ---------- Set Pixel/Scan Clock ----------
+ 
+  if(SCAN_FREQ>=63)        //&&(SCAN_FREQ<=100))
+  {
+	SPI_CmdWrite(REG_PPLLC1);                  //0x05 
+	SPI_DataWrite(0x04);                       //PLL Divided by 4
+	SPI_CmdWrite(REG_PPLLC2);                  //0x06
+	SPI_DataWrite((SCAN_FREQ*4/OSC_FREQ)-1);   //Deve ser de 1~63, 0 é proibido
+  }                                            
+  if((SCAN_FREQ>=32)&&(SCAN_FREQ<=62))         
+  {                                            
+	SPI_CmdWrite(REG_PPLLC1);                  //0x05    
+	SPI_DataWrite(0x06);                       //PLL Divided by 8
+	SPI_CmdWrite(REG_PPLLC2);                  //0x06
+	SPI_DataWrite((SCAN_FREQ*8/OSC_FREQ)-1);   //Deve ser de 1~63, 0 é proibido
+  }                                            
+  if((SCAN_FREQ>=16)&&(SCAN_FREQ<=31))         
+  {                                            
+	SPI_CmdWrite(REG_PPLLC1);                  //0x05     
+	SPI_DataWrite(0x16);                       //PLL Divided by 16
+	SPI_CmdWrite(REG_PPLLC2);                  //0x06
+	SPI_DataWrite((SCAN_FREQ*16/OSC_FREQ)-1);  //Deve ser de 1~63, 0 é proibido
+  }                                            
+  if((SCAN_FREQ>=8)&&(SCAN_FREQ<=15))          
+  {                                            
+	SPI_CmdWrite(REG_PPLLC1);                  //0x05    
+	SPI_DataWrite(0x26);                       //PLL Divided by 32
+	SPI_CmdWrite(REG_PPLLC2);                  //0x06
+	SPI_DataWrite((SCAN_FREQ*32/OSC_FREQ)-1);  //Deve ser de 1~63, 0 é proibido
+  }                                            
+  if((SCAN_FREQ>0)&&(SCAN_FREQ<=7))            
+  {                                            
+	SPI_CmdWrite(REG_PPLLC1);                  //0x05    
+	SPI_DataWrite(0x36);                       //PLL Divided by 64
+	SPI_CmdWrite(REG_PPLLC2);                  //0x06
+	SPI_DataWrite((SCAN_FREQ*64/OSC_FREQ)-1);  //Deve ser de 1~63, 0 é proibido
+  }            
+  
+  // ---------- Set SDRAM clock ----------
+
+  if(DRAM_FREQ>=125) //&&(DRAM_FREQ<=166))
+  {
+	SPI_CmdWrite(REG_MPLLC1);                  //0x07 
+	SPI_DataWrite(0x02);                       //PLL Divided by 2
+	SPI_CmdWrite(REG_MPLLC2);                  //0x08
+	SPI_DataWrite((DRAM_FREQ*2/OSC_FREQ)-1);   //Deve ser de 1~63, 0 é proibido
+  }
+  if((DRAM_FREQ>=63)&&(DRAM_FREQ<=124))  //&&(DRAM_FREQ<=166)
+  {
+	SPI_CmdWrite(REG_MPLLC1);                  //0x07     
+	SPI_DataWrite(0x04);                       //PLL Divided by 4
+	SPI_CmdWrite(REG_MPLLC2);                  //0x08
+	SPI_DataWrite((DRAM_FREQ*4/OSC_FREQ)-1);   //Deve ser de 1~63, 0 é proibido
+  }
+  if((DRAM_FREQ>=31)&&(DRAM_FREQ<=62))
+  {           
+	SPI_CmdWrite(REG_MPLLC1);                  //0x07     
+	SPI_DataWrite(0x06);                       //PLL Divided by 8
+	SPI_CmdWrite(REG_MPLLC2);                  //0x08
+	SPI_DataWrite((DRAM_FREQ*8/OSC_FREQ)-1);   //Deve ser de 1~63, 0 é proibido
+  }
+  if(DRAM_FREQ<=30)
+  {
+	SPI_CmdWrite(REG_MPLLC1);                  //0x07   
+	SPI_DataWrite(0x06);                       //PLL Divided by 8
+	SPI_CmdWrite(REG_MPLLC2);                  //0x08
+	SPI_DataWrite((30*8/OSC_FREQ)-1);          //Deve ser de 1~63, 0 é proibido
+  }
+ 
+  // ---------- Set Core clock ----------
+  
+  if(CORE_FREQ>=125)
+  {
+	SPI_CmdWrite(REG_SPLLC1);                  //0x09
+	SPI_DataWrite(0x02);                       //PLL Divided by 2
+	SPI_CmdWrite(REG_SPLLC2);                  //0x0A
+	SPI_DataWrite((CORE_FREQ*2/OSC_FREQ)-1);   //Deve ser de 1~63, 0 é proibido
+  }
+  if((CORE_FREQ>=63)&&(CORE_FREQ<=124))     
+  {
+	SPI_CmdWrite(REG_SPLLC1);                  //0x09   
+	SPI_DataWrite(0x04);                       //PLL Divided by 4
+	SPI_CmdWrite(REG_SPLLC2);                  //0x0A
+	SPI_DataWrite((CORE_FREQ*4/OSC_FREQ)-1);   //Deve ser de 1~63, 0 é proibido
+  }
+  if((CORE_FREQ>=31)&&(CORE_FREQ<=62))
+  {           
+	SPI_CmdWrite(REG_SPLLC1);                  //0x09  
+	SPI_DataWrite(0x06);                       //PLL Divided by 8
+	SPI_CmdWrite(REG_SPLLC2);                  //0x0A
+	SPI_DataWrite((CORE_FREQ*8/OSC_FREQ)-1);   //Deve ser de 1~63, 0 é proibido
+  }
+  if(CORE_FREQ<=30)
+  {
+	SPI_CmdWrite(REG_SPLLC1);                  //0x09   
+	SPI_DataWrite(0x06);                       //PLL Divided by 8
+	SPI_CmdWrite(REG_SPLLC2);                  //0x0A
+	SPI_DataWrite((30*8/OSC_FREQ)-1);          //Deve ser de 1~63, 0 é proibido
+  }
+
+  //PLL_Enable();
+  //O fabricante permite que o dispositivo, possa fazer as configurações do PLL sem estar desligado ou desativado o PLL
+  //basta delsigar momentaneamente e religar ele para entrar em vigo as configurações de frequencia.
+  //Isso é feito apra simplificar e facilitar a progarmação e arquitetura sem gerar instabilidade no disposiutivo.
+  
+  // ---------- Desliga temporariamente o PLL ----------
+  SPI_CmdWrite(REG_CCR);         //0x01, Envia comando Chip Configuration Register (CCR) 
+  SPI_CmdWrite(0x00);            //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
+  delay(1);                      //Aguarda para estabilizar
+  
+  // ---------- Habilita PLL com novos valores ----------
+  SPI_CmdWrite(0x80);            //Comando para ligar PLL
+  delay(1);                      //Aguarda para estabilizar
+
+}
+
+
+Wilson, continuando. Este codigo do microcontrolador de display RA8889.
+Qual é a função deste código?
+Tem também um nome melhor que este, está muito esquisito.
+Segue as funções que são utilziadas:
+  RegisterWrite: escreve os dados para o registrador
+  Check_SDRAM_Ready: Verifica se a memoria SDRAM está pronta para o acesso
+//
+void ER_TFTBasic::SDRAM_initail(void)
+{
+  uint8_t sdram_itv;
+  
+  //0xe0, SDRAM attribute register (SDRAR)
+  //Configura o modo da SDRAM
+  //  0x29 = indica parâmetros como largura do barramento e o tipo de refresh.
+  //  SDRAM Bank number (sdr_bank)      bit 5=1b     -> uso 4 bancos
+  //  SDRAM Row addressing (sdr_row)    bit 4-3=01b  -> 4096 (A0-A11) 
+  //  SDRAM Column addressing (sdr_col) bit 2-0=001b -> 512 (A0-A8)
+  RegisterWrite(REG_SDRAR, 0x29);            
+    
+  //0xe1, SDRAM mode register & extended mode register (SDRMD)
+  //Define a latência CAS (Column Address Strobe latency).
+  //  0x03 = Define a latência CAS (Column Address Strobe latency)
+  //  SDRAM CAS latency (sdr-caslat)    bit 2-0 CAS:2 010b=0x02 -> 2 ciclos CAS:3 011b=0x03 -> 3 ciclos  
+  RegisterWrite(REG_SDRMD, 0x03);
+  
+  //Calcula o intervalo de refresh da SDRAM.
+  // - A maioria das SDRAM precisa de 8192 ciclos de refresh em 64 ms.
+  // - Esse cálculo pega o clock de 64 MHz, divide pelo número de linhas (8192), e ajusta para a taxa de atualização (60 Hz).
+  // - O -2 é um ajuste de margem para não ficar no limite.
+  sdram_itv = (64000000 / 8192) / (1000/60);
+  sdram_itv-=2;
+
+  RegisterWrite(0xe2,sdram_itv);
+  RegisterWrite(0xe3,sdram_itv >>8);
+  RegisterWrite(0xe4,0x01);
+  Check_SDRAM_Ready();
+  delay(1);
 }
 
 

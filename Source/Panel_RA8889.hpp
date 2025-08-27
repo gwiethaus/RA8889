@@ -336,11 +336,37 @@ Contributors:
 #define REG_AVI_PAUSE          0xd3            //Page 1 AVI pause
 #define REG_AVI_STOP           0xd4            //Page 1 AVI stop                        
 
+//uso para Set bits (or apply)
+#define cSetb0    0x01
+#define cSetb1    0x02
+#define cSetb2    0x04
+#define cSetb3    0x08
+#define cSetb4    0x10
+#define cSetb5    0x20
+#define cSetb6    0x40
+#define cSetb7    0x80
+
+//Uso para Clear bits (and apply)
+#define cClrb0    0xfe
+#define cClrb1    0xfd
+#define cClrb2    0xfb
+#define cClrb3    0xf7
+#define cClrb4    0xef
+#define cClrb5    0xdf
+#define cClrb6    0xbf
+#define cClrb7    0x7f
+
+ //==== [SW_(1)]  PLL  =====
+#define OSC_FREQ     10	  // crystal clcok
+#define DRAM_FREQ    133 // SDRAM clock frequency, unti: MHz		  
+#define CORE_FREQ    120  // Core (system) clock frequency, unit: MHz 
+#define SCAN_FREQ     34 // Panel Scan clock frequency, unit: MHz
+
 class Panel_RA8889 {
 	
 	public
 		Panel_RA8889(uint8_t cs, uint8_t reset);
-		unint8_t init();
+		uint8_t init();
 		void DisplayOn(bool on);
 		void GraphicMode(void);
 		void TextMode(void);
@@ -349,7 +375,8 @@ class Panel_RA8889 {
         void RegisterWrite(uint8_t Cmd, uint8_t Data);
 	    uint8_t RegisterRead(uint8_t Cmd);
 		uint8_t StatusRead(void);
-		
+		void HardwareReset(void);
+
 	protected
 		uint8_t _cs;	      //chip select pin
 		uint8_t _rst;	      //chip reset pin
@@ -365,9 +392,18 @@ class Panel_RA8889 {
 		int SPI_DataRead(void);
 		
 		void Check_SDRAM_Ready(void);
-		void HW_Reset(void);
-		
+		void PLL_WaitReady(void);
+		void PLL_ConfigClocks(void);		
 }
+
+
+
+
+
+
+
+
+
 
 
 

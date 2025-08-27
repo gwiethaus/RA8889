@@ -33,9 +33,7 @@ void setup() {
   
   gfx.init();
   
-  ER_TFT.System_Check_Temp();
-  delay(100);
-  while(ER_TFT.LCD_StatusRead()&0x02);
+  //Esta funcao sera desfeita e sera colocada as suas funcoes dentro de init()
   ER_TFT.initial();     //aqui configura o PLL, frequencia, modo do display, cor... etc... todos os registardores
   
   gfx.DisplayOn(true);
