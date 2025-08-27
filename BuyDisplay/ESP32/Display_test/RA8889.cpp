@@ -3281,6 +3281,7 @@ void ER_TFTBasic::MemWrite_Left_Right_Top_Down(void)
   ER_TFT.LCD_DataWrite(temp);
 }
 
+//void PLL_WaitReady(void);
 void ER_TFTBasic::System_Check_Temp(void)
 {
   unsigned char i=0,j=0;
@@ -3321,6 +3322,7 @@ void ER_TFTBasic::System_Check_Temp(void)
   }while(system_ok==0);
 }
 
+//void PLL_ConfigClocks(void);
 void ER_TFTBasic::PLL_Initial(void) 
 {
 
@@ -3452,6 +3454,8 @@ void ER_TFTBasic::SDRAM_initail(void)
   delay(1);
 }
 
+
+//void HardwareReset(void);
 void ER_TFTBasic::HW_Reset(void)
 {
   pinMode(LCD_RESET, OUTPUT);
@@ -3461,11 +3465,13 @@ void ER_TFTBasic::HW_Reset(void)
   delay(500);
 }
 
+
+//sera desfragmentado esta funcao
 void ER_TFTBasic::initial(void)
 {
 
     ER_TFT.PLL_Initial();
-  
+    
     ER_TFT.SDRAM_initail();
 
 //**[01h]**//
