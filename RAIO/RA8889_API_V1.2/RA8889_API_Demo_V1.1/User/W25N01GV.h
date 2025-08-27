@@ -1,0 +1,26 @@
+void W25N01_Write_Enable(void);
+void W25N01_Write_Disable(void);
+bool W25N01_Check_WEL(void);
+void W25N01_Device_Reset(void);
+void W25N01_Read_JEDEC_ID(unsigned char *manufacturer_id,unsigned short *device_id);
+unsigned char W25N01_Read_Status_Register1(void);
+unsigned char W25N01_Read_Status_Register2(void);
+unsigned char W25N01_Read_Status_Register3(void);
+void W25N01_Write_Status_Register1(unsigned char data);
+void W25N01_Write_Status_Register2(unsigned char data);
+void W25N01_Write_Status_Register3(unsigned char data);
+bool W25N01_Check_Flash_Busy(void);
+void W25N01_Clear_BUF(void);
+void W25N01_Set_ECC(void);
+//void W25N01_Factory_BBMandSetLUT(void);
+unsigned short W25N01_Factory_Check_Bad_Blocks(unsigned char Buffer_Page[] );
+void W25N01_Find_Bad_Block(void);
+void W25N01_Read_BBM_LUT(unsigned char *LUT_list);
+void W25N01_Disable_Block_Protect(void);
+unsigned char W25N01_Block_Erase_128KB(unsigned short pageAddress);
+unsigned char W25N01_Whole_Flash_Erase(void);
+void W25N01_Load_Program_Data(unsigned short lenght,unsigned char *UpdataValue);
+void W25N01_Program_Execute(unsigned short pageAddress);
+void W25N01_Read_PageSize(unsigned short pageAddr);
+void W25N01_Swap_Block(unsigned short BadBlockAddr, unsigned short GoodBlockAddr);
+
