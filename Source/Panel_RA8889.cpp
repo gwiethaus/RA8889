@@ -1,4 +1,4 @@
-//Notas:
+//Notas 1:
 // substitua "unsigned char" por "uint8_t", embora ambos funcionam do mesmo jeito
 
 /*----------------------------------------------------------------------------/
