@@ -32,13 +32,10 @@ Panel_RA8889 gfx(LCD_CS, LCD_RESET);
 void setup() {
   
   gfx.init();
-  
-  //Esta funcao sera desfeita e sera colocada as suas funcoes dentro de init()
-  ER_TFT.initial();     //aqui configura o PLL, frequencia, modo do display, cor... etc... todos os registardores
-  
   gfx.DisplayOn(true);
 
 }
+
 void loop() {
   ER_TFT.Select_Main_Window_16bpp();
   ER_TFT.Main_Image_Start_Address(layer1_start_addr);        

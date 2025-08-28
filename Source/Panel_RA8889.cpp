@@ -45,9 +45,9 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst) {
 //inicializa o display
 uint8_t Panel_RA8889::init(void) {
 
-  SPIInit();
+  SPI_Init();
   ChipHardwareReset();
-  CheckPLLReady();  
+  PLL_WaitReady();
   delay(100);
   // Aguarda até que a inicialização interna do RA8889 termine
   // Bit 1 do STSR (0x02) = 1 → inicialização em andamento
@@ -58,12 +58,49 @@ uint8_t Panel_RA8889::init(void) {
   //colcoar aqui abaixo as partes  
   PLL_ConfigClocks();                 //Configura clock Pixel/SDRAM/Core PLL
   
-  //proximo...
-  //ER_TFT.SDRAM_initail();
+  SDRAM_Init();                       //Inicializa a SDRAM
   
-  
-  
+
+
+//Descomentar a medida que as funcoes vao ficando pronta  
+//**[01h]**//
+  ER_TFT.TFT_16bit();
+//  ER_TFT.Host_Bus_16bit(); //Host bus 16bit
+      
+//**[02h]**//
+//  ER_TFT.RGB_16b_16bpp();
+//  ER_TFT.MemWrite_Left_Right_Top_Down(); 
+      
+//**[03h]**//
+//  ER_TFT.Graphic_Mode();
+//  ER_TFT.Memory_Select_SDRAM();
+
+//  ER_TFT.HSCAN_L_to_R();     //REG[12h]:from left to right
+//  ER_TFT.VSCAN_T_to_B();       //REG[12h]:from top to bottom
+//  ER_TFT.PDATA_Set_RGB();        //REG[12h]:Select RGB output
+
+//  ER_TFT.Set_PCLK(LCD_PCLK_Falling_Rising);   //LCD_PCLK_Falling_Rising
+//  ER_TFT.Set_HSYNC_Active(LCD_HSYNC_Active_Polarity);
+//  ER_TFT.Set_VSYNC_Active(LCD_VSYNC_Active_Polarity);
+//  ER_TFT.Set_DE_Active(LCD_DE_Active_Polarity);
+ 
+//  ER_TFT.LCD_HorizontalWidth_VerticalHeight(LCD_XSIZE_TFT ,LCD_YSIZE_TFT);
+//  ER_TFT.LCD_Horizontal_Non_Display(LCD_HBPD);                          
+//  ER_TFT.LCD_HSYNC_Start_Position(LCD_HFPD);                              
+//  ER_TFT.LCD_HSYNC_Pulse_Width(LCD_HSPW);                              
+//  ER_TFT.LCD_Vertical_Non_Display(LCD_VBPD);                               
+//  ER_TFT.LCD_VSYNC_Start_Position(LCD_VFPD);                               
+//  ER_TFT.LCD_VSYNC_Pulse_Width(LCD_VSPW);                              
+      
+//  ER_TFT.Select_Main_Window_16bpp();
+
+//  ER_TFT.Memory_XY_Mode(); //Block mode (X-Y coordination addressing)
+//  ER_TFT.Memory_16bpp_Mode();
+//  ER_TFT.Select_Main_Window_16bpp();  
+    
 }
+
+
 
 //Liga o display
 //on: true, liga display, false: desliga display 
@@ -105,7 +142,7 @@ void Panel_RA8889::TextMode(void)
 //================================================================================
 
 //Inicializa o SPI para a comunicacao com o Display RA8889
-void Panel_RA8889::SPIInit()
+void Panel_RA8889::SPI_Init()
 {
 	pinMode(_cs, OUTPUT);
 	SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0));
@@ -208,27 +245,6 @@ uint8_t Panel_RA8889::RegisterRead(uint8_t Cmd)
 	return result;
 }
 
-
-//================================================================================
-// Funcoes Base para o Display
-//================================================================================
-
-
-//Verifica se a memoria SDRAM está pronta para o acesso
-void Panel_RA8889::Check_SDRAM_Ready(void)
-{
-  //Bit 2 do registrador STSR
-  //0: SDRAM is not ready for access
-  //1: SDRAM is ready for access
-  uint8_t temp;
-  do
-  {
-    temp = StatusRead();
-  }
-  while( (temp & 0x04) == 0x00 );
-}
-
-
 //Antigo HW_Reset(void)
 /**
  * Executa um reset de hardware no RA8889 através do pino RESET.
@@ -249,6 +265,10 @@ void Panel_RA8889::HardwareReset(void)
   digitalWrite(_rst, HIGH);
   delay(500);
 }
+
+//================================================================================
+// Funcoes PLL
+//================================================================================
 
 
 /**
@@ -317,7 +337,7 @@ void Panel_RA8889::PLL_WaitReady(void)
  * 2. Configura os registros de divisores/multiplicadores
  * 3. Habilita o PLL com os novos valores
  */
-void ER_TFTBasic::PLL_ConfigClocks(void) 
+void Panel_RA8889::PLL_ConfigClocks(void) 
 {
   //REG[05h] SCLK PLL Control Register 1 (PPLLC1) - SCAN or PIXEL Clock PLL
   //REG[07h] MCLK PLL Control Register 1 (MPLLC1) - MEMORY Clock PLL
@@ -440,16 +460,60 @@ void ER_TFTBasic::PLL_ConfigClocks(void)
 }
 
 
-Wilson, continuando. Este codigo do microcontrolador de display RA8889.
-Qual é a função deste código?
-Tem também um nome melhor que este, está muito esquisito.
-Segue as funções que são utilziadas:
-  RegisterWrite: escreve os dados para o registrador
-  Check_SDRAM_Ready: Verifica se a memoria SDRAM está pronta para o acesso
-//
-void ER_TFTBasic::SDRAM_initail(void)
+//================================================================================
+// Funcoes SDRAM
+//================================================================================
+
+
+/**
+ * @brief Aguarda até que a SDRAM do RA8889 esteja pronta para acesso.
+ *
+ * Esta função realiza leituras repetidas do registrador de status (STSR) 
+ * do RA8889 até que o bit 2 esteja definido como '1', indicando que a 
+ * memória SDRAM já está inicializada e pronta para operações de leitura 
+ * e escrita. 
+ *
+ * Uso típico: deve ser chamada após a inicialização da SDRAM ou 
+ * antes de qualquer operação que dependa do acesso estável à memória.
+ *
+ * - Bit 2 do STSR:
+ *   0: SDRAM não está pronta para acesso.
+ *   1: SDRAM pronta para acesso.
+ */
+void Panel_RA8889::SDRAM_WaitReady(void)
 {
-  uint8_t sdram_itv;
+  //Bit 2 do registrador STSR
+  //0: SDRAM is not ready for access
+  //1: SDRAM is ready for access
+  uint8_t temp;
+  do
+  {
+    temp = StatusRead();
+  }
+  while( (temp & 0x04) == 0x00 );
+}
+
+
+/**
+ * @brief Inicializa a memória SDRAM externa usada pelo RA8889.
+ *
+ * Esta função configura os parâmetros necessários para o controlador SDRAM do RA8889,
+ * incluindo a latência CAS e o intervalo de refresh, de acordo com a frequência de operação
+ * (64 MHz) e os requisitos típicos da SDRAM (8192 ciclos de refresh a cada 64 ms).
+ *
+ * Passos executados:
+ *  - Define o modo de operação da SDRAM.
+ *  - Configura a latência CAS (3 ciclos).
+ *  - Calcula e ajusta o intervalo de refresh com base no clock do sistema.
+ *  - Grava os valores de refresh nos registradores correspondentes.
+ *  - Ativa a SDRAM e aguarda até que esteja pronta para uso.
+ *
+ * @note Deve ser chamada apenas uma vez na inicialização do sistema, 
+ *       antes de qualquer acesso à memória SDRAM (framebuffer).
+ */
+void Panel_RA8889::SDRAM_Init(void)
+{
+  uint16_t sdram_itv;
   
   //0xe0, SDRAM attribute register (SDRAR)
   //Configura o modo da SDRAM
@@ -465,6 +529,8 @@ void ER_TFTBasic::SDRAM_initail(void)
   //  SDRAM CAS latency (sdr-caslat)    bit 2-0 CAS:2 010b=0x02 -> 2 ciclos CAS:3 011b=0x03 -> 3 ciclos  
   RegisterWrite(REG_SDRMD, 0x03);
   
+  //Set SDRAM refresh interval via SDRAM auto refresh interval registers
+  
   //Calcula o intervalo de refresh da SDRAM.
   // - A maioria das SDRAM precisa de 8192 ciclos de refresh em 64 ms.
   // - Esse cálculo pega o clock de 64 MHz, divide pelo número de linhas (8192), e ajusta para a taxa de atualização (60 Hz).
@@ -472,14 +538,34 @@ void ER_TFTBasic::SDRAM_initail(void)
   sdram_itv = (64000000 / 8192) / (1000/60);
   sdram_itv-=2;
 
-  RegisterWrite(0xe2,sdram_itv);
-  RegisterWrite(0xe3,sdram_itv >>8);
-  RegisterWrite(0xe4,0x01);
-  Check_SDRAM_Ready();
+  //0xe2, SDRAM auto refresh interval (SDR_REF_ITVL0) - Byte low
+  RegisterWrite(REG_SDR_REF_ITVL0, sdram_itv); //envia byte menos significativo da palavra
+  //0xe3, SDRAM auto refresh interval (SDR_REF_ITVL1) - Byte high
+  RegisterWrite(REG_SDR_REF_ITVL1, sdram_itv >> 8); //envia byte mais significativo da palavra
+  
+  //0xe4, SDRAM Control register (SDRCR)
+  //  0x01 = Iniciar procedimento de inicialização da SDRAM (sdr_initdone)
+  RegisterWrite(REG_SDRCR, 0x01);
+  
+  //Espera até que a SDRAM esteja pronta
+  SDRAM_WaitReady();
   delay(1);
 }
 
-
+Wilson, para que serve esta funcao par a microcontroladora RA8889?
+Não leve em consideração so comentários, eu nao tenho certeza se é isto que está fazendo cada linha de código.
+#define cClrb0    0xfe
+#define cClrb1    0xfd
+void ER_TFTBasic::SDRAM_MemorySelect(void)
+{
+  uint8_t temp = 0;
+  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();               //Ler o registrador ICR
+  temp &= cClrb1;                      //Limpa bit 1 
+  temp &= cClrb0;                      //Limpa bit 0
+  //bit 1-0 Memory port Read/Write Destination Selection
+  SPI_DataWrite(temp);                 //escrever valores xxxxxx00b = Image buffer (SDRAM) for image data, pattern, user-characters. Support Read-modify-Write.
+}
 
 
 

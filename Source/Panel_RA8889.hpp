@@ -365,7 +365,7 @@ Contributors:
 class Panel_RA8889 {
 	
 	public
-		Panel_RA8889(uint8_t cs, uint8_t reset);
+		Panel_RA8889(uint8_t cs, uint8_t rst);
 		uint8_t init();
 		void DisplayOn(bool on);
 		void GraphicMode(void);
@@ -383,17 +383,19 @@ class Panel_RA8889 {
 		unsigned int _width;  //lardura do display
 		unsigned int _height; //altura do display
 		
-        void SPIInit();
 		void SPISetCS(bool active);
 		uint8_t SPIRwByte(uint8_t value);
 		void SPI_CmdWrite(int cmd);
 	    void SPI_DataWrite(int data);
 		void SPI_DataWrite_Pixel(int data);
 		int SPI_DataRead(void);
+        void SPI_Init();
 		
-		void Check_SDRAM_Ready(void);
 		void PLL_WaitReady(void);
 		void PLL_ConfigClocks(void);		
+		void SDRAM_WaitReady(void);
+		void SDRAM_Init(void);
+		
 }
 
 
