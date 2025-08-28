@@ -52,6 +52,8 @@ void ER_TFTBasic::SPI_DataWrite_Pixel(int data)
   ER_TFT.SPIRwByte(data>>8);
   ER_TFT.SPISetCs(1);    //SS_SET;
 }
+
+//uint8_t StatusRead(void);
 int ER_TFTBasic::SPI_StatusRead(void)
 {
   int temp = 0;
@@ -96,6 +98,7 @@ void ER_TFTBasic::LCD_CmdWrite(unsigned char cmd)
 	#endif
 }
 
+//void SPI_DataWrite(int data);
 void ER_TFTBasic::LCD_DataWrite(unsigned char data)
 {
 	#if Arduino_SPI
@@ -107,6 +110,7 @@ void ER_TFTBasic::LCD_DataWrite(unsigned char data)
 	#endif
 }
 
+//void SPI_DataWrite_Pixel(int data);
 void ER_TFTBasic::LCD_DataWrite_Pixel(unsigned int data)
 {
 	#if Arduino_SPI
@@ -118,7 +122,7 @@ void ER_TFTBasic::LCD_DataWrite_Pixel(unsigned int data)
 	#endif
 }
 
-
+//funcao removida do meu projeto
 unsigned char ER_TFTBasic::LCD_StatusRead(void)
 {
 	unsigned char temp = 0;
@@ -163,7 +167,7 @@ unsigned char ER_TFTBasic::LCD_RegisterRead(unsigned char Cmd)
 	return temp;
 }
 
-
+//void SDRAM_WaitReady(void);
 void ER_TFTBasic::Check_SDRAM_Ready(void)
 {
 /*  0: SDRAM is not ready for access
@@ -223,6 +227,7 @@ void ER_TFTBasic::Graphic_Mode(void)
     temp &= cClrb2;
   ER_TFT.LCD_DataWrite(temp);
 }
+
 void ER_TFTBasic::Memory_Select_SDRAM(void)
 {
   unsigned char temp;
@@ -232,6 +237,7 @@ void ER_TFTBasic::Memory_Select_SDRAM(void)
     temp &= cClrb0; // B
   ER_TFT.LCD_DataWrite(temp);
 }
+
 void ER_TFTBasic::HSCAN_L_to_R(void)
 {
 /*  
