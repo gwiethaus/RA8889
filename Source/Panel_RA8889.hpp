@@ -356,11 +356,20 @@ Contributors:
 #define cClrb6    0xbf
 #define cClrb7    0x7f
 
- //==== [SW_(1)]  PLL  =====
+//==== [SW_(1)]  PLL  =====
 #define OSC_FREQ     10	  // crystal clcok
-#define DRAM_FREQ    133 // SDRAM clock frequency, unti: MHz		  
+#define DRAM_FREQ    133  // SDRAM clock frequency, unti: MHz		  
 #define CORE_FREQ    120  // Core (system) clock frequency, unit: MHz 
-#define SCAN_FREQ     34 // Panel Scan clock frequency, unit: MHz
+#define SCAN_FREQ     34  // Panel Scan clock frequency, unit: MHz
+
+//Tipo de seleção de destino da porta de memória do RA8889
+enum class MemoryPortDest : uint8_t {
+    SDRAM            = 0b00,
+    GammaTable       = 0b01,
+	GraphicCursorRAM = 0b10,
+    ColorPaletteRAM  = 0b11    
+};
+
 
 class Panel_RA8889 {
 	
@@ -395,6 +404,12 @@ class Panel_RA8889 {
 		void PLL_ConfigClocks(void);		
 		void SDRAM_WaitReady(void);
 		void SDRAM_Init(void);
+		
+		void Memory_Select_SDRAM(void);
+		void Memory_Select_Gamma_Table(void);
+		void Memory_Select_Graphic_Cursor_RAM(void);
+		void Memory_Select_Color_Palette_RAM(void);
+		void MemoryPort_Select(MemoryPortDest dest);
 		
 }
 

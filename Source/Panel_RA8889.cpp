@@ -26,6 +26,14 @@ Contributors:
 
 #include "../platforms/device.hpp"
 
+/*
+	Notas para Fazer:
+	- Determinar a autoconfiguracao das portas MISO, MOSI, CLK da micrcontroladora
+	- Determinar manual das portas MISO, MOSI, CLK da micrcontroladora
+	- tipo de comunciacao SPI MODO 0, 1, 2 dependedo da microcontroladora
+    - Sistema da porta de itnerrupção para a tla de toque do display
+	
+*/
 
 //================================================================================
 // Funções Principais de Inicializacao
@@ -48,7 +56,9 @@ uint8_t Panel_RA8889::init(void) {
   SPI_Init();
   ChipHardwareReset();
   PLL_WaitReady();
+  
   delay(100);
+  
   // Aguarda até que a inicialização interna do RA8889 termine
   // Bit 1 do STSR (0x02) = 1 → inicialização em andamento
   // Bit 1 do STSR (0x02) = 0 → inicialização concluída
@@ -60,20 +70,22 @@ uint8_t Panel_RA8889::init(void) {
   
   SDRAM_Init();                       //Inicializa a SDRAM
   
-
-
 //Descomentar a medida que as funcoes vao ficando pronta  
-//**[01h]**//
-  ER_TFT.TFT_16bit();
+
+//Chip Configuration Register (CCR) [01h]
+
+//  ER_TFT.TFT_16bit();
 //  ER_TFT.Host_Bus_16bit(); //Host bus 16bit
       
-//**[02h]**//
+//Memory Access Control Register (MACR) [02h]
+
 //  ER_TFT.RGB_16b_16bpp();
 //  ER_TFT.MemWrite_Left_Right_Top_Down(); 
       
-//**[03h]**//
-//  ER_TFT.Graphic_Mode();
-//  ER_TFT.Memory_Select_SDRAM();
+//Input Control Register (ICR) [03h]
+
+  GraphicMode();
+  Memory_Select_SDRAM();
 
 //  ER_TFT.HSCAN_L_to_R();     //REG[12h]:from left to right
 //  ER_TFT.VSCAN_T_to_B();       //REG[12h]:from top to bottom
@@ -552,20 +564,163 @@ void Panel_RA8889::SDRAM_Init(void)
   delay(1);
 }
 
-Wilson, para que serve esta funcao par a microcontroladora RA8889?
-Não leve em consideração so comentários, eu nao tenho certeza se é isto que está fazendo cada linha de código.
-#define cClrb0    0xfe
-#define cClrb1    0xfd
-void ER_TFTBasic::SDRAM_MemorySelect(void)
+
+/**
+ * @brief Seleciona o destino da porta de memória do RA8889 para a SDRAM.
+ *
+ * Configura os bits [1:0]=00b do registrador ICR (0x03)
+  *
+ * @param Nenhum
+ *
+ * @note Image buffer (SDRAM) for image data, pattern (palette), user-characters. 
+ *        
+ */
+void Memory_Select_SDRAM(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();               //Ler o registrador ICR
-  temp &= cClrb1;                      //Limpa bit 1 
-  temp &= cClrb0;                      //Limpa bit 0
-  //bit 1-0 Memory port Read/Write Destination Selection
-  SPI_DataWrite(temp);                 //escrever valores xxxxxx00b = Image buffer (SDRAM) for image data, pattern, user-characters. Support Read-modify-Write.
+  temp = SPI_DataRead();               //Lê valor atual do registrador
+  temp &= cClrb0;                      //Clear bit 0
+  temp &= cClrb1;                      //Clear bit 1
+  SPI_DataWrite(temp);                 //Atualiza registrador
 }
+
+/**
+ * @brief Seleciona o destino da porta de memória do RA8889 para Tabela Gama.
+ *
+ * Configura os bits [1:0]=01b do registrador ICR (0x03)
+  *
+ * @param Nenhum
+ *
+ * @note Tabela Gama para cores Vermelho/Verde/Azul.
+ *        
+ */
+void Memory_Select_Gamma_Table(void)
+{
+  uint8_t temp = 0;
+  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();               //Lê valor atual do registrador
+  temp &= cClrb1;                      //Clear bit 1 
+  temp |= cSetb0;                      //Set bit 0
+  SPI_DataWrite(temp);                 //Atualiza registrador
+}
+
+/**
+ * @brief Seleciona o destino da porta de memória do RA8889 para Cursor Gráfico.
+ *
+ * Configura os bits [1:0]=10b do registrador ICR (0x03)
+  *
+ * @param Nenhum
+ *
+ * @note RAM do Cursor Gráfico (aceita apenas dados MPU de 8 bits, leitura e 
+ *       gravação de dados de registradores normais semelhantes), não suporta 
+ *       leitura de RAM do Cursor Gráfico. Contém 4 conjuntos de cursores 
+ *       gráficos. Cada conjunto tem 128x16 bits. O usuário precisa especificar 
+ *       o conjunto de cursores gráficos de destino e continuar a gravação de 
+ *       256 bytes..
+ */
+void Memory_Select_Graphic_Cursor_RAM(void)
+{
+  uint8_t temp = 0;
+  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();               //Lê valor atual do registrador
+  temp |= cSetb1;                      //Set bit 1  
+  temp &= cClrb0;                      //Clear bit 0
+  SPI_DataWrite(temp);                 //Atualiza registrador
+}
+
+/**
+ * @brief Seleciona o destino da porta de memória do RA8889 para RAM de Palette.
+ *
+ * Configura os bits [1:0]=11b do registrador ICR (0x03)
+  *
+ * @param Nenhum
+ *
+ * @note RAM do Cursor Gráfico (aceita apenas dados MPU de 8 bits, leitura e 
+ *       gravação de dados de registradores normais semelhantes), não suporta 
+ *       leitura de RAM do Cursor Gráfico. Contém 4 conjuntos de cursores 
+ *       gráficos. Cada conjunto tem 128x16 bits. O usuário precisa especificar 
+ *       o conjunto de cursores gráficos de destino e continuar a gravação de 
+ *       256 bytes..
+ */
+void Memory_Select_Color_Palette_RAM(void)
+{
+  uint8_t temp = 0;
+  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();               //Lê valor atual do registrador
+  temp |= cSetb1;                      //Set bit 1
+  temp |= cSetb0;                      //Set bit 0
+  SPI_DataWrite(temp);                 //Atualiza registrador
+}
+
+/**
+ * @brief Seleciona o destino da porta de memória do RA8889.
+ *
+ * Configura os bits [1:0] do registrador ICR (0x03) de acordo com
+ * o destino escolhido.
+ *
+ * Exemplo: MemoryPort_Select(MemoryPortDest::SDRAM);
+ *          Este exemplo é o memo que suar a funcao Memory_Select_SDRAM();
+ *
+ * @param dest Destino da porta de memória (SDRAM, Tabela Gama, Cursor Grafico e Palete)
+ *
+ */
+void Panel_RA8889::MemoryPort_Select(MemoryPortDest dest);
+{
+  uint8_t temp = 0;
+  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();               //Lê valor atual do registrador
+  temp &= 0xfc;                        //Limpa bit 1 e 0
+  temp |= static_cast<uint8_t>(dest);  //Define o destino
+  SPI_DataWrite(temp);                 //Atualiza registrador
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
