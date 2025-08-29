@@ -228,6 +228,7 @@ void ER_TFTBasic::Graphic_Mode(void)
   ER_TFT.LCD_DataWrite(temp);
 }
 
+
 void ER_TFTBasic::Memory_Select_SDRAM(void)
 {
   unsigned char temp;
