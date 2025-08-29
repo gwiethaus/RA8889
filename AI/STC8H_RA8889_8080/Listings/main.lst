@@ -1,0 +1,468 @@
+C51 COMPILER V9.55   MAIN                                                                  07/12/2024 14:46:12 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\Program Files\Keil_v5\C51\BIN\C51.EXE main.c COMPACT OMF2 ROM(COMPACT) OPTIMIZE(9,SPEED) BROWSE 
+                    -INCDIR(.\RA8889_01_Kernel) DEBUG PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          
+   2          /************** RAIO Technology Inc. / Lcdvision Co., Ltd.***************
+   3           * file     : main.c
+   4           * author   : LCDVISION FAE TEAM
+   5           * version  : V1.3
+   6           * date     : 2024/07/01
+   7           * brief    : STC8H8K64U + RA8889 ÑÝÊ¾´úÂëÖ÷³ÌÐò£¬MCUÍ¨ÐÅ½Ó¿Ú²ÉÓÃ8080 
+   8          ************************* bbs.lcdvision.com.cn **************************/
+   9          
+  10          #include "stc8h.h"       //°üº¬´ËÍ·ÎÄ¼þºó£¬²»ÐèÒªÔÙ°üº¬"reg51.h"Í·ÎÄ¼þ
+  11          #include <intrins.h>
+  12          
+  13          /* µ¥Æ¬»ú¿ª·¢°åÏà¹Øº¯Êý */
+  14          #include "MCU_Dev_Board.h"
+  15          
+  16          /* RA8889Í·ÎÄ¼þ */
+  17          #include "RA8889_51.h"
+  18          #include "RA8889_API_51.h"
+  19          #include "RA8889_MCU_IF.h"
+  20          #include "UserDef.h"
+  21          #include "delay.h"
+  22          
+  23          /* FLASHÍ¼Æ¬µµÍ·ÎÄ¼þ */
+  24          #include "flash.h"
+  25          
+  26          
+  27          /**************************** È«¾Ö±äÁ¿ÉùÃ÷ ******************************/
+  28          
+  29          
+  30          
+  31          
+  32          /*************************************************************************
+  33          *                             º¯ÊýÉùÃ÷
+  34          *************************************************************************/
+  35          void Introduction (void);       //ÎÄ×Ö½éÉÜ
+  36          void Geometry_Demo(void);       //¼¸ºÎ»æÍ¼ÑÝÊ¾
+  37          void Show_BMP(void);            //µ÷ÓÃFLASHµÄBMPÍ¼Æ¬ÏÔÊ¾
+  38          void Show_JPG(void);            //µ÷ÓÃFLASHµÄJPGÍ¼Æ¬ÏÔÊ¾
+  39          void Fade_in_Fade_out(void);    //Í¼Æ¬µ­Èëµ­³öÑÝÊ¾
+  40          void Show_AVI(void);            //µ÷ÓÃFLASHµÄAVIÓ°Æ¬²¥·Å
+  41          void Show_PNG(void);            //µ÷ÓÃFLASHµÄPNGÍ¼Æ¬ÏÔÊ¾
+  42          
+  43          
+  44          /*************************************************************************
+  45            * @brief  Ö÷º¯Êý
+  46            * @param  ÎÞ
+  47            * @retval ÎÞ
+  48            * @note   SPIÍ¨ÐÅ½Ó¿Ú£¬Òº¾§ÆÁÏÔÊ¾É«Éî¶¨ÒåÎª24bpp½øÐÐÑÝÊ¾
+  49            ************************************************************************/
+  50          void main()
+  51          {
+  52   1        P2M0 = 0x00;        //ÉèÖÃP2ÎªË«Ïò¿ÚÄ£Ê½  Data_Bus  8bit
+  53   1        P2M1 = 0x00; 
+  54   1      
+C51 COMPILER V9.55   MAIN                                                                  07/12/2024 14:46:12 PAGE 2   
+
+  55   1        P0M0 = 0xFF;        //ÉèÖÃP0ÎªÍÆÍìÊä³öÄ£Ê½
+  56   1        P0M1 = 0x00;
+  57   1        
+  58   1        P1M0 = 0xFF;        //ÉèÖÃP1ÎªÍÆÍìÊä³öÄ£Ê½
+  59   1        P1M1 = 0x00;
+  60   1        
+  61   1      
+  62   1        /* ¿ªÊ¼£¬ÉÁË¸LED */
+  63   1        LED2_FLASH();
+  64   1        
+  65   1        /* RA8889Ó²¼þ¸´Î» */
+  66   1        RA8889_RST = 1;
+  67   1        delay_ms(10);
+  68   1        RA8889_RST = 0;
+  69   1        delay_ms(10);
+  70   1        RA8889_RST = 1;
+  71   1        
+  72   1        /* ¼ì²âSPIÍ¨ÐÅÊÇ·ñÕý³££¬Õý³£ÔòÉÁË¸LED2 */
+  73   1        //  while(1) Comm_Test();
+  74   1      
+  75   1        /* RA8889³õÊ¼»¯ */
+  76   1        RA8889_Initial();
+  77   1        
+  78   1        /* Ñ­»·¹¦ÄÜÑÝÊ¾ */
+  79   1        while(1)
+  80   1        {
+  81   2          Introduction();       //ÎÄ×Ö½éÉÜ
+  82   2          Geometry_Demo();      //¼¸ºÎ»æÍ¼ÑÝÊ¾
+  83   2          Show_BMP();           //µ÷ÓÃFLASHµÄBMPÍ¼Æ¬ÏÔÊ¾
+  84   2          Show_JPG();           //µ÷ÓÃFLASHµÄJPGÍ¼Æ¬ÏÔÊ¾
+  85   2          Fade_in_Fade_out();   //Í¼Æ¬µ­Èëµ­³öÑÝÊ¾
+  86   2          Show_AVI();           //µ÷ÓÃFLASHµÄAVIÓ°Æ¬²¥·Å
+  87   2          Show_PNG();           //µ÷ÓÃFLASHµÄPNGÍ¼Æ¬ÏÔÊ¾
+  88   2        }
+  89   1        
+  90   1      }
+  91          
+  92          
+  93          
+  94          
+  95          /*****************************************************************
+  96            * @brief  ÎÄ×Ö½éÉÜ
+  97            * @param  ÎÞ
+  98            * @retval ÎÞ
+  99            * @note   
+ 100            ****************************************************************/
+ 101          void Introduction (void)
+ 102          { 
+ 103   1        unsigned char i=3;
+ 104   1      
+ 105   1        /* ÆðÊ¼µØÖ·¡¢»­²¼Éè¶¨ */
+ 106   1        Main_Image_Start_Address(0);
+ 107   1        Main_Image_Width(canvas_image_width);             
+ 108   1        Canvas_Image_Start_address(0);
+ 109   1        Canvas_image_width(canvas_image_width);
+ 110   1        
+ 111   1        /* ÆðÊ¼×ø±ê¡¢µ±Ç°´°¿Ú¿í¸ßÉè¶¨ */
+ 112   1        Active_Window_XY(0,0);
+ 113   1        Active_Window_WH(LCD_Width,LCD_Height);
+ 114   1        
+ 115   1        BTE_Solid_Fill(0,canvas_image_width,0,0,color16M_black,LCD_Width,LCD_Height);
+ 116   1        Draw_Square(color16M_green,0,0,LCD_Width-1,LCD_Height-1);
+C51 COMPILER V9.55   MAIN                                                                  07/12/2024 14:46:12 PAGE 3   
+
+ 117   1        
+ 118   1        Select_Font_Height_WxN_HxN_ChromaKey_Alignment(24,1,1,1,0);     //Éè¶¨ÎÄ×Ö¸ñÊ½
+ 119   1        Foreground_color_16M(color16M_white);
+ 120   1        Goto_Text_XY(124,30);
+ 121   1        Show_String("Solution: MCU 8051 + RA8889.");
+ 122   1        Goto_Text_XY(124,60);
+ 123   1        Show_String("RA8889 is an efficient TFT LCD CONTROLLER.");
+ 124   1        Goto_Text_XY(124,90);
+ 125   1        Show_String("It has an embedded decoder for JPG and AVI.");
+ 126   1        
+ 127   1        Draw_Square_Fill(color16M_red,124,180,124+150,180+200);
+ 128   1        Draw_Square_Fill(color16M_green,124+200,180,124+150+200,180+200);
+ 129   1        Draw_Square_Fill(color16M_blue,124+200+200,180,124+150+200+200,180+200);
+ 130   1        delay_ms(1000);
+ 131   1      
+ 132   1        BTE_Solid_Fill(0,canvas_image_width,0,0,color16M_black,LCD_Width,LCD_Height);
+ 133   1        
+ 134   1        Draw_Square_Fill(color16M_red,10,10,40,60);
+ 135   1        Draw_Square_Fill(color16M_green,50,10,80,60);
+ 136   1        Draw_Square_Fill(color16M_blue,90,10,120,60);
+ 137   1      
+ 138   1        Foreground_color_16M(color16M_white);
+ 139   1        
+ 140   1        /* ÕâÐ©´ò¿ª¿ÉÄÜ»á³¬³öµ¥Æ¬»úµÄRAM£¬µ¼ÖÂÏÔÊ¾ÂÒÂë£¬ÔÝÊ±ÆÁ±Î */
+ 141   1        Goto_Text_XY(10,24*i++);
+ 142   1        Show_String("RA8889 is a low power TFT controller with powerful display");
+ 143   1        Goto_Text_XY(10,24*i++);
+ 144   1        Show_String("functions and build-in internal SDRAM memory. In order to quickly");
+ 145   1        Goto_Text_XY(10,24*i++);
+ 146   1        Show_String("refresh the screen content with the display memory. RA8889");
+ 147   1        Goto_Text_XY(10,24*i++);
+ 148   1        Show_String("provides not only parallel 8080/6800 and 8/16-bit MCU interface,");
+ 149   1        Goto_Text_XY(10,24*i++);
+ 150   1        Show_String("but also 3/4 wire SPI and IIC serial interface. Plenty powerful");
+ 151   1        Goto_Text_XY(10,24*i++);
+ 152   1        Show_String("functions are provides from RA8889, such as multiple display");
+ 153   1        Goto_Text_XY(10,24*i++);
+ 154   1        Show_String("buffers, Picture-in-Picture,transparency control,display with");
+ 155   1        Goto_Text_XY(10,24*i++);
+ 156   1        Show_String("rotation & mirror, and build-in JPEG and AVI decoder.");
+ 157   1      
+ 158   1      
+ 159   1        Select_Font_Height_WxN_HxN_ChromaKey_Alignment(24,2,2,1,0);     //Éè¶¨ÎÄ×Ö¸ñÊ½£¬·Å´óÁ½±¶
+ 160   1      
+ 161   1        i+=3;
+ 162   1        Goto_Text_XY(10,300);
+ 163   1        Foreground_color_16M(color16M_yellow);
+ 164   1        Show_String("Contact us:");
+ 165   1        Goto_Text_XY(10,350);
+ 166   1        Show_String("Wechat/QQ: 598076690");
+ 167   1        Goto_Text_XY(10,400);
+ 168   1        Show_String("BBS: bbs.lcdvision.com.cn");
+ 169   1      
+ 170   1        delay_ms(1000);
+ 171   1      }
+ 172          
+ 173          
+ 174          /*****************************************************************
+ 175            * @brief  »æÖÆ¼¸ºÎÍ¼ÐÎÑÝÊ¾
+ 176            * @param  ÎÞ
+ 177            * @retval ÎÞ
+ 178            * @note   
+C51 COMPILER V9.55   MAIN                                                                  07/12/2024 14:46:12 PAGE 4   
+
+ 179            ****************************************************************/
+ 180          void Geometry_Demo(void)
+ 181          {
+ 182   1        BTE_Solid_Fill(0,canvas_image_width,0,0,color16M_black,LCD_Width,LCD_Height);
+ 183   1        Foreground_color_16M(color16M_purple);
+ 184   1        Select_Font_Height_WxN_HxN_ChromaKey_Alignment(24,2,2,1,0);     //Éè¶¨ÎÄ×Ö¸ñÊ½£¬·Å´óÁ½±¶
+ 185   1        Goto_Text_XY(10,10);
+ 186   1        Show_String("Geometry drawing.");
+ 187   1        delay_ms(500);
+ 188   1        
+ 189   1        Foreground_color_65k(0x0);
+ 190   1        Square_Start_XY(0,0);
+ 191   1        Square_End_XY(LCD_Width-1,LCD_Height-1);
+ 192   1        Start_Square_Fill();
+ 193   1        
+ 194   1        Draw_Line(color16M_purple,10,10,799-10,479-10);
+ 195   1        Draw_Line(color16M_purple,11,11,799-11,479-11);
+ 196   1      
+ 197   1        Draw_Triangle(color16M_red,50,0,50,100,150,100);
+ 198   1        Draw_Triangle_Fill(color16M_green,200,0,200,100,300,100);
+ 199   1      
+ 200   1        Draw_Circle(color16M_blue,400,50,50);
+ 201   1        Draw_Circle_Fill(color16M_white,550,50,50);
+ 202   1        
+ 203   1        Draw_Ellipse(color16M_yellow,100,200,100,50); 
+ 204   1        Draw_Ellipse_Fill(color16M_purple,350,200,100,50);
+ 205   1        
+ 206   1        Draw_Left_Up_Curve(color16M_blue,550,190,50,50);
+ 207   1        Draw_Right_Down_Curve(color16M_white,560,200,50,50);
+ 208   1        Draw_Right_Up_Curve(color16M_red,560,190,50,50);
+ 209   1        Draw_Left_Down_Curve(color16M_yellow,550,200,50,50);
+ 210   1      
+ 211   1        Draw_Left_Up_Curve_Fill(color16M_blue,700,190,50,50);
+ 212   1        Draw_Right_Down_Curve_Fill(color16M_white,710,200,50,50);
+ 213   1        Draw_Right_Up_Curve_Fill(color16M_red,710,190,50,50);
+ 214   1        Draw_Left_Down_Curve_Fill(color16M_yellow,700,200,50,50);
+ 215   1        
+ 216   1        Draw_Square(color16M_red,50,300,150,400);         
+ 217   1        Draw_Square_Fill(color16M_red,200,300,300,400);
+ 218   1        
+ 219   1        Draw_Circle_Square(color16M_purple,450,300,550,400,10,10);
+ 220   1        Draw_Circle_Square_Fill(color16M_green,600,300,700,400,10,10);
+ 221   1        
+ 222   1        delay_ms(1000);
+ 223   1      
+ 224   1      } 
+ 225          
+ 226          
+ 227          /*****************************************************************
+ 228            * @brief  µ÷ÓÃFLASHµÄBMPÍ¼Æ¬ÏÔÊ¾
+ 229            * @param  ÎÞ
+ 230            * @retval ÎÞ
+ 231            * @note   Ñ­»·ÏÔÊ¾BMPÍ¼Æ¬
+ 232            ****************************************************************/
+ 233          void Show_BMP (void)
+ 234          {
+ 235   1        unsigned char n;
+ 236   1        
+ 237   1        BTE_Solid_Fill(0,canvas_image_width,0,0,color16M_black,LCD_Width,LCD_Height);
+ 238   1        Foreground_color_16M(color16M_red);
+ 239   1        Select_Font_Height_WxN_HxN_ChromaKey_Alignment(24,2,2,1,0);     //Éè¶¨ÎÄ×Ö¸ñÊ½£¬·Å´óÁ½±¶
+ 240   1        Goto_Text_XY(10,10);
+C51 COMPILER V9.55   MAIN                                                                  07/12/2024 14:46:12 PAGE 5   
+
+ 241   1        Show_String("Showing picture of BMP format.");
+ 242   1        Goto_Text_XY(10,60);
+ 243   1        Show_String("DMA BMP: FLASH->DISPLAY RAM");
+ 244   1        delay_ms(1000);
+ 245   1        
+ 246   1        SPI_NOR_initial_DMA (3,BUS0,CS1,1,0);       //Æ¬Ñ¡BUS0,CS1 £¨×¢Òâ£º³õÊ¼»¯º¯ÊýBMPºÍJPGµÄ²»Í¬£©
+ 247   1      
+ 248   1        //µÚ1~3ÕÅÊÇBMPÍ¼Æ¬
+ 249   1        for(n=0;n<3;n++)
+ 250   1        {   
+ 251   2          DMA_24bit(2,0,0,800,480,BINARY_INFO[n].img_width,BINARY_INFO[n].start_addr);
+ 252   2          delay_ms(100);
+ 253   2        }
+ 254   1        
+ 255   1        delay_ms(1000);
+ 256   1      }
+ 257          
+ 258          
+ 259          /*****************************************************************
+ 260            * @brief  µ÷ÓÃFLASHµÄJPGÍ¼Æ¬ÏÔÊ¾
+ 261            * @param  ÎÞ
+ 262            * @retval ÎÞ
+ 263            * @note   Ñ­»·ÏÔÊ¾JPGÍ¼Æ¬£¬ÏÔÊ¾ËÙ¶È³¬¼«¿ì
+ 264            ****************************************************************/
+ 265          void Show_JPG (void)
+ 266          {
+ 267   1        unsigned char n;
+ 268   1        
+ 269   1        BTE_Solid_Fill(0,canvas_image_width,0,0,color16M_black,LCD_Width,LCD_Height);
+ 270   1        Foreground_color_16M(color16M_green);
+ 271   1        Select_Font_Height_WxN_HxN_ChromaKey_Alignment(24,2,2,1,0);     //Éè¶¨ÎÄ×Ö¸ñÊ½£¬·Å´óÁ½±¶
+ 272   1        Goto_Text_XY(10,10);
+ 273   1        Show_String("Showing picture of JPG format.");
+ 274   1        Goto_Text_XY(10,60);
+ 275   1        Show_String("DMA JPG: FLASH->DISPLAY RAM");
+ 276   1        delay_ms(1000);
+ 277   1        
+ 278   1        SPI_NOR_initial_JPG_AVI(1,0,BUS0,CS1,1);          //Æ¬Ñ¡BUS0,CS1
+ 279   1        
+ 280   1        //µÚ4~8ÕÅÊÇJPGÍ¼Æ¬
+ 281   1        for(n=3;n<8;n++)
+ 282   1        {
+ 283   2          JPG_NOR(BINARY_INFO[n].start_addr,BINARY_INFO[n].img_size,canvas_image_width,0,0);
+ 284   2          delay_ms(300);
+ 285   2        }
+ 286   1        
+ 287   1        delay_ms(1000);
+ 288   1      }
+ 289          
+ 290          
+ 291          /*****************************************************************
+ 292            * @brief  Í¼Æ¬µ­Èëµ­³öÑÝÊ¾
+ 293            * @param  ÎÞ
+ 294            * @retval ÎÞ
+ 295            * @note   µ÷³ö2ÕÅÍ¼Æ¬´æ·ÅÔÚ(0,480)ºÍ(800,480)´¦£¬½øÐÐÍ¼Æ¬¹ý¶ÈÏÔÊ¾
+ 296            ****************************************************************/
+ 297          void Fade_in_Fade_out (void)
+ 298          {
+ 299   1        unsigned char n,a;
+ 300   1        
+ 301   1        BTE_Solid_Fill(0,canvas_image_width,0,0,color16M_black,LCD_Width,LCD_Height);
+ 302   1        Foreground_color_16M(color16M_green);
+C51 COMPILER V9.55   MAIN                                                                  07/12/2024 14:46:12 PAGE 6   
+
+ 303   1        Select_Font_Height_WxN_HxN_ChromaKey_Alignment(24,2,2,1,0);     //Éè¶¨ÎÄ×Ö¸ñÊ½£¬·Å´óÁ½±¶
+ 304   1        Goto_Text_XY(10,10);
+ 305   1        Show_String("Fade in & fade out.");
+ 306   1        delay_ms(1000);
+ 307   1        
+ 308   1        SPI_NOR_initial_JPG_AVI(1,0,BUS0,CS1,1);          //Æ¬Ñ¡BUS0,CS1
+ 309   1      
+ 310   1        //µÚ4~8ÕÅÊÇJPGÍ¼Æ¬£¬Ñ­»·µ÷³ö2ÕÅ²¢½øÐÐ¹ý¶ÉÇÐ»»ÑÝÊ¾
+ 311   1        for(n=3;n<7;n++)
+ 312   1        {
+ 313   2          JPG_NOR(BINARY_INFO[n].start_addr,BINARY_INFO[n].img_size,canvas_image_width,0,480);
+ 314   2          JPG_NOR(BINARY_INFO[n+1].start_addr,BINARY_INFO[n+1].img_size,canvas_image_width,800,480);
+ 315   2          
+ 316   2          for(a=0;a<=32;a=a+2)
+ 317   2          {
+ 318   3            BTE_Alpha_Blending_Picture_Mode(0,canvas_image_width,0,480,0,canvas_image_width,800,480,0,canvas_image_
+             -width, 0,0,800,480,a);
+ 319   3          }
+ 320   2        }
+ 321   1        
+ 322   1        delay_ms(1000);
+ 323   1      }
+ 324          
+ 325          
+ 326          /*****************************************************************
+ 327            * @brief  µ÷ÓÃFLASHµÄAVIÓ°Æ¬²¥·Å
+ 328            * @param  ÎÞ
+ 329            * @retval ÎÞ
+ 330            * @note   ²¥·ÅÒ»¶ÎAVIÓ°Æ¬£¬³ß´ç600x250£¬¾ÓÖÐÏÔÊ¾
+ 331            ****************************************************************/
+ 332          void Show_AVI (void)
+ 333          {
+ 334   1        unsigned char temp;
+ 335   1        
+ 336   1        BTE_Solid_Fill(0,canvas_image_width,0,0,color16M_black,LCD_Width,LCD_Height);
+ 337   1        Foreground_color_16M(color16M_white);
+ 338   1        Select_Font_Height_WxN_HxN_ChromaKey_Alignment(24,2,2,1,0);     //Éè¶¨ÎÄ×Ö¸ñÊ½£¬·Å´óÁ½±¶
+ 339   1        Goto_Text_XY(10,10);
+ 340   1        Show_String("Playing AVI video.");
+ 341   1      
+ 342   1        SPI_NOR_initial_JPG_AVI(1,0,BUS0,CS1,1);          //Æ¬Ñ¡BUS0,CS1
+ 343   1        
+ 344   1        AVI_NOR(BINARY_INFO[10].start_addr,BINARY_INFO[10].img_size,shadow_buff,shadow_buff+2400,(LCD_Width-600)/
+             -2,(LCD_Height-250)/2,250,600,canvas_image_width);
+ 345   1        AVI_window(1);
+ 346   1        
+ 347   1        do{ 
+ 348   2            temp = Read_Media_Decode_Busy();  //read busy flag to know media decode busy or idle
+ 349   2        }while(temp&0x40);
+ 350   1        AVI_window(0);
+ 351   1      }
+ 352          
+ 353          
+ 354          /*****************************************************************
+ 355            * @brief  µ÷ÓÃFLASHµÄPNGÍ¼Æ¬ÏÔÊ¾
+ 356            * @param  ÎÞ
+ 357            * @retval ÎÞ
+ 358            * @note   ÏÔÊ¾PNGÍ¼Æ¬£¬Í¬Ê±¸¡¶¯PNG
+ 359            ****************************************************************/
+ 360          void Show_PNG (void)
+ 361          {
+ 362   1        unsigned short n,x,y,dir_x,dir_y;
+C51 COMPILER V9.55   MAIN                                                                  07/12/2024 14:46:12 PAGE 7   
+
+ 363   1        
+ 364   1        BTE_Solid_Fill(0,canvas_image_width,0,0,color16M_black,LCD_Width,LCD_Height);
+ 365   1        Foreground_color_16M(color16M_green);
+ 366   1        Select_Font_Height_WxN_HxN_ChromaKey_Alignment(24,2,2,1,0);     //Éè¶¨ÎÄ×Ö¸ñÊ½£¬·Å´óÁ½±¶
+ 367   1        Goto_Text_XY(10,10);
+ 368   1        Show_String("Showing picture of PNG format.");
+ 369   1        delay_ms(1000);
+ 370   1      
+ 371   1        SPI_NOR_initial_JPG_AVI(1,0,BUS0,CS1,1);          //Æ¬Ñ¡BUS0,CS1
+ 372   1        JPG_NOR(BINARY_INFO[3].start_addr,BINARY_INFO[3].img_size,canvas_image_width,0,0);      //Layer0 Ö÷»­Ãæ
+ 373   1        JPG_NOR(BINARY_INFO[3].start_addr,BINARY_INFO[3].img_size,canvas_image_width,0,480);    //Layer1 Ö÷»­Ãæ·ÅÔÚ
+             -×ó²à
+ 374   1        JPG_NOR(BINARY_INFO[3].start_addr,BINARY_INFO[3].img_size,canvas_image_width,800,480);  //Layer1 Ö÷»­Ãæ·ÅÔ
+             -ÚÓÒ²à
+ 375   1      
+ 376   1        SPI_NOR_initial_DMA (4,BUS0,CS1,1,0);       //Æ¬Ñ¡BUS0,CS1 £¨×¢Òâ£º³õÊ¼»¯º¯ÊýBMPºÍJPGµÄ²»Í¬£©
+ 377   1        SPI_NOR_DMA_png (BINARY_INFO[8].start_addr,Layer4,0,BINARY_INFO[8].img_width,BINARY_INFO[8].img_height);  
+             -  //½«µÚ8ÕÅ£¬PNGÍ¼Æ¬Êý¾ÝÏÈDMA·Åµ½Layer4»º´æ
+ 378   1        
+ 379   1        x=123;
+ 380   1        y=218;      
+ 381   1        dir_x=1;  //PNGÒÆ¶¯·½Ïò£º0:µÝ¼õ£¬1£ºµÝ½ø
+ 382   1        dir_y=1;  //PNGÒÆ¶¯·½Ïò£º0:µÝ¼õ£¬1£ºµÝ½ø
+ 383   1        
+ 384   1        for(n=0;n<300;n++)
+ 385   1        {
+ 386   2          //À´Ô´0=JPG±³¾°Í¼Æ¬   À´Ô´1=PNGÊý¾Ý
+ 387   2          BTE_alpha_blending_32bit_Pixel_mode(BINARY_INFO[8].img_width,BINARY_INFO[8].img_width,BINARY_INFO[8].img
+             -_height,x,y,Layer1,canvas_image_width,x,y,Layer1,canvas_image_width,Layer4);  //(S0X,S0Y)<--ÏàÍ¬×ø±ê-->(desX,desY)£¬PNGÕ¹
+             -¿ª·ÅÔÚLayer1(x,y)
+ 388   2          BTE_Memory_Copy(Layer1,canvas_image_width,0,0,0,canvas_image_width,0,0,Layer0,canvas_image_width,0,0,0x0
+             -C,800,480);        //½«Layer1(0,0) -> Layer0(0,0) Ö÷»­Ãæµþ¼ÓÁËPNGÍ¼Æ¬ºócopy
+ 389   2          BTE_Memory_Copy(Layer1,canvas_image_width,800,0,0,canvas_image_width,0,0,Layer1,canvas_image_width,0,0,0
+             -x0C,800,480);      //½«Layer1(800,0) -> Layer1(0,0) »Ö¸´µ×Í¼
+ 390   2      
+ 391   2          //xÏòµÝÔöºÍµÝ¼õ
+ 392   2          if(dir_x==1 && x<800-400)
+ 393   2          {
+ 394   3            x++;
+ 395   3            if(x==800-400-1)  dir_x=0;
+ 396   3          }
+ 397   2          else if(dir_x==0 && x>0)
+ 398   2          {
+ 399   3            x--;
+ 400   3            if(x==0)  dir_x=1;
+ 401   3          }   
+ 402   2          
+ 403   2          //yÏòµÝÔöºÍµÝ¼õ
+ 404   2          if(dir_y==1 && y<480-100)
+ 405   2          {
+ 406   3            y++;
+ 407   3            if(y==480-100-1)  dir_y=0;
+ 408   3          }
+ 409   2          else if(dir_y==0 && y>0)
+ 410   2          {
+ 411   3            y--;
+ 412   3            if(y==0)  dir_y=1;
+ 413   3          }
+ 414   2        } 
+ 415   1        
+ 416   1      }
+ 417          
+C51 COMPILER V9.55   MAIN                                                                  07/12/2024 14:46:12 PAGE 8   
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2941    ----
+   CONSTANT SIZE    =    871    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =    154      15
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

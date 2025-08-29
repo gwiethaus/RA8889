@@ -1,0 +1,4239 @@
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE RA8889_API
+OBJECT MODULE PLACED IN .\Objects\RA8889_API.obj
+COMPILER INVOKED BY: D:\Program Files\Keil_v5\C51\BIN\C51.EXE RA8889_01_Kernel\RA8889_API.c OMF2 OPTIMIZE(9,SPEED) BROWS
+                    -E INCDIR(.\RA8889_01_Kernel) DEBUG PRINT(.\Listings\RA8889_API.lst) TABS(2) OBJECT(.\Objects\RA8889_API.obj)
+
+line level    source
+
+   1          
+   2          /*************** RAIO Technology Inc. ***************
+   3           * file   : RA8889_API.c
+   4           * author   : RAIO Application Team ^v^
+   5           * version    : V1.0
+   6           * date   : 2020/04/21
+   7           * brief    :
+   8           * RAIO copyright
+   9           ****************************************************/
+  10          
+  11          #include <reg52.h>
+  12          #include <intrins.h>
+  13          
+  14          /* 单片机开发板相关函数 */
+  15          #include "MCU_Dev_Board.h"
+  16          
+  17          /* RA8889头文件 */
+  18          #include "RA8889_51.h"
+  19          #include "UserDef.h"
+  20          #include "RA8889_MCU_IF.h"
+  21          #include "delay.h"
+  22          #include "RA8889_API.h"
+*** ERROR C141 IN LINE 14 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 15 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 16 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 17 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 18 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 19 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 58 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 59 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 60 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 61 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 64 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 65 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 66 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 67 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 82 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 84 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+*** ERROR C141 IN LINE 86 OF RA8889_01_Kernel\RA8889_API.h: syntax error near ')'
+  23          #include "ascii_table_8x12.h"
+*** WARNING C318 IN LINE 23 OF RA8889_01_Kernel\RA8889_API.c: can't open file 'ascii_table_8x12.h'
+  24          #include "ascii_table_16x24.h"
+*** WARNING C318 IN LINE 24 OF RA8889_01_Kernel\RA8889_API.c: can't open file 'ascii_table_16x24.h'
+  25          #include "W25N01GV.h"
+*** WARNING C318 IN LINE 25 OF RA8889_01_Kernel\RA8889_API.c: can't open file 'W25N01GV.h'
+  26          char tmp1[];
+  27          
+  28          void MPU8_8bpp_Memory_Write(
+  29              unsigned short x // x of coordinate
+  30              ,
+  31              unsigned short y // y of coordinate
+  32              ,
+  33              unsigned short w // width
+  34              ,
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 2   
+
+  35              unsigned short h // height
+  36              ,
+  37              const unsigned char *data // 8bit data
+  38          )
+*** ERROR C141 IN LINE 38 OF RA8889_01_Kernel\RA8889_API.c: syntax error near ')'
+  39          {
+  40   1          unsigned short i, j;
+  41   1          Graphic_Mode();
+  42   1          Active_Window_XY(x, y);
+  43   1          Active_Window_WH(w, h);
+  44   1          Goto_Pixel_XY(x, y);
+  45   1          LCD_CmdWrite(0x04);
+  46   1          for (i = 0; i < h; i++) {
+  47   2              for (j = 0; j < w; j++) {
+  48   3                  Check_Mem_WR_FIFO_not_Full();
+  49   3                  LCD_DataWrite(*data);
+*** ERROR C141 IN LINE 49 OF RA8889_01_Kernel\RA8889_API.c: syntax error near 'data'
+  50   3                  data++;
+  51   3              }
+  52   2          }
+  53   1          Check_Mem_WR_FIFO_Empty();
+  54   1      }
+  55          
+  56          void MPU8_16bpp_Memory_Write(
+  57              unsigned short x // x of coordinate
+  58              ,
+  59              unsigned short y // y of coordinate
+  60              ,
+  61              unsigned short w // width
+  62              ,
+  63              unsigned short h // height
+  64              ,
+  65              const unsigned char *data // 8bit data
+  66          )
+  67          {
+  68   1          unsigned short i, j;
+  69   1          Graphic_Mode();
+  70   1          Active_Window_XY(x, y);
+  71   1          Active_Window_WH(w, h);
+  72   1          Goto_Pixel_XY(x, y);
+  73   1          LCD_CmdWrite(0x04);
+  74   1          for (i = 0; i < h; i++) {
+  75   2              for (j = 0; j < w; j++) {
+  76   3                  Check_Mem_WR_FIFO_not_Full();
+  77   3                  LCD_DataWrite(*data);
+  78   3                  data++;
+  79   3                  Check_Mem_WR_FIFO_not_Full();
+  80   3                  LCD_DataWrite(*data);
+  81   3                  data++;
+  82   3              }
+  83   2          }
+  84   1          Check_Mem_WR_FIFO_Empty();
+  85   1      }
+  86          
+  87          void MPU8_24bpp_Memory_Write(
+  88              unsigned short x // x of coordinate
+  89              ,
+  90              unsigned short y // y of coordinate
+  91              ,
+  92              unsigned short w // width
+  93              ,
+  94              unsigned short h // height
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 3   
+
+  95              ,
+  96              const unsigned char *data // 8bit data
+  97          )
+  98          
+  99          {
+ 100   1          unsigned short i, j;
+ 101   1          Graphic_Mode();
+ 102   1          Active_Window_XY(x, y);
+ 103   1          Active_Window_WH(w, h);
+ 104   1          Goto_Pixel_XY(x, y);
+ 105   1          LCD_CmdWrite(0x04);
+ 106   1          for (i = 0; i < h; i++) {
+ 107   2              for (j = 0; j < w; j++) {
+ 108   3                  Check_Mem_WR_FIFO_not_Full();
+ 109   3                  LCD_DataWrite(*data);
+ 110   3                  data++;
+ 111   3                  Check_Mem_WR_FIFO_not_Full();
+ 112   3                  LCD_DataWrite(*data);
+ 113   3                  data++;
+ 114   3                  Check_Mem_WR_FIFO_not_Full();
+ 115   3                  LCD_DataWrite(*data);
+ 116   3                  data++;
+ 117   3              }
+ 118   2          }
+ 119   1          Check_Mem_WR_FIFO_Empty();
+ 120   1      }
+ 121          
+ 122          void MPU16_16bpp_Memory_Write(
+ 123              unsigned short x // x of coordinate
+ 124              ,
+ 125              unsigned short y // y of coordinate
+ 126              ,
+ 127              unsigned short w // width
+ 128              ,
+ 129              unsigned short h // height
+ 130              ,
+ 131              const unsigned short *data // 16bit data
+ 132          )
+ 133          {
+ 134   1          unsigned short i, j;
+ 135   1          Graphic_Mode();
+ 136   1          Active_Window_XY(x, y);
+ 137   1          Active_Window_WH(w, h);
+ 138   1          Goto_Pixel_XY(x, y);
+ 139   1          LCD_CmdWrite(0x04);
+ 140   1          for (i = 0; i < h; i++) {
+ 141   2              for (j = 0; j < w; j++) {
+ 142   3                  Check_Mem_WR_FIFO_not_Full();
+ 143   3                  LCD_DataWrite(*data);
+ 144   3                  data++;
+ 145   3              }
+ 146   2          }
+ 147   1          Check_Mem_WR_FIFO_Empty();
+ 148   1      }
+ 149          
+ 150          void MPU16_24bpp_Mode1_Memory_Write(
+ 151              unsigned short x // x of coordinate
+ 152              ,
+ 153              unsigned short y // y of coordinate
+ 154              ,
+ 155              unsigned short w // width
+ 156              ,
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 4   
+
+ 157              unsigned short h // height
+ 158              ,
+ 159              const unsigned short *data // 16bit data
+ 160          )
+ 161          {
+ 162   1          unsigned short i, j;
+ 163   1          Graphic_Mode();
+ 164   1          Active_Window_XY(x, y);
+ 165   1          Active_Window_WH(w, h);
+ 166   1          Goto_Pixel_XY(x, y);
+ 167   1          LCD_CmdWrite(0x04);
+ 168   1          for (i = 0; i < h; i++) {
+ 169   2              for (j = 0; j < w / 2; j++) {
+ 170   3                  LCD_DataWrite(*data);
+ 171   3                  Check_Mem_WR_FIFO_not_Full();
+ 172   3                  data++;
+ 173   3                  LCD_DataWrite(*data);
+ 174   3                  Check_Mem_WR_FIFO_not_Full();
+ 175   3                  data++;
+ 176   3                  LCD_DataWrite(*data);
+ 177   3                  Check_Mem_WR_FIFO_not_Full();
+ 178   3                  data++;
+ 179   3              }
+ 180   2          }
+ 181   1          Check_Mem_WR_FIFO_Empty();
+ 182   1      }
+ 183          
+ 184          void MPU16_24bpp_Mode2_Memory_Write(
+ 185              unsigned short x // x of coordinate
+ 186              ,
+ 187              unsigned short y // y of coordinate
+ 188              ,
+ 189              unsigned short w // width
+ 190              ,
+ 191              unsigned short h // height
+ 192              ,
+ 193              const unsigned short *data // 16bit data
+ 194          )
+ 195          {
+ 196   1          unsigned short i, j;
+ 197   1          Graphic_Mode();
+ 198   1          Active_Window_XY(x, y);
+ 199   1          Active_Window_WH(w, h);
+ 200   1          Goto_Pixel_XY(x, y);
+ 201   1          LCD_CmdWrite(0x04);
+ 202   1          for (i = 0; i < h; i++) {
+ 203   2              for (j = 0; j < w; j++) {
+ 204   3                  Check_Mem_WR_FIFO_not_Full();
+ 205   3                  LCD_DataWrite(*data);
+ 206   3                  data++;
+ 207   3                  Check_Mem_WR_FIFO_not_Full();
+ 208   3                  LCD_DataWrite(*data);
+ 209   3                  data++;
+ 210   3              }
+ 211   2          }
+ 212   1          Check_Mem_WR_FIFO_Empty();
+ 213   1      }
+ 214          
+ 215          void PIP(
+ 216              unsigned char On_Off // 0 : disable PIP, 1 : enable PIP, 2 : To maintain the original state
+ 217              ,
+ 218              unsigned char Select_PIP // 1 : use PIP1 , 2 : use PIP2
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 5   
+
+ 219              ,
+ 220              unsigned long PAddr // start address of PIP
+ 221              ,
+ 222              unsigned short XP // coordinate X of PIP Window, It must be divided by 4.
+ 223              ,
+ 224              unsigned short YP // coordinate Y of PIP Window, It must be divided by 4.
+ 225              ,
+ 226              unsigned long ImageWidth // Image Width of PIP (recommend = canvas image width)
+ 227              ,
+ 228              unsigned short X_Dis // coordinate X of Display Window
+ 229              ,
+ 230              unsigned short Y_Dis // coordinate Y of Display Window
+ 231              ,
+ 232              unsigned short X_W // width of PIP and Display Window, It must be divided by 4.
+ 233              ,
+ 234              unsigned short Y_H // height of PIP and Display Window , It must be divided by 4.
+ 235          )
+ 236          {
+ 237   1          if (Select_PIP == 1) {
+ 238   2              Select_PIP1_Parameter();
+ 239   2          }
+ 240   1          if (Select_PIP == 2) {
+ 241   2              Select_PIP2_Parameter();
+ 242   2          }
+ 243   1          PIP_Display_Start_XY(X_Dis, Y_Dis);
+ 244   1          PIP_Image_Start_Address(PAddr);
+ 245   1          PIP_Image_Width(ImageWidth);
+ 246   1          PIP_Window_Image_Start_XY(XP, YP);
+ 247   1          PIP_Window_Width_Height(X_W, Y_H);
+ 248   1      
+ 249   1          if (On_Off == 0) {
+ 250   2              if (Select_PIP == 1) {
+ 251   3                  Disable_PIP1();
+ 252   3              }
+ 253   2              if (Select_PIP == 2) {
+ 254   3                  Disable_PIP2();
+ 255   3              }
+ 256   2          }
+ 257   1      
+ 258   1          if (On_Off == 1) {
+ 259   2              if (Select_PIP == 1) {
+ 260   3                  Enable_PIP1();
+ 261   3              }
+ 262   2              if (Select_PIP == 2) {
+ 263   3                  Enable_PIP2();
+ 264   3              }
+ 265   2          }
+ 266   1      }
+ 267          
+ 268          /*internal font
+ 269          x : Print font start coordinate of X
+ 270          y : Print font start coordinate of Y
+ 271          X_W : active window width
+ 272          Y_H : active window height
+ 273          FontColor : Set Font Color
+ 274          BackGroundColor : Set Font BackGround Color
+ 275          Font Color and BackGround Color dataformat :
+ 276          ColorDepth_8bpp : R3G3B2
+ 277          ColorDepth_16bpp : R5G6B5
+ 278          ColorDepth_24bpp : R8G8B8
+ 279          tmp2 : Hex variable you want print (range : 0 ~ 32bit)
+ 280          */
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 6   
+
+ 281          void Print_Internal_Font_Hexvariable(unsigned short x, unsigned short y, unsigned short X_W, unsigned shor
+             -t Y_H, unsigned long FontColor, unsigned long BackGroundColor, unsigned int tmp2)
+ 282          {
+ 283   1          Text_Mode();
+ 284   1          CGROM_Select_Internal_CGROM();
+ 285   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(FontColor);
+                  Background_color_256(BackGroundColor);
+              #endif
+ 289   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 293   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 294   1          Foreground_color_16M(FontColor);
+ 295   1          Background_color_16M(BackGroundColor);
+ 296   1      #endif
+ 297   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 301   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 305   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 309   1          Active_Window_XY(x, y);
+ 310   1          Active_Window_WH(X_W, Y_H);
+ 311   1          Goto_Text_XY(x, y);
+ 312   1          sprintf(tmp1, "%X", tmp2);
+ 313   1          Show_String(tmp1);
+ 314   1      }
+ 315          
+ 316          /*internal font
+ 317          x : Print font start coordinate of X
+ 318          y : Print font start coordinate of Y
+ 319          X_W : active window width
+ 320          Y_H : active window height
+ 321          FontColor : Set Font Color
+ 322          BackGroundColor : Set Font BackGround Color
+ 323          Font Color and BackGround Color dataformat :
+ 324          ColorDepth_8bpp : R3G3B2
+ 325          ColorDepth_16bpp : R5G6B5
+ 326          ColorDepth_24bpp : R8G8B8
+ 327          tmp2 : Decimalvariable you want print (range : 0 ~ 32bit)
+ 328          */
+ 329          void Print_Internal_Font_Decimalvariable(unsigned short x, unsigned short y, unsigned short X_W, unsigned 
+             -short Y_H, unsigned long FontColor, unsigned long BackGroundColor, unsigned int tmp2)
+ 330          {
+ 331   1      
+ 332   1          Text_Mode();
+ 333   1          CGROM_Select_Internal_CGROM();
+ 334   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(FontColor);
+                  Background_color_256(BackGroundColor);
+              #endif
+ 338   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 7   
+
+              #endif
+ 342   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 343   1          Foreground_color_16M(FontColor);
+ 344   1          Background_color_16M(BackGroundColor);
+ 345   1      #endif
+ 346   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 350   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 354   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 358   1          Active_Window_XY(x, y);
+ 359   1          Active_Window_WH(X_W, Y_H);
+ 360   1          Goto_Text_XY(x, y);
+ 361   1          sprintf(tmp1, "%d", tmp2);
+ 362   1          Show_String(tmp1);
+ 363   1      }
+ 364          
+ 365          void Print_Internal_Font_String(
+ 366              unsigned short x // coordinate x for print string
+ 367              ,
+ 368              unsigned short y // coordinate x for print string
+ 369              ,
+ 370              unsigned short X_W // active window width
+ 371              ,
+ 372              unsigned short Y_H // active window height
+ 373              ,
+ 374              unsigned long FontColor // FontColor : Set Font Color
+ 375              ,
+ 376              unsigned long BackGroundColor
+ 377              /*BackGroundColor : Set Font BackGround Color.Font Color and BackGround Color dataformat :
+ 378              ColorDepth_8bpp : R3G3B2
+ 379              ColorDepth_16bpp : R5G6B5
+ 380              ColorDepth_24bpp : R8G8B8*/
+ 381              ,
+ 382              char tmp2[] // tmp2 : Font String which you want print on LCD
+ 383          )
+ 384          {
+ 385   1      
+ 386   1          Text_Mode();
+ 387   1          CGROM_Select_Internal_CGROM();
+ 388   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(FontColor);
+                  Background_color_256(BackGroundColor);
+              #endif
+ 392   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 396   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 397   1          Foreground_color_16M(FontColor);
+ 398   1          Background_color_16M(BackGroundColor);
+ 399   1      #endif
+ 400   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 8   
+
+              #endif
+ 404   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 408   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 412   1          Active_Window_XY(x, y);
+ 413   1          Active_Window_WH(X_W, Y_H);
+ 414   1          Goto_Text_XY(x, y);
+ 415   1          //  sprintf(tmp1,"%s",tmp2);
+ 416   1          //  Show_String(tmp1);
+ 417   1          Show_String(tmp2);
+ 418   1      }
+ 419          
+ 420          void Print_BIG5String(
+ 421              unsigned char Clk // SPI CLK = System Clock / 2*(Clk+1)
+ 422              ,
+ 423              unsigned char BUS // 0 : Bus0, 1:Bus1
+ 424              ,
+ 425              unsigned char SCS // 0 : use CS0 , 1 : use CS1 , 2 : use CS2, 3 :use CS3
+ 426              ,
+ 427              unsigned short x // coordinate x for print string
+ 428              ,
+ 429              unsigned short y // coordinate y for print string
+ 430              ,
+ 431              unsigned short X_W // active window width
+ 432              ,
+ 433              unsigned short Y_H // active window height
+ 434              ,
+ 435              unsigned long FontColor // Set Font Color
+ 436              ,
+ 437              unsigned long BackGroundColor // Set Font BackGround Color
+ 438              /*Font Color and BackGround Color dataformat :
+ 439              ColorDepth_8bpp : R3G3B2
+ 440              ColorDepth_16bpp : R5G6B5
+ 441              ColorDepth_24bpp : R8G8B8*/
+ 442              ,
+ 443              char *tmp2 // tmp2 : BIG5 Font String which you want print on LCD
+ 444          )
+ 445          {
+ 446   1      
+ 447   1          Select_SFI_Font_Mode();
+ 448   1          CGROM_Select_Genitop_FontROM();
+ 449   1          SPI_Clock_Period(Clk);
+ 450   1          Set_GTFont_Decoder(0x11);
+ 451   1      
+ 452   1          Select_SFI_24bit_Address();
+ 453   1          Select_RA8875_SPI_Mode0_and_Mode3();
+ 454   1          Select_SFI_Single_Mode_Dummy_0T_03h();
+ 455   1      
+ 456   1          switch (SCS) {
+ 457   2              case 0:
+ 458   2                  Select_SFI_0();
+ 459   2                  break;
+ 460   2              case 1:
+ 461   2                  Select_SFI_1();
+ 462   2                  break;
+ 463   2              case 2:
+ 464   2                  Select_SFI_2();
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 9   
+
+ 465   2                  break;
+ 466   2              case 3:
+ 467   2                  Select_SFI_3();
+ 468   2                  break;
+ 469   2          }
+ 470   1      
+ 471   1          switch (BUS) {
+ 472   2              case 0:
+ 473   2                  FONT_DMA_Select_Bus_0();
+ 474   2                  break;
+ 475   2              case 1:
+ 476   2                  FONT_DMA_Select_Bus_1();
+ 477   2                  break;
+ 478   2          }
+ 479   1      
+ 480   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(FontColor);
+                  Background_color_256(BackGroundColor);
+              #endif
+ 484   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 488   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 489   1          Foreground_color_16M(FontColor);
+ 490   1          Background_color_16M(BackGroundColor);
+ 491   1      #endif
+ 492   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 496   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 500   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 504   1          Text_Mode();
+ 505   1          Active_Window_XY(x, y);
+ 506   1          Active_Window_WH(X_W, Y_H);
+ 507   1          Goto_Text_XY(x, y);
+ 508   1          //  sprintf(tmp1,"%s",tmp2);
+ 509   1          //  Show_String(tmp1);
+ 510   1          Show_String(tmp2);
+ 511   1      }
+ 512          
+ 513          void Print_GB2312String(
+ 514              unsigned char Clk // Clk : SPI CLK = System Clock / 2*(Clk+1)
+ 515              ,
+ 516              unsigned char BUS // 0 : Bus0, 1:Bus1
+ 517              ,
+ 518              unsigned char SCS // 0 : use CS0 , 1 : use CS1 , 2 : use CS2, 3 :use CS3
+ 519              ,
+ 520              unsigned short x // coordinate x for print string
+ 521              ,
+ 522              unsigned short y // coordinate y for print string
+ 523              ,
+ 524              unsigned short X_W // active window width
+ 525              ,
+ 526              unsigned short Y_H // active window height
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 10  
+
+ 527              ,
+ 528              unsigned long FontColor // Set Font Color
+ 529              ,
+ 530              unsigned long BackGroundColor // Set Font BackGround Color
+ 531              /*Font Color and BackGround Color dataformat :
+ 532              ColorDepth_8bpp : R3G3B2
+ 533              ColorDepth_16bpp : R5G6B5
+ 534              ColorDepth_24bpp : R8G8B8*/
+ 535              ,
+ 536              char tmp2[] // tmp2 : GB2312 Font String which you want print on LCD
+ 537          )
+ 538          {
+ 539   1      
+ 540   1          Select_SFI_Font_Mode();
+ 541   1          CGROM_Select_Genitop_FontROM();
+ 542   1          SPI_Clock_Period(Clk);
+ 543   1      
+ 544   1          Select_SFI_24bit_Address();
+ 545   1          Select_RA8875_SPI_Mode0_and_Mode3();
+ 546   1          Select_SFI_Single_Mode_Dummy_0T_03h();
+ 547   1      
+ 548   1          switch (SCS) {
+ 549   2              case 0:
+ 550   2                  Select_SFI_0();
+ 551   2                  break;
+ 552   2              case 1:
+ 553   2                  Select_SFI_1();
+ 554   2                  break;
+ 555   2              case 2:
+ 556   2                  Select_SFI_2();
+ 557   2                  break;
+ 558   2              case 3:
+ 559   2                  Select_SFI_3();
+ 560   2                  break;
+ 561   2          }
+ 562   1      
+ 563   1          switch (BUS) {
+ 564   2              case 0:
+ 565   2                  FONT_DMA_Select_Bus_0();
+ 566   2                  break;
+ 567   2              case 1:
+ 568   2                  FONT_DMA_Select_Bus_1();
+ 569   2                  break;
+ 570   2          }
+ 571   1      
+ 572   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(FontColor);
+                  Background_color_256(BackGroundColor);
+              #endif
+ 576   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 580   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 581   1          Foreground_color_16M(FontColor);
+ 582   1          Background_color_16M(BackGroundColor);
+ 583   1      #endif
+ 584   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 588   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 11  
+
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 592   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 596   1          Text_Mode();
+ 597   1          Active_Window_XY(x, y);
+ 598   1          Active_Window_WH(X_W, Y_H);
+ 599   1          Goto_Text_XY(x, y);
+ 600   1          //  sprintf(tmp1,"%s",tmp2);
+ 601   1          //  Show_String(tmp1);
+ 602   1          Show_String(tmp2);
+ 603   1      }
+ 604          
+ 605          void Print_GB12345String(
+ 606              unsigned char Clk // Clk : SPI CLK = System Clock / 2*(Clk+1)
+ 607              ,
+ 608              unsigned char BUS // 0 : Bus0, 1:Bus1
+ 609              ,
+ 610              unsigned char SCS // 0 : use CS0 , 1 : use CS1 , 2 : use CS2, 3 :use CS3
+ 611              ,
+ 612              unsigned short x // coordinate x for print string
+ 613              ,
+ 614              unsigned short y ////coordinate y for print string
+ 615              ,
+ 616              unsigned short X_W // active window width
+ 617              ,
+ 618              unsigned short Y_H // active window height
+ 619              ,
+ 620              unsigned long FontColor // Set Font Color
+ 621              ,
+ 622              unsigned long BackGroundColor // Set Font BackGround Color
+ 623              /*Font Color and BackGround Color dataformat :
+ 624              ColorDepth_8bpp : R3G3B2
+ 625              ColorDepth_16bpp : R5G6B5
+ 626              ColorDepth_24bpp : R8G8B8*/
+ 627              ,
+ 628              char *tmp2 // tmp2 : GB12345 Font String which you want print on LCD
+ 629          )
+ 630          {
+ 631   1          Select_SFI_Font_Mode();
+ 632   1          CGROM_Select_Genitop_FontROM();
+ 633   1          SPI_Clock_Period(Clk);
+ 634   1          Set_GTFont_Decoder(0x05);
+ 635   1      
+ 636   1          Select_SFI_24bit_Address();
+ 637   1          Select_RA8875_SPI_Mode0_and_Mode3();
+ 638   1          Select_SFI_Single_Mode_Dummy_0T_03h();
+ 639   1      
+ 640   1          switch (SCS) {
+ 641   2              case 0:
+ 642   2                  Select_SFI_0();
+ 643   2                  break;
+ 644   2              case 1:
+ 645   2                  Select_SFI_1();
+ 646   2                  break;
+ 647   2              case 2:
+ 648   2                  Select_SFI_2();
+ 649   2                  break;
+ 650   2              case 3:
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 12  
+
+ 651   2                  Select_SFI_3();
+ 652   2                  break;
+ 653   2          }
+ 654   1      
+ 655   1          switch (BUS) {
+ 656   2              case 0:
+ 657   2                  FONT_DMA_Select_Bus_0();
+ 658   2                  break;
+ 659   2              case 1:
+ 660   2                  FONT_DMA_Select_Bus_1();
+ 661   2                  break;
+ 662   2          }
+ 663   1      
+ 664   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(FontColor);
+                  Background_color_256(BackGroundColor);
+              #endif
+ 668   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 672   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 673   1          Foreground_color_16M(FontColor);
+ 674   1          Background_color_16M(BackGroundColor);
+ 675   1      #endif
+ 676   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 680   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 684   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 688   1          Text_Mode();
+ 689   1          Active_Window_XY(x, y);
+ 690   1          Active_Window_WH(X_W, Y_H);
+ 691   1          Goto_Text_XY(x, y);
+ 692   1          //  sprintf(tmp1,"%s",tmp2);
+ 693   1          //  Show_String(tmp1);
+ 694   1          Show_String(tmp2);
+ 695   1      }
+ 696          
+ 697          void Print_UnicodeString(
+ 698              unsigned char Clk // SPI CLK = System Clock / 2*(Clk+1)
+ 699              ,
+ 700              unsigned char BUS // 0 : Bus0, 1:Bus1
+ 701              ,
+ 702              unsigned char SCS // 0 : use CS0 , 1 : use CS1 , 2 : use CS2, 3 :use CS3
+ 703              ,
+ 704              unsigned short x // Print font start coordinate of X
+ 705              ,
+ 706              unsigned short y // Print font start coordinate of Y
+ 707              ,
+ 708              unsigned short X_W // active window width
+ 709              ,
+ 710              unsigned short Y_H // active window height
+ 711              ,
+ 712              unsigned long FontColor // Set Font Color
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 13  
+
+ 713              ,
+ 714              unsigned long BackGroundColor // Set Font BackGround Color
+ 715              /*Font Color and BackGround Color dataformat :
+ 716              ColorDepth_8bpp : R3G3B2
+ 717              ColorDepth_16bpp : R5G6B5
+ 718              ColorDepth_24bpp : R8G8B8*/
+ 719              ,
+ 720              unsigned short *tmp2 /*tmp2 : Unicode Font String which you want print on LCD (L"string" in keil c is 
+             -Unicode string)*/
+ 721          )
+ 722          {
+ 723   1          Select_SFI_Font_Mode();
+ 724   1          CGROM_Select_Genitop_FontROM();
+ 725   1          SPI_Clock_Period(Clk);
+ 726   1      
+ 727   1          Select_SFI_24bit_Address();
+ 728   1          Select_RA8875_SPI_Mode0_and_Mode3();
+ 729   1          Select_SFI_Single_Mode_Dummy_0T_03h();
+ 730   1      
+ 731   1          switch (SCS) {
+ 732   2              case 0:
+ 733   2                  Select_SFI_0();
+ 734   2                  break;
+ 735   2              case 1:
+ 736   2                  Select_SFI_1();
+ 737   2                  break;
+ 738   2              case 2:
+ 739   2                  Select_SFI_2();
+ 740   2                  break;
+ 741   2              case 3:
+ 742   2                  Select_SFI_3();
+ 743   2                  break;
+ 744   2          }
+ 745   1      
+ 746   1          switch (BUS) {
+ 747   2              case 0:
+ 748   2                  FONT_DMA_Select_Bus_0();
+ 749   2                  break;
+ 750   2              case 1:
+ 751   2                  FONT_DMA_Select_Bus_1();
+ 752   2                  break;
+ 753   2          }
+ 754   1      
+ 755   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(FontColor);
+                  Background_color_256(BackGroundColor);
+              #endif
+ 759   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 763   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 764   1          Foreground_color_16M(FontColor);
+ 765   1          Background_color_16M(BackGroundColor);
+ 766   1      #endif
+ 767   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(FontColor);
+                  Background_color_65k(BackGroundColor);
+              #endif
+ 771   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 14  
+
+              #endif
+ 775   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(FontColor);
+                  Background_color_16M(BackGroundColor);
+              #endif
+ 779   1          Text_Mode();
+ 780   1          Active_Window_XY(x, y);
+ 781   1          Active_Window_WH(X_W, Y_H);
+ 782   1          Goto_Text_XY(x, y);
+ 783   1          while (*tmp2 != '\0') {
+ 784   2              if ((*tmp2) > 0x0020 && (*tmp2) < 0x0080) {
+ 785   3                  /* ASCII Code*/
+ 786   3                  Set_GTFont_Decoder(0x21);
+ 787   3                  LCD_CmdWrite(0x04);
+ 788   3                  LCD_DataWrite(*tmp2);
+ 789   3                  Check_2D_Busy();
+ 790   3              } else {
+ 791   3                  /* Unicode */
+ 792   3                  Set_GTFont_Decoder(0x18);
+ 793   3                  LCD_CmdWrite(0x04);
+ 794   3                  LCD_DataWrite((*tmp2) >> 8);
+ 795   3                  LCD_DataWrite(*tmp2);
+ 796   3                  Check_2D_Busy();
+ 797   3              }
+ 798   2              ++tmp2;
+ 799   2          }
+ 800   1      
+ 801   1          /* Aribrial */
+ 802   1          Set_GTFont_Decoder(0x3a);
+ 803   1          LCD_CmdWrite(0x04);
+ 804   1          LCD_DataWrite(0x060C);
+ 805   1          Check_2D_Busy();
+ 806   1      
+ 807   1          Graphic_Mode(); // back to graphic mode
+ 808   1      }
+ 809          
+ 810          void Select_Font_Height_WxN_HxN_ChromaKey_Alignment(
+ 811              unsigned char Font_Height
+ 812              /*Font_Height:
+ 813              16 : Font = 8x16 16x16
+ 814              24 : Font = 12x2424x24
+ 815              32 : Font = 16x3232x32 */
+ 816              ,
+ 817              unsigned char XxN // XxN :Font Width x 1~4
+ 818              ,
+ 819              unsigned char YxN // YxN :Font Height x 1~4
+ 820              ,
+ 821              unsigned char ChromaKey
+ 822              /*ChromaKey :
+ 823              0 : Font Background color not transparency
+ 824              1 : Set Font Background color transparency*/
+ 825              ,
+ 826              unsigned char Alignment // 0 : no alignment, 1 : Set font alignment
+ 827          )
+ 828          {
+ 829   1          if (Font_Height == 16) Font_Select_8x16_16x16();
+ 830   1          if (Font_Height == 24) Font_Select_12x24_24x24();
+ 831   1          if (Font_Height == 32) Font_Select_16x32_32x32();
+ 832   1      
+ 833   1          //(*)
+ 834   1          if (XxN == 1) Font_Width_X1();
+ 835   1          if (XxN == 2) Font_Width_X2();
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 15  
+
+ 836   1          if (XxN == 3) Font_Width_X3();
+ 837   1          if (XxN == 4) Font_Width_X4();
+ 838   1      
+ 839   1          //(*)
+ 840   1          if (YxN == 1) Font_Height_X1();
+ 841   1          if (YxN == 2) Font_Height_X2();
+ 842   1          if (YxN == 3) Font_Height_X3();
+ 843   1          if (YxN == 4) Font_Height_X4();
+ 844   1      
+ 845   1          //(*)
+ 846   1          if (ChromaKey == 0) { Font_Background_select_Color(); }
+ 847   1      
+ 848   1          if (ChromaKey == 1) { Font_Background_select_Original_Canvas(); }
+ 849   1      
+ 850   1          //(*)
+ 851   1          if (Alignment == 0) { Disable_Font_Alignment(); }
+ 852   1      
+ 853   1          if (Alignment == 1) { Enable_Font_Alignment(); }
+ 854   1      }
+ 855          
+ 856          void Show_String(char *str)
+ 857          {
+ 858   1          Check_Mem_WR_FIFO_Empty();
+ 859   1      
+ 860   1          Text_Mode();
+ 861   1      
+ 862   1          LCD_CmdWrite(0x04);
+ 863   1          while (*str != '\0') {
+ 864   2              Check_Mem_WR_FIFO_not_Full();
+ 865   2              LCD_DataWrite(*str);
+ 866   2              ++str;
+ 867   2          }
+ 868   1          Check_2D_Busy();
+ 869   1          Graphic_Mode(); // back to graphic mode
+ 870   1      }
+ 871          
+ 872          void Draw_Line(
+ 873              unsigned long LineColor
+ 874              /*LineColor : Set Draw Line color. Line Color dataformat :
+ 875              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+ 876              ,
+ 877              unsigned short X1 // X of point1 coordinate
+ 878              ,
+ 879              unsigned short Y1 // Y of point1 coordinate
+ 880              ,
+ 881              unsigned short X2 // X of point2 coordinate
+ 882              ,
+ 883              unsigned short Y2 // Y of point2 coordinate
+ 884          )
+ 885          {
+ 886   1      
+ 887   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(LineColor);
+              #endif
+ 890   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(LineColor);
+              #endif
+ 893   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 894   1          Foreground_color_16M(LineColor);
+ 895   1      #endif
+ 896   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(LineColor);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 16  
+
+              #endif
+ 899   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(LineColor);
+              #endif
+ 902   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(LineColor);
+              #endif
+ 905   1          Line_Start_XY(X1, Y1);
+ 906   1          Line_End_XY(X2, Y2);
+ 907   1          Start_Line();
+ 908   1          Check_2D_Busy();
+ 909   1      }
+ 910          
+ 911          void Draw_Triangle(
+ 912              unsigned long ForegroundColor
+ 913              /*ForegroundColor: Set Draw Triangle color. ForegroundColor Color dataformat :
+ 914              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+ 915              ,
+ 916              unsigned short X1 // X of point1 coordinate
+ 917              ,
+ 918              unsigned short Y1 // Y of point1 coordinate
+ 919              ,
+ 920              unsigned short X2 // X of point2 coordinate
+ 921              ,
+ 922              unsigned short Y2 // Y of point2 coordinate
+ 923              ,
+ 924              unsigned short X3 // X of point3 coordinate
+ 925              ,
+ 926              unsigned short Y3 // Y of point3 coordinate
+ 927          )
+ 928          {
+ 929   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+ 932   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+ 935   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 936   1          Foreground_color_16M(ForegroundColor);
+ 937   1      #endif
+ 938   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+ 941   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+ 944   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+ 947   1          Triangle_Point1_XY(X1, Y1);
+ 948   1          Triangle_Point2_XY(X2, Y2);
+ 949   1          Triangle_Point3_XY(X3, Y3);
+ 950   1          Start_Triangle();
+ 951   1          Check_2D_Busy();
+ 952   1      }
+ 953          
+ 954          void Draw_Triangle_Fill(
+ 955              unsigned long ForegroundColor
+ 956              /*ForegroundColor: Set Draw Triangle color. ForegroundColor Color dataformat :
+ 957              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+ 958              ,
+ 959              unsigned short X1 // X of point1 coordinate
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 17  
+
+ 960              ,
+ 961              unsigned short Y1 // Y of point1 coordinate
+ 962              ,
+ 963              unsigned short X2 // X of point2 coordinate
+ 964              ,
+ 965              unsigned short Y2 // Y of point2 coordinate
+ 966              ,
+ 967              unsigned short X3 // X of point3 coordinate
+ 968              ,
+ 969              unsigned short Y3 // Y of point3 coordinate
+ 970          )
+ 971          {
+ 972   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+ 975   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+ 978   1      #ifdef MCU_8bit_ColorDepth_24bpp
+ 979   1          Foreground_color_16M(ForegroundColor);
+ 980   1      #endif
+ 981   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+ 984   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+ 987   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+ 990   1          Triangle_Point1_XY(X1, Y1);
+ 991   1          Triangle_Point2_XY(X2, Y2);
+ 992   1          Triangle_Point3_XY(X3, Y3);
+ 993   1          Start_Triangle_Fill();
+ 994   1          Check_2D_Busy();
+ 995   1      }
+ 996          
+ 997          void Draw_Circle(
+ 998              unsigned long ForegroundColor // ForegroundColor: Set Draw Circle or Circle Fill color
+ 999              /*ForegroundColor Color dataformat :
+1000              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1001              ,
+1002              unsigned short XCenter // coordinate X of Center
+1003              ,
+1004              unsigned short YCenter // coordinate Y of Center
+1005              ,
+1006              unsigned short R // Circle Radius
+1007          )
+1008          {
+1009   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1012   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1015   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1016   1          Foreground_color_16M(ForegroundColor);
+1017   1      #endif
+1018   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1021   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 18  
+
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1024   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1027   1          Circle_Center_XY(XCenter, YCenter);
+1028   1          Circle_Radius_R(R);
+1029   1          Start_Circle_or_Ellipse();
+1030   1          Check_2D_Busy();
+1031   1      }
+1032          
+1033          void Draw_Circle_Fill(
+1034              unsigned long ForegroundColor
+1035              /*ForegroundColor: Set Draw Circle or Circle Fill color
+1036              ForegroundColor Color dataformat :
+1037              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1038              ,
+1039              unsigned short XCenter // coordinate X of Center
+1040              ,
+1041              unsigned short YCenter // coordinate Y of Center
+1042              ,
+1043              unsigned short R // Circle Radius
+1044          )
+1045          {
+1046   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1049   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1052   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1053   1          Foreground_color_16M(ForegroundColor);
+1054   1      #endif
+1055   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1058   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1061   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1064   1          Circle_Center_XY(XCenter, YCenter);
+1065   1          Circle_Radius_R(R);
+1066   1          Start_Circle_or_Ellipse_Fill();
+1067   1          Check_2D_Busy();
+1068   1      }
+1069          
+1070          void Draw_Ellipse(
+1071              unsigned long ForegroundColor // ForegroundColor : Set Draw Ellipse or Ellipse Fill color
+1072              /*ForegroundColor Color dataformat :
+1073              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1074              ,
+1075              unsigned short XCenter // coordinate X of Center
+1076              ,
+1077              unsigned short YCenter // coordinate Y of Center
+1078              ,
+1079              unsigned short X_R // Radius Width of Ellipse
+1080              ,
+1081              unsigned short Y_R // Radius Length of Ellipse
+1082          )
+1083          {
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 19  
+
+1084   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1087   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1090   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1091   1          Foreground_color_16M(ForegroundColor);
+1092   1      #endif
+1093   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1096   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1099   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1102   1          Ellipse_Center_XY(XCenter, YCenter);
+1103   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1104   1          Start_Circle_or_Ellipse();
+1105   1          Check_2D_Busy();
+1106   1      }
+1107          
+1108          void Draw_Ellipse_Fill(
+1109              unsigned long ForegroundColor // ForegroundColor : Set Draw Ellipse or Ellipse Fill color
+1110              /*ForegroundColor Color dataformat :
+1111              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1112              ,
+1113              unsigned short XCenter // coordinate X of Center
+1114              ,
+1115              unsigned short YCenter // coordinate Y of Center
+1116              ,
+1117              unsigned short X_R // Radius Width of Ellipse
+1118              ,
+1119              unsigned short Y_R // Radius Length of Ellipse
+1120          )
+1121          {
+1122   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1125   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1128   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1129   1          Foreground_color_16M(ForegroundColor);
+1130   1      #endif
+1131   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1134   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1137   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1140   1          Ellipse_Center_XY(XCenter, YCenter);
+1141   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1142   1          Start_Circle_or_Ellipse_Fill();
+1143   1          Check_2D_Busy();
+1144   1      }
+1145          
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 20  
+
+1146          void Draw_Left_Up_Curve(
+1147              unsigned long ForegroundColor // ForegroundColor: Set Curve or Curve Fill color
+1148              /*ForegroundColor Color dataformat :
+1149              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1150              ,
+1151              unsigned short XCenter // coordinate X of Center
+1152              ,
+1153              unsigned short YCenter // coordinate Y of Center
+1154              ,
+1155              unsigned short X_R // Radius Width of Curve
+1156              ,
+1157              unsigned short Y_R // Radius Length of Curve
+1158          )
+1159          {
+1160   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1163   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1166   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1167   1          Foreground_color_16M(ForegroundColor);
+1168   1      #endif
+1169   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1172   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1175   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1178   1          Ellipse_Center_XY(XCenter, YCenter);
+1179   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1180   1          Start_Left_Up_Curve();
+1181   1          Check_2D_Busy();
+1182   1      }
+1183          
+1184          void Draw_Left_Up_Curve_Fill(
+1185              unsigned long ForegroundColor // ForegroundColor: Set Curve or Curve Fill color
+1186              /*ForegroundColor Color dataformat :
+1187              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1188              ,
+1189              unsigned short XCenter // coordinate X of Center
+1190              ,
+1191              unsigned short YCenter // coordinate Y of Center
+1192              ,
+1193              unsigned short X_R // Radius Width of Curve
+1194              ,
+1195              unsigned short Y_R // Radius Length of Curve
+1196          )
+1197          {
+1198   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1201   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1204   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1205   1          Foreground_color_16M(ForegroundColor);
+1206   1      #endif
+1207   1      #ifdef MCU_16bit_ColorDepth_16bpp
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 21  
+
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1210   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1213   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1216   1          Ellipse_Center_XY(XCenter, YCenter);
+1217   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1218   1          Start_Left_Up_Curve_Fill();
+1219   1          Check_2D_Busy();
+1220   1      }
+1221          
+1222          void Draw_Right_Down_Curve(
+1223              unsigned long ForegroundColor // ForegroundColor: Set Curve or Curve Fill color
+1224              /*ForegroundColor Color dataformat :
+1225              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1226              ,
+1227              unsigned short XCenter // coordinate X of Center
+1228              ,
+1229              unsigned short YCenter // coordinate Y of Center
+1230              ,
+1231              unsigned short X_R // Radius Width of Curve
+1232              ,
+1233              unsigned short Y_R // Radius Length of Curve
+1234          )
+1235          {
+1236   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1239   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1242   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1243   1          Foreground_color_16M(ForegroundColor);
+1244   1      #endif
+1245   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1248   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1251   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1254   1          Ellipse_Center_XY(XCenter, YCenter);
+1255   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1256   1          Start_Right_Down_Curve();
+1257   1          Check_2D_Busy();
+1258   1      }
+1259          
+1260          void Draw_Right_Down_Curve_Fill(
+1261              unsigned long ForegroundColor // ForegroundColor: Set Curve or Curve Fill color
+1262              /*ForegroundColor Color dataformat :
+1263              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1264              ,
+1265              unsigned short XCenter // coordinate X of Center
+1266              ,
+1267              unsigned short YCenter // coordinate Y of Center
+1268              ,
+1269              unsigned short X_R // Radius Width of Curve
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 22  
+
+1270              ,
+1271              unsigned short Y_R // Radius Length of Curve
+1272          )
+1273          {
+1274   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1277   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1280   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1281   1          Foreground_color_16M(ForegroundColor);
+1282   1      #endif
+1283   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1286   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1289   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1292   1          Ellipse_Center_XY(XCenter, YCenter);
+1293   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1294   1          Start_Right_Down_Curve_Fill();
+1295   1          Check_2D_Busy();
+1296   1      }
+1297          
+1298          void Draw_Right_Up_Curve(
+1299              unsigned long ForegroundColor // ForegroundColor: Set Curve or Curve Fill color
+1300              /*ForegroundColor Color dataformat :
+1301              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1302              ,
+1303              unsigned short XCenter // coordinate X of Center
+1304              ,
+1305              unsigned short YCenter // coordinate Y of Center
+1306              ,
+1307              unsigned short X_R // Radius Width of Curve
+1308              ,
+1309              unsigned short Y_R // Radius Length of Curve
+1310          )
+1311          {
+1312   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1315   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1318   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1319   1          Foreground_color_16M(ForegroundColor);
+1320   1      #endif
+1321   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1324   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1327   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1330   1          Ellipse_Center_XY(XCenter, YCenter);
+1331   1          Ellipse_Radius_RxRy(X_R, Y_R);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 23  
+
+1332   1          Start_Right_Up_Curve();
+1333   1          Check_2D_Busy();
+1334   1      }
+1335          
+1336          void Draw_Right_Up_Curve_Fill(
+1337              unsigned long ForegroundColor // ForegroundColor: Set Curve or Curve Fill color
+1338              /*ForegroundColor Color dataformat :
+1339              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1340              ,
+1341              unsigned short XCenter // coordinate X of Center
+1342              ,
+1343              unsigned short YCenter // coordinate Y of Center
+1344              ,
+1345              unsigned short X_R // Radius Width of Curve
+1346              ,
+1347              unsigned short Y_R // Radius Length of Curve
+1348          )
+1349          {
+1350   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1353   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1356   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1357   1          Foreground_color_16M(ForegroundColor);
+1358   1      #endif
+1359   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1362   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1365   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1368   1          Ellipse_Center_XY(XCenter, YCenter);
+1369   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1370   1          Start_Right_Up_Curve_Fill();
+1371   1          Check_2D_Busy();
+1372   1      }
+1373          
+1374          void Draw_Left_Down_Curve(
+1375              unsigned long ForegroundColor // ForegroundColor: Set Curve or Curve Fill color
+1376              /*ForegroundColor Color dataformat :
+1377              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1378              ,
+1379              unsigned short XCenter // coordinate X of Center
+1380              ,
+1381              unsigned short YCenter // coordinate Y of Center
+1382              ,
+1383              unsigned short X_R // Radius Width of Curve
+1384              ,
+1385              unsigned short Y_R // Radius Length of Curve
+1386          )
+1387          {
+1388   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1391   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 24  
+
+1394   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1395   1          Foreground_color_16M(ForegroundColor);
+1396   1      #endif
+1397   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1400   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1403   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1406   1          Ellipse_Center_XY(XCenter, YCenter);
+1407   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1408   1          Start_Left_Down_Curve();
+1409   1          Check_2D_Busy();
+1410   1      }
+1411          
+1412          void Draw_Left_Down_Curve_Fill(
+1413              unsigned long ForegroundColor // ForegroundColor: Set Curve or Curve Fill color
+1414              /*ForegroundColor Color dataformat :
+1415              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1416              ,
+1417              unsigned short XCenter // coordinate X of Center
+1418              ,
+1419              unsigned short YCenter // coordinate Y of Center
+1420              ,
+1421              unsigned short X_R // Radius Width of Curve
+1422              ,
+1423              unsigned short Y_R // Radius Length of Curve
+1424          )
+1425          {
+1426   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1429   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1432   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1433   1          Foreground_color_16M(ForegroundColor);
+1434   1      #endif
+1435   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1438   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1441   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1444   1          Ellipse_Center_XY(XCenter, YCenter);
+1445   1          Ellipse_Radius_RxRy(X_R, Y_R);
+1446   1          Start_Left_Down_Curve_Fill();
+1447   1          Check_2D_Busy();
+1448   1      }
+1449          
+1450          void Draw_Square(
+1451              unsigned long ForegroundColor
+1452              /*ForegroundColor: Set Curve or Curve Fill color. ForegroundColor Color dataformat :
+1453              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1454              ,
+1455              unsigned short X1 // X of point1 coordinate
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 25  
+
+1456              ,
+1457              unsigned short Y1 // Y of point1 coordinate
+1458              ,
+1459              unsigned short X2 // X of point2 coordinate
+1460              ,
+1461              unsigned short Y2 // Y of point2 coordinate
+1462          )
+1463          {
+1464   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1467   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1470   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1471   1          Foreground_color_16M(ForegroundColor);
+1472   1      #endif
+1473   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1476   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1479   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1482   1          Square_Start_XY(X1, Y1);
+1483   1          Square_End_XY(X2, Y2);
+1484   1          Start_Square();
+1485   1          Check_2D_Busy();
+1486   1      }
+1487          
+1488          void Draw_Square_Fill(
+1489              unsigned long ForegroundColor
+1490              /*ForegroundColor: Set Curve or Curve Fill color. ForegroundColor Color dataformat :
+1491              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1492              ,
+1493              unsigned short X1 // X of point1 coordinate
+1494              ,
+1495              unsigned short Y1 // Y of point1 coordinate
+1496              ,
+1497              unsigned short X2 // X of point2 coordinate
+1498              ,
+1499              unsigned short Y2 // Y of point2 coordinate
+1500          )
+1501          {
+1502   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1505   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1508   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1509   1          Foreground_color_16M(ForegroundColor);
+1510   1      #endif
+1511   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1514   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1517   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 26  
+
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1520   1          Square_Start_XY(X1, Y1);
+1521   1          Square_End_XY(X2, Y2);
+1522   1          Start_Square_Fill();
+1523   1          Check_2D_Busy();
+1524   1      }
+1525          
+1526          void Draw_Circle_Square(
+1527              unsigned long ForegroundColor
+1528              /*ForegroundColor : Set Circle Square color. ForegroundColor Color dataformat :
+1529              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1530              ,
+1531              unsigned short X1 // X of point1 coordinate
+1532              ,
+1533              unsigned short Y1 // Y of point1 coordinate
+1534              ,
+1535              unsigned short X2 // X of point2 coordinate
+1536              ,
+1537              unsigned short Y2 // Y of point2 coordinate
+1538              ,
+1539              unsigned short X_R // Radius Width of Circle Square
+1540              ,
+1541              unsigned short Y_R // Radius Length of Circle Square
+1542          )
+1543          {
+1544   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1547   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1550   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1551   1          Foreground_color_16M(ForegroundColor);
+1552   1      #endif
+1553   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1556   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1559   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1562   1          Square_Start_XY(X1, Y1);
+1563   1          Square_End_XY(X2, Y2);
+1564   1          Circle_Square_Radius_RxRy(X_R, Y_R);
+1565   1          Start_Circle_Square();
+1566   1          Check_2D_Busy();
+1567   1      }
+1568          
+1569          void Draw_Circle_Square_Fill(
+1570              unsigned long ForegroundColor
+1571              /*ForegroundColor : Set Circle Square color. ForegroundColor Color dataformat :
+1572              ColorDepth_8bpp : R3G3B2ColorDepth_16bpp : R5G6B5ColorDepth_24bpp : R8G8B8*/
+1573              ,
+1574              unsigned short X1 // X of point1 coordinate
+1575              ,
+1576              unsigned short Y1 // Y of point1 coordinate
+1577              ,
+1578              unsigned short X2 // X of point2 coordinate
+1579              ,
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 27  
+
+1580              unsigned short Y2 // Y of point2 coordinate
+1581              ,
+1582              unsigned short X_R // Radius Width of Circle Square
+1583              ,
+1584              unsigned short Y_R // Radius Length of Circle Square
+1585          )
+1586          {
+1587   1      
+1588   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(ForegroundColor);
+              #endif
+1591   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1594   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1595   1          Foreground_color_16M(ForegroundColor);
+1596   1      #endif
+1597   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(ForegroundColor);
+              #endif
+1600   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1603   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(ForegroundColor);
+              #endif
+1606   1          Square_Start_XY(X1, Y1);
+1607   1          Square_End_XY(X2, Y2);
+1608   1          Circle_Square_Radius_RxRy(X_R, Y_R);
+1609   1          Start_Circle_Square_Fill();
+1610   1          Check_2D_Busy();
+1611   1      }
+1612          
+1613          void BTE_Pattern_Fill(
+1614              unsigned char P_8x8_or_16x16 // 0 : use 8x8 Icon , 1 : use 16x16 Icon.
+1615              ,
+1616              unsigned long S0_Addr // Start address of Source 0
+1617              ,
+1618              unsigned short S0_W // image width of Source 0 (recommend = canvas image width)
+1619              ,
+1620              unsigned short XS0 // coordinate X of Source 0
+1621              ,
+1622              unsigned short YS0 // coordinate Y of Source 0
+1623              ,
+1624              unsigned long S1_Addr // Start address of Source 1
+1625              ,
+1626              unsigned short S1_W // image width of Source 1 (recommend = canvas image width)
+1627              ,
+1628              unsigned short XS1 // coordinate X of Source 1
+1629              ,
+1630              unsigned short YS1 // coordinate Y of Source 1
+1631              ,
+1632              unsigned long Des_Addr // start address of Destination
+1633              ,
+1634              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+1635              ,
+1636              unsigned short XDes // coordinate X of Destination
+1637              ,
+1638              unsigned short YDes // coordinate Y of Destination
+1639              ,
+1640              unsigned int ROP_Code
+1641              /*ROP_Code :
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 28  
+
+1642                 0000b    0(Blackness)
+1643                 0001b    ~S0!E~S1 or ~(S0+S1)
+1644                 0010b    ~S0!ES1
+1645                 0011b    ~S0
+1646                 0100b    S0!E~S1
+1647                 0101b    ~S1
+1648                 0110b    S0^S1
+1649                 0111b    ~S0 + ~S1 or ~(S0 + S1)
+1650                 1000b    S0!ES1
+1651                 1001b    ~(S0^S1)
+1652                 1010b    S1
+1653                 1011b    ~S0+S1
+1654                 1100b    S0
+1655                 1101b    S0+~S1
+1656                 1110b    S0+S1
+1657                 1111b    1(whiteness)*/
+1658              ,
+1659              unsigned short X_W // Width of BTE Winodw
+1660              ,
+1661              unsigned short Y_H // Length of BTE Winodw
+1662          )
+1663          {
+1664   1          if (P_8x8_or_16x16 == 0) {
+1665   2              Pattern_Format_8X8();
+1666   2          }
+1667   1          if (P_8x8_or_16x16 == 1) {
+1668   2              Pattern_Format_16X16();
+1669   2          }
+1670   1          BTE_S0_Memory_Start_Address(S0_Addr);
+1671   1          BTE_S0_Image_Width(S0_W);
+1672   1          BTE_S0_Window_Start_XY(XS0, YS0);
+1673   1      
+1674   1          BTE_S1_Memory_Start_Address(S1_Addr);
+1675   1          BTE_S1_Image_Width(S1_W);
+1676   1          BTE_S1_Window_Start_XY(XS1, YS1);
+1677   1      
+1678   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+1679   1          BTE_Destination_Image_Width(Des_W);
+1680   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+1681   1      
+1682   1          BTE_ROP_Code(ROP_Code);
+1683   1          BTE_Operation_Code(0x06); // BTE Operation: Pattern Fill with ROP.
+1684   1          BTE_Window_Size(X_W, Y_H);
+1685   1          BTE_Enable();
+1686   1          Check_BTE_Busy();
+1687   1      }
+1688          
+1689          void BTE_Pattern_Fill_With_Chroma_key(
+1690              unsigned char P_8x8_or_16x16 // 0 : use 8x8 Icon , 1 : use 16x16 Icon.
+1691              ,
+1692              unsigned long S0_Addr // Start address of Source 0
+1693              ,
+1694              unsigned short S0_W // image width of Source 0 (recommend = canvas image width)
+1695              ,
+1696              unsigned short XS0 // coordinate X of Source 0
+1697              ,
+1698              unsigned short YS0 // coordinate Y of Source 0
+1699              ,
+1700              unsigned long S1_Addr // Start address of Source 1
+1701              ,
+1702              unsigned short S1_W // image width of Source 1 (recommend = canvas image width)
+1703              ,
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 29  
+
+1704              unsigned short XS1 // coordinate X of Source 1
+1705              ,
+1706              unsigned short YS1 // coordinate Y of Source 1
+1707              ,
+1708              unsigned long Des_Addr // Des_Addr : start address of Destination
+1709              ,
+1710              unsigned short Des_W // Des_W : image width of Destination (recommend = canvas image width)
+1711              ,
+1712              unsigned short XDes // coordinate X of Destination
+1713              ,
+1714              unsigned short YDes // coordinate Y of Destination
+1715              ,
+1716              unsigned int ROP_Code
+1717              /*ROP_Code :
+1718                 0000b    0(Blackness)
+1719                 0001b    ~S0!E~S1 or ~(S0+S1)
+1720                 0010b    ~S0!ES1
+1721                 0011b    ~S0
+1722                 0100b    S0!E~S1
+1723                 0101b    ~S1
+1724                 0110b    S0^S1
+1725                 0111b    ~S0 + ~S1 or ~(S0 + S1)
+1726                 1000b    S0!ES1
+1727                 1001b    ~(S0^S1)
+1728                 1010b    S1
+1729                 1011b    ~S0+S1
+1730                 1100b    S0
+1731                 1101b    S0+~S1
+1732                 1110b    S0+S1
+1733                 1111b    1(whiteness)*/
+1734              ,
+1735              unsigned long Background_color // Transparent color
+1736              ,
+1737              unsigned short X_W // Width of BTE Window
+1738              ,
+1739              unsigned short Y_H // Length of BTE Window
+1740          )
+1741          {
+1742   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Background_color_256(Background_color);
+              #endif
+1745   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Background_color_65k(Background_color);
+              #endif
+1748   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1749   1          Background_color_16M(Background_color);
+1750   1      #endif
+1751   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Background_color_65k(Background_color);
+              #endif
+1754   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Background_color_16M(Background_color);
+              #endif
+1757   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Background_color_16M(Background_color);
+              #endif
+1760   1          if (P_8x8_or_16x16 == 0) {
+1761   2              Pattern_Format_8X8();
+1762   2          }
+1763   1          if (P_8x8_or_16x16 == 1) {
+1764   2              Pattern_Format_16X16();
+1765   2          }
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 30  
+
+1766   1          BTE_S0_Memory_Start_Address(S0_Addr);
+1767   1          BTE_S0_Image_Width(S0_W);
+1768   1          BTE_S0_Window_Start_XY(XS0, YS0);
+1769   1      
+1770   1          BTE_S1_Memory_Start_Address(S1_Addr);
+1771   1          BTE_S1_Image_Width(S1_W);
+1772   1          BTE_S1_Window_Start_XY(XS1, YS1);
+1773   1      
+1774   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+1775   1          BTE_Destination_Image_Width(Des_W);
+1776   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+1777   1      
+1778   1          BTE_ROP_Code(ROP_Code);
+1779   1          BTE_Operation_Code(0x07); // BTE Operation: Pattern Fill with Chroma key.
+1780   1          BTE_Window_Size(X_W, Y_H);
+1781   1          BTE_Enable();
+1782   1          Check_BTE_Busy();
+1783   1      }
+1784          
+1785          void BTE_Memory_Copy(
+1786              unsigned long S0_Addr // Start address of Source 0
+1787              ,
+1788              unsigned short S0_W // image width of Source 0 (recommend = canvas image width)
+1789              ,
+1790              unsigned short XS0 // coordinate X of Source 0
+1791              ,
+1792              unsigned short YS0 // coordinate Y of Source 0
+1793              ,
+1794              unsigned long S1_Addr // Start address of Source 1
+1795              ,
+1796              unsigned short S1_W // image width of Source 1 (recommend = canvas image width)
+1797              ,
+1798              unsigned short XS1 // coordinate X of Source 1
+1799              ,
+1800              unsigned short YS1 // coordinate Y of Source 1
+1801              ,
+1802              unsigned long Des_Addr // start address of Destination
+1803              ,
+1804              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+1805              ,
+1806              unsigned short XDes // coordinate X of Destination
+1807              ,
+1808              unsigned short YDes // coordinate Y of Destination
+1809              ,
+1810              unsigned int ROP_Code
+1811              /*ROP_Code :
+1812                 0000b    0(Blackness)
+1813                 0001b    ~S0!E~S1 or ~(S0+S1)
+1814                 0010b    ~S0!ES1
+1815                 0011b    ~S0
+1816                 0100b    S0!E~S1
+1817                 0101b    ~S1
+1818                 0110b    S0^S1
+1819                 0111b    ~S0 + ~S1 or ~(S0 + S1)
+1820                 1000b    S0!ES1
+1821                 1001b    ~(S0^S1)
+1822                 1010b    S1
+1823                 1011b    ~S0+S1
+1824                 1100b    S0
+1825                 1101b    S0+~S1
+1826                 1110b    S0+S1
+1827                 1111b    1(whiteness)*/
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 31  
+
+1828              ,
+1829              unsigned short X_W // X_W : Width of BTE Window
+1830              ,
+1831              unsigned short Y_H // Y_H : Length of BTE Window
+1832          )
+1833          {
+1834   1          BTE_S0_Memory_Start_Address(S0_Addr);
+1835   1          BTE_S0_Image_Width(S0_W);
+1836   1          BTE_S0_Window_Start_XY(XS0, YS0);
+1837   1      
+1838   1          BTE_S1_Memory_Start_Address(S1_Addr);
+1839   1          BTE_S1_Image_Width(S1_W);
+1840   1          BTE_S1_Window_Start_XY(XS1, YS1);
+1841   1      
+1842   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+1843   1          BTE_Destination_Image_Width(Des_W);
+1844   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+1845   1      
+1846   1          BTE_ROP_Code(ROP_Code);
+1847   1          BTE_Operation_Code(0x02); // BTE Operation: Memory copy (move) with ROP.
+1848   1          BTE_Window_Size(X_W, Y_H);
+1849   1          BTE_Enable();
+1850   1          Check_BTE_Busy();
+1851   1      }
+1852          
+1853          void BTE_Memory_Copy_Chroma_key(
+1854              unsigned long S0_Addr // Start address of Source 0
+1855              ,
+1856              unsigned short S0_W // image width of Source 0 (recommend = canvas image width)
+1857              ,
+1858              unsigned short XS0 // coordinate X of Source 0
+1859              ,
+1860              unsigned short YS0 // coordinate Y of Source 0
+1861              ,
+1862              unsigned long Des_Addr // start address of Destination
+1863              ,
+1864              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+1865              ,
+1866              unsigned short XDes // coordinate X of Destination
+1867              ,
+1868              unsigned short YDes // coordinate Y of Destination
+1869              ,
+1870              unsigned long Background_color // transparent color
+1871              ,
+1872              unsigned short X_W // Width of BTE Window
+1873              ,
+1874              unsigned short Y_H // Length of BTE Window
+1875          )
+1876          {
+1877   1      
+1878   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Background_color_256(Background_color);
+              #endif
+1881   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Background_color_65k(Background_color);
+              #endif
+1884   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1885   1          Background_color_16M(Background_color);
+1886   1      #endif
+1887   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Background_color_65k(Background_color);
+              #endif
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 32  
+
+1890   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Background_color_16M(Background_color);
+              #endif
+1893   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Background_color_16M(Background_color);
+              #endif
+1896   1          BTE_S0_Memory_Start_Address(S0_Addr);
+1897   1          BTE_S0_Image_Width(S0_W);
+1898   1          BTE_S0_Window_Start_XY(XS0, YS0);
+1899   1      
+1900   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+1901   1          BTE_Destination_Image_Width(Des_W);
+1902   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+1903   1      
+1904   1          BTE_Operation_Code(0x05); // BTE Operation: Memory copy (move) with chroma keying (w/o ROP)
+1905   1          BTE_Window_Size(X_W, Y_H);
+1906   1          BTE_Enable();
+1907   1          Check_BTE_Busy();
+1908   1      }
+1909          
+1910          void BTE_MCU_Write_MCU_8bit(
+1911              unsigned long S1_Addr // Start address of Source 1
+1912              ,
+1913              unsigned short S1_W // image width of Source 1 (recommend = canvas image width)
+1914              ,
+1915              unsigned short XS1 // coordinate X of Source 1
+1916              ,
+1917              unsigned short YS1 // coordinate Y of Source 1
+1918              ,
+1919              unsigned long Des_Addr // start address of Destination
+1920              ,
+1921              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+1922              ,
+1923              unsigned short XDes // coordinate X of Destination
+1924              ,
+1925              unsigned short YDes // coordinate Y of Destination
+1926              ,
+1927              unsigned int ROP_Code
+1928              /*ROP_Code :
+1929                 0000b    0(Blackness)
+1930                 0001b    ~S0!E~S1 or ~(S0+S1)
+1931                 0010b    ~S0!ES1
+1932                 0011b    ~S0
+1933                 0100b    S0!E~S1
+1934                 0101b    ~S1
+1935                 0110b    S0^S1
+1936                 0111b    ~S0 + ~S1 or ~(S0 + S1)
+1937                 1000b    S0!ES1
+1938                 1001b    ~(S0^S1)
+1939                 1010b    S1
+1940                 1011b    ~S0+S1
+1941                 1100b    S0
+1942                 1101b    S0+~S1
+1943                 1110b    S0+S1
+1944                 1111b    1(whiteness)*/
+1945              ,
+1946              unsigned short X_W // Width of BTE Window
+1947              ,
+1948              unsigned short Y_H // Length of BTE Window
+1949              ,
+1950              const unsigned char *data // 8-bit data
+1951          )
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 33  
+
+1952          {
+1953   1          unsigned short i, j;
+1954   1      
+1955   1          BTE_S1_Memory_Start_Address(S1_Addr);
+1956   1          BTE_S1_Image_Width(S1_W);
+1957   1          BTE_S1_Window_Start_XY(XS1, YS1);
+1958   1      
+1959   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+1960   1          BTE_Destination_Image_Width(Des_W);
+1961   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+1962   1      
+1963   1          BTE_Window_Size(X_W, Y_H);
+1964   1          BTE_ROP_Code(ROP_Code);
+1965   1          BTE_Operation_Code(0x00); // BTE Operation: MPU Write with ROP.
+1966   1          BTE_Enable();
+1967   1          LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+1968   1      #ifdef MCU_8bit_ColorDepth_8bpp
+              
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+1979   1      
+1980   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W * 2); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+1990   1      
+1991   1      #ifdef MCU_8bit_ColorDepth_24bpp
+1992   1          for (i = 0; i < Y_H; i++) {
+1993   2              for (j = 0; j < (X_W * 3); j++) {
+1994   3                  Check_Mem_WR_FIFO_not_Full();
+1995   3                  LCD_DataWrite(*data);
+1996   3                  data++;
+1997   3              }
+1998   2          }
+1999   1          Check_Mem_WR_FIFO_Empty();
+2000   1      #endif
+2001   1      }
+2002          
+2003          void BTE_MCU_Write_MCU_16bit(
+2004              unsigned long S1_Addr // Start address of Source 1
+2005              ,
+2006              unsigned short S1_W // image width of Source 1 (recommend = canvas image width)
+2007              ,
+2008              unsigned short XS1 // coordinate X of Source 1
+2009              ,
+2010              unsigned short YS1 // coordinate Y of Source 1
+2011              ,
+2012              unsigned long Des_Addr // start address of Destination
+2013              ,
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 34  
+
+2014              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+2015              ,
+2016              unsigned short XDes // coordinate X of Destination
+2017              ,
+2018              unsigned short YDes // coordinate Y of Destination
+2019              ,
+2020              unsigned int ROP_Code
+2021              /*ROP_Code :
+2022                 0000b    0(Blackness)
+2023                 0001b    ~S0!E~S1 or ~(S0+S1)
+2024                 0010b    ~S0!ES1
+2025                 0011b    ~S0
+2026                 0100b    S0!E~S1
+2027                 0101b    ~S1
+2028                 0110b    S0^S1
+2029                 0111b    ~S0 + ~S1 or ~(S0 + S1)
+2030                 1000b    S0!ES1
+2031                 1001b    ~(S0^S1)
+2032                 1010b    S1
+2033                 1011b    ~S0+S1
+2034                 1100b    S0
+2035                 1101b    S0+~S1
+2036                 1110b    S0+S1
+2037                 1111b    1(whiteness)*/
+2038              ,
+2039              unsigned short X_W // Width of BTE Window
+2040              ,
+2041              unsigned short Y_H // Length of BTE Window
+2042              ,
+2043              const unsigned short *data // 16-bit data
+2044          )
+2045          {
+2046   1          unsigned short i, j;
+2047   1      
+2048   1          BTE_S1_Memory_Start_Address(S1_Addr);
+2049   1          BTE_S1_Image_Width(S1_W);
+2050   1          BTE_S1_Window_Start_XY(XS1, YS1);
+2051   1      
+2052   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2053   1          BTE_Destination_Image_Width(Des_W);
+2054   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2055   1      
+2056   1          BTE_Window_Size(X_W, Y_H);
+2057   1          BTE_ROP_Code(ROP_Code);
+2058   1          BTE_Operation_Code(0x00); // BTE Operation: MPU Write with ROP.
+2059   1          BTE_Enable();
+2060   1          LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+2061   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite((*data));
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2071   1      
+2072   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W / 2); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 35  
+
+                          LCD_DataWrite(*data);
+                          data++;
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2088   1      
+2089   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2102   1      
+2103   1          Check_BTE_Busy();
+2104   1      }
+2105          
+2106          void BTE_MCU_Write_Chroma_key_MCU_8bit(
+2107              unsigned long Des_Addr // start address of Destination
+2108              ,
+2109              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+2110              ,
+2111              unsigned short XDes // coordinate X of Destination
+2112              ,
+2113              unsigned short YDes // coordinate Y of Destination
+2114              ,
+2115              unsigned long Background_color // transparency color
+2116              ,
+2117              unsigned short X_W // Width of BTE Window
+2118              ,
+2119              unsigned short Y_H // Length of BTE Window
+2120              ,
+2121              const unsigned char *data // 8-bit data
+2122          )
+2123          {
+2124   1          unsigned short i, j;
+2125   1      
+2126   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Background_color_256(Background_color);
+              #endif
+2129   1      
+2130   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Background_color_65k(Background_color);
+              #endif
+2133   1      
+2134   1      #ifdef MCU_8bit_ColorDepth_24bpp
+2135   1          Background_color_16M(Background_color);
+2136   1      #endif
+2137   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 36  
+
+2138   1          BTE_Destination_Image_Width(Des_W);
+2139   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2140   1      
+2141   1          BTE_Window_Size(X_W, Y_H);
+2142   1          BTE_Operation_Code(0x04); // BTE Operation: MPU Write w/ chroma keying (w/o ROP)
+2143   1          BTE_Enable();
+2144   1      
+2145   1          LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+2146   1      
+2147   1      #ifdef MCU_8bit_ColorDepth_8bpp
+              
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2158   1      
+2159   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W * 2); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2169   1      
+2170   1      #ifdef MCU_8bit_ColorDepth_24bpp
+2171   1          for (i = 0; i < Y_H; i++) {
+2172   2              for (j = 0; j < (X_W * 3); j++) {
+2173   3                  Check_Mem_WR_FIFO_not_Full();
+2174   3                  LCD_DataWrite(*data);
+2175   3                  data++;
+2176   3              }
+2177   2          }
+2178   1          Check_Mem_WR_FIFO_Empty();
+2179   1      #endif
+2180   1          Check_BTE_Busy();
+2181   1      }
+2182          
+2183          void BTE_MCU_Write_Chroma_key_MCU_16bit(
+2184              unsigned long Des_Addr // start address of Destination
+2185              ,
+2186              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+2187              ,
+2188              unsigned short XDes // coordinate X of Destination
+2189              ,
+2190              unsigned short YDes // coordinate Y of Destination
+2191              ,
+2192              unsigned long Background_color // transparency color
+2193              ,
+2194              unsigned short X_W // Width of BTE Window
+2195              ,
+2196              unsigned short Y_H // Length of BTE Window
+2197              ,
+2198              const unsigned short *data // 16-bit data
+2199          )
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 37  
+
+2200          {
+2201   1          unsigned int i, j;
+2202   1      
+2203   1      #ifdef MCU_16bit_ColorDepth_16bpp // setting in UserDef.h
+                  Background_color_65k(Background_color);
+              #endif
+2206   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1 // setting in UserDef.h
+                  Background_color_16M(Background_color);
+              #endif
+2209   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2 // setting in UserDef.h
+                  Background_color_16M(Background_color);
+              #endif
+2212   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2213   1          BTE_Destination_Image_Width(Des_W);
+2214   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2215   1      
+2216   1          BTE_Window_Size(X_W, Y_H);
+2217   1          BTE_Operation_Code(0x04); // BTE Operation: MPU Write with chroma keying (w/o ROP)
+2218   1          BTE_Enable();
+2219   1          LCD_CmdWrite(0x04);           // Memory Data Read/Write Port
+2220   1      #ifdef MCU_16bit_ColorDepth_16bpp // setting in UserDef.h
+              
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < X_W; j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2231   1      
+2232   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1 // setting in UserDef.h
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W / 2); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2248   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2 // setting in UserDef.h
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < (X_W); j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2261   1      
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 38  
+
+2262   1          Check_BTE_Busy();
+2263   1      }
+2264          
+2265          /*
+2266          No support 24bpp color depth
+2267          S0_Addr : Source 0 Start address
+2268          S0_W : Source 0 image width(recommend = canvas image width)
+2269          XS0 : Source 0 coordinate of X
+2270          YS0 : Source 0 coordinate of Y
+2271          Des_Addr : Destination start address
+2272          Des_W :  Destination image width(recommend = canvas image width)
+2273          XDes : Destination coordinate of X
+2274          YDes : Destination coordinate of Y
+2275          X_W : BTE Window Size of X
+2276          Y_H : BTE Window Size of Y
+2277          Foreground_color : The source (1bit map picture) map data 1 translate to Foreground color by color expansi
+             -on
+2278          Background_color : The source (1bit map picture) map data 0 translate to background color by color expansi
+             -on
+2279          */
+2280          void BTE_Memory_Copy_ColorExpansion(unsigned long S0_Addr, unsigned short S0_W, unsigned short XS0, unsign
+             -ed short YS0, unsigned long Des_Addr, unsigned short Des_W, unsigned short XDes, unsigned short YDes, unsigned short X_W
+             -, unsigned short Y_H, unsigned long Foreground_color, unsigned long Background_color)
+2281          {
+2282   1      
+2283   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(Foreground_color);
+                  Background_color_256(Background_color);
+                  BTE_ROP_Code(7); // MCU data bus width: 8bit, ROP Code=7
+              #endif
+2288   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(Foreground_color);
+                  Background_color_65k(Background_color);
+                  BTE_ROP_Code(15); // MCU data bus width: 8bit, ROP Code=7
+              #endif
+2293   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(Foreground_color);
+                  Background_color_65k(Background_color);
+                  BTE_ROP_Code(15); // MCU data bus width: 16bit, ROP Code=7
+              #endif
+2298   1      
+2299   1          BTE_S0_Memory_Start_Address(S0_Addr);
+2300   1          BTE_S0_Image_Width(S0_W);
+2301   1          BTE_S0_Window_Start_XY(XS0, YS0);
+2302   1      
+2303   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2304   1          BTE_Destination_Image_Width(Des_W);
+2305   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2306   1      
+2307   1          BTE_Window_Size(X_W, Y_H);
+2308   1          BTE_Operation_Code(0xE); // BTE Operation: Memory write with Color Expansion (w/o ROP)
+2309   1      
+2310   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  BTE_Enable();
+                  Check_BTE_Busy();
+              #endif
+2314   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  BTE_Enable();
+                  Check_BTE_Busy();
+              #endif
+2318   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  BTE_Enable();
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 39  
+
+                  Check_BTE_Busy();
+              #endif
+2322   1      }
+2323          
+2324          /*
+2325          No support 24bpp color depth
+2326          S0_Addr : Source 0 Start address
+2327          S0_W : Source 0 image width(recommend = canvas image width)
+2328          XS0 : Source 0 coordinate of X
+2329          YS0 : Source 0 coordinate of Y
+2330          Des_Addr : Destination start address
+2331          Des_W :  Destination image width(recommend = canvas image width)
+2332          XDes : Destination coordinate of X
+2333          YDes : Destination coordinate of Y
+2334          X_W : BTE Window Size of X
+2335          Y_H : BTE Window Size of Y
+2336          Foreground_color : The source (1bit map picture) map data 1 translate to Foreground color by color expansi
+             -on
+2337          */
+2338          void BTE_Memory_Copy_ColorExpansion_Chroma_key(unsigned long S0_Addr, unsigned short S0_W, unsigned short 
+             -XS0, unsigned short YS0, unsigned long Des_Addr, unsigned short Des_W, unsigned short XDes, unsigned short YDes, unsigne
+             -d short X_W, unsigned short Y_H, unsigned long Foreground_color)
+2339          {
+2340   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(Foreground_color);
+                  BTE_ROP_Code(7); // MCU data bus width: 8bit, ROP Code=7
+              #endif
+2344   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(Foreground_color);
+                  BTE_ROP_Code(15); // MCU data bus width: 8bit, ROP Code=7
+              #endif
+2348   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(Foreground_color);
+                  BTE_ROP_Code(15); // MCU data bus width: 16bit, ROP Code=7
+              #endif
+2352   1      
+2353   1          BTE_S0_Memory_Start_Address(S0_Addr);
+2354   1          BTE_S0_Image_Width(S0_W);
+2355   1          BTE_S0_Window_Start_XY(XS0, YS0);
+2356   1      
+2357   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2358   1          BTE_Destination_Image_Width(Des_W);
+2359   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2360   1      
+2361   1          BTE_Window_Size(X_W, Y_H);
+2362   1          BTE_Operation_Code(0xF); // BTE Operation: Memory write with Color Expansion and chroma keying (w/o RO
+             -P)
+2363   1      
+2364   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  BTE_Enable();
+                  Check_BTE_Busy();
+              #endif
+2368   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  BTE_Enable();
+                  Check_BTE_Busy();
+              #endif
+2372   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  BTE_Enable();
+                  Check_BTE_Busy();
+              #endif
+2376   1      }
+2377          
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 40  
+
+2378          void BTE_MCU_Write_ColorExpansion_MCU_8bit(
+2379              unsigned long Des_Addr // start address of Destination
+2380              ,
+2381              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+2382              ,
+2383              unsigned short XDes // coordinate X of Destination
+2384              ,
+2385              unsigned short YDes // coordinate Y of Destination
+2386              ,
+2387              unsigned short X_W // Width of BTE Window
+2388              ,
+2389              unsigned short Y_H // Length of BTE Window
+2390              ,
+2391              unsigned long Foreground_color
+2392              /*Foreground_color : The source (1bit map picture) map data 1 translate to Foreground color by color e
+             -xpansion*/
+2393              ,
+2394              unsigned long Background_color
+2395              /*Background_color : The source (1bit map picture) map data 0 translate to Foreground color by color e
+             -xpansion*/
+2396              ,
+2397              const unsigned char *data // 8-bit data
+2398          )
+2399          {
+2400   1          unsigned short i, j;
+2401   1      
+2402   1          /* set BTE Parameters and Run */
+2403   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(Foreground_color);
+                  Background_color_256(Background_color);
+              #endif
+2407   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(Foreground_color);
+                  Background_color_65k(Background_color);
+              #endif
+2411   1      #ifdef MCU_8bit_ColorDepth_24bpp
+2412   1          Foreground_color_16M(Foreground_color);
+2413   1          Background_color_16M(Background_color);
+2414   1      #endif
+2415   1      
+2416   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2417   1          BTE_Destination_Image_Width(Des_W);
+2418   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2419   1      
+2420   1          BTE_ROP_Code(7); // MCU data bus width: 8bit, ROP Code=7
+2421   1          BTE_Window_Size(X_W, Y_H);
+2422   1          BTE_Operation_Code(0x8); // BTE Operation: MPU Write with Color Expansion (w/o ROP)
+2423   1      
+2424   1          BTE_Enable();
+2425   1      
+2426   1          LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+2427   1      
+2428   1          for (i = 0; i < Y_H; i++) {
+2429   2              for (j = 0; j < X_W / 8; j++) {
+2430   3                  Check_Mem_WR_FIFO_not_Full();
+2431   3                  LCD_DataWrite(*data);
+2432   3                  data++;
+2433   3              }
+2434   2          }
+2435   1          Check_Mem_WR_FIFO_Empty();
+2436   1      
+2437   1          Check_BTE_Busy();
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 41  
+
+2438   1      }
+2439          
+2440          void BTE_MCU_Write_ColorExpansion_MCU_16bit(
+2441              unsigned long Des_Addr // start address of Destination
+2442              ,
+2443              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+2444              ,
+2445              unsigned short XDes // coordinate X of Destination
+2446              ,
+2447              unsigned short YDes // coordinate Y of Destination
+2448              ,
+2449              unsigned short X_W // Width of BTE Window
+2450              ,
+2451              unsigned short Y_H // Length of BTE Window
+2452              ,
+2453              unsigned long Foreground_color
+2454              /*Foreground_color : The source (1bit map picture) map data 1 translate to Foreground color by color e
+             -xpansion*/
+2455              ,
+2456              unsigned long Background_color
+2457              /*Background_color : The source (1bit map picture) map data 0 translate to Background color by color e
+             -xpansion*/
+2458              ,
+2459              const unsigned short *data // 16-bit data
+2460          )
+2461          {
+2462   1          unsigned short i, j;
+2463   1      
+2464   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Data_Format_16b_16bpp();
+                  Foreground_color_65k(Foreground_color);
+                  Background_color_65k(Background_color);
+                  BTE_ROP_Code(15);
+              #endif
+2470   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Data_Format_16b_8bpp();
+                  Foreground_color_16M(Foreground_color);
+                  Background_color_16M(Background_color);
+                  BTE_ROP_Code(7);
+              #endif
+2476   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Data_Format_16b_8bpp();
+                  Foreground_color_16M(Foreground_color);
+                  Background_color_16M(Background_color);
+                  BTE_ROP_Code(7);
+              #endif
+2482   1      
+2483   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2484   1          BTE_Destination_Image_Width(Des_W);
+2485   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2486   1      
+2487   1          BTE_Window_Size(X_W, Y_H);
+2488   1          BTE_Operation_Code(0x8); // BTE Operation: MPU Write with Color Expansion (w/o ROP)
+2489   1          BTE_Enable();
+2490   1      
+2491   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < X_W / 16; j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 42  
+
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2502   1      
+2503   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < X_W / 16; j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data >> 8);
+              
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2517   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < X_W / 16; j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data >> 8);
+              
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2531   1      
+2532   1          Check_BTE_Busy();
+2533   1      
+2534   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Data_Format_16b_16bpp();
+              #endif
+2537   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Data_Format_16b_24bpp_mode1();
+              #endif
+2540   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Data_Format_16b_24bpp_mode2();
+              #endif
+2543   1      }
+2544          
+2545          void BTE_MCU_Write_ColorExpansion_Chroma_key_MCU_8bit(
+2546              unsigned long Des_Addr // start address of Destination
+2547              ,
+2548              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+2549              ,
+2550              unsigned short XDes // coordinate X of Destination
+2551              ,
+2552              unsigned short YDes // coordinate Y of Destination
+2553              ,
+2554              unsigned short X_W // Width of BTE Window
+2555              ,
+2556              unsigned short Y_H // Length of BTE Window
+2557              ,
+2558              unsigned long Foreground_color
+2559              /*Foreground_color : The source (1bit map picture) map data 1 translate to Foreground color by color e
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 43  
+
+             -xpansion*/
+2560              ,
+2561              const unsigned char *data // 8-bit data
+2562          )
+2563          {
+2564   1          unsigned short i, j;
+2565   1      
+2566   1          //  Data_Format_8b_8bpp();
+2567   1      
+2568   1          /* set BTE Parameters and Run */
+2569   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(Foreground_color);
+              #endif
+2572   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(Foreground_color);
+              #endif
+2575   1      #ifdef MCU_8bit_ColorDepth_24bpp
+2576   1          Foreground_color_16M(Foreground_color);
+2577   1      #endif
+2578   1      
+2579   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2580   1          BTE_Destination_Image_Width(Des_W);
+2581   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2582   1      
+2583   1          BTE_ROP_Code(7); // MCU data bus width: 8bit, ROP Code=7
+2584   1          BTE_Window_Size(X_W, Y_H);
+2585   1          BTE_Operation_Code(0x9); // BTE Operation: MPU Write with Color Expansion and chroma keying (w/o ROP)
+2586   1      
+2587   1          BTE_Enable();
+2588   1      
+2589   1          LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+2590   1      
+2591   1          for (i = 0; i < Y_H; i++) {
+2592   2              for (j = 0; j < X_W / 8; j++) {
+2593   3                  Check_Mem_WR_FIFO_not_Full();
+2594   3                  LCD_DataWrite(*data);
+2595   3                  data++;
+2596   3              }
+2597   2          }
+2598   1          Check_Mem_WR_FIFO_Empty();
+2599   1      
+2600   1          Check_BTE_Busy();
+2601   1      }
+2602          
+2603          void BTE_MCU_Write_ColorExpansion_Chroma_key_MCU_16bit(
+2604              unsigned long Des_Addr // start address of Destination
+2605              ,
+2606              unsigned short Des_W // image width of Destination (recommend = canvas image width)
+2607              ,
+2608              unsigned short XDes // coordinate X of Destination
+2609              ,
+2610              unsigned short YDes // coordinate Y of Destination
+2611              ,
+2612              unsigned short X_W // Width of BTE Window
+2613              ,
+2614              unsigned short Y_H // Length of BTE Window
+2615              ,
+2616              unsigned long Foreground_color
+2617              /*Foreground_color : The source (1bit map picture) map data 1 translate to Foreground color by color e
+             -xpansion*/
+2618              ,
+2619              const unsigned short *data // 16-bit data
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 44  
+
+2620          )
+2621          {
+2622   1          unsigned short i, j;
+2623   1      
+2624   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Data_Format_16b_16bpp();
+                  Foreground_color_65k(Foreground_color);
+                  BTE_ROP_Code(15);
+              #endif
+2629   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Data_Format_16b_8bpp();
+                  Foreground_color_16M(Foreground_color);
+                  BTE_ROP_Code(7);
+              #endif
+2634   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Data_Format_16b_8bpp();
+                  Foreground_color_16M(Foreground_color);
+                  BTE_ROP_Code(7);
+              #endif
+2639   1      
+2640   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2641   1          BTE_Destination_Image_Width(Des_W);
+2642   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2643   1      
+2644   1          BTE_Window_Size(X_W, Y_H);
+2645   1          BTE_Operation_Code(0x9); // BTE Operation: MPU Write with Color Expansion and chroma keying (w/o ROP)
+2646   1          BTE_Enable();
+2647   1          LCD_CmdWrite(0x04); // Memory Data Read/Write Port
+2648   1      
+2649   1      #ifdef MCU_16bit_ColorDepth_16bpp // setting in UserDef.h
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < X_W / 16; j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2659   1      
+2660   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1 // setting in UserDef.h
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < X_W / 16; j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data >> 8);
+              
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2673   1      
+2674   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2 // setting in UserDef.h
+                  for (i = 0; i < Y_H; i++) {
+                      for (j = 0; j < X_W / 16; j++) {
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data >> 8);
+              
+                          Check_Mem_WR_FIFO_not_Full();
+                          LCD_DataWrite(*data);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 45  
+
+                          data++;
+                      }
+                  }
+                  Check_Mem_WR_FIFO_Empty();
+              #endif
+2687   1          Check_BTE_Busy();
+2688   1      }
+2689          
+2690          void BTE_Solid_Fill(
+2691              unsigned long Des_Addr // start address of destination
+2692              ,
+2693              unsigned short Des_W // image width of destination (recommend = canvas image width)
+2694              ,
+2695              unsigned short XDes // coordinate X of destination
+2696              ,
+2697              unsigned short YDes // coordinate Y of destination
+2698              ,
+2699              unsigned long Foreground_color // Solid Fill color
+2700              ,
+2701              unsigned short X_W // Width of BTE Window
+2702              ,
+2703              unsigned short Y_H // Length of BTE Window
+2704          )
+2705          {
+2706   1      
+2707   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Foreground_color_256(Foreground_color);
+              #endif
+2710   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Foreground_color_65k(Foreground_color);
+              #endif
+2713   1      #ifdef MCU_8bit_ColorDepth_24bpp
+2714   1          Foreground_color_16M(Foreground_color);
+2715   1      #endif
+2716   1      
+2717   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Foreground_color_65k(Foreground_color);
+              #endif
+2720   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Foreground_color_16M(Foreground_color);
+              #endif
+2723   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Foreground_color_16M(Foreground_color);
+              #endif
+2726   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2727   1          BTE_Destination_Image_Width(Des_W);
+2728   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2729   1          BTE_Window_Size(X_W, Y_H);
+2730   1          BTE_Operation_Code(0x0c); // BTE Operation: Solid Fill (w/o ROP)
+2731   1          BTE_Enable();
+2732   1          Check_BTE_Busy();
+2733   1      }
+2734          
+2735          /*
+2736          S0_Addr : Source 0 Start address
+2737          S0_W : Source 0 image width(recommend = canvas image width)
+2738          XS0 : Source 0 coordinate of X
+2739          YS0 : Source 0 coordinate of Y
+2740          S1_Addr : Source 1 Start address
+2741          S1_W : Source 1 image width(recommend = canvas image width)
+2742          XS1 : Source 1 coordinate of X
+2743          YS1 : Source 1 coordinate of Y
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 46  
+
+2744          Des_Addr : Destination start address
+2745          Des_W :  Destination image width(recommend = canvas image width)
+2746          XDes : Destination coordinate of X
+2747          YDes : Destination coordinate of Y
+2748          X_W : BTE Window Size of X
+2749          Y_H : BTE Window Size of Y
+2750          alpha : Alpha Blending effect 0 ~ 32, Destination data = (Source 0 * (1- alpha)) + (Source 1 * alpha)
+2751          */
+2752          void BTE_Alpha_Blending_Picture_Mode(unsigned long S0_Addr, unsigned short S0_W, unsigned short XS0, unsig
+             -ned short YS0, unsigned long S1_Addr, unsigned short S1_W, unsigned short XS1, unsigned short YS1, unsigned long Des_Add
+             -r, unsigned short Des_W, unsigned short XDes, unsigned short YDes, unsigned short X_W, unsigned short Y_H, unsigned char
+             - alpha)
+2753          {
+2754   1          BTE_S0_Memory_Start_Address(S0_Addr);
+2755   1          BTE_S0_Image_Width(S0_W);
+2756   1          BTE_S0_Window_Start_XY(XS0, YS0);
+2757   1      
+2758   1          BTE_S1_Memory_Start_Address(S1_Addr);
+2759   1          BTE_S1_Image_Width(S1_W);
+2760   1          BTE_S1_Window_Start_XY(XS1, YS1);
+2761   1      
+2762   1          BTE_Destination_Memory_Start_Address(Des_Addr);
+2763   1          BTE_Destination_Image_Width(Des_W);
+2764   1          BTE_Destination_Window_Start_XY(XDes, YDes);
+2765   1      
+2766   1          BTE_Window_Size(X_W, Y_H);
+2767   1          BTE_Operation_Code(0x0A); // BTE Operation: Memory write with opacity (w/o ROP)
+2768   1          BTE_Alpha_Blending_Effect(alpha);
+2769   1          BTE_Enable();
+2770   1          Check_BTE_Busy();
+2771   1      }
+2772          
+2773          void DMA_24bit(
+2774              unsigned char Clk // Clk : SPI Clock = System Clock /{(Clk)*2} , SPI CLK recommend <=90MHz
+2775              ,
+2776              unsigned short X1 // X of DMA Coordinate
+2777              ,
+2778              unsigned short Y1 // Y of DMA Coordinate
+2779              ,
+2780              unsigned short X_W // DMA Block width
+2781              ,
+2782              unsigned short Y_H // DMA Block height
+2783              ,
+2784              unsigned short P_W // DMA Picture width
+2785              ,
+2786              unsigned long Addr // DMA Source Start address
+2787          )
+2788          {
+2789   1          SPIM_Clock_Divided_1();                // SPI Clock = System Clock /{(Clk)*2}
+2790   1          SPI_Master_LatchEdge_Select_Falling(); // SPIM latch
+2791   1      
+2792   1          Select_SFI_DMA_Mode(); // Set Serial Flash DMA Mode
+2793   1          SPI_Clock_Period(Clk);
+2794   1          /////////////////////////////////////////****************DMA
+2795   1          Goto_Pixel_XY(X1, Y1);                         // set Memory coordinate in Graphic Mode
+2796   1          SFI_DMA_Destination_Upper_Left_Corner(X1, Y1); // DMA Destination position(x,y)
+2797   1          SFI_DMA_Transfer_Width_Height(X_W, Y_H);       // Set DMA Block (Height , Width)
+2798   1          SFI_DMA_Source_Width(P_W);                     // Set DMA Source Picture Width
+2799   1          SFI_DMA_Source_Start_Address(Addr);            // Set Serial Flash DMA Source Starting Address
+2800   1      
+2801   1          Start_SFI_DMA();      // Start DMA
+2802   1          Check_Busy_SFI_DMA(); // DMA Busy Check
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 47  
+
+2803   1      }
+2804          
+2805          void DMA_32bit(
+2806              unsigned char Clk // Clk : SPI Clock = System Clock /{(Clk+1)*2}
+2807              ,
+2808              unsigned short X1 // X of DMA Coordinate
+2809              ,
+2810              unsigned short Y1 // Y of DMA Coordinate
+2811              ,
+2812              unsigned short X_W // DMA Block width
+2813              ,
+2814              unsigned short Y_H // DMA Block height
+2815              ,
+2816              unsigned short P_W // DMA Picture width
+2817              ,
+2818              unsigned long Addr // DMA Source Start address
+2819          )
+2820          {
+2821   1      
+2822   1          //  Enable_SFlash_SPI();                     //Enable Serial Flash
+2823   1          Select_SFI_DMA_Mode(); // Set Serial Flash DMA Mode
+2824   1          SPI_Clock_Period(Clk);
+2825   1      
+2826   1          Select_SFI_32bit_Address(); // Set Serial Flash/ROM 32bits Address
+2827   1          /////////////////////////////////////////****************DMA
+2828   1          Goto_Pixel_XY(X1, Y1);                         // set Memory coordinate in Graphic Mode
+2829   1          SFI_DMA_Destination_Upper_Left_Corner(X1, Y1); // DMA Destination position(x,y)
+2830   1          SFI_DMA_Transfer_Width_Height(X_W, Y_H);       // Set DMA Block (Height , Width)
+2831   1          SFI_DMA_Source_Width(P_W);                     // Set DMA Source Picture Width
+2832   1          SFI_DMA_Source_Start_Address(Addr);            // Set Serial Flash DMA Source Starting Address
+2833   1      
+2834   1          Start_SFI_DMA();      // Start DMA
+2835   1          Check_Busy_SFI_DMA(); // DMA Busy Check
+2836   1          Select_SFI_24bit_Address();
+2837   1      }
+2838          
+2839          void switch_24bits_to_32bits(unsigned char BUS, unsigned char SCS)
+2840          {
+2841   1          Enable_SFlash_SPI();
+2842   1          SPI_Master_LatchEdge_Select_Falling();
+2843   1          SPIM_Clock_Divided_1();
+2844   1          SPI_Clock_Period(2);
+2845   1      
+2846   1          switch (BUS) {
+2847   2              case 0:
+2848   2                  SPIM_Select_Bus_0();
+2849   2                  break;
+2850   2      
+2851   2              case 1:
+2852   2                  SPIM_Select_Bus_1();
+2853   2                  break;
+2854   2          }
+2855   1      
+2856   1          if (SCS == 0) {
+2857   2              Select_nSS_drive_on_xnsfcs0();
+2858   2          }
+2859   1          if (SCS == 1) {
+2860   2              Select_nSS_drive_on_xnsfcs1();
+2861   2          }
+2862   1          if (SCS == 2) {
+2863   2              Select_nSS_drive_on_xnsfcs2();
+2864   2          }
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 48  
+
+2865   1          if (SCS == 3) {
+2866   2              Select_nSS_drive_on_xnsfcs3();
+2867   2          }
+2868   1          //**************************//data are read on the clock's rising edge(low!鱤igh transition)
+2869   1          //**************************//and data are changed on a falling edge (high!鱨ow clock transition)
+2870   1          Reset_CPOL();
+2871   1          // Set_CPOL();
+2872   1          Reset_CPHA();
+2873   1          // Set_CPHA();
+2874   1          //**************************
+2875   1          // Enter 4-byte mode
+2876   1      
+2877   1          nSS_Active(); // nSS port will goes low
+2878   1          SPI_Master_FIFO_Data_Put(0xB7);
+2879   1      
+2880   1          delay_ms(1);
+2881   1          nSS_Inactive(); // nSS port will goes high
+2882   1      }
+2883          
+2884          void PWM0(
+2885              unsigned char on_off // on_off = 1 ,enable PWM, on_off = 0 , disable PWM.
+2886              ,
+2887              unsigned char Clock_Divided // divided PWM clock, only 0~3(1,1/2,1/4,1/8)
+2888              ,
+2889              unsigned char Prescalar // Prescaler : only 1~256
+2890              ,
+2891              unsigned short Count_Buffer // Count_Buffer : set PWM output period time
+2892              ,
+2893              unsigned short Compare_Buffer // Compare_Buffer : set PWM output high level time(Duty cycle)
+2894              /*Such as the following formula :
+2895              PWM CLK = (Core CLK / Prescalar ) /2^ divided clock
+2896              PWM output period = (Count Buffer + 1) x PWM CLK time
+2897              PWM output high level time = (Compare Buffer + 1) x PWM CLK time */
+2898          )
+2899          {
+2900   1          Select_PWM0();
+2901   1          Set_PWM_Prescaler_1_to_256(Prescalar);
+2902   1      
+2903   1          if (Clock_Divided == 0) {
+2904   2              Select_PWM0_Clock_Divided_By_1();
+2905   2          }
+2906   1          if (Clock_Divided == 1) {
+2907   2              Select_PWM0_Clock_Divided_By_2();
+2908   2          }
+2909   1          if (Clock_Divided == 2) {
+2910   2              Select_PWM0_Clock_Divided_By_4();
+2911   2          }
+2912   1          if (Clock_Divided == 3) {
+2913   2              Select_PWM0_Clock_Divided_By_8();
+2914   2          }
+2915   1      
+2916   1          Set_Timer0_Count_Buffer(Count_Buffer);     // 砞﹚顶计
+2917   1          Set_Timer0_Compare_Buffer(Compare_Buffer); // DUTY
+2918   1      
+2919   1          if (on_off == 1) {
+2920   2              Start_PWM0();
+2921   2          }
+2922   1          if (on_off == 0) {
+2923   2              Stop_PWM0();
+2924   2          }
+2925   1      }
+2926          
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 49  
+
+2927          void PWM1(
+2928              unsigned char on_off // on_off = 1 ,enable PWM, on_off = 0 , disable PWM.
+2929              ,
+2930              unsigned char Clock_Divided // divided PWM clock, only 0~3(1,1/2,1/4,1/8)
+2931              ,
+2932              unsigned char Prescalar // Prescaler : only 1~256
+2933              ,
+2934              unsigned short Count_Buffer // Count_Buffer : set PWM output period time
+2935              ,
+2936              unsigned short Compare_Buffer // Compare_Buffer : set PWM output high level time(Duty cycle)
+2937              /*Such as the following formula :
+2938              PWM CLK = (Core CLK / Prescalar ) /2^ divided clock
+2939              PWM output period = (Count Buffer + 1) x PWM CLK time
+2940              PWM output high level time = (Compare Buffer + 1) x PWM CLK time */
+2941          )
+2942          {
+2943   1          Select_PWM1();
+2944   1          Set_PWM_Prescaler_1_to_256(Prescalar);
+2945   1      
+2946   1          if (Clock_Divided == 0) {
+2947   2              Select_PWM1_Clock_Divided_By_1();
+2948   2          }
+2949   1          if (Clock_Divided == 1) {
+2950   2              Select_PWM1_Clock_Divided_By_2();
+2951   2          }
+2952   1          if (Clock_Divided == 2) {
+2953   2              Select_PWM1_Clock_Divided_By_4();
+2954   2          }
+2955   1          if (Clock_Divided == 3) {
+2956   2              Select_PWM1_Clock_Divided_By_8();
+2957   2          }
+2958   1      
+2959   1          Set_Timer1_Count_Buffer(Count_Buffer);     // 砞﹚顶计
+2960   1          Set_Timer1_Compare_Buffer(Compare_Buffer); // DUTY
+2961   1      
+2962   1          if (on_off == 1) {
+2963   2              Start_PWM1();
+2964   2          }
+2965   1          if (on_off == 0) {
+2966   2              Stop_PWM1();
+2967   2          }
+2968   1      }
+2969          
+2970          // Note. this API does not support the case that MCU=16bit, 24bpp and mode1
+2971          void putPixel(
+2972              unsigned short x // x of coordinate
+2973              ,
+2974              unsigned short y // y of coordinate
+2975              ,
+2976              unsigned long color
+2977              /*color : 8bpp:R3G3B2
+2978              16bpp:R5G6B5
+2979              24bpp:R8G8B8 */
+2980          )
+2981          
+2982          {
+2983   1      
+2984   1          Goto_Pixel_XY(x, y);
+2985   1          LCD_CmdWrite(0x04);
+2986   1          Check_Mem_WR_FIFO_not_Full();
+2987   1      
+2988   1      #ifdef MCU_8bit_ColorDepth_8bpp
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 50  
+
+                  LCD_DataWrite(color);
+              #endif
+2991   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  LCD_DataWrite(color);
+                  Check_Mem_WR_FIFO_not_Full();
+                  LCD_DataWrite(color >> 8);
+              #endif
+2996   1      #ifdef MCU_8bit_ColorDepth_24bpp
+2997   1          LCD_DataWrite(color);
+2998   1          Check_Mem_WR_FIFO_not_Full();
+2999   1          LCD_DataWrite(color >> 8);
+3000   1          Check_Mem_WR_FIFO_not_Full();
+3001   1          LCD_DataWrite(color >> 16);
+3002   1      #endif
+3003   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  LCD_DataWrite(color);
+              #endif
+3006   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  LCD_DataWrite(color);
+                  Check_Mem_WR_FIFO_not_Full();
+                  LCD_DataWrite(color >> 16);
+              #endif
+3011   1      }
+3012          
+3013          // Note. this API does not support the case that MCU=16bit, 24bpp and mode1
+3014          void lcdPutChar8x12(
+3015              unsigned short x // x of coordinate
+3016              ,
+3017              unsigned short y // y of coordinate
+3018              ,
+3019              unsigned long fgcolor // fgcolor : foreground color(font color)
+3020              ,
+3021              unsigned long bgcolor // bgcolor : background color
+3022              /*8bpp:R3G3B2
+3023              16bpp:R5G6B5
+3024              24bpp:R8G8B8*/
+3025              ,
+3026              unsigned char bg_transparent
+3027              /*bg_transparent = 0, background color with no transparent
+3028              bg_transparent = 1, background color with transparent*/
+3029              ,
+3030              unsigned char code // code : font char
+3031          )
+3032          {
+3033   1          unsigned short i       = 0;
+3034   1          unsigned short j       = 0;
+3035   1          unsigned char tmp_char = 0, LB;
+3036   1          unsigned long temp1, temp2;
+3037   1      
+3038   1          for (i = 0; i < 12; i++) {
+3039   2              tmp_char = ascii_table_8x12[((code - 0x20) * 12) + i]; // minus 32 offset, because this table from
+             - ascii table "space"
+3040   2      
+3041   2              for (j = 0; j < 8; j++) {
+3042   3      
+3043   3                  if ((tmp_char >> 7 - j) & 0x01 == 0x01)
+3044   3      
+3045   3                      putPixel(x + j, y + i, fgcolor); //
+3046   3      
+3047   3                  else {
+3048   4      
+3049   4                      if (!bg_transparent)
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 51  
+
+3050   4      
+3051   4                          putPixel(x + j, y + i, bgcolor); //
+3052   4                  }
+3053   3              }
+3054   2          }
+3055   1      }
+3056          
+3057          // Note. this API does not support the case that MCU=16bit, 24bpp and mode1
+3058          void lcdPutString8x12(
+3059              unsigned short x // x of coordinate
+3060              ,
+3061              unsigned short y // y of coordinate
+3062              ,
+3063              unsigned long fgcolor // fgcolor : foreground color(font color)
+3064              ,
+3065              unsigned long bgcolor // bgcolor : background color
+3066              /*8bpp:R3G3B2
+3067              16bpp:R5G6B5
+3068              24bpp:R8G8B8*/
+3069              ,
+3070              unsigned char bg_transparent
+3071              /*bg_transparent = 0, background color with no transparent
+3072              bg_transparent = 1, background color with transparent*/
+3073              ,
+3074              char *ptr //*ptr: font string
+3075          )
+3076          {
+3077   1          unsigned short i = 0;
+3078   1          // screen width = 800,  800/8 = 100
+3079   1          // if string more then 100 fonts, no show
+3080   1          while ((*ptr != 0) & (i < 100)) {
+3081   2              lcdPutChar8x12(x, y, fgcolor, bgcolor, bg_transparent, *ptr);
+3082   2              x += 8;
+3083   2              ptr++;
+3084   2              i++;
+3085   2          }
+3086   1      }
+3087          
+3088          // Note. this API does not support the case that MCU=16bit, 24bpp and mode1
+3089          void lcdPutChar16x24(
+3090              unsigned short x // x of coordinate
+3091              ,
+3092              unsigned short y // y of coordinate
+3093              ,
+3094              unsigned long fgcolor // fgcolor : foreground color(font color)
+3095              ,
+3096              unsigned long bgcolor // bgcolor : background color
+3097              /*8bpp:R3G3B2
+3098              16bpp:R5G6B5
+3099              24bpp:R8G8B8*/
+3100              ,
+3101              unsigned char bg_transparent
+3102              /*bg_transparent = 0, background color with no transparent
+3103              bg_transparent = 1, background color with transparent*/
+3104              ,
+3105              unsigned char code // code : font char
+3106          )
+3107          {
+3108   1          unsigned short i         = 0;
+3109   1          unsigned short j         = 0;
+3110   1          unsigned long array_addr = 0;
+3111   1          unsigned int tmp_char    = 0;
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 52  
+
+3112   1      
+3113   1          for (i = 0; i < 24; i++) {
+3114   2              // minus 32 offset, because this table from ascii table "space"
+3115   2              array_addr = ((code - 0x20) * 2 * 24) + (i * 2);
+3116   2              tmp_char   = ascii_table_16x24[array_addr] << 8 | ascii_table_16x24[array_addr + 1];
+3117   2      
+3118   2              for (j = 0; j < 16; j++) {
+3119   3      
+3120   3                  if ((tmp_char >> 15 - j) & 0x01 == 0x01)
+3121   3      
+3122   3                      putPixel(x + j, y + i, fgcolor); //
+3123   3      
+3124   3                  else {
+3125   4                      if (!bg_transparent)
+3126   4      
+3127   4                          putPixel(x + j, y + i, bgcolor); //
+3128   4                  }
+3129   3              }
+3130   2          }
+3131   1      }
+3132          
+3133          // Note. this API does not support the case that MCU=16bit, 24bpp and mode1
+3134          void lcdPutString16x24(
+3135              unsigned short x // x of coordinate
+3136              ,
+3137              unsigned short y // y of coordinate
+3138              ,
+3139              unsigned long fgcolor // fgcolor : foreground color(font color)
+3140              ,
+3141              unsigned long bgcolor // bgcolor : background color
+3142              /*8bpp:R3G3B2
+3143              16bpp:R5G6B5
+3144              24bpp:R8G8B8*/
+3145              ,
+3146              unsigned char bg_transparent
+3147              /*bg_transparent = 0, background color with no transparent
+3148              bg_transparent = 1, background color with transparent*/
+3149              ,
+3150              char *ptr //*ptr : font string
+3151          )
+3152          {
+3153   1          unsigned short i = 0;
+3154   1          // screen width = 800,  800/16 = 50
+3155   1          // if string more then 50 fonts, no show
+3156   1          while ((*ptr != 0) & (i < 50)) {
+3157   2              lcdPutChar16x24(x, y, fgcolor, bgcolor, bg_transparent, *ptr);
+3158   2              x += 16;
+3159   2              ptr++;
+3160   2              i++;
+3161   2          }
+3162   1      }
+3163          
+3164          
+3165          /////********************************
+3166          /*
+3167          BUS : select SPI Master bus 0 or 1
+3168          SCS : select SPI Master bus 0~3
+3169          buffer : AVI Shadow buffer
+3170          SCK_Divide : Media CLK = CORE CLK / (2^SCK_Divide) , Media CLK <= 60MHz (range : 0~2)
+3171          */
+3172          /////********************************
+3173          void SPI_NAND_initial_JPG_AVI(
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 53  
+
+3174              unsigned char BUS // BUS : 0 = Use BUS0, 1 = Use BUS1
+3175              ,
+3176              unsigned char SCS // SCS : 0 = Use SCS0, 1 = Use SCS1 ,2 = Use SCS2 ,3 = Use SCS3
+3177              ,
+3178              unsigned char SCK_Divide // media decode divide : IDEC Clock = CORE CLK/2^SCK_Divide ,range:0~3, recom
+             -mend <= 60MHz
+3179          )
+3180          {
+3181   1          Enable_SFlash_SPI();
+3182   1          SPI_Master_LatchEdge_Select_Falling();
+3183   1          SPIM_Clock_Divided_1();
+3184   1          IDEC_SPI_Clock_Divide(SCK_Divide);
+3185   1          SPI_Clock_Period(2);
+3186   1      
+3187   1          switch (BUS) {
+3188   2              case 0:
+3189   2                  IDEC_Select_Bus_0(); // MEDIA BUS 0
+3190   2                  SPIM_Select_Bus_0();
+3191   2                  break;
+3192   2      
+3193   2              case 1:
+3194   2                  IDEC_Select_Bus_1(); // MEDIA BUS 1
+3195   2                  SPIM_Select_Bus_1();
+3196   2                  break;
+3197   2          }
+3198   1      
+3199   1          switch (SCS) {
+3200   2              case 0:
+3201   2                  IDEC_Select_SFI_0(); // MEDIA CS0
+3202   2                  Select_nSS_drive_on_xnsfcs0();
+3203   2                  break;
+3204   2      
+3205   2              case 1:
+3206   2                  IDEC_Select_SFI_1(); // MEDIA CS1
+3207   2                  Select_nSS_drive_on_xnsfcs1();
+3208   2                  break;
+3209   2      
+3210   2              case 2:
+3211   2                  IDEC_Select_SFI_2(); // MEDIA CS2
+3212   2                  Select_nSS_drive_on_xnsfcs2();
+3213   2                  break;
+3214   2      
+3215   2              case 3:
+3216   2                  IDEC_Select_SFI_3(); // MEDIA CS3
+3217   2                  Select_nSS_drive_on_xnsfcs3();
+3218   2                  break;
+3219   2          }
+3220   1      
+3221   1          Reset_CPOL();
+3222   1          // Set_CPOL();
+3223   1          Reset_CPHA();
+3224   1          // Set_CPHA();
+3225   1      
+3226   1          W25N01_Device_Reset();
+3227   1          W25N01_Clear_BUF();
+3228   1          W25N01_Set_ECC();
+3229   1      
+3230   1          IDEC_Select_SFI_24bit_Address();
+3231   1          IDEC_Select_RA8875_SPI_Mode0_and_Mode3();
+3232   1          IDEC_Select_SFI_Quad_Mode_Dummy_8T_6Bh(); // MEDIA QUAD MODE
+3233   1          // IDEC_Select_SFI_Quad_Mode_Dummy_4T_EBh();
+3234   1      
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 54  
+
+3235   1          IDEC_AVI_Decoding_to_PIP1_and_Shadow();
+3236   1      }
+3237          
+3238          /////********************************
+3239          /*
+3240          BUS : select SPI Master bus 0 or 1
+3241          SCS : select SPI Master bus 0~3
+3242          SCK_Divide : Media CLK = CORE CLK / (2^SCK_Divide) , Media CLK <= 60MHz
+3243          */
+3244          /////********************************
+3245          void SPI_NAND_initial_DMA(
+3246              unsigned char SCS // SCS : 0 = Use SCS0, 1 = Use SCS1 ,2 = Use SCS2 ,3 = Use SCS3
+3247              ,
+3248              unsigned char BUS // BUS : 0 = Use BUS0, 1 = Use BUS1
+3249          )
+3250          {
+3251   1          Enable_SFlash_SPI();
+3252   1          SPI_Master_LatchEdge_Select_Falling();
+3253   1          SPIM_Clock_Divided_1();
+3254   1          SPI_Clock_Period(2);
+3255   1      
+3256   1          switch (BUS) {
+3257   2              case 0:
+3258   2                  SPIM_Select_Bus_0();
+3259   2                  FONT_DMA_Select_Bus_0();
+3260   2                  break;
+3261   2      
+3262   2              case 1:
+3263   2                  SPIM_Select_Bus_1();
+3264   2                  FONT_DMA_Select_Bus_1();
+3265   2                  break;
+3266   2          }
+3267   1      
+3268   1          switch (SCS) {
+3269   2              case 0:
+3270   2                  Select_nSS_drive_on_xnsfcs0();
+3271   2                  Select_SFI_0();
+3272   2                  break;
+3273   2      
+3274   2              case 1:
+3275   2                  Select_nSS_drive_on_xnsfcs1();
+3276   2                  Select_SFI_1();
+3277   2                  break;
+3278   2      
+3279   2              case 2:
+3280   2                  Select_nSS_drive_on_xnsfcs2();
+3281   2                  Select_SFI_2();
+3282   2                  break;
+3283   2      
+3284   2              case 3:
+3285   2                  Select_nSS_drive_on_xnsfcs3();
+3286   2                  Select_SFI_3();
+3287   2                  break;
+3288   2          }
+3289   1      
+3290   1          Reset_CPOL();
+3291   1          // Set_CPOL();
+3292   1          Reset_CPHA();
+3293   1          // Set_CPHA();
+3294   1      
+3295   1          W25N01_Device_Reset();
+3296   1          W25N01_Clear_BUF();
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 55  
+
+3297   1          W25N01_Set_ECC();
+3298   1      
+3299   1          // Select_standard_SPI_Mode0_or_Mode3();
+3300   1          Select_RA8875_SPI_Mode0_and_Mode3();
+3301   1      
+3302   1          //  Select_SFI_Single_Mode_Dummy_0T_03h();
+3303   1          //  Select_SFI_Single_Mode_Dummy_8T_0Bh();
+3304   1          //  Select_SFI_Single_Mode_Dummy_16T_1Bh();
+3305   1          //  Select_SFI_Dual_Mode_Dummy_8T_3Bh();
+3306   1          //  Select_SFI_Dual_Mode_Dummy_4T_BBh();
+3307   1          Select_SFI_Quad_Mode_Dummy_8T_6Bh();
+3308   1      
+3309   1          Select_SFI_DMA_Mode();
+3310   1          Select_SFI_24bit_Address();
+3311   1      }
+3312          
+3313          /////********************************
+3314          /*
+3315          addr : Pic addr in flash
+3316          JPGsize : Pic size
+3317          x : write pic coordinate of x
+3318          y : write pic coordinate of y
+3319          */
+3320          /////********************************
+3321          void JPG_NAND(
+3322              unsigned long addr // Pic addr in flash
+3323              ,
+3324              unsigned long JPGsize // Pic size
+3325              ,
+3326              unsigned long IDEC_canvas_width // recommend = canvas_image_width
+3327              ,
+3328              unsigned short x // write pic coordinate of x
+3329              ,
+3330              unsigned short y // write pic coordinate of y
+3331          )
+3332          {
+3333   1          IDEC_Destination_Image_Width(IDEC_canvas_width);
+3334   1          IDEC_Destination_Upper_Left_Corner(x, y);
+3335   1      
+3336   1          nSS_Active();
+3337   1          SPI_Master_FIFO_Data_Put(0x13);      // page data read(13h)
+3338   1          SPI_Master_FIFO_Data_Put(0x00);      // 8Dummy clock
+3339   1          SPI_Master_FIFO_Data_Put(addr >> 8); // page address MSB
+3340   1          SPI_Master_FIFO_Data_Put(addr);      // page address LSB
+3341   1          nSS_Inactive();
+3342   1          delay_us(500); // delay for buffer load
+3343   1      
+3344   1          IDEC_Source_Start_Address(addr); // JPG癬cl|i
+3345   1          IDEC_Transfer_Number(JPGsize);   // JPG SIZE
+3346   1          IDEC_Starts_Decoding();          //?}cl?NJPG
+3347   1          Check_Busy_Media_Decode();
+3348   1      }
+3349          
+3350          /////********************************
+3351          /*
+3352          addr : vedio addr in flash
+3353          vediosize : vedio size
+3354          x : show vedio coordinate of x
+3355          y : show vedio coordinate of y
+3356          height : vedio height
+3357          width : vedio width
+3358          */
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 56  
+
+3359          /////********************************
+3360          void AVI_NAND(
+3361              unsigned long addr // vedio addr in flash
+3362              ,
+3363              unsigned long videosize // vedio size
+3364              ,
+3365              unsigned long shadow_buffer_addr // shadow buffer addr
+3366              ,
+3367              unsigned long PIP_buffer_addr // PIP buffer addr
+3368              ,
+3369              unsigned long x // show vedio coordinate of x
+3370              ,
+3371              unsigned long y // show vedio coordinate of y
+3372              ,
+3373              unsigned long height // vedio height
+3374              ,
+3375              unsigned long width // vedio width
+3376              ,
+3377              unsigned long PIP_canvas_Width // recommend = canvas_image_width
+3378          )
+3379          {
+3380   1          nSS_Active();
+3381   1          SPI_Master_FIFO_Data_Put(0x13);      // page data read(13h)
+3382   1          SPI_Master_FIFO_Data_Put(0x00);      // 8Dummy clock
+3383   1          SPI_Master_FIFO_Data_Put(addr >> 8); // page address MSB
+3384   1          SPI_Master_FIFO_Data_Put(addr);      // page address LSB
+3385   1          nSS_Inactive();
+3386   1          delay_us(500); // delay for buffer load
+3387   1      
+3388   1          IDEC_Source_Start_Address(addr);
+3389   1          IDEC_Transfer_Number(videosize); // AVI File Size
+3390   1          AVI_Shadow_PIP_Start_Address(shadow_buffer_addr);
+3391   1      
+3392   1          Select_PIP1_Parameter();
+3393   1          PIP_Image_Start_Address(PIP_buffer_addr);
+3394   1          PIP_Display_Start_XY(x, y);
+3395   1          PIP_Image_Width(PIP_canvas_Width);
+3396   1          PIP_Window_Image_Start_XY(0, 0);
+3397   1          PIP_Window_Width_Height(width, height);
+3398   1          //  Enable_PIP1();
+3399   1      
+3400   1          // Check_Vsync_finished();
+3401   1          IDEC_Starts_Decoding();
+3402   1          // Check_Busy_Media_Decode();
+3403   1      }
+3404          
+3405          void AVI_window(
+3406              unsigned char ON_OFF // 0 : turn off AVI window, 1 :turn on AVI window
+3407          )
+3408          {
+3409   1          if (ON_OFF == 0) {
+3410   2              Disable_PIP1();
+3411   2          }
+3412   1          if (ON_OFF == 1) {
+3413   2              Enable_PIP1();
+3414   2          }
+3415   1      }
+3416          
+3417          /*
+3418          PNG PIC : A(8)R(8)G(8)B(8) = 32bits
+3419          For BTE_alpha_blending_32bit_Pixel_mode
+3420          dma_page_addr : pic addr
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 57  
+
+3421          pic_buffer_Layer : read pic buffer in sdram
+3422          Show_pic_Layer : show pic layer
+3423          */
+3424          void SPI_NAND_DMA_png(
+3425              unsigned long dma_page_addr // dma pic addr in flash
+3426              ,
+3427              unsigned long pic_buffer_Layer // pic_buffer_Layer : read pic buffer in sdram
+3428              ,
+3429              unsigned long Show_pic_Layer // Show_pic_Layer : write pic into sdram addr
+3430              ,
+3431              unsigned int picture_Width, unsigned int picture_Height)
+3432          {
+3433   1      
+3434   1          nSS_Active();
+3435   1          SPI_Master_FIFO_Data_Put(0x13);                 // page data read(13h)
+3436   1          SPI_Master_FIFO_Data_Put(0x00);                 // 8Dummy clock
+3437   1          SPI_Master_FIFO_Data_Put((dma_page_addr) >> 8); // page address MSB
+3438   1          SPI_Master_FIFO_Data_Put(dma_page_addr);        // page address LSB
+3439   1          nSS_Inactive();
+3440   1          delay_us(500); // delay for buffer load
+3441   1      
+3442   1          Memory_Linear_Mode();
+3443   1      
+3444   1          SFI_DMA_Transfer_Number(picture_Width * picture_Height * 4); // picture Width x Height x Color depth(3
+             -2bit = 4byte)
+3445   1          SFI_DMA_Destination_Start_Address(pic_buffer_Layer);         //
+3446   1      
+3447   1          Start_SFI_DMA();
+3448   1          Check_2D_Busy();
+3449   1          Memory_XY_Mode();
+3450   1      }
+3451          
+3452          void SPI_NOR_DMA_png(
+3453              unsigned long dma_page_addr // dma pic addr in flash
+3454              ,
+3455              unsigned long pic_buffer_Layer // pic_buffer_Layer : read pic buffer in sdram
+3456              ,
+3457              unsigned long Show_pic_Layer // Show_pic_Layer : write pic into sdram addr
+3458              ,
+3459              unsigned int picture_Width, unsigned int picture_Height)
+3460          {
+3461   1      
+3462   1          Memory_Linear_Mode();
+3463   1          SFI_DMA_Source_Start_Address(dma_page_addr);
+3464   1          SFI_DMA_Transfer_Number(picture_Width * picture_Height * 4); // picture Width x Height x Color depth(3
+             -2bit = 4byte)
+3465   1          SFI_DMA_Destination_Start_Address(pic_buffer_Layer);         //
+3466   1      
+3467   1          Start_SFI_DMA();
+3468   1          Check_2D_Busy();
+3469   1          Memory_XY_Mode();
+3470   1      }
+3471          
+3472          /*
+3473          dma_page_addr : pic addr
+3474          pic_buffer_Layer : read pic buffer in sdram
+3475          Show_pic_Layer : show pic layer
+3476          X_coordinate : write to sdram coordinate of x
+3477          Y_coordinate : write to sdram coordinate of y
+3478          chorma : 0 = no transparent ,1 : Specify a color as transparent
+3479          Background_color : transparent color
+3480          */
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 58  
+
+3481          void SPI_NAND_DMA(
+3482              unsigned long dma_page_addr // dma pic addr in flash
+3483              ,
+3484              unsigned long X_coordinate // pic write to sdram coordinate of x
+3485              ,
+3486              unsigned long Y_coordinate // pic write to sdram coordinate of y
+3487              ,
+3488              unsigned long des_canvas_width // recommend = canvas_image_width
+3489              ,
+3490              unsigned int picture_Width, unsigned int picture_Height, unsigned long pic_buffer_Layer // pic_buffer_
+             -Layer : read pic buffer in sdram
+3491              ,
+3492              unsigned long Show_pic_Layer // Show_pic_Layer : write pic into sdram addr
+3493              ,
+3494              unsigned char chorma // 0: no transparent,1:Specify a color as transparent
+3495              ,
+3496              unsigned long Background_color // transparent color
+3497          )
+3498          {
+3499   1      
+3500   1      #ifdef MCU_8bit_ColorDepth_8bpp
+                  Background_color_256(Background_color);
+              #endif
+3503   1      #ifdef MCU_8bit_ColorDepth_16bpp
+                  Background_color_65k(Background_color);
+              #endif
+3506   1      #ifdef MCU_8bit_ColorDepth_24bpp
+3507   1          Background_color_16M(Background_color);
+3508   1      #endif
+3509   1      #ifdef MCU_16bit_ColorDepth_16bpp
+                  Background_color_65k(Background_color);
+              #endif
+3512   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_1
+                  Background_color_16M(Background_color);
+              #endif
+3515   1      #ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+                  Background_color_16M(Background_color);
+              #endif
+3518   1      
+3519   1          nSS_Active();
+3520   1          SPI_Master_FIFO_Data_Put(0x13);                 // page data read(13h)
+3521   1          SPI_Master_FIFO_Data_Put(0x00);                 // 8Dummy clock
+3522   1          SPI_Master_FIFO_Data_Put((dma_page_addr) >> 8); // page address MSB
+3523   1          SPI_Master_FIFO_Data_Put(dma_page_addr);        // page address LSB
+3524   1          nSS_Inactive();
+3525   1          delay_us(500); // delay for buffer load
+3526   1      
+3527   1          Memory_Linear_Mode();
+3528   1          SFI_DMA_Source_Start_Address(dma_page_addr); // 24bit address
+3529   1      
+3530   1      #if defined MCU_8bit_ColorDepth_8bpp
+                  SFI_DMA_Transfer_Number(picture_Width * picture_Height); // picture Width x Height x Color depth(8/8=1
+             -)
+              #endif
+3533   1      #if defined MCU_8bit_ColorDepth_16bpp
+                  SFI_DMA_Transfer_Number(picture_Width * picture_Height * 2); // picture Width x Height x Color depth(1
+             -6/8=2)
+              #endif
+3536   1      #if defined MCU_16bit_ColorDepth_16bpp
+                  SFI_DMA_Transfer_Number(picture_Width * picture_Height * 2); // picture Width x Height x Color depth(1
+             -6/8=2)
+              #endif
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 59  
+
+3539   1      #if defined MCU_8bit_ColorDepth_24bpp
+3540   1          SFI_DMA_Transfer_Number(picture_Width * picture_Height * 3); // picture Width x Height x Color depth(2
+             -4/8=3)
+3541   1      #endif
+3542   1      #if defined MCU_16bit_ColorDepth_24bpp_Mode_1
+                  SFI_DMA_Transfer_Number(picture_Width * picture_Height * 3); // picture Width x Height x Color depth(2
+             -4/8=3)
+              #endif
+3545   1      #if defined MCU_16bit_ColorDepth_24bpp_Mode_2
+                  SFI_DMA_Transfer_Number(picture_Width * picture_Height * 3); // picture Width x Height x Color depth(2
+             -4/8=3)
+              #endif
+3548   1      
+3549   1          SFI_DMA_Destination_Start_Address(pic_buffer_Layer); // DMA to Memory Address 1280*480*3
+3550   1      
+3551   1          Start_SFI_DMA();
+3552   1          // Check_Busy_SFI_DMA();
+3553   1          Check_2D_Busy();
+3554   1      
+3555   1          BTE_S0_Color_24bpp();
+3556   1          BTE_S0_Memory_Start_Address(pic_buffer_Layer); // S0 Address 1280*480*3
+3557   1          BTE_S0_Image_Width(picture_Width);
+3558   1          BTE_S0_Window_Start_XY(0, 0);
+3559   1      
+3560   1          BTE_Destination_Color_24bpp();
+3561   1          BTE_Destination_Memory_Start_Address(Show_pic_Layer);
+3562   1          BTE_Destination_Image_Width(des_canvas_width);
+3563   1          BTE_Destination_Window_Start_XY(X_coordinate, Y_coordinate);
+3564   1      
+3565   1          if (chorma == 0) {
+3566   2              BTE_ROP_Code(12);
+3567   2              BTE_Operation_Code(0x02);
+3568   2          }
+3569   1          if (chorma == 1) {
+3570   2              BTE_Operation_Code(0x05);
+3571   2          }
+3572   1      
+3573   1          BTE_Window_Size(picture_Width, picture_Height);
+3574   1      
+3575   1          BTE_Enable();
+3576   1      
+3577   1          Check_BTE_Busy();
+3578   1      
+3579   1          Memory_XY_Mode();
+3580   1      }
+3581          
+3582          
+3583          /*
+3584          S0_Addr : Source 0 Start address
+3585          S0_W : Source 0 image width(recommend = canvas image width) 
+3586          XS0 : Source 0 coordinate of X
+3587          YS0 : Source 0 coordinate of Y
+3588          S1_Addr : Source 1 Start address
+3589          S1_W : Source 1 image width(recommend = canvas image width) 
+3590          XS1 : Source 1 coordinate of X
+3591          YS1 : Source 1 coordinate of Y
+3592          Des_Addr : Destination start address
+3593          Des_W :  Destination image width(recommend = canvas image width) 
+3594          XDes : Destination coordinate of X
+3595          YDes : Destination coordinate of Y
+3596          X_W : BTE Window Size of X
+3597          Y_H : BTE Window Size of Y
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 60  
+
+3598          */
+3599          void BTE_alpha_blending_24bit_Pixel_mode(unsigned long S0_Addr,unsigned short S0_W,unsigned short XS0,unsi
+             -gned short YS0,unsigned long S1_Addr,unsigned short S1_W,unsigned short XS1,unsigned short YS1,unsigned long Des_Addr,un
+             -signed short Des_W, unsigned short XDes,unsigned short YDes,unsigned short X_W,unsigned short Y_H)
+3600          {
+3601   1        BTE_S0_Color_24bpp();                             //S0的色深选择
+3602   1        BTE_S0_Memory_Start_Address(S0_Addr);
+3603   1        BTE_S0_Image_Width(S0_W);
+3604   1        BTE_S0_Window_Start_XY(XS0,YS0);                  //S0与Des位置设定一样
+3605   1      
+3606   1        BTE_S1_Color_16bit_Alpha();                       //选用16bpp，固定不变
+3607   1        BTE_S1_Memory_Start_Address(S1_Addr);
+3608   1        BTE_S1_Image_Width(S1_W); 
+3609   1        BTE_S1_Window_Start_XY(XS1,YS1);
+3610   1        
+3611   1        BTE_Destination_Color_24bpp();                    //Des的色深选择
+3612   1        BTE_Destination_Memory_Start_Address(Des_Addr);
+3613   1        BTE_Destination_Image_Width(Des_W);
+3614   1        BTE_Destination_Window_Start_XY(XDes,YDes);
+3615   1      
+3616   1        BTE_Window_Size(X_W,Y_H);
+3617   1        BTE_Operation_Code(0x0A);   //BTE Operation: Memory write with opacity (w/o ROP)
+3618   1        BTE_Enable();
+3619   1        Check_BTE_Busy();
+3620   1      }
+3621          
+3622          
+3623          /*
+3624          use for linear mode ,nand flash,
+3625          BTE_X : BTE window Width
+3626          BTE_Y : BTE window Height
+3627          S0X : source 0 coordinate of x
+3628          S0Y : source 0 coordinate of y
+3629          desX :destination coordinate of x
+3630          desY :destination coordinate of y
+3631          pic_buffer_Layer : read pic buffer addr in sdram
+3632          */
+3633          void BTE_alpha_blending_32bit_Pixel_mode(
+3634              unsigned int picture_Width // pic width
+3635              ,
+3636              unsigned int BTE_X // BTE window Width
+3637              ,
+3638              unsigned int BTE_Y // BTE window Height
+3639              ,
+3640              unsigned long S0X // source 0 coordinate of x
+3641              ,
+3642              unsigned long S0Y // source 0 coordinate of y
+3643              ,
+3644              unsigned long S0_Start_Addr // source 0 start addr
+3645              ,
+3646              unsigned long S0_canvas_width // recomamnd = canvas_image_width
+3647              ,
+3648              unsigned long desX // Destination coordinate of x
+3649              ,
+3650              unsigned long desY // Destination coordinate of y
+3651              ,
+3652              unsigned long DES_Start_Addr // Destination start addr
+3653              ,
+3654              unsigned long DES_canvas_width // recomamnd = canvas_image_width
+3655              ,
+3656              unsigned long pic_buffer_Layer // source 1 pic addr
+3657          )
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 61  
+
+3658          {
+3659   1          BTE_S0_Color_24bpp();
+3660   1          BTE_S0_Memory_Start_Address(S0_Start_Addr);
+3661   1          BTE_S0_Image_Width(S0_canvas_width);
+3662   1      
+3663   1          BTE_S1_Color_32bit_Alpha();
+3664   1          BTE_S1_Memory_Start_Address(pic_buffer_Layer);
+3665   1          BTE_S1_Image_Width(picture_Width); // ARGB
+3666   1      
+3667   1          BTE_Destination_Color_24bpp();
+3668   1          BTE_Destination_Memory_Start_Address(DES_Start_Addr);
+3669   1          BTE_Destination_Image_Width(DES_canvas_width);
+3670   1      
+3671   1          BTE_S1_Window_Start_XY(0, 0);
+3672   1          BTE_S0_Window_Start_XY(S0X, S0Y);
+3673   1          BTE_Destination_Window_Start_XY(desX, desY);
+3674   1          BTE_Window_Size(BTE_X, BTE_Y);
+3675   1          BTE_ROP_Code(12);
+3676   1          BTE_Operation_Code(0x0A);
+3677   1          BTE_Enable();
+3678   1          Check_BTE_Busy();
+3679   1      
+3680   1          BTE_S1_Color_24bpp();
+3681   1      }
+3682          
+3683          void SPI_NOR_Flash_switch_QUAD_MODE(
+3684              unsigned char BUS /*select SPI Bus 0 or 1*/
+3685              ,
+3686              unsigned char SCS /*select SPI CS 0~3*/
+3687              ,
+3688              unsigned char flash /*select flash: 0 =MXIC , 1=WINBOND*/
+3689          )
+3690          
+3691          {
+3692   1          unsigned char temp;
+3693   1      
+3694   1          Enable_SFlash_SPI();
+3695   1          SPI_Master_LatchEdge_Select_Falling();
+3696   1          SPIM_Clock_Divided_1();
+3697   1          SPI_Clock_Period(2);
+3698   1      
+3699   1          switch (BUS) {
+3700   2              case 0:
+3701   2                  SPIM_Select_Bus_0();
+3702   2                  break;
+3703   2              case 1:
+3704   2                  SPIM_Select_Bus_1();
+3705   2                  break;
+3706   2          }
+3707   1      
+3708   1          switch (SCS) {
+3709   2              case 0:
+3710   2                  Select_nSS_drive_on_xnsfcs0();
+3711   2                  break;
+3712   2      
+3713   2              case 1:
+3714   2                  Select_nSS_drive_on_xnsfcs1();
+3715   2                  break;
+3716   2      
+3717   2              case 2:
+3718   2                  Select_nSS_drive_on_xnsfcs2();
+3719   2                  break;
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 62  
+
+3720   2      
+3721   2              case 3:
+3722   2                  Select_nSS_drive_on_xnsfcs3();
+3723   2                  break;
+3724   2          }
+3725   1      
+3726   1          Reset_CPOL();
+3727   1          // Set_CPOL();
+3728   1          Reset_CPHA();
+3729   1          // Set_CPHA();
+3730   1      
+3731   1          // WREN : write enable
+3732   1          nSS_Active();
+3733   1          SPI_Master_FIFO_Data_Put(0x06);
+3734   1          nSS_Inactive();
+3735   1      
+3736   1          // RDSR : check writable
+3737   1      
+3738   1          do {
+3739   2              nSS_Active();
+3740   2              SPI_Master_FIFO_Data_Put(0x05); //
+3741   2              temp = SPI_Master_FIFO_Data_Put(0xff);
+3742   2              nSS_Inactive();
+3743   2              delay_us(100);
+3744   2          } while ((temp & 0x02) == 0x00); // WEL=1 ? WRITABLE : UNWRITABLE
+3745   1      
+3746   1          switch (flash) {
+3747   2              case 0:
+3748   2                  //**********************************MXIC Flash Quad mode
+3749   2                  // WRITE STATUS REG
+3750   2                  nSS_Active();
+3751   2                  SPI_Master_FIFO_Data_Put(0x01);
+3752   2                  SPI_Master_FIFO_Data_Put(0x40);
+3753   2                  nSS_Inactive();
+3754   2                  ///*************************************
+3755   2                  break;
+3756   2      
+3757   2              case 1:
+3758   2                  //******************************Winbond Flash Quad mode
+3759   2                  // WRITE STATUS REG
+3760   2                  nSS_Active();
+3761   2                  SPI_Master_FIFO_Data_Put(0x31); // Status Register-2
+3762   2                  SPI_Master_FIFO_Data_Put(0x02); // QE=1, Quad Mode
+3763   2                  nSS_Inactive();
+3764   2                  ///*****************************
+3765   2                  break;
+3766   2              case 2:
+3767   2                  //******************************GD Flash Quad mode---DEBUGING.
+3768   2                  // WRITE STATUS REG
+3769   2                  nSS_Active();
+3770   2                  SPI_Master_FIFO_Data_Put(0x01);
+3771   2                  SPI_Master_FIFO_Data_Put(0x31); // Status Register-2
+3772   2                  SPI_Master_FIFO_Data_Put(0x38);
+3773   2                  nSS_Inactive();
+3774   2                  ///*****************************
+3775   2                  break;
+3776   2      
+3777   2          }
+3778   1      
+3779   1          // check flash busy
+3780   1          do {
+3781   2              // RDSR
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 63  
+
+3782   2              nSS_Active();
+3783   2              SPI_Master_FIFO_Data_Put(0x05); //
+3784   2              temp = SPI_Master_FIFO_Data_Put(0xff);
+3785   2              nSS_Inactive();
+3786   2          } while ((temp & 0x01) == 0x01); // WIP=1 ? BUSY:IDLE
+3787   1      }
+3788          
+3789          void SPI_NOR_initial_DMA(
+3790              unsigned char mode // SPI mode : 0:Single_03h,1:Single_0Bh,2:Single_1Bh,3:Dual_3Bh,4:Dual_BBh,5:Quad_6
+             -Bh,6:Quad_EBh
+3791              ,
+3792              unsigned char BUS // BUS : 0 = Use BUS0, 1 = Use BUS1
+3793              ,
+3794              unsigned char SCS // SCS : 0 = Use SCS0, 1 = Use SCS1 ,2 = Use SCS2 ,3 = Use SCS3
+3795              ,
+3796              unsigned char flash // 0 : MXIC , 1 : Winbond
+3797              ,
+3798              unsigned char addr_24b_32b // flash 24bit or 32bit addr
+3799          )
+3800          {
+3801   1          unsigned char temp;
+3802   1      
+3803   1          Enable_SFlash_SPI();
+3804   1          SPI_Master_LatchEdge_Select_Falling();
+3805   1          SPIM_Clock_Divided_1();
+3806   1          SPI_Clock_Period(2);
+3807   1      
+3808   1          switch (BUS) {
+3809   2              case 0:
+3810   2                  FONT_DMA_Select_Bus_0();
+3811   2                  SPIM_Select_Bus_0();
+3812   2                  break;
+3813   2      
+3814   2              case 1:
+3815   2                  FONT_DMA_Select_Bus_1();
+3816   2                  SPIM_Select_Bus_1();
+3817   2                  break;
+3818   2          }
+3819   1      
+3820   1          switch (SCS) {
+3821   2              case 0:
+3822   2                  Select_SFI_0();
+3823   2                  Select_nSS_drive_on_xnsfcs0();
+3824   2                  break;
+3825   2      
+3826   2              case 1:
+3827   2                  Select_SFI_1();
+3828   2                  Select_nSS_drive_on_xnsfcs1();
+3829   2                  break;
+3830   2      
+3831   2              case 2:
+3832   2                  Select_SFI_2();
+3833   2                  Select_nSS_drive_on_xnsfcs2();
+3834   2                  break;
+3835   2      
+3836   2              case 3:
+3837   2                  Select_SFI_3();
+3838   2                  Select_nSS_drive_on_xnsfcs3();
+3839   2                  break;
+3840   2          }
+3841   1      
+3842   1          Select_RA8875_SPI_Mode0_and_Mode3();
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 64  
+
+3843   1      
+3844   1          switch (mode) {
+3845   2              case 0:
+3846   2                  Select_SFI_Single_Mode_Dummy_0T_03h(); // single mode
+3847   2                  break;
+3848   2      
+3849   2              case 1:
+3850   2                  Select_SFI_Single_Mode_Dummy_8T_0Bh(); // single mode
+3851   2                  break;
+3852   2      
+3853   2              case 2:
+3854   2                  Select_SFI_Single_Mode_Dummy_16T_1Bh(); // single mode
+3855   2                  break;
+3856   2      
+3857   2              case 3:
+3858   2                  Select_SFI_Dual_Mode_Dummy_8T_3Bh(); // dual mode
+3859   2                  break;
+3860   2      
+3861   2              case 4:
+3862   2                  SPI_NOR_Flash_switch_QUAD_MODE(BUS, SCS, flash); // quad mode
+3863   2                  Select_SFI_Quad_Mode_Dummy_8T_6Bh();
+3864   2                  break;
+3865   2      
+3866   2              case 5:
+3867   2                  SPI_NOR_Flash_switch_QUAD_MODE(BUS, SCS, flash); // quad mode
+3868   2                  Select_SFI_Quad_Mode_Dummy_4T_EBh();
+3869   2          }
+3870   1      
+3871   1          Select_SFI_DMA_Mode();
+3872   1      
+3873   1          if (addr_24b_32b == 0)
+3874   1              Select_SFI_24bit_Address();
+3875   1          else {
+3876   2              switch_24bits_to_32bits(BUS, SCS);
+3877   2              Select_SFI_32bit_Address();
+3878   2          }
+3879   1          Memory_XY_Mode();
+3880   1          delay_ms(30);
+3881   1      }
+3882          
+3883          void SPI_NOR_initial_JPG_AVI(
+3884              unsigned char flash // 0 : MXIC , 1 : Winbond
+3885              ,
+3886              unsigned char addr_24b_32b // flash addr : 0:24bit addr, 1:32bit addr
+3887              ,
+3888              unsigned char BUS // BUS : 0 = Use BUS0, 1 = Use BUS1
+3889              ,
+3890              unsigned char SCS // SCS : 0 = Use SCS0, 1 = Use SCS1 ,2 = Use SCS2 ,3 = Use SCS3
+3891              ,
+3892              unsigned char SCK_Divide // media decode divide : IDEC Clock = CORE CLK/2^SCK_Divide ,range:0~3, recom
+             -mend <= 60MHz
+3893          )
+3894          {
+3895   1          unsigned char temp;
+3896   1      
+3897   1          Enable_SFlash_SPI();
+3898   1          SPI_Master_LatchEdge_Select_Falling();
+3899   1          SPIM_Clock_Divided_1();
+3900   1          IDEC_SPI_Clock_Divide(SCK_Divide);
+3901   1          SPI_Clock_Period(2);
+3902   1      
+3903   1          switch (BUS) {
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 65  
+
+3904   2              case 0:
+3905   2                  IDEC_Select_Bus_0(); // MEDIA ?I?IBUS 0
+3906   2                  SPIM_Select_Bus_0();
+3907   2                  break;
+3908   2              case 1:
+3909   2                  IDEC_Select_Bus_1(); // MEDIA ?I?IBUS 1
+3910   2                  SPIM_Select_Bus_1();
+3911   2                  break;
+3912   2          }
+3913   1      
+3914   1          switch (SCS) {
+3915   2              case 0:
+3916   2                  IDEC_Select_SFI_0(); // MEDIA?I?ICS0
+3917   2                  Select_nSS_drive_on_xnsfcs0();
+3918   2                  break;
+3919   2      
+3920   2              case 1:
+3921   2                  IDEC_Select_SFI_1(); // MEDIA?I?ICS1
+3922   2                  Select_nSS_drive_on_xnsfcs1();
+3923   2                  break;
+3924   2      
+3925   2              case 2:
+3926   2                  IDEC_Select_SFI_2(); // MEDIA?I?ICS2
+3927   2                  Select_nSS_drive_on_xnsfcs2();
+3928   2                  break;
+3929   2      
+3930   2              case 3:
+3931   2                  IDEC_Select_SFI_3(); // MEDIA?I?ICS3
+3932   2                  Select_nSS_drive_on_xnsfcs3();
+3933   2                  break;
+3934   2          }
+3935   1      
+3936   1          SPI_NOR_Flash_switch_QUAD_MODE(BUS, SCS, flash); // Into Quad Mode
+3937   1      
+3938   1          if (addr_24b_32b == 0)
+3939   1              IDEC_Select_SFI_24bit_Address();
+3940   1          else {
+3941   2              switch_24bits_to_32bits(BUS, SCS);
+3942   2              IDEC_Select_SFI_32bit_Address();
+3943   2          }
+3944   1      
+3945   1          IDEC_Select_RA8875_SPI_Mode0_and_Mode3();
+3946   1          IDEC_Select_SFI_Quad_Mode_Dummy_8T_6Bh(); // MEDIA QUAD MODE
+3947   1          // IDEC_Select_SFI_Quad_Mode_Dummy_4T_EBh();
+3948   1      
+3949   1          IDEC_AVI_Decoding_to_PIP1_and_Shadow();
+3950   1      }
+3951          
+3952          void JPG_NOR(
+3953              unsigned long addr // JPG pic addr in flash
+3954              ,
+3955              unsigned long JPGsize // JPG pic size
+3956              ,
+3957              unsigned long IDEC_canvas_width // recommend = canvas_image_width
+3958              ,
+3959              unsigned short x // JPG pic write to sdram coordinate of x
+3960              ,
+3961              unsigned short y // JPG pic write to sdram coordinate of y
+3962          )
+3963          {
+3964   1      
+3965   1          IDEC_Destination_Image_Width(IDEC_canvas_width);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 66  
+
+3966   1          IDEC_Destination_Upper_Left_Corner(x, y);
+3967   1      
+3968   1          IDEC_Source_Start_Address(addr); // JPG癬cl|i
+3969   1          IDEC_Transfer_Number(JPGsize);   // JPG SIZE
+3970   1          IDEC_Starts_Decoding();          //?}cl?NJPG
+3971   1          Check_Busy_Media_Decode();
+3972   1      }
+3973          
+3974          void AVI_NOR(
+3975              unsigned long addr // AVI addr in flash
+3976              ,
+3977              unsigned long videosize // video size
+3978              ,
+3979              unsigned long shadow_buffer_addr // shadow buffer addr
+3980              ,
+3981              unsigned long PIP_buffer_addr // PIP buffer addr
+3982              ,
+3983              unsigned long x // show AVI to coordinate of x
+3984              ,
+3985              unsigned long y // show AVI to coordinate of y
+3986              ,
+3987              unsigned long height // vedio height
+3988              ,
+3989              unsigned long width // vedio width
+3990              ,
+3991              unsigned long PIP_width // PIP Image width, recommend = canvas_image_width
+3992          )
+3993          {
+3994   1      
+3995   1          IDEC_Source_Start_Address(addr);
+3996   1          IDEC_Transfer_Number(videosize); // AVI File Size
+3997   1      
+3998   1          AVI_Shadow_PIP_Start_Address(shadow_buffer_addr);
+3999   1      
+4000   1          Select_PIP1_Parameter();
+4001   1      
+4002   1          PIP_Image_Start_Address(PIP_buffer_addr);
+4003   1          PIP_Display_Start_XY(x, y);
+4004   1          PIP_Image_Width(PIP_width);
+4005   1          PIP_Window_Image_Start_XY(0, 0);
+4006   1          PIP_Window_Width_Height(width, height);
+4007   1          //  Enable_PIP1();
+4008   1          // Check_Vsync_finished();
+4009   1          IDEC_Starts_Decoding();
+4010   1          // Check_Busy_Media_Decode();
+4011   1      }
+4012          
+4013          void Print_Hex(unsigned char buf)
+4014          {
+4015   1          unsigned char temp;
+4016   1          temp = buf;
+4017   1          temp = (temp >> 4) & 0x0F;
+4018   1          Text_Mode();
+4019   1          LCD_CmdWrite(0x04);
+4020   1      
+4021   1          if (temp < 0x0A) {
+4022   2              temp |= 0x30;
+4023   2          } else
+4024   1              temp = temp + 0x37;
+4025   1          LCD_DataWrite(temp);
+4026   1          Check_Mem_WR_FIFO_not_Full();
+4027   1          //  delay_ms(1);
+C51 COMPILER V9.55   RA8889_API                                                            05/31/2024 15:05:35 PAGE 67  
+
+4028   1      
+4029   1          temp = buf;
+4030   1          temp = temp & 0x0F;
+4031   1          if (temp < 0x0A) {
+4032   2              temp |= 0x30;
+4033   2          } else
+4034   1              temp = temp + 0x37;
+4035   1          LCD_DataWrite(temp);
+4036   1          //  delay_ms(1);
+4037   1          Check_Mem_WR_FIFO_not_Full();
+4038   1      }
+
+C51 COMPILATION COMPLETE.  3 WARNING(S),  19 ERROR(S)

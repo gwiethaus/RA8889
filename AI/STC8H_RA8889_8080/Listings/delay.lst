@@ -1,0 +1,46 @@
+C51 COMPILER V9.55   DELAY                                                                 07/12/2024 14:46:12 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE DELAY
+OBJECT MODULE PLACED IN .\Objects\delay.obj
+COMPILER INVOKED BY: D:\Program Files\Keil_v5\C51\BIN\C51.EXE RA8889_01_Kernel\delay.c COMPACT OMF2 ROM(COMPACT) OPTIMIZ
+                    -E(9,SPEED) BROWSE INCDIR(.\RA8889_01_Kernel) DEBUG PRINT(.\Listings\delay.lst) TABS(2) OBJECT(.\Objects\delay.obj)
+
+line level    source
+
+   1          #include <intrins.h>
+   2          #include "delay.h"
+   3          
+   4          //****************************************************
+   5          // ms延时函数(根据自己的系统频率修正)
+   6          //****************************************************
+   7          void delay_ms(unsigned int n)
+   8          {
+   9   1          unsigned short i, j;
+  10   1          for (i = 0; i < n; i++)
+  11   1              for (j = 0; j < 1500; j++);
+  12   1      }
+  13          
+  14          //通信延时函数
+  15          void delay(unsigned short n)
+  16          {
+  17   1        while(n--);
+  18   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     43    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,147 @@
+C51 COMPILER V9.55   SPI4                                                                  05/28/2024 13:45:40 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE SPI4
+OBJECT MODULE PLACED IN .\Objects\SPI4.obj
+COMPILER INVOKED BY: D:\Program Files\Keil_v5\C51\BIN\C51.EXE RA8889_01_Kernel\SPI4.c OMF2 OPTIMIZE(9,SPEED) BROWSE INCD
+                    -IR(.\RA8889_01_Kernel) DEBUG PRINT(.\Listings\SPI4.lst) TABS(2) OBJECT(.\Objects\SPI4.obj)
+
+line level    source
+
+   1          #include "SPI4.h"
+   2          
+   3          /* SPI通信延时，根据自己的时钟调整 */
+   4          void SPI_Delay()
+   5          {
+   6   1          unsigned int i = 80;
+   7   1          while (--i != 0);
+   8   1      }
+   9          
+  10          /* SPI-4 初始化 */
+  11          void SPI4_Init()
+  12          {
+  13   1          SPI_MISO = 0;
+  14   1          SPI_MOSI = 0;
+  15   1          SPI_SCK  = 0;
+  16   1          SPI_SS   = 1;
+  17   1      }
+  18          
+  19          /* SPI-4 发送数据 */
+  20          void SPI_SendByte(unsigned char dat)
+  21          {
+  22   1          unsigned char t = 8;
+  23   1          do {
+  24   2              SPI_MOSI = (bit)(dat & 0x80);
+  25   2              dat <<= 1;
+  26   2              SPI_SCK = 0;
+  27   2              SPI_Delay();
+  28   2              SPI_SCK = 1;
+  29   2              SPI_Delay();
+  30   2          } while (--t != 0);
+  31   1      
+  32   1          SPI_SCK  = 1;
+  33   1          SPI_MOSI = 0;
+  34   1      }
+  35          
+  36          /* SPI-4 接收数据 */
+  37          unsigned char SPI_ReceiveByte()
+  38          {
+  39   1          unsigned char dat;
+  40   1          unsigned char t = 8;
+  41   1          SPI_MISO        = 1; // 在读取数据之前，要把单片机拉高，使之处於输入状态
+  42   1          do {
+  43   2              SPI_SCK = 0;
+  44   2              SPI_Delay();
+  45   2              dat <<= 1;
+  46   2              if (SPI_MISO) dat++;
+  47   2              SPI_SCK = 1;
+  48   2              SPI_Delay();
+  49   2          } while (--t != 0);
+  50   1          return dat;
+  51   1      }
+  52          
+  53          /* LCD API: 写入命令 */
+  54          void LCD_CmdWrite(unsigned char cmd)
+C51 COMPILER V9.55   SPI4                                                                  05/28/2024 13:45:40 PAGE 2   
+
+  55          {
+  56   1          SPI_SCK  = 1;
+  57   1          SPI_MISO = 1;
+  58   1          SPI_MOSI = 1;
+  59   1          SPI_SS   = 0;
+  60   1          SPI_Delay();
+  61   1          SPI_SendByte(0x00);
+  62   1          SPI_SendByte(cmd);
+  63   1          SPI_Delay();
+  64   1          SPI_SS = 1;
+  65   1          SPI_Delay();
+  66   1      }
+  67          
+  68          /* LCD API: 写入数据 */
+  69          void LCD_DataWrite(unsigned char Data)
+  70          {
+  71   1          SPI_SCK  = 1;
+  72   1          SPI_MISO = 1;
+  73   1          SPI_MOSI = 1;
+  74   1          SPI_SS   = 0;
+  75   1          SPI_SendByte(0x80);
+  76   1          SPI_SendByte(Data);
+  77   1          SPI_Delay();
+  78   1          SPI_SS = 1;
+  79   1          SPI_Delay();
+  80   1      }
+  81          
+  82          /* LCD API: 读取数据 */
+  83          unsigned char LCD_DataRead(void)
+  84          {
+  85   1          unsigned char Data;
+  86   1      
+  87   1          SPI_SCK  = 1;
+  88   1          SPI_MISO = 1;
+  89   1          SPI_MOSI = 1;
+  90   1          SPI_SS   = 0;
+  91   1          SPI_SendByte(0xc0);
+  92   1          Data = SPI_ReceiveByte();
+  93   1          SPI_Delay();
+  94   1          SPI_SS = 1;
+  95   1      
+  96   1          return Data;
+  97   1      }
+  98          
+  99          /* LCD API: 读取芯片状态 */
+ 100          unsigned char LCD_StatusRead(void)
+ 101          {
+ 102   1          unsigned char Data;
+ 103   1      
+ 104   1          SPI_SCK  = 1;
+ 105   1          SPI_MISO = 1;
+ 106   1          SPI_MOSI = 1;
+ 107   1          SPI_SS   = 0;
+ 108   1          SPI_Delay();
+ 109   1          SPI_SendByte(0x40);
+ 110   1          Data = SPI_ReceiveByte();
+ 111   1          SPI_Delay();
+ 112   1          SPI_SS = 1;
+ 113   1      
+ 114   1          return Data;
+ 115   1      }
+
+C51 COMPILER V9.55   SPI4                                                                  05/28/2024 13:45:40 PAGE 3   
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    166    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,108 @@
+C51 COMPILER V9.55   MCU_DEV_BOARD                                                         07/15/2024 22:22:17 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE MCU_DEV_BOARD
+OBJECT MODULE PLACED IN .\Objects\MCU_Dev_Board.obj
+COMPILER INVOKED BY: D:\Program Files\Keil_v5\C51\BIN\C51.EXE MCU_Dev_Board.c COMPACT OMF2 ROM(COMPACT) OPTIMIZE(9,SPEED
+                    -) BROWSE INCDIR(.\RA8889_01_Kernel) DEBUG PRINT(.\Listings\MCU_Dev_Board.lst) TABS(2) OBJECT(.\Objects\MCU_Dev_Board.obj
+                    -)
+
+line level    source
+
+   1          #include "MCU_Dev_Board.h"
+   2          #include "UserDef.h"
+   3          #include "RA8889_MCU_IF.h"
+   4          #include "delay.h"
+   5          
+   6          
+   7          /*****************************************************************
+   8            * @brief  闪烁LED1
+   9            * @param  无
+  10            * @retval 无
+  11            * @note   
+  12            ****************************************************************/
+  13          void LED1_FLASH(void)
+  14          {
+  15   1        LED1_ON;
+  16   1        delay_ms(50);
+  17   1        LED1_OFF;
+  18   1        delay_ms(50);
+  19   1        LED1_ON;
+  20   1        delay_ms(50);
+  21   1        LED1_OFF;
+  22   1        delay_ms(1000);
+  23   1      }
+  24          
+  25          
+  26          /*****************************************************************
+  27            * @brief  闪烁LED2
+  28            * @param  无
+  29            * @retval 无
+  30            * @note   
+  31            ****************************************************************/
+  32          void LED2_FLASH(void)
+  33          {
+  34   1        LED2_ON;
+  35   1        delay_ms(50);
+  36   1        LED2_OFF;
+  37   1        delay_ms(50);
+  38   1        LED2_ON;
+  39   1        delay_ms(50);
+  40   1        LED2_OFF;
+  41   1        delay_ms(1000);
+  42   1      }
+  43          
+  44          
+  45          /*****************************************************************
+  46            * @brief  读写RA8889寄存器测试函数
+  47            * @param  无
+  48            * @retval 无
+  49            * @note   用于检测通信接口是否正常，正常时闪烁LED灯指示
+  50            ****************************************************************/
+  51          void Comm_Test(void)
+  52          {
+  53   1        unsigned char temp;
+C51 COMPILER V9.55   MCU_DEV_BOARD                                                         07/15/2024 22:22:17 PAGE 2   
+
+  54   1      
+  55   1        while (1) 
+  56   1        {
+  57   2          // 寄存器写入
+  58   2          LCD_CmdWrite(0xAD);   //指定寄存器0xAD
+  59   2          LCD_DataWrite(0xA5);  //写入数据0xA5
+  60   2      
+  61   2          // 寄存器读回
+  62   2          LCD_CmdWrite(0xAD);
+  63   2          temp = LCD_DataRead();
+  64   2      
+  65   2          if (temp == 0xA5) 
+  66   2          {
+  67   3            LED2_ON;
+  68   3            delay_ms(50);
+  69   3            LED2_OFF;
+  70   3            delay_ms(50);
+  71   3            LED2_ON;
+  72   3            delay_ms(50);
+  73   3            LED2_OFF;
+  74   3            delay_ms(500);
+  75   3          }
+  76   2        }
+  77   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    126    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

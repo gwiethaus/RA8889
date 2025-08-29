@@ -1,0 +1,573 @@
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 1   
+
+
+C51 COMPILER V9.55, COMPILATION OF MODULE W25N01GV
+OBJECT MODULE PLACED IN .\Objects\W25N01GV.obj
+COMPILER INVOKED BY: D:\Program Files\Keil_v5\C51\BIN\C51.EXE RA8889_01_Kernel\W25N01GV.c LARGE OMF2 OPTIMIZE(9,SPEED) B
+                    -ROWSE INCDIR(.\RA8889_01_Kernel) DEBUG PRINT(.\Listings\W25N01GV.lst) TABS(2) OBJECT(.\Objects\W25N01GV.obj)
+
+line level    source
+
+   1          
+   2          //**************************************************************//
+   3          /*
+   4          File Name : W25N01GV.c                                   
+   5          Author    : RAiO Application Team                             
+   6          Edit Date : 02/05/2016
+   7          Version   : v1.0
+   8          Note: 
+   9          
+  10          */
+  11          //**************************************************************//
+  12          #include "stdio.h"
+  13          #include "UserDef.h"
+  14          #include "RA8889_51.h"
+  15          #include "RA8889_MCU_IF.h"
+  16          #include "W25N01GV.h"
+  17          #include "delay.h"
+  18          
+  19          unsigned char LUT_list[100];
+  20          unsigned char Buffer_Page[2048];
+  21          
+  22          //**************************************************************//
+  23          //write enable
+  24          //**************************************************************//
+  25          void W25N01_Write_Enable(void)
+  26          {
+  27   1        nSS_Active();
+  28   1        SPI_Master_FIFO_Data_Put(0x06);
+  29   1        nSS_Inactive();
+  30   1      }
+  31          //**************************************************************//
+  32          //write disable
+  33          //**************************************************************//
+  34          void W25N01_Write_Disable(void)
+  35          {
+  36   1        nSS_Active();
+  37   1        SPI_Master_FIFO_Data_Put(0x04);
+  38   1        nSS_Inactive(); 
+  39   1      }
+  40          
+  41          //**************************************************************//
+  42          //check write enable latch bit   //1: write latch  //0: no latch
+  43          //**************************************************************//
+  44          unsigned char W25N01_Check_WEL(void)
+  45          {
+  46   1        unsigned char temp;
+  47   1       
+  48   1        temp = W25N01_Read_Status_Register3();
+  49   1       
+  50   1        if((temp&0x02)==0x02)
+  51   1        return 1;
+  52   1        else 
+  53   1        return 0; 
+  54   1      }
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 2   
+
+  55          //**************************************************************//
+  56          //**************************************************************//
+  57          void W25N01_Device_Reset(void)
+  58          {
+  59   1        //delay for power on
+  60   1        delay_ms(1);
+  61   1        
+  62   1        nSS_Active();
+  63   1        SPI_Master_FIFO_Data_Put(0xFF); 
+  64   1        nSS_Inactive();
+  65   1        
+  66   1        //delay for reset
+  67   1        delay_ms(1);
+  68   1      }
+  69          //**************************************************************//
+  70          //**************************************************************//
+  71          void W25N01_Read_JEDEC_ID(unsigned char *manufacturer_id,unsigned short *device_id)
+  72          {
+  73   1        unsigned short temp;
+  74   1      
+  75   1        nSS_Active();
+  76   1        SPI_Master_FIFO_Data_Put(0x9F); 
+  77   1        SPI_Master_FIFO_Data_Put(0xFF);
+  78   1      
+  79   1        *manufacturer_id = SPI_Master_FIFO_Data_Put(0xff);
+  80   1        temp=SPI_Master_FIFO_Data_Put(0xff);
+  81   1        temp<<=8;
+  82   1        temp&=0xff00;
+  83   1        temp|=SPI_Master_FIFO_Data_Put(0xff);
+  84   1        nSS_Inactive();
+  85   1      
+  86   1        *device_id = temp;
+  87   1      
+  88   1      }
+  89          //**************************************************************//
+  90          //**************************************************************//
+  91          unsigned char W25N01_Read_Status_Register1(void)
+  92          {
+  93   1        unsigned char temp;
+  94   1        
+  95   1        nSS_Active();
+  96   1        SPI_Master_FIFO_Data_Put(0x0F);
+  97   1        SPI_Master_FIFO_Data_Put(0xA0);
+  98   1        delay_ms(1);
+  99   1        temp=SPI_Master_FIFO_Data_Put(0xff);//dummy cycle and read back value 
+ 100   1        nSS_Inactive();
+ 101   1        
+ 102   1        return(temp);
+ 103   1      }
+ 104          
+ 105          //**************************************************************//
+ 106          //**************************************************************//
+ 107          unsigned char W25N01_Read_Status_Register2(void)
+ 108          {
+ 109   1        unsigned char temp;
+ 110   1      
+ 111   1        nSS_Active();
+ 112   1        SPI_Master_FIFO_Data_Put(0x0F);
+ 113   1        SPI_Master_FIFO_Data_Put(0xB0);
+ 114   1        delay_ms(1);
+ 115   1        temp=SPI_Master_FIFO_Data_Put(0xff);//dummy cycle and read back value 
+ 116   1        nSS_Inactive();
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 3   
+
+ 117   1        
+ 118   1        return(temp);
+ 119   1      }
+ 120          //**************************************************************//
+ 121          //**************************************************************//
+ 122          unsigned char W25N01_Read_Status_Register3(void)
+ 123          {
+ 124   1        unsigned char temp;
+ 125   1      
+ 126   1        nSS_Active();
+ 127   1        SPI_Master_FIFO_Data_Put(0x0F);
+ 128   1        SPI_Master_FIFO_Data_Put(0xC0);
+ 129   1        delay_ms(1);
+ 130   1        temp=SPI_Master_FIFO_Data_Put(0xff);//dummy cycle and read back value 
+ 131   1        nSS_Inactive();
+ 132   1        
+ 133   1        return(temp);
+ 134   1      }
+ 135          
+ 136          //**************************************************************//
+ 137          //**************************************************************//
+ 138          void W25N01_Write_Status_Register1(unsigned char Reg_data)
+ 139          {
+ 140   1        W25N01_Write_Enable();
+ 141   1        nSS_Active();
+ 142   1        SPI_Master_FIFO_Data_Put(0x1F);
+ 143   1        SPI_Master_FIFO_Data_Put(0xA0);
+ 144   1        SPI_Master_FIFO_Data_Put(Reg_data); 
+ 145   1        nSS_Inactive();
+ 146   1        
+ 147   1      }
+ 148          //**************************************************************//
+ 149          //**************************************************************//
+ 150          void W25N01_Write_Status_Register2(unsigned char Reg_data)
+ 151          {
+ 152   1      
+ 153   1        W25N01_Write_Enable();
+ 154   1        nSS_Active();
+ 155   1        SPI_Master_FIFO_Data_Put(0x1F);
+ 156   1        SPI_Master_FIFO_Data_Put(0xB0);
+ 157   1        SPI_Master_FIFO_Data_Put(Reg_data); 
+ 158   1        nSS_Inactive();
+ 159   1        
+ 160   1      }
+ 161          //**************************************************************//
+ 162          //**************************************************************//
+ 163          void W25N01_Write_Status_Register3(unsigned char Reg_data)
+ 164          {
+ 165   1      
+ 166   1        W25N01_Write_Enable();
+ 167   1        nSS_Active();
+ 168   1        SPI_Master_FIFO_Data_Put(0x1F);
+ 169   1        SPI_Master_FIFO_Data_Put(0xC0);
+ 170   1        SPI_Master_FIFO_Data_Put(Reg_data); 
+ 171   1        nSS_Inactive();
+ 172   1        
+ 173   1      }
+ 174          
+ 175          //**************************************************************//
+ 176          //return 1 = BUSY
+ 177          //**************************************************************//
+ 178          unsigned char W25N01_Check_Flash_Busy(void)
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 4   
+
+ 179          { 
+ 180   1        unsigned char temp;
+ 181   1        temp=W25N01_Read_Status_Register3();
+ 182   1        temp&=0x01;
+ 183   1      
+ 184   1        if(temp==0x01)
+ 185   1        return 1;
+ 186   1        else
+ 187   1        return 0; 
+ 188   1      }
+ 189          //**************************************************************//
+ 190          //**************************************************************//
+ 191          void W25N01_Clear_BUF(void)
+ 192          { 
+ 193   1        unsigned char temp;
+ 194   1      
+ 195   1        temp=W25N01_Read_Status_Register2();
+ 196   1        temp&=0xf7;
+ 197   1        W25N01_Write_Status_Register2(temp);
+ 198   1        delay_ms(1);
+ 199   1      }
+ 200          //**************************************************************//
+ 201          //**************************************************************//
+ 202          void W25N01_Set_ECC(void)
+ 203          { 
+ 204   1        unsigned char temp;
+ 205   1      
+ 206   1        temp=W25N01_Read_Status_Register2();
+ 207   1        temp|=0x10;
+ 208   1        W25N01_Write_Status_Register2(temp);
+ 209   1        delay_ms(1);
+ 210   1      }
+ 211          //**************************************************************//
+ 212          //**************************************************************//
+ 213          unsigned short W25N01_Factory_Check_Bad_Blocks(unsigned char Buffer_Page[] )
+ 214          {
+ 215   1        unsigned int i,j,pageAddr;
+ 216   1        unsigned char first_byte_data;
+ 217   1       
+ 218   1        j=0;
+ 219   1        for(i=0;i<1024;i++) //reserved last 24 block for BBM LUT
+ 220   1        {
+ 221   2      
+ 222   2        //delay_ms(1); //delay
+ 223   2        while(W25N01_Check_Flash_Busy());
+ 224   2      
+ 225   2          nSS_Active();
+ 226   2          SPI_Master_FIFO_Data_Put(0x13);  //page data read(13h)
+ 227   2          SPI_Master_FIFO_Data_Put(0x00);  //8Dummy clock
+ 228   2       
+ 229   2        pageAddr = i*64;
+ 230   2      
+ 231   2        SPI_Master_FIFO_Data_Put(pageAddr>>8);   //page address MSB
+ 232   2        SPI_Master_FIFO_Data_Put(pageAddr);   //page address LSB
+ 233   2          nSS_Inactive();
+ 234   2      
+ 235   2        delay_ms(1); //delay for buffer load
+ 236   2      
+ 237   2        //read data (03h)
+ 238   2          nSS_Active();
+ 239   2          SPI_Master_FIFO_Data_Put(0x03);
+ 240   2        SPI_Master_FIFO_Data_Put(0xff);
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 5   
+
+ 241   2        SPI_Master_FIFO_Data_Put(0xff);
+ 242   2        SPI_Master_FIFO_Data_Put(0xff);
+ 243   2        
+ 244   2        first_byte_data=SPI_Master_FIFO_Data_Put(0xff);
+ 245   2        
+ 246   2          nSS_Inactive();
+ 247   2      
+ 248   2          
+ 249   2              
+ 250   2        //Check bad block
+ 251   2        if(first_byte_data!=0xff) 
+ 252   2          {
+ 253   3          Buffer_Page[j]=i>>8;
+ 254   3          Buffer_Page[j+1]=i;
+ 255   3      
+ 256   3      //    Buffer_Page[j]=0x00;
+ 257   3      //    Buffer_Page[j+1]=first_byte_data;
+ 258   3      
+ 259   3          j=j+2;
+ 260   3        }    
+ 261   2      
+ 262   2        }
+ 263   1        if(j==0)
+ 264   1          return 0;
+ 265   1        else
+ 266   1          return j;
+ 267   1      } 
+ 268          
+ 269          //**************************************************************//
+ 270          //**************************************************************//
+ 271          //this function only use for first time check bad block in factory 
+ 272          void W25N01_Find_Bad_Block(void)
+ 273          {
+ 274   1        unsigned short i,j;
+ 275   1        unsigned long pageAddr;
+ 276   1        unsigned char first_byte_data;
+ 277   1        j=0;
+ 278   1         for(i=0;i<1000;i++) //reserved last 24 block for BBM LUT
+ 279   1         {
+ 280   2           //page data read(13h)
+ 281   2           nSS_Active();
+ 282   2           SPI_Master_FIFO_Data_Put(0x13);
+ 283   2         SPI_Master_FIFO_Data_Put(0xff);   //8Dummy clock
+ 284   2      
+ 285   2           pageAddr = i*64;
+ 286   2           SPI_Master_FIFO_Data_Put(pageAddr>>8);   //page address MSB  
+ 287   2         SPI_Master_FIFO_Data_Put(pageAddr);   //page address LSB
+ 288   2           nSS_Inactive();  
+ 289   2             
+ 290   2         delay_ms(1); //delay for buffer load
+ 291   2      
+ 292   2           //read data (03h)
+ 293   2           nSS_Active();
+ 294   2           SPI_Master_FIFO_Data_Put(0x03);
+ 295   2           SPI_Master_FIFO_Data_Put(0xff);   //8Dummy clock
+ 296   2           SPI_Master_FIFO_Data_Put(0xff);   //8Dummy clock
+ 297   2           SPI_Master_FIFO_Data_Put(0xff);   //8Dummy clock
+ 298   2      
+ 299   2           first_byte_data=SPI_Master_FIFO_Data_Put(0xff);
+ 300   2             
+ 301   2           //Check bad block
+ 302   2           if(first_byte_data==0xff)
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 6   
+
+ 303   2           {
+ 304   3           printf("%u",i); 
+ 305   3           printf(" good block"); 
+ 306   3           printf("%x",first_byte_data);
+ 307   3           }    
+ 308   2         else
+ 309   2         {
+ 310   3             printf("%u",i); 
+ 311   3           printf(" bad block"); 
+ 312   3           printf("%x",first_byte_data);
+ 313   3           j++;
+ 314   3         }
+ 315   2      
+ 316   2        }
+ 317   1        printf("%u",j); 
+ 318   1        printf(" bad block!");
+ 319   1      }
+ 320          
+ 321          //**************************************************************//
+ 322          //**************************************************************//
+ 323          void W25N01_Read_BBM_LUT(unsigned char *LUT_list)
+ 324          {
+ 325   1      
+ 326   1        unsigned char i;
+ 327   1      
+ 328   1      
+ 329   1        nSS_Active();
+ 330   1        SPI_Master_FIFO_Data_Put(0xA5);
+ 331   1        SPI_Master_FIFO_Data_Put(0xFF);  //8Dummy clock
+ 332   1         
+ 333   1        for(i=0; i<20;i++)
+ 334   1        {
+ 335   2        *LUT_list = i;
+ 336   2        LUT_list++;
+ 337   2        *LUT_list = SPI_Master_FIFO_Data_Put(0xFF);//
+ 338   2        LUT_list++; 
+ 339   2        *LUT_list = SPI_Master_FIFO_Data_Put(0xFF);//
+ 340   2        LUT_list++;
+ 341   2        
+ 342   2      
+ 343   2        *LUT_list = SPI_Master_FIFO_Data_Put(0xFF);// 
+ 344   2        LUT_list++;
+ 345   2      
+ 346   2          if(i==19) //for finish the cycle and set scs to high
+ 347   2        {
+ 348   3            *LUT_list = SPI_Master_FIFO_Data_Put(0xFF);//
+ 349   3            LUT_list++;
+ 350   3          nSS_Inactive();
+ 351   3        }
+ 352   2        else
+ 353   2        {
+ 354   3          *LUT_list = SPI_Master_FIFO_Data_Put(0xFF);//
+ 355   3          LUT_list++;
+ 356   3        }
+ 357   2       
+ 358   2        }
+ 359   1      }
+ 360          
+ 361          
+ 362          
+ 363          
+ 364          //**************************************************************//
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 7   
+
+ 365          //**************************************************************//
+ 366          void W25N01_Disable_Block_Protect(void)
+ 367          {
+ 368   1        W25N01_Write_Status_Register1(0x00);
+ 369   1      }
+ 370          
+ 371          //**************************************************************//
+ 372          //flash block erase 
+ 373          //pageAddress:  input (0~1023)*64 page address
+ 374          //return: 1  fail
+ 375          //return: 0  pass
+ 376          //(64-Pages,128K-Bytes)
+ 377          //**************************************************************//
+ 378          unsigned char W25N01_Block_Erase_128KB(unsigned short pageAddress)
+ 379          {   
+ 380   1        unsigned short h;
+ 381   1          
+ 382   1        W25N01_Write_Enable();
+ 383   1        if(W25N01_Check_WEL()==0) //if WEL=1,write enable fail
+ 384   1        {
+ 385   2      
+ 386   2          return 1 ;
+ 387   2        }
+ 388   1        nSS_Active();
+ 389   1        SPI_Master_FIFO_Data_Put(0xD8);
+ 390   1        SPI_Master_FIFO_Data_Put(0xFF);  //8Dummy clock     
+ 391   1        SPI_Master_FIFO_Data_Put(pageAddress>>8);
+ 392   1        SPI_Master_FIFO_Data_Put(pageAddress);
+ 393   1        nSS_Inactive();
+ 394   1      
+ 395   1        delay_ms(1);
+ 396   1      
+ 397   1        h=0;
+ 398   1        while(W25N01_Check_Flash_Busy()&&(h<10))
+ 399   1        {
+ 400   2          //Block erase time max  10ms
+ 401   2        delay_ms(1);
+ 402   2        h++;
+ 403   2        }
+ 404   1        if(h>10)
+ 405   1        {
+ 406   2        return 1;
+ 407   2        }
+ 408   1        return 0;
+ 409   1      }
+ 410          
+ 411          //**************************************************************//
+ 412          //whole flash erase 
+ 413          //return: 1  error
+ 414          //return: 0  done
+ 415          //**************************************************************//
+ 416          unsigned char W25N01_Whole_Flash_Erase(void)
+ 417          {
+ 418   1        unsigned short i;
+ 419   1        
+ 420   1        
+ 421   1        for(i=0;i<1000;i++) //use 1024 of the block to program
+ 422   1        {
+ 423   2          if(W25N01_Block_Erase_128KB(i*64))
+ 424   2        {
+ 425   3      
+ 426   3          return 1;
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 8   
+
+ 427   3        }
+ 428   2        }
+ 429   1      
+ 430   1        return 0;
+ 431   1      }
+ 432          
+ 433          //**************************************************************//
+ 434          //Load data in 2k data buffer
+ 435          //lenght: page lenght
+ 436          //*UpdataValue: data pointer
+ 437          //**************************************************************//
+ 438          void W25N01_Load_Program_Data(unsigned short lenght,unsigned char *UpdataValue)
+ 439          { 
+ 440   1        unsigned short i ;
+ 441   1      
+ 442   1        W25N01_Write_Enable();
+ 443   1        
+ 444   1        nSS_Active();
+ 445   1        SPI_Master_FIFO_Data_Put(0x02);
+ 446   1        SPI_Master_FIFO_Data_Put(0x00);     
+ 447   1        SPI_Master_FIFO_Data_Put(0x00);
+ 448   1        
+ 449   1        for(i=0;i<lenght;i++)
+ 450   1        {
+ 451   2          SPI_Master_FIFO_Data_Put(UpdataValue[i]);
+ 452   2        
+ 453   2        } 
+ 454   1        
+ 455   1        nSS_Inactive();
+ 456   1      
+ 457   1        while(W25N01_Check_Flash_Busy());
+ 458   1      }
+ 459          
+ 460          //**************************************************************//
+ 461          //program data buffer content into the physical memory page 
+ 462          //**************************************************************//
+ 463          void W25N01_Program_Execute(unsigned short pageAddress)
+ 464          {
+ 465   1        W25N01_Write_Enable();
+ 466   1        nSS_Active();
+ 467   1        SPI_Master_FIFO_Data_Put(0x10);
+ 468   1        SPI_Master_FIFO_Data_Put(0xff); //8 Dummy clocks
+ 469   1        SPI_Master_FIFO_Data_Put(pageAddress>>8);
+ 470   1        SPI_Master_FIFO_Data_Put(pageAddress);
+ 471   1        nSS_Inactive();
+ 472   1          
+ 473   1        while(W25N01_Check_Flash_Busy());
+ 474   1      }
+ 475          
+ 476          //**************************************************************//
+ 477          //**************************************************************//
+ 478          void W25N01_Read_PageSize(unsigned short pageAddr)
+ 479          {
+ 480   1        unsigned short i=0;
+ 481   1      
+ 482   1          nSS_Active();
+ 483   1          SPI_Master_FIFO_Data_Put(0x13);  //page data read(13h)
+ 484   1          SPI_Master_FIFO_Data_Put(0x00);  //8Dummy clock
+ 485   1        SPI_Master_FIFO_Data_Put(pageAddr>>8);   //page address MSB
+ 486   1        SPI_Master_FIFO_Data_Put(pageAddr);   //page address LSB
+ 487   1          nSS_Inactive();
+ 488   1      
+C51 COMPILER V9.55   W25N01GV                                                              05/31/2024 15:39:38 PAGE 9   
+
+ 489   1        //delay_ms(1); //delay for buffer load
+ 490   1        while(W25N01_Check_Flash_Busy());
+ 491   1      
+ 492   1        //read data (03h)
+ 493   1          nSS_Active();
+ 494   1          SPI_Master_FIFO_Data_Put(0x03);
+ 495   1        SPI_Master_FIFO_Data_Put(0xff);
+ 496   1        SPI_Master_FIFO_Data_Put(0xff);
+ 497   1        SPI_Master_FIFO_Data_Put(0xff);
+ 498   1        for(i=0; i<2048; i++)
+ 499   1          Buffer_Page[i]=SPI_Master_FIFO_Data_Put(0xff);
+ 500   1          nSS_Inactive();
+ 501   1      
+ 502   1            
+ 503   1      }
+ 504          //**************************************************************//
+ 505          //**************************************************************//
+ 506          void W25N01_Swap_Block(unsigned short BadBlockAddr, unsigned short GoodBlockAddr)
+ 507          {
+ 508   1        unsigned short temp;
+ 509   1      
+ 510   1        //Write LBA-->PBA
+ 511   1      
+ 512   1        W25N01_Write_Enable();
+ 513   1      
+ 514   1        nSS_Active();
+ 515   1        SPI_Master_FIFO_Data_Put(0xA1);
+ 516   1        temp = BadBlockAddr | 0x8000;
+ 517   1      
+ 518   1        SPI_Master_FIFO_Data_Put(temp>>8);
+ 519   1        SPI_Master_FIFO_Data_Put(temp);
+ 520   1                       
+ 521   1        temp = GoodBlockAddr;
+ 522   1      
+ 523   1        SPI_Master_FIFO_Data_Put(temp>>8);
+ 524   1        SPI_Master_FIFO_Data_Put(temp);
+ 525   1        nSS_Inactive();
+ 526   1                     
+ 527   1        while(W25N01_Check_Flash_Busy());
+ 528   1      
+ 529   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1673    ----
+   CONSTANT SIZE    =     41    ----
+   XDATA SIZE       =   2148      62
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
