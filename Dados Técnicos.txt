@@ -1,0 +1,57 @@
+Legandas
+--------
+
+I/F                                 Interface
+MCU                                 Microcontroller Unit
+MPU                                 Microprocessor Unit
+
+Significado do x na configuração de bits
+----------------------------------------
+
+  Nos bits indicados em um datasheet o x representa “don’t care” (não importa o valor).
+  Isso significa que qualquer valor não irá afetar o registrador.
+  
+  bits [7-6]: 0x: O valor do bit 7 deve ser zero e o valor do bit 6 pode ser qualquer valor
+              x1: O valor do bit 7 pode ser qulquer valor e o valor do bit 6 deve ser 1.
+
+MCU e MPU
+---------
+
+Diferença entre MCU e MPU:
+
+  MCU (Microcontroller Unit) → um chip que já tem CPU, memória, periféricos integrados (ex: Arduino, ESP32, STM32, etc.).
+  
+  MPU (Microprocessor Unit) → apenas o processador, sem memória nem periféricos integrados (ex: ARM Cortex-A, Intel 8086, Z80).
+  
+  Ou seja, em teoria:
+  
+    - MCU = processador + memória + periféricos.
+    - MPU = só o processador.
+
+Por que os datasheets de controladores de LCD usam "MPU I/F"?
+
+  Porque historicamente os primeiros controladores gráficos eram pensados para 
+  conversar com microprocessadores externos (MPUs), como 8080, 6800, Z80…
+  
+  Então os fabricantes padronizaram o termo MPU Interface (MPU I/F) para 
+  indicar a interface paralela ou serial de barramento que o chip expõe para 
+  ser controlado.
+  
+  Na prática, hoje em dia a maioria das pessoas conecta MCUs (ex.: STM32, 
+  ESP32, PIC, etc.), mas os datasheets continuam usando “MPU I/F” por tradição,
+  porque:
+  
+    - a interface é genérica (pode ser usada tanto por um MCU quanto por um MPU),
+    - mantém compatibilidade com documentação e padrões antigos.
+
+Nota sobre nomenclatura "MPU I/F" vs "MCU I/F":
+  
+  Em datasheets de controladores gráficos (como RA8875, RA8889), a interface de
+  barramento com o host é chamada de "MPU I/F" (Microprocessor Unit Interface).
+  
+  Historicamente, esses chips foram projetados para trabalhar com MPUs clássicos
+  (ex.: Intel 8080, Motorola 6800, Z80), por isso o termo "MPU" virou padrão.
+  Na prática atual, a interface é usada quase sempre com MCUs (microcontroladores
+  como STM32, ESP32, PIC, etc.). Portanto, "MPU I/F" e "MCU I/F" podem ser lidos
+  como equivalentes — o nome "MPU I/F" é apenas um legado histórico.
+

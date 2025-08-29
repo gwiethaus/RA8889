@@ -32,7 +32,7 @@ Panel_RA8889 gfx(LCD_CS, LCD_RESET);
 void setup() {
   
   gfx.init();
-  gfx.DisplayOn(true);
+  gfx.DisplayOn(true);  //esta funcao nao seria necessaria, pois init() já inicializa o display no modo grafico
 
 }
 

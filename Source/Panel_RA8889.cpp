@@ -66,30 +66,35 @@ uint8_t Panel_RA8889::init(void) {
   
   //Funcao aberta de void ER_TFTBasic::initial(void)
   //colcoar aqui abaixo as partes  
-  PLL_ConfigClocks();                 //Configura clock Pixel/SDRAM/Core PLL
+  PLL_ConfigClocks();                          //Configura clock Pixel/SDRAM/Core PLL
   
-  SDRAM_Init();                       //Inicializa a SDRAM
+  SDRAM_Init();                                //Inicializa a SDRAM
   
 //Descomentar a medida que as funcoes vao ficando pronta  
 
 //Chip Configuration Register (CCR) [01h]
 
-//  ER_TFT.TFT_16bit();
-//  ER_TFT.Host_Bus_16bit(); //Host bus 16bit
+  TFT_16bit();
+  HostDataBus_Select_16bit();                  //Host bus 16bit
       
 //Memory Access Control Register (MACR) [02h]
 
-//  ER_TFT.RGB_16b_16bpp();
-//  ER_TFT.MemWrite_Left_Right_Top_Down(); 
-      
+  HostColorDepthFormat(0);                     //Host MPU/MCU I/F 8/16 bits color depth 8/16/24 mode 1
+  HostReadMemoryDirection(MemoryDirection::LeftRight_TopBotom);
+
 //Input Control Register (ICR) [03h]
 
   GraphicMode();
   Memory_Select_SDRAM();
 
+//Display Configuration Register (DPCR) [12h]
+
 //  ER_TFT.HSCAN_L_to_R();     //REG[12h]:from left to right
 //  ER_TFT.VSCAN_T_to_B();       //REG[12h]:from top to bottom
 //  ER_TFT.PDATA_Set_RGB();        //REG[12h]:Select RGB output
+
+
+
 
 //  ER_TFT.Set_PCLK(LCD_PCLK_Falling_Rising);   //LCD_PCLK_Falling_Rising
 //  ER_TFT.Set_HSYNC_Active(LCD_HSYNC_Active_Polarity);
@@ -136,6 +141,16 @@ void Panel_RA8889::GraphicMode(void)
   temp = SPI_DataRead();
   temp &= cClrb2;         //desliga o bit 2, ativando modo grafico
   SPI_DataWrite(temp);
+}
+
+//Verifica se o modo grafico está ativo
+//false: modo texto
+//true: modo grafico 
+bool Panel_RA8889::GraphicMode(void){
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);  //0x03
+  temp = SPI_DataRead();
+  return ((temp == cSetb2) == 0x00);      //Veja se o bit 2 está desligado
 }
 
 //Passa o display para modo texto
@@ -277,6 +292,7 @@ void Panel_RA8889::HardwareReset(void)
   digitalWrite(_rst, HIGH);
   delay(500);
 }
+
 
 //================================================================================
 // Funcoes PLL
@@ -565,17 +581,280 @@ void Panel_RA8889::SDRAM_Init(void)
 }
 
 
+//================================================================================
+// [0x01] Chip Configuration Register (CCR)
+//================================================================================
+
+/**
+ * @brief Configuração do pino de saída 24-bits da interface (I/F) do painel TFT
+ *
+ * Escreve no registrador 0x01 Chip Configuration Register (CCR)
+ *   bit [4-3]
+ *   00b: Saída TFT 24-bits
+ *   01b: Saída TFT 18-bits
+ *   10b: Saída TFT 16-bits
+ *   11b: Sem Nenhuma Saída TFT
+ * 
+ * Outros pinos de saída TFT não utilizados são definidos como GPIO ou função de tecla.
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::TFT_24bit(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = SPI_DataRead();
+  temp &= cClrb4;                              //Reset bit 4
+  temp &= cClrb3;                              //Reset bit 3
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Configuração do pino de saída 18-bits da interface (I/F) do painel TFT
+ *
+ * Escreve no registrador 0x01 Chip Configuration Register (CCR)
+ *   bit [4-3]
+ *   00b: Saída TFT 24-bits
+ *   01b: Saída TFT 18-bits
+ *   10b: Saída TFT 16-bits
+ *   11b: Sem Nenhuma Saída TFT
+ * 
+ * Outros pinos de saída TFT não utilizados são definidos como GPIO ou função de tecla.
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::TFT_18bit(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = SPI_DataRead();
+  temp &= cClrb4;                              //Reset bit 4
+  temp |= cSetb3;                              //Set bit 3
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Configuração do pino de saída 18-bits da interface (I/F) do painel TFT
+ *
+ * Escreve no registrador 0x01 Chip Configuration Register (CCR)
+ *   bit [4-3]
+ *   00b: Saída TFT 24-bits
+ *   01b: Saída TFT 18-bits
+ *   10b: Saída TFT 16-bits
+ *   11b: Sem Nenhuma Saída TFT
+ * 
+ * Outros pinos de saída TFT não utilizados são definidos como GPIO ou função de tecla.
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::TFT_16bit(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = SPI_DataRead();
+  temp |= cSetb4;                              //Set bit 4
+  temp &= cClrb3;                              //Reset bit 3 
+  SPI_DataWrite(temp);
+}
+
+/**
+ * @brief Configuração do pino sem nenhuma saída interface (I/F) do painel TFT
+ *
+ * Desativa o uso de interface do painel de TFT
+ *
+ * Escreve no registrador 0x01 Chip Configuration Register (CCR)
+ *   bit [4-3]
+ *   00b: Saída TFT 24-bits
+ *   01b: Saída TFT 18-bits
+ *   10b: Saída TFT 16-bits
+ *   11b: Sem Nenhuma Saída TFT
+ * 
+ * Outros pinos de saída TFT não utilizados são definidos como GPIO ou função de tecla.
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::TFT_Without(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = SPI_DataRead();
+  temp |= cSetb4;                              //Set bit 4
+  temp |= cSetb3;                              //Set bit 3
+  SPI_DataWrite(temp);
+}
+
+/**
+ * @brief Configuração do pino de saída de interface (I/F) do painel TFT
+ *
+ * Escreve no registrador 0x01 Chip Configuration Register (CCR)
+ *   bit [4-3]
+ *   00b: Saída TFT 24-bits
+ *   01b: Saída TFT 18-bits
+ *   10b: Saída TFT 16-bits
+ *   11b: Sem Nenhuma Saída TFT
+ * 
+ * Outros pinos de saída TFT não utilizados são definidos como GPIO ou função de tecla.
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::TFT_SetInterface(TFTInterface mode)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR);                 //0x01, Chip Configuration Register (CCR) 
+  temp = SPI_DataRead();
+  temp &= ( cClrb4 & cClrb3);            //Limpa bits 4 e 3
+  temp |= static_cast<uint8_t>(mode);    //Converte enum para uint8_t
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Parallel Host Data Bus 8-bit Width Selection
+ *
+ * Escreve no registrador 0x01 Chip Configuration Register (CCR)
+ *   bit [0]
+ *   0b: 8-bit Parallel Host Data Bus
+ *   1b: 16-bit Parallel Host Data Bus
+ *
+ * @param None
+ *
+ * @note Uso em MCU de 16-bit com: 
+ *         - color depth 8-bpp
+ *         - color depth 16-bpp
+ *         - color depth 24-bpp
+ */
+void Panel_RA8889::HostDataBus_Select_8bit(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(0x01);                          //0x01, Chip Configuration Register (CCR) 
+  temp = SI_LCD_DataRead();
+  temp &= cClrb0;                              //Reset bit 0
+  SPI_DataWrite(temp);
+}
+
+/**
+ * @brief Parallel Host Data Bus 16-bit Width Selection
+ *
+ * Escreve no registrador 0x01 Chip Configuration Register (CCR)
+ *   bit [0]
+ *   0b: 8-bit Parallel Host Data Bus
+ *   1b: 16-bit Parallel Host Data Bus
+ *
+ * @param None
+ *
+ * @note Uso em MCU de 16-bit com: 
+ *         - color depth 16-bpp
+ *         - color depth 24-bpp Mode 1
+ *         - color depth 24-bpp Mode 2
+ */
+void Panel_RA8889::HostDataBus_Select_16bit(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(0x01);                          //0x01, Chip Configuration Register (CCR) 
+  temp = SI_LCD_DataRead();
+  temp |= cSetb0;                              //Set bit 0
+  SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+// [0x02] Memory Access Control Register (MACR)
+//================================================================================
+
+
+/**
+ * @brief Host Read/Write Image Data Format
+ *        MPU/MCU read/write data format when access memory data port.      
+ *        
+ *        Data format setting: MCU interface, color depth
+ *
+ *        bit [7-6] Direct write
+ *        0b0x: Direct write for all 8 bits MPU I/F, 16 bits MPU I/F with 
+ *              16bpp, 16 bits MPU I/F with 24bpp data mode 1 and serial host 
+ *              interface.
+ *        0b11: Mask high byte of even data (ex. 16 bit MPU I/F with 24-bpp data mode 2)
+ *
+ * @param 0: Aplicado a todas as MCU e color depth
+ *        1: Apenas para MCU de 16bit com Color Depth de 24bpp no Modo 2
+ *
+ * @note type=0 - Uso em MCU de 8/16-bit:
+ *         - MCU 8-bit color depth 8-bpp
+ *         - MCU 8-bit color depth 16-bpp
+ *         - MCU 8-bit color depth 24-bpp
+ *         - MCU 16-bit color depth 16-bpp
+ *         - MCU 16-bit color depth 24-bpp Mode 1
+ *      type=1 - Uso em MCU de 16-bit:
+ *         - MCU 16-bit color depth 24-bpp Mode 2
+ */
+void Panel_RA8889::HostColorDepthFormat(uint_t type)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
+  temp = SPI_DataRead();
+  if (type == 0) temp &= cClrb7;               //Reset bit 7
+  if (type == 1) {
+	  temp |= cSetb7;                          //Set bit 7
+	  temp |= cSetb6;                          //Set bit 7
+  }
+  SPI_DataWrite(temp);                         //Mask high byte of each data (ex. 16 bit MPU I/F with 8-bpp data mode 1)
+}
+
+
+/**
+ * @brief Host Read/Write Memory Direction (Only for Graphic Mode)
+ *        Video memory write direction setting
+ *        
+ *        Efeito somente no modo gráfico
+ *
+ *        bit [5-4] 0b00: Left to Right then Top to Bottom
+ *                  0b01: Right to Left then Top to Bottom
+ *                  0b10: Top to Bottom then Left to Right
+ *                  0b11: Bottom to Top then Left to Right
+ *
+ * @param MemoryDirection::LeftRight_TopBotom 
+ *        MemoryDirection::RightLeft_TopBotom
+ *        MemoryDirection::TopBotom_LeftRight
+ *        MemoryDirection::BotomTop_LeftRight 
+ *
+ *
+ * @note Esta função só tem efeito no modo gráfico. O modo grafico pode ser 
+ *       ativado após o uso desta função.
+ */
+void Panel_RA8889::HostReadMemoryDirection(MemoryDirection direction)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
+  temp = SPI_DataRead();
+  temp &= cClrb5;                              //Reset bit 5
+  temp &= cClrb4;                              //Reset bit 4
+  temp |= static_cast<uint8_t>(direction);     //Converte enum para uint8_t
+  SPI_DataWrite(temp);                         //Host Read Memory Direction
+}
+
+
+//================================================================================
+// [0x03] Input Control Register (ICR)
+//================================================================================
+
+
 /**
  * @brief Seleciona o destino da porta de memória do RA8889 para a SDRAM.
  *
  * Configura os bits [1:0]=00b do registrador ICR (0x03)
-  *
+ *
  * @param Nenhum
  *
  * @note Image buffer (SDRAM) for image data, pattern (palette), user-characters. 
  *        
  */
-void Memory_Select_SDRAM(void)
+void Panel_RA8889::Memory_Select_SDRAM(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
@@ -595,7 +874,7 @@ void Memory_Select_SDRAM(void)
  * @note Tabela Gama para cores Vermelho/Verde/Azul.
  *        
  */
-void Memory_Select_Gamma_Table(void)
+void Panel_RA8889::Memory_Select_Gamma_Table(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
@@ -609,7 +888,7 @@ void Memory_Select_Gamma_Table(void)
  * @brief Seleciona o destino da porta de memória do RA8889 para Cursor Gráfico.
  *
  * Configura os bits [1:0]=10b do registrador ICR (0x03)
-  *
+ *
  * @param Nenhum
  *
  * @note RAM do Cursor Gráfico (aceita apenas dados MPU de 8 bits, leitura e 
@@ -619,7 +898,7 @@ void Memory_Select_Gamma_Table(void)
  *       o conjunto de cursores gráficos de destino e continuar a gravação de 
  *       256 bytes..
  */
-void Memory_Select_Graphic_Cursor_RAM(void)
+void Panel_RA8889::Memory_Select_Graphic_Cursor_RAM(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
@@ -643,7 +922,7 @@ void Memory_Select_Graphic_Cursor_RAM(void)
  *       o conjunto de cursores gráficos de destino e continuar a gravação de 
  *       256 bytes..
  */
-void Memory_Select_Color_Palette_RAM(void)
+void Panel_RA8889::Memory_Select_Color_Palette_RAM(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)

@@ -360,7 +360,7 @@ Contributors:
 #define OSC_FREQ     10	  // crystal clcok
 #define DRAM_FREQ    133  // SDRAM clock frequency, unti: MHz		  
 #define CORE_FREQ    120  // Core (system) clock frequency, unit: MHz 
-#define SCAN_FREQ     34  // Panel Scan clock frequency, unit: MHz
+#define SCAN_FREQ    34   // Panel Scan clock frequency, unit: MHz
 
 //Tipo de seleção de destino da porta de memória do RA8889
 enum class MemoryPortDest : uint8_t {
@@ -370,6 +370,22 @@ enum class MemoryPortDest : uint8_t {
     ColorPaletteRAM  = 0b11    
 };
 
+//Interface de saída do TFT com o RA8889
+enum class TFTInterface : uint8_t {
+    IF_24BIT = 0b00,     //Saída TFT 24-bits 
+    IF_18BIT = 0b01,     //Saída TFT 18-bits 
+    IF_16BIT = 0b10,     //Saída TFT 16-bits         
+    IF_NONE  = 0b11      //Sem Saída TFT
+};
+
+//Host Read/Write Memory Direction
+enum class MemoryDirection : uint8_t {
+	LeftRight_TopBotom = 0b00,
+    RightLeft_TopBotom = 0b01,
+    TopBotom_LeftRight = 0b10,
+    BotomTop_LeftRight = 0b11
+}
+
 
 class Panel_RA8889 {
 	
@@ -377,7 +393,8 @@ class Panel_RA8889 {
 		Panel_RA8889(uint8_t cs, uint8_t rst);
 		uint8_t init();
 		void DisplayOn(bool on);
-		void GraphicMode(void);
+		void GraphicMode(void);     //overload
+		bool GraphicMode(void);     //overload
 		void TextMode(void);
 		
 	private
@@ -410,6 +427,20 @@ class Panel_RA8889 {
 		void Memory_Select_Graphic_Cursor_RAM(void);
 		void Memory_Select_Color_Palette_RAM(void);
 		void MemoryPort_Select(MemoryPortDest dest);
+		
+		void TFT_24bit(void);
+		void TFT_18bit(void);
+		void TFT_16bit(void);
+		void TFT_Without(void);
+		void TFT_SetInterface(TFTInterface mode);
+		
+		void HostDataBus_Select_8bit(void);
+		void HostDataBus_Select_16bit(void);
+
+        void HostColorDepthFormat(uint_t type);
+		void HostReadMemoryDirection(MemoryDirection direction);
+		
+}
 		
 }
 
