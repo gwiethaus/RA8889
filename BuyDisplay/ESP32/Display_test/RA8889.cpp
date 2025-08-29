@@ -181,6 +181,8 @@ void ER_TFTBasic::Check_SDRAM_Ready(void)
 }
 
 
+//void TFT_SetInterface(TFTInterface mode)
+//void TFT_16bit(void)
 void ER_TFTBasic::TFT_16bit(void)
 {
   unsigned char temp;
@@ -190,6 +192,8 @@ void ER_TFTBasic::TFT_16bit(void)
     temp &= cClrb3;
   ER_TFT.LCD_DataWrite(temp);  
 }
+
+//void HostDataBus_Select_16bit(void)
 void ER_TFTBasic::Host_Bus_16bit(void)
 {
 /*  Parallel Host Data Bus Width Selection
@@ -201,6 +205,8 @@ void ER_TFTBasic::Host_Bus_16bit(void)
   temp |= cSetb0;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void HostColorDepthFormat(uint_t type)
 void ER_TFTBasic::RGB_16b_16bpp(void)
 {
   unsigned char temp;
@@ -210,6 +216,8 @@ void ER_TFTBasic::RGB_16b_16bpp(void)
   temp |= cSetb6;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void HostReadMemoryDirection(MemoryDirection direction)
 void ER_TFTBasic::MemRead_Left_Right_Top_Down(void)
 {
   unsigned char temp;
@@ -219,6 +227,8 @@ void ER_TFTBasic::MemRead_Left_Right_Top_Down(void)
   temp &= cClrb4;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void GraphicMode(void);
 void ER_TFTBasic::Graphic_Mode(void)
 {
   unsigned char temp;
@@ -228,7 +238,7 @@ void ER_TFTBasic::Graphic_Mode(void)
   ER_TFT.LCD_DataWrite(temp);
 }
 
-
+//void Memory_Select_SDRAM(void)
 void ER_TFTBasic::Memory_Select_SDRAM(void)
 {
   unsigned char temp;
@@ -3563,6 +3573,7 @@ void ER_TFTBasic::DMA_24bit_Block
   ER_TFT.Check_Busy_SFI_DMA();                        
 }
 
+//void TextMode(void);
 void ER_TFTBasic::Text_Mode(void)
 {
   unsigned char temp;
