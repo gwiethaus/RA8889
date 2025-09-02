@@ -12,6 +12,7 @@ Tenho um Foke do projeto LovyanGFX na pasta LovyanGFX em gwiethaus\LovyanGFX
 Estrutura de Pastas
 -------------------
 
+Datasheet       Pasta de Folha de dados de varios dispositivos
 BuyDisplay      Pasta dos Arquivos da BuyDisplay
 RAIO            Pasta dos Arquivos da RAIO
 AI              Pasta dos Arquivos da AI

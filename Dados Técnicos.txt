@@ -1,9 +1,64 @@
+Display ER-TFT070-2-6105
+------------------------
+
+  Product: 7 inch 800x480 LCD Display with RA8889 Controller Board,128M SDRAM 
+           Supports Smooth Video Even on Basic 8051 MCU
+  
+  Description
+  -----------
+  
+  ER-TFT070-2-6105 is 7-inch TFT LCD display paired with 800x480 pixels and an RA8889 Controller Board. This controller board is notable for its low power consumption and integrated 128M SDRAM memory, enabling smooth video playback without lagging, even when interfaced with the simplest 8051 microcontroller. To ensure swift refreshing of screen content from the display memory, it supports a versatile range of interfaces, including 8080/6800 8-bit and 16-bit parallel, 3-wire, 4-wire, I2C SPI serial. Additionally, it boasts a built-in MicroSD card slot, making it optional microSD cards. Font chips and flash chips are also available.
+  
+  ER-TFT070-2-6105 is loaded with powerful features such as multiple display buffers, Picture-in-Picture capability, transparency control, display rotation and mirroring, as well as built-in JPEG and AVI decoders. It offers flexibility in touch panel options, being compatible with both resistive and capacitive touch panels.
+  
+  For Arduino enthusiasts, we provide an Arduino shield accessory that facilitates a quick and seamless connection between the ER-TFT070-2-6105 and the Arduino board. Recognizing the diverse connection requirements of our users, we offer two connection methods: FFC and pin header. To save you the hassle, we will prepare the connection for you, eliminating the need for manual assembly.
+  
+  
+  For users of 8051, we have also prepared corresponding sample programs that can be downloaded and used.
+  
+  Lastly, the ER-TFT070-2-6105 offers an optional choice between 3.3V and 5V operation, further enhancing its versatility and compatibility with various systems and applications.
+
+  Specification
+  -------------
+  
+  Gross Weight (kg)           0.2330
+  Manufacturer                EastRising
+  Continuity Supply           We promise the long term continuity supply for this product no less than 10 years since 2025.
+  Part Number                 ER-TFT070-2-6105
+  Display Format              800x480 Pixels
+  Interface                   I2C, 3-wire SPI, 4-wire SPI, 6800 8-bit Parallel , 6800 16-bit Parallel , 8080 8-bit Parallel , 8080 16-bit Parallel
+  IC or Equivalent            RA8889
+  Appearance                  RGB
+  Diagonal Size               7.0“
+  Connection                  Pin Header, Plug-in FFC
+  Outline Dimension           180.00(W)x100.20(H)mm
+  Visual Area                 156.7x89.10mm
+  Active Area                 154.08(W)x85.92(H)mm
+  Dot (Pixel) Size            0.0642(W)x0.1790(H)mm
+  IC Package                  SMT
+  Display Type                TFT-LCD Color
+  Touch Panel Optional        Yes
+  Touch Panel Drive           FocalTech FT5316
+  IC Screen Drive:            Fitipower EK9713 (Informado pela BuyDisplay)
+  Sunlight Readable           No
+  Contrast Ratio(Typ)         500:1
+  Colors                      65K/262K/16.7M
+  Viewing Angle Range         Left:60.0 , Right:60.0 , Up:60.0 , Down:60.0 degree
+  Brightness(Typ)             200cd/m2
+  Backlight Color             White Color
+  Power Supply(Typ)           3.3V, 5V
+  Supply Current for LCM(Max) 480mA ( VDD=3.3V) / 300mA ( VDD=5.0V)
+  Operating Temperature       -20oC~70oC
+  Storage Temperature         -30oC~80oC
+
 Legandas
 --------
 
 I/F                                 Interface
 MCU                                 Microcontroller Unit
 MPU                                 Microprocessor Unit
+PIP                                 Picture-in-Picture
+
 
 Significado do x na configuração de bits
 ----------------------------------------
@@ -54,4 +109,114 @@ Nota sobre nomenclatura "MPU I/F" vs "MCU I/F":
   Na prática atual, a interface é usada quase sempre com MCUs (microcontroladores
   como STM32, ESP32, PIC, etc.). Portanto, "MPU I/F" e "MCU I/F" podem ser lidos
   como equivalentes — o nome "MPU I/F" é apenas um legado histórico.
+
+
+Horizontal Non-Display Period
+-----------------------------
+
+  A Horizontal Non-Display Period refers to a specific interval within a video signal's horizontal scanning process, particularly in the context of older video display systems, where a signal is temporarily not displayed on the screen, allowing for the refresh of the electron beam to its starting point for the next horizontal line. 
+  Video Basics: https://www.analog.com/cn/resources/technical-articles/basics-of-analog-video.html
+  Driving circuit for driving simple matrix type display apparatus: https://patents.google.com/patent/US6040826A/en
+  Video display control system for animation pattern image: https://patents.google.com/patent/US4864289A
+
+  Here's a breakdown of the concept:
+  ----------------------------------
+  
+  Horizontal Scanning:
+  Traditional video displays, like older CRT monitors, draw images by scanning the electron beam across the screen line by line, from left to right. 
+  NTSC Basics: https://people.ece.cornell.edu/land/courses/ece4760/FinalProjects/s2002/gpm5/ntsc.html
+  
+  
+  Non-Display Period (or Blanking Interval):
+  After completing a horizontal scan, the beam must quickly return to the left side of the screen to begin the next line. During this brief "return" period, the beam is turned off or "blanked" so that the retrace is not visible on the screen. 
+  Reduced Blanking for Low Power, High Res Displays: https://www.synopsys.com/blogs/chip-design/reduced-blanking-high-res-displays.html
+  720p Video from an FPGA: https://log.martinatkins.me/2019/09/22/video-timing-in-verilog/
+
+  "Horizontal Non-Display Period" as a Specific Range:
+  In the context of patent literature, such as US4864289A, the term "Horizontal Non-Display Period" is used to define a specific range of signal counts (e.g., "between 256 and 340") during which the horizontal blanking occurs. This suggests a more detailed classification or control mechanism for the blanking interval. 
+  
+  Function:
+  This period ensures a smooth, continuous image by preventing the visible retrace lines and allowing the display system to synchronize for the next line of video. 
+  
+  In essence, the Horizontal Non-Display Period is a technical term for the blanking interval that occurs after each horizontal line is drawn in older video display systems, enabling the electron beam to reset for the next line without displaying a visible line. 
+
+PIP (Picture-in-Picture)
+------------------------
+
+  PIP (Picture-in-Picture) é um recurso de exibição em que duas imagens diferentes são mostradas ao mesmo tempo em um único display:
+
+  - A imagem principal ocupa a tela inteira.
+  - Uma imagem secundária aparece dentro de uma janela menor sobreposta (normalmente em um dos cantos da tela).
+
+  📺 Exemplos práticos:
+
+     Em televisores, você pode assistir a um canal e, ao mesmo tempo, ver outro em uma janelinha.
+
+     Em monitores de segurança (CFTV), dá para exibir a câmera principal em tela cheia e uma câmera extra em PIP.
+
+     Em controladores gráficos como RA8875 ou RA8889 (que sei que você anda estudando), isso pode ser implementado via camadas de memória de vídeo e janelas configuráveis em registradores.
+
+  👉 Diferença de conceitos:
+
+     PIP: a janela menor está sobreposta à principal.
+
+     PBP (Picture-by-Picture): a tela é dividida em duas ou mais áreas iguais, cada uma exibindo uma fonte de vídeo.
+
+  O PIP (Picture-in-Picture) é implementado eletronicamente em controladores de display, como os RA8875/RA8889 que você vem estudando:
+  
+  🔹 1. Estrutura de memória de vídeo
+
+     O display tem uma VRAM (Video RAM), onde são armazenados os pixels da imagem.
+     
+	 Para permitir PIP, o controlador precisa trabalhar com mais de uma área de memória:
+     
+	 - Buffer principal: contém a imagem “de fundo” (full screen).
+     - Buffer secundário: contém a imagem que vai aparecer na janelinha.
+
+     Esses buffers podem estar em regiões diferentes da mesma VRAM ou até em chips de memória externa (ex: SDRAM conectada ao controlador).
+
+  🔹 2. Controle de camadas (layers / overlays)
+  
+     O controlador gráfico precisa ter um blender (misturador) que define qual camada de pixels será exibida em cada posição da tela:
+  
+     - Durante o varrimento da tela (linha por linha, pixel por pixel), o controlador checa:
+  
+       - Se a posição atual está dentro da janela PIP → pega os dados do buffer secundário.
+       - Se está fora → pega os dados do buffer principal.
+  
+     Esse processo é feito em tempo real, sincronizado com o refresh do display.
+  
+  🔹 3. Definição da janela PIP
+  
+     Normalmente o firmware/programador configura via registradores:
+  
+     - Posição X, Y da janela PIP (canto superior esquerdo da janelinha).
+     - Largura e altura da janela.
+     - Endereço base da memória VRAM de onde saem os dados da imagem PIP.
+  
+  🔹 4. Suporte a transparência (opcional)
+  
+  Alguns controladores permitem ainda:
+  
+  - Chroma key: uma cor definida fica transparente (parecido com tela verde em vídeo).
+  - Alpha blending: define o nível de transparência (mistura parcial das camadas).
+  
+  Isso já é mais avançado e exige suporte de HW (ou software, mas aí fica pesado em microcontroladores).
+  
+  🔹 5. Exemplo prático (RA8875 / RA8889)
+  
+  Nesses chips, você pode:
+  
+  - Configurar áreas de janela gráfica com registradores de início/fim X e Y.
+  - Selecionar qual bloco de memória VRAM vai alimentar essa janela.
+  - Usar comandos de “layer” ou “overlay” para habilitar a exibição do PIP.
+  
+  Assim, você teria algo como:
+  
+  - Tela cheia exibindo o fundo (Layer 0).
+  - Janelinha no canto exibindo o conteúdo de outro buffer (Layer 1).
+  
+  Resumindo:
+  
+  👉 O PIP é basicamente uma lógica de multiplexação de memória de vídeo durante o refresh da tela, controlada por registradores que definem onde fica a janelinha e de onde vêm os dados.
 
