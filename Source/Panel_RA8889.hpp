@@ -356,35 +356,195 @@ Contributors:
 #define cClrb6    0xbf
 #define cClrb7    0x7f
 
-//==== [SW_(1)]  PLL  =====
-#define OSC_FREQ     10	  // crystal clcok
-#define DRAM_FREQ    133  // SDRAM clock frequency, unti: MHz		  
-#define CORE_FREQ    120  // Core (system) clock frequency, unit: MHz 
-#define SCAN_FREQ    34   // Panel Scan clock frequency, unit: MHz
+//==== RA8889 frequency configuration [SW_(1)] PLL =====
+#define OSC_FREQ     10	                       // Crystal clock
+#define DRAM_FREQ    133                       // SDRAM clock frequency, unti: MHz		  
+#define CORE_FREQ    120                       // Core (system) clock frequency, unit: MHz 
+#define SCAN_FREQ    34                        // PSCK Panel Scan clock frequency, unit: MHz
+
+//==== Valores tipicos do fabricante da tela de display LCD =====
+//O RA8889 usa os valores adequados apra envio ao display LCD par a exibição correta das imagam
+//Cada fabricante de tela possui as especificações e caracteristicas configuradas nesta constantes abaixo
+//Consulte o Datasheet do fabricante de tela para entender estes valores 
+//Exemplo de alguns Fabricnates
+//https://www.twscreen.com/index.php/lcdpanel/search?brand=19&size=3
+
+//===== LCD screen model =====
+//#define ILI6122                                //ILITEK ILI6122 800x480 7.0" TFT-LCD, https://www.buydisplay.com/7-tft-lcd-touch-screen-display-module-800x480-for-mp4-gps-tablet-pc
+//#define ST7277                                 //Sitronix ST7277 800x480 7.0" TFT-LCD, IPS, https://www.buydisplay.com/wide-angle-7-inch-800x480-color-ips-tft-display-st7277-controller
+//#define HX8282                                 //HiMAX HX8282
+//#define HX8264                                 //HiMAX HX8264 800x480 7.0"
+//#define HX8664                                 //HiMAX HX8664 800x480 7.0"
+//#define AWY_800480T70N02                       //AWY_800480T70N02
+//#define LQ035NC111                             //Innolux LQ035NC111 320x240
+//#define AWT_1024600L7N03                       //AWT_1024600L7N03
+#define EK9713                                 //Fitipower EK9713 800x600/800x480, https://www.buydisplay.com/7-inch-lcd-screen-tft-display-module-wvga-800x480-at070tn90-at070tn92
+//#define EK7330                                 //Fitipower EK7330 800x480 7.0" TFT
+//#define EK73002                                //Fitipower EK73002
+//#define L80480R70		                         //L80480R70 800x480
+//#define AT070TN90                              //Innolux AT070TN90
+//#define AT070TN92                              //Innolux AT070TN92 800X480 7"
+//#define AT070TN94                              //Innolux AT070TN94
+//#define AT070TN92_V1_TP                        //Innolux AT070TN92 V.1 TP 800X480 7.0" TFT-LCD 
+//#define EJ080NA-04A                            //Innolux EJ080NA-04A 1024X768 8.0" TFT-LCD
+//#define EJ080NA_04B                            //Innolux EJ080NA-04B 1024X768 8.0" TFT-LCD
+//#define EJ080NA_04C                            //Innolux EJ080NA-04C 1024X768 8.0" TFT-LCD
+//#define EJ080NA_05B                            //Innolux EJ080NA-05B 800x600 8.0" TFT-LCD
+//#define NJ070NA-23A                            //Innolux NJ070NA-23A 1024X600 7" TFT-LCD
+//#define ZJ070NA-01B                            //Innolux ZJ070NA-01B 1024x600
+//#define AT070TN90                              //CMO AT070TN90 800x480 7.0" TFT-LCD 
+//#define ET101000DM6                            //EDT ET101000DM6 1024x600 
+//#define B116XW03_V0                            //AUO B116XW03 V0 1366x768
+//#define G190SVT01                              //AUO G190SVT01 1680x342 
+//#define G070VW01_V1                            //AUO G070VW01 V1 800X480 7" TFT-LCD 
+//#define G070VW01_V0                            //AUO G070VW01 V0 800X480 7" TFT-LCD 
+//#define LQ150X1LGN2C                           //SHARP LQ150X1LGN2C
+//#define LQ190E1LW52                            //SHARP LQ190E1LW52 1280x1024 
+//#define LQ121S1LG81                            //SHARP LQ121S1LG81
+//#define LQ156M1LG21                            //SHARP LQ156M1LG21 1920x1080
+//#define LQ201U1LW32                            //SHARP LQ201U1LW32 1600x1200
+//#define LQ150X1LGN2C_LVDS1                     //SHARP LQ150X1LGN2C_LVDS1 1024x768
+//#define LQ150X1LGN2C_LVDS2                     //SHARP LQ150X1LGN2C_LVDS2 1024x768
+
+//Valores foi fornecido pela BuyDisplay
+#ifdef EK9713                                  //Fitipower EK9713 800x600/800x480
+  #define LCD_HW           800                 //Horizontal Width
+  #define LCD_VH           480                 //Vertical Height
+  #define LCD_HBPD         20                  //HS Back Porch (Blanking)
+  #define LCD_HFPD         160                 //HS Front Porch
+  #define LCD_HSPW         5                   //HS Pulse Width
+  #define LCD_VBPD         20                  //VS Back Porch (Blanking)
+  #define LCD_VFPD         12                  //VS Front Porch
+  #define LCD_VSPW         3                   //VS Pulse Width
+#endif
+
+#ifdef EJ080NA_05B                             //Innolux EJ080NA-05B 800x600 8.0" TFT-LCD
+  #define LCD_HW           800                 //Horizontal Width
+  #define LCD_VH           600                 //Vertical Height
+  #define LCD_HBPD         38                  //HS Back Porch (Blanking) - 46
+  #define LCD_HFPD         210                 //HS Front Porch - 16~354
+  #define LCD_HSPW         8                   //HS Pulse Width - 1~40C
+  #define LCD_VBPD         15                  //VS Back Porch (Blanking) - 23
+  #define LCD_VFPD         12                  //VS Front Porch - 1~77
+  #define LCD_VSPW         8                   //VS Pulse Width - 1~20C
+#endif
+
+#ifdef AT070TN92                               //Innolux AT070TN92 800X480 7"  TFT-LCD
+  #define LCD_HW           800                 //Horizontal Width
+  #define LCD_VH           480                 //Vertical Height
+  #define LCD_HBPD         30                  //HS Back Porch (Blanking) - 46
+  #define LCD_HFPD         210                 //HS Front Porch - 16~354
+  #define LCD_HSPW         16                  //HS Pulse Width - 1~40C
+  #define LCD_VBPD         13                  //VS Back Porch (Blanking) - 23
+  #define LCD_VFPD         22                  //VS Front Porch - 7~147
+  #define LCD_VSPW         10                  //VS Pulse Width - 1~20
+#endif
 
 //Tipo de seleção de destino da porta de memória do RA8889
-enum class MemoryPortDest : uint8_t {
-    SDRAM            = 0b00,
-    GammaTable       = 0b01,
-	GraphicCursorRAM = 0b10,
-    ColorPaletteRAM  = 0b11    
+enum class MemoryPortDest : uint8_t {          //bit 1-0
+  SDRAM            = 0x0,
+  GammaTable       = cSetb0,
+  GraphicCursorRAM = cSetb1,
+  ColorPaletteRAM  = cSetb0 | cSetb1
 };
 
 //Interface de saída do TFT com o RA8889
-enum class TFTInterface : uint8_t {
-    IF_24BIT = 0b00,     //Saída TFT 24-bits 
-    IF_18BIT = 0b01,     //Saída TFT 18-bits 
-    IF_16BIT = 0b10,     //Saída TFT 16-bits         
-    IF_NONE  = 0b11      //Sem Saída TFT
+enum class TFTInterface : uint8_t {            //bit 4-3
+  IF_24BIT = 0x0,                              //Saída TFT 24-bits 
+  IF_18BIT = cSetb3,                           //Saída TFT 18-bits 
+  IF_16BIT = cSetb4,                           //Saída TFT 16-bits         
+  IF_NONE  = cSetb4 | cSetb3                   //Sem Saída TFT
 };
 
 //Host Read/Write Memory Direction
-enum class MemoryDirection : uint8_t {
-	LeftRight_TopBotom = 0b00,
-    RightLeft_TopBotom = 0b01,
-    TopBotom_LeftRight = 0b10,
-    BotomTop_LeftRight = 0b11
+enum class MemoryDirection : uint8_t {         //bit 5-4
+  LeftRight_TopBotom = 0x0,
+  RightLeft_TopBotom = cSetb4,
+  TopBotom_LeftRight = cSetb5,        
+  BotomTop_LeftRight = cSetb5 | cSetb4
 }
+
+//Horizontal Scan Direction
+enum class HSCANDir : uint8_t {                //bit 4
+  LeftToRight        = 0x0,                    
+  RightToLeft        = cSetb4                  
+}
+
+//Vertical Scan Direction
+enum class VSCANDir : uint8_t {                //bit 3
+  TopToBottom        = 0x0,                    
+  BottomToTop        = cSetb3                  
+}
+
+//Parallel XDATA[23~0] Color Format
+enum class PDATAColorFmt : uint8_t {          //bit [2~0]
+  RGB               = 0x0,
+  RBG               = 0x1,
+  GRB               = 0x2,
+  GBR               = 0x3,
+  BRG               = 0x4,
+  BGR               = 0x5,
+  Gray              = 0x6,
+  BW                = 0x7
+}
+
+//Panel Scan Clock PCLK Edge Type
+enum class PCLKEdge : uint8_t {                //bit [7]
+  Rising            = 0x0,                     //Borda de subida
+  Falling           = cSetb7                   //Borda de descida
+}
+
+enum class HSYNCPolarity : uint8_t {           //bit [6]
+  Low              = 0x0,
+  High             = cSetb7
+}
+
+enum class VSYNCPolarity : uint8_t {           //bit [6]
+  Low              = 0x0,
+  High             = cSetb6
+}
+
+enum class DEPolarity : uint8_t {              //bit [5]
+  High             = 0x0,
+  Low              = cSetb5
+}
+
+enum class PIPSelect : uint8_t {              //bit [4]
+  PIP1            = 0x00,                     //Picture-to-Picute (PIP 1) 
+  PIP2            = cSetb4                    //Picture-to-Picute (PIP 2)
+}
+
+
+//Supported Panel Resolution (Horiz x Vert)
+//Note:  The actual panel resolution depends on the pixel clock and color depth.
+//When RA8889 TFT Output supports 24bpp 
+//CCLK Max. = 120MHz 
+//SCLK Max. = 60MHz 
+//Required LCD clock ≒ LCD vertical Pixel * LCD horizontal Pixel * 60(Hz) * 1.1 
+//If Required LCD Clock > SCLK, the LCD refresh rate (Refresh Rate or VSYNC rate) will be lower than 
+//60Hz under this application condition.
+enum class PanelResolution : uint_t {
+  320x240,                       //QVGA:  320 x 240 x 16/18/24-bit LCD panel 
+  480x272,                       //WQVGA: 480 x 272 x 16/18/24-bit LCD panel
+  640x480,                       //VGA:   640 x 480 x 16/18/24-bit LCD panel 
+  800x480,                       //WVGA:  800 x 480 x 16/18/24-bit LCD panel   
+  800x600,                       //SVGA:  800 x 600 x 16/18/24-bit LCD panel
+  960x540,                       //QHD:   960 x 540 x 16/18/24-bit LCD panel
+  1024x600,                      //WSVGA: 1024 x 600 x 16/18/24-bit LCD panel
+  1024x768,                      //XGA:   1024 x 768 x 16/18/24-bit LCD panel 
+  1280x768,                      //WXGA:  1280 x 768 x 16/18/24-bit LCD panel
+  1280x800,                      //WXGA:  1280 x 800 x 16/18/24-bit LCD panel 
+  1366x768                       //WXGA:  1366 x 768 x 16/18/24-bit LCD panel
+}
+
+#define layer1_start_addr 0	 
+#define layer2_start_addr 768000
+#define layer3_start_addr 1536000
+#define layer4_start_addr 2304000
+#define layer5_start_addr 3072000
+#define layer6_start_addr 3840000
+#define layer7_start_addr 4608000
+#define layer8_start_addr 5376000
 
 
 class Panel_RA8889 {
@@ -396,11 +556,16 @@ class Panel_RA8889 {
 		void GraphicMode(void);     //overload
 		bool GraphicMode(void);     //overload
 		void TextMode(void);
+		uint16_t Width(void);
+		uint16_t Height(void);
+		
+		void MainImage_StartAddress(unsigned long addr);
+		void MainImage_Width(uint16_t wx);
 		
 	private
+		uint8_t StatusRead(void);
         void RegisterWrite(uint8_t Cmd, uint8_t Data);
 	    uint8_t RegisterRead(uint8_t Cmd);
-		uint8_t StatusRead(void);
 		void HardwareReset(void);
 
 	protected
@@ -409,12 +574,14 @@ class Panel_RA8889 {
 		unsigned int _width;  //lardura do display
 		unsigned int _height; //altura do display
 		
+		void PanelResolution(PanelResolution resolution);
+		
 		void SPISetCS(bool active);
 		uint8_t SPIRwByte(uint8_t value);
-		void SPI_CmdWrite(int cmd);
-	    void SPI_DataWrite(int data);
-		void SPI_DataWrite_Pixel(int data);
-		int SPI_DataRead(void);
+		void SPI_CmdWrite(uint8_t cmd);
+	    void SPI_DataWrite(uint8_t data);
+		void SPI_DataWrite_Pixel(uint16_t data);
+		uint8_t SPI_DataRead(void);
         void SPI_Init();
 		
 		void PLL_WaitReady(void);
@@ -422,17 +589,26 @@ class Panel_RA8889 {
 		void SDRAM_WaitReady(void);
 		void SDRAM_Init(void);
 		
-		void Memory_Select_SDRAM(void);
-		void Memory_Select_Gamma_Table(void);
-		void Memory_Select_Graphic_Cursor_RAM(void);
-		void Memory_Select_Color_Palette_RAM(void);
+		void MemorySelect_SDRAM(void);
+		void MemorySelect_GammaTable(void);
+		void MemorySelect_GraphicCursorRAM(void);
+		void MemorySelect_ColorPaletteRAM(void);
 		void MemoryPort_Select(MemoryPortDest dest);
+		
+		void Enable_PIP1(bool b);
+		void Enable_PIP2(bool b);
+		void Select_PIP_Parameter(PIPSelect pip);
+		void Select_MainWindow_8bpp(void);
+		void Select_MainWindow_16bpp(void);
+		void Select_MainWindow_24bpp(void);
+		void Select_LCD_SyncMode(void);
+		void Select_LCD_DEMode(void);
 		
 		void TFT_24bit(void);
 		void TFT_18bit(void);
 		void TFT_16bit(void);
 		void TFT_Without(void);
-		void TFT_SetInterface(TFTInterface mode);
+		void TFT_Interface(TFTInterface mode);
 		
 		void HostDataBus_Select_8bit(void);
 		void HostDataBus_Select_16bit(void);
@@ -440,9 +616,44 @@ class Panel_RA8889 {
         void HostColorDepthFormat(uint_t type);
 		void HostReadMemoryDirection(MemoryDirection direction);
 		
+		void HScanDirection_LeftToRight (void);
+		void HScanDirection_RightToLeft (void);
+		void HorizontalScanDirection (HSCANDir direction);
+		void VScanDirection_TopToBottom(void);
+		void VScanDirection_BottomToTop(void);
+		void VerticalScanDirection(VSCANDir direction);
+		void PDATA_ColorFmt(PDATAColorFmt: fmt);
+		void PCLK_Rising(void);
+		void PCLK_Falling(void);
+		void PCLK_EdgeType(PCLKEdge edge);
+
+        void HSYNC_PolarityLow(void);
+		void HSYNC_PolarityHigh(void);
+		void HSYNC_Polarity(HSYNCPolarity val);
+		void VSYNC_PolarityLow(void);
+		void VSYNC_PolarityHigh(void);
+		void VSYNC_Polarity(VSYNCPolarity val);
+        void DE_PolarityLow(void);
+        void DE_PolarityHigh(void);
+        void DE_Polarity(DEPolarity val);
+		
+		void HorizontalWidth_VerticalHeight(uint16_t WX, uint16_t HY);
+		void Horizontal_NonDisplay(uint16_t hbpd);
+		void HSYNC_StartPosition(uint16_t hfpd);
+		void HSYNC_PulseWidth(uint16_t hspw);
+		void Vertical_NonDisplay(uint16_t vbpd);
+		void VSYNC_StartPosition(uint16_t vfpd);
+		void VSYNC_PulseWidth(uint8_t vspw);
+		void LCD_SetPanel(void);
+		
+		void Memory_BlockMode(void);
+		void Memory_Linear_Mode(void);
+		void Memory_8bpp_BlockMode(void);
+		void Memory_16bpp_BlockMode(void);
+		void Memory_24bpp_BlockMode(void);
 }
 		
-}
+
 
 
 

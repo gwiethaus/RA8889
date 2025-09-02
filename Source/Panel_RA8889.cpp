@@ -31,7 +31,7 @@ Contributors:
 	- Determinar a autoconfiguracao das portas MISO, MOSI, CLK da micrcontroladora
 	- Determinar manual das portas MISO, MOSI, CLK da micrcontroladora
 	- tipo de comunciacao SPI MODO 0, 1, 2 dependedo da microcontroladora
-    - Sistema da porta de itnerrupção para a tla de toque do display
+    - Sistema da porta de itnerrupção para a tela de toque do display
 	
 */
 
@@ -39,18 +39,56 @@ Contributors:
 // Funções Principais de Inicializacao
 //================================================================================
 
-//Construtor da classe
+
+/**
+ * @brief Construtor da Classe Panel_RA8889
+ *
+ * @param None
+ * 
+ * @note None
+ */
 Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst) {
-  _cs = cs;
-  _rst = rst;
-  _width = 800;
-  _height = 480;
-  
+  _cs     = cs;
+  _rst    = rst;
+  _width  = LCD_HW;
+  _height = LCD_VH;
 }
 
 
-//tabalhan do nesta funcao....
-//inicializa o display
+/**
+ * @brief Define a resolução do display width x height
+ *
+ * @param None
+ * 
+ * @note Mesmo que o RA8889 consiga gerenciar todas estas resoluções
+ *       fica limitado pela caracteristica de tela (screen) produzidos
+ *       por um fabricante. Para o caso do modelo de display da 
+ *       BuyDisplay ER-TFT070-2-6105, a controladora da tela (screen) é
+*        o EK9713 800x480/800x600 (1200x960 pixel panel).
+ */
+void Panel_RA8889::PanelResolution(PanelResolution resolution);
+{
+  if (resolution::320x240)  {_width=320;  _height=240;}
+  if (resolution::480x272)  {_width=480;  _height=272;}
+  if (resolution::640x480)  {_width=640;  _height=480;}
+  if (resolution::800x480)  {_width=800;  _height=480;}
+  if (resolution::800x600)  {_width=800;  _height=600;}
+  if (resolution::960x540)  {_width=960;  _height=540;}
+  if (resolution::1024x600) {_width=1024; _height=600;}
+  if (resolution::1024x768) {_width=1024; _height=768;}
+  if (resolution::1280x768) {_width=1280; _height=768;}
+  if (resolution::1280x800) {_width=1280; _height=800;}
+  if (resolution::1366x768) {_width=1366; _height=768;}
+}
+
+
+/**
+ * @brief Inicializa a configurações básicas do display RA8889.
+ *
+ * @param None
+ *
+ * @note None
+ */
 uint8_t Panel_RA8889::init(void) {
 
   SPI_Init();
@@ -70,8 +108,6 @@ uint8_t Panel_RA8889::init(void) {
   
   SDRAM_Init();                                //Inicializa a SDRAM
   
-//Descomentar a medida que as funcoes vao ficando pronta  
-
 //Chip Configuration Register (CCR) [01h]
 
   TFT_16bit();
@@ -85,88 +121,100 @@ uint8_t Panel_RA8889::init(void) {
 //Input Control Register (ICR) [03h]
 
   GraphicMode();
-  Memory_Select_SDRAM();
+  MemorySelect_SDRAM();
 
-//Display Configuration Register (DPCR) [12h]
+  LCD_SetPanel();                              //Configuração do Panel Screen LCD, de acordo com o tipo do fabricante
+  
+  Select_MainWindow_16bpp();
 
-//  ER_TFT.HSCAN_L_to_R();     //REG[12h]:from left to right
-//  ER_TFT.VSCAN_T_to_B();       //REG[12h]:from top to bottom
-//  ER_TFT.PDATA_Set_RGB();        //REG[12h]:Select RGB output
+  Memory_BlockMode();                          //Set Block mode (X-Y coordination addressing)
+  Memory_16bpp_BlockMode(void);                //Set 16bpp Block mode
+  
+}
 
 
+uint16_t Panel_RA8889::Width(void);
+{
+  return _width;
+}
 
 
-//  ER_TFT.Set_PCLK(LCD_PCLK_Falling_Rising);   //LCD_PCLK_Falling_Rising
-//  ER_TFT.Set_HSYNC_Active(LCD_HSYNC_Active_Polarity);
-//  ER_TFT.Set_VSYNC_Active(LCD_VSYNC_Active_Polarity);
-//  ER_TFT.Set_DE_Active(LCD_DE_Active_Polarity);
+uint16_t Panel_RA8889::Height(void);
+{
+  return _height;
+}
+
+/**
+ * @brief Inicializa a configuração da Tela LCD (Screen) de acordo com a 
+ *        montagem feita pelo fornecedor do display.
+ *        Informações baseada no IC do drive da tela utilziada no display.
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::LCD_SetPanel(void);
+{
+
+#ifdef EK9713                                  //Fitipower EK9713 800x600/800x480
+
+  //Display Configuration Register (DPCR) [12h]
+
+  HScanDirection_LeftToRight();                //HSCAN Left to Right
+  VScanDirection_TopToBottom();                //VSCAN Top to Bottom
+  PDATA_ColorFmt(PDATAColorFmt::RGB);          //Select RGB output
+  PCLK_EdgeType(PCLKEdge::Falling);            //LCD PCLK Falling
+
+  //Panel scan Clock and Data Setting Register (PCSR) [13h]
+
+  HSYNC_Polarity(HSYNCPolarity::Low);
+  VSYNC_Polarity(VSYNCPolarity::Low);
+  DE_Polarity(DEPolarity::High);
+
+  //Horizontal Display Width Register (HDWR) [14h]
+  //Horizontal Display Width Fine Tune Register (HDWFTR) [15h]
+  //Vertical Display Height Register 0(VDHR0) [1Ah]
+  //Vertical Display Height Register 1 (VDHR1) [1Bh]
+  
+  HorizontalWidth_VerticalHeight(LCD_HW, LCD_VH);
+  
+  //Seta a resolução do display baseado no painel
+  
+  _width  = LCD_HW;
+  _height = LCD_VH;
+	
+  //Minha notas:
+  //Estas funcoes são de caracteristica da tela LCD (Screen) gerenciado pelo
+  //RA8889, no entanto o RA8889 controla o tipo de tela. Cada fabricante de 
+  //tela possui seus determinados valores tipicos de Blanking horiz/Vert,  
+  //HSYNC/VSYNC largura de pulso e front porch que precisam ser grenciados 
+  //pelo RA8889.
+
+  //Horizontal Non-Display Period(HNDR) [16h]
+  //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
+  //HSYNC Start Position Register (HSTR) [18h]
+  //HSYNC Pulse Width Register (HPWR) [19h]
+
+  Horizontal_NonDisplay(LCD_HBPD);             //(HS Blanking)
+  HSYNC_StartPosition(LCD_HFPD);               //(HS Front Porch)                  
+  HSYNC_PulseWidth(LCD_HSPW);                  //(HS Pulse Width)
+                            
+  //Vertical Non-Display Period Register 0(VNDR0) [0x1c]
+  //Vertical Non-Display Period Register 1(VNDR1) [0x1d]
+  //VSYNC Pulse Width Register (VPWR) [0x1f]
  
-//  ER_TFT.LCD_HorizontalWidth_VerticalHeight(LCD_XSIZE_TFT ,LCD_YSIZE_TFT);
-//  ER_TFT.LCD_Horizontal_Non_Display(LCD_HBPD);                          
-//  ER_TFT.LCD_HSYNC_Start_Position(LCD_HFPD);                              
-//  ER_TFT.LCD_HSYNC_Pulse_Width(LCD_HSPW);                              
-//  ER_TFT.LCD_Vertical_Non_Display(LCD_VBPD);                               
-//  ER_TFT.LCD_VSYNC_Start_Position(LCD_VFPD);                               
-//  ER_TFT.LCD_VSYNC_Pulse_Width(LCD_VSPW);                              
-      
-//  ER_TFT.Select_Main_Window_16bpp();
-
-//  ER_TFT.Memory_XY_Mode(); //Block mode (X-Y coordination addressing)
-//  ER_TFT.Memory_16bpp_Mode();
-//  ER_TFT.Select_Main_Window_16bpp();  
-    
-}
-
-
-
-//Liga o display
-//on: true, liga display, false: desliga display 
-void Panel_RA8889::DisplayOn(bool on)
-{
-  //Display ON/OFF, bit 5 do registardor DPCR
-  // 0: Display Off.
-  // 1: Display On.
-  uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);  //0x12
-  temp = SPI_DataRead();
-  if (on) temp |= cSetb6 else temp &= (~cSetb6);
-  SPI_DataWrite(temp);
-}
-
-//Passa o display para modo grafico
-void Panel_RA8889::GraphicMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_ICR);  //0x03
-  temp = SPI_DataRead();
-  temp &= cClrb2;         //desliga o bit 2, ativando modo grafico
-  SPI_DataWrite(temp);
-}
-
-//Verifica se o modo grafico está ativo
-//false: modo texto
-//true: modo grafico 
-bool Panel_RA8889::GraphicMode(void){
-  uint8_t temp;
-  SPI_CmdWrite(REG_ICR);  //0x03
-  temp = SPI_DataRead();
-  return ((temp == cSetb2) == 0x00);      //Veja se o bit 2 está desligado
-}
-
-//Passa o display para modo texto
-void Panel_RA8889::TextMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_ICR);  //0x03
-  temp = SPI_DataRead();
-  temp |= cSetb2;         //liga o bit 2, ativando o modo texto
-  SPI_DataWrite(temp);
+  Vertical_NonDisplay(LCD_VBPD);               //(VS Blanking)
+  VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
+  VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
+  
+#end if
 }
 
 
 //================================================================================
 // Funções SPI
 //================================================================================
+
 
 //Inicializa o SPI para a comunicacao com o Display RA8889
 void Panel_RA8889::SPI_Init()
@@ -175,6 +223,7 @@ void Panel_RA8889::SPI_Init()
 	SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0));
 	SPI.begin();
 }
+
 
 //SPISetCS
 //Seta o Chip Select
@@ -187,16 +236,18 @@ void Panel_RA8889::SPISetCS(bool active)
 	digitalWrite(_cs, LOW);   //SS_RESET
 }
 
+
 uint8_t Panel_RA8889::SPIRwByte(uint8_t value)
 {
-	uint8_t result;
-	result = SPI.transfer(value);
-	return result;
+  uint8_t result;
+  result = SPI.transfer(value);
+  return result;
 }
+
 
 //SPI_CommandWrite
 //Escreve um comando para o SPI do Display
-void Panel_RA8889::SPI_CmdWrite(int cmd)
+void Panel_RA8889::SPI_CmdWrite(uint8_t cmd)
 {
   SPISetCS(false);    //SS_RESET;
   SPIRwByte(0x00);    //Indica Commando para escrever 
@@ -204,9 +255,10 @@ void Panel_RA8889::SPI_CmdWrite(int cmd)
   SPISetCS(true);     //SS_SET;
 }
 
+
 //SPI_DataWrite
 //Escreve dados para o SPI
-void Panel_RA8889::SPI_DataWrite(int data)
+void Panel_RA8889::SPI_DataWrite(uint8_t data)
 {
   SPISetCS(false);    //SS_RESET;
   SPIRwByte(0x80);    //Indica Dados para escrever
@@ -214,8 +266,9 @@ void Panel_RA8889::SPI_DataWrite(int data)
   SPISetCS(true);     //SS_SET;
 }
 
+
 //SPI_DataWritePixel
-void Panel_RA8889::SPI_DataWrite_Pixel(int data)
+void Panel_RA8889::SPI_DataWrite_Pixel(uint16_t data)
 {
   SPISetCS(false);          //SS_RESET;
   SPIRwByte(0x80);          //Indica Dados para escrever
@@ -228,11 +281,12 @@ void Panel_RA8889::SPI_DataWrite_Pixel(int data)
   SPISetCS(true);           //SS_SET;
 }
 
+
 //SPI_DataRead
 //Ler um byte de dados no SPI
-int Panel_RA8889::SPI_DataRead(void)
+uint8_t Panel_RA8889::SPI_DataRead(void)
 {
-  int temp = 0;
+  uint8_t temp = 0;
   SPISetCS(false);          //SS_RESET;
   SPIRwByte(0xc0);
   temp = SPIRwByte(0x00);
@@ -240,13 +294,15 @@ int Panel_RA8889::SPI_DataRead(void)
   return temp;
 }
 
+
 //================================================================================
 // Comandos para o Display
 //================================================================================
 
+
 //StatusRead
 //Leia o estado do registrado STSR
-int Panel_RA8889::StatusRead(void)
+uint8_t Panel_RA8889::StatusRead(void)
 {
   int temp = 0;
   SPISetCS(false);       //SS_RESET;
@@ -256,12 +312,14 @@ int Panel_RA8889::StatusRead(void)
   return temp;
 }
 
+
 //escreve valor no registrador do display
 void Panel_RA8889::RegisterWrite(uint8_t Cmd, uint8_t Data)
 {
 	SPI_CmdWrite(Cmd);
 	SPI_DataWrite(Data);
 }
+
 
 //Ler valor do registrador do display
 uint8_t Panel_RA8889::RegisterRead(uint8_t Cmd)
@@ -271,6 +329,7 @@ uint8_t Panel_RA8889::RegisterRead(uint8_t Cmd)
 	temp = SPI_DataRead();
 	return result;
 }
+
 
 //Antigo HW_Reset(void)
 /**
@@ -300,7 +359,7 @@ void Panel_RA8889::HardwareReset(void)
 
 
 /**
- * Aguarda até que o RA8889 finalize sua inicialização interna e o PLL esteja pronto.
+ * @brief Aguarda até que o RA8889 finalize sua inicialização interna e o PLL esteja pronto.
  * 
  * Fluxo:
  *  - Verifica o registrador de status (STSR) para saber se a inicialização interna terminou.
@@ -317,37 +376,37 @@ void Panel_RA8889::PLL_WaitReady(void)
   bool system_ok = false;
   
   do {
-    temp = StatusRead();              //Read Status Register STSR
-    if((temp & 0x02) == 0x00)         //Veja se o bit 2 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
+    temp = StatusRead();                       //Read Status Register STSR
+    if((temp & 0x02) == 0x00)                  //Veja se o bit 2 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
     {
       
-	  delay(2);                       //MCU too fast, necessary
-      SPI_CmdWrite(0x01);             //Access register Chip Configuration Register (CCR)
-      delay(2);                       //MCU too fast, necessary
-      temp = SPI_DataRead();          //Leia o CCR 
-      if((temp & 0x80) == 0x80)       //Check CCR register's PLL is ready or not (bit 7 = 1)
+	  delay(2);                                //MCU too fast, necessary
+      SPI_CmdWrite(0x01);                      //Access register Chip Configuration Register (CCR)
+      delay(2);                                //MCU too fast, necessary
+      temp = SPI_DataRead();                   //Leia o CCR 
+      if((temp & 0x80) == 0x80)                //Check CCR register's PLL is ready or not (bit 7 = 1)
       {
-        system_ok = true;             //PLL pronto
+        system_ok = true;                      //PLL pronto
         count_timeout = 0;
       } else {
-        delay(2);                     //MCU too fast, necessary
-        SPI_CmdWrite(0x01);           //Access register Chip Configuration Register (CCR)
-        delay(2);                     //MCU too fast, necessary
-        SPI_DataWrite(0x80);          //Reconfigura a frequencia do PLL
+        delay(2);                              //MCU too fast, necessary
+        SPI_CmdWrite(0x01);                    //Access register Chip Configuration Register (CCR)
+        delay(2);                              //MCU too fast, necessary
+        SPI_DataWrite(0x80);                   //Reconfigura a frequencia do PLL
       }
 	  
     } else {                          
-      system_ok = false;              //A inicialização interna ainda está sendo feita
-      count_timeout++;                //fazer outra tentativa
+      system_ok = false;                       //A inicialização interna ainda está sendo feita
+      count_timeout++;                         //fazer outra tentativa
     }
 	
-    if(system_ok==false && count_timeout==5)      //Sistema ainda nao está pronto e houve timeout
+    if(system_ok==false && count_timeout==5)   //Sistema ainda nao está pronto e houve timeout
     {
-      ChipHardwareReset();            //*note1, envia um reset novamente
-      count_timeout = 0;              //zera o cotnador de timeout 
+      ChipHardwareReset();                     //*note1, envia um reset novamente
+      count_timeout = 0;                       //zera o cotnador de timeout 
     }
 	
-  } while(system_ok==false);          //faz enquanto não ficar pronto o sistema
+  } while(system_ok==false);                   //faz enquanto não ficar pronto o sistema
 }
 
 
@@ -357,6 +416,10 @@ void Panel_RA8889::PLL_WaitReady(void)
  *        - SDRAM Clock (DRAM_FREQ)
  *        - Core Clock (CORE_FREQ)
  * 
+ *        REG[05h] SCLK PLL Control Register 1 (PPLLC1) - SCAN or PIXEL Clock PLL
+ *        REG[07h] MCLK PLL Control Register 1 (MPLLC1) - MEMORY Clock PLL
+ *        REG[09h] CCLK PLL Control Register 1 (SPLLC1) - CORE or SYSTEM Clock PLL
+ *
  * A função calcula automaticamente o divisor e multiplicador adequado
  * com base no cristal externo (OSC_FREQ) e nas frequências alvo.
  * 
@@ -367,10 +430,7 @@ void Panel_RA8889::PLL_WaitReady(void)
  */
 void Panel_RA8889::PLL_ConfigClocks(void) 
 {
-  //REG[05h] SCLK PLL Control Register 1 (PPLLC1) - SCAN or PIXEL Clock PLL
-  //REG[07h] MCLK PLL Control Register 1 (MPLLC1) - MEMORY Clock PLL
-  //REG[09h] CCLK PLL Control Register 1 (SPLLC1) - CORE or SYSTEM Clock PLL
-
+  
   // ---------- Set Pixel/Scan Clock ----------
  
   if(SCAN_FREQ>=63)        //&&(SCAN_FREQ<=100))
@@ -477,13 +537,13 @@ void Panel_RA8889::PLL_ConfigClocks(void)
   //Isso é feito apra simplificar e facilitar a progarmação e arquitetura sem gerar instabilidade no disposiutivo.
   
   // ---------- Desliga temporariamente o PLL ----------
-  SPI_CmdWrite(REG_CCR);         //0x01, Envia comando Chip Configuration Register (CCR) 
-  SPI_CmdWrite(0x00);            //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
-  delay(1);                      //Aguarda para estabilizar
+  SPI_CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
+  SPI_CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
+  delay(1);                                    //Aguarda para estabilizar
   
   // ---------- Habilita PLL com novos valores ----------
-  SPI_CmdWrite(0x80);            //Comando para ligar PLL
-  delay(1);                      //Aguarda para estabilizar
+  SPI_CmdWrite(0x80);                          //Comando para ligar PLL
+  delay(1);                                    //Aguarda para estabilizar
 
 }
 
@@ -584,6 +644,7 @@ void Panel_RA8889::SDRAM_Init(void)
 //================================================================================
 // [0x01] Chip Configuration Register (CCR)
 //================================================================================
+
 
 /**
  * @brief Configuração do pino de saída 24-bits da interface (I/F) do painel TFT
@@ -689,28 +750,31 @@ void Panel_RA8889::TFT_Without(void)
   SPI_DataWrite(temp);
 }
 
+
 /**
  * @brief Configuração do pino de saída de interface (I/F) do painel TFT
  *
- * Escreve no registrador 0x01 Chip Configuration Register (CCR)
- *   bit [4-3]
- *   00b: Saída TFT 24-bits
- *   01b: Saída TFT 18-bits
- *   10b: Saída TFT 16-bits
- *   11b: Sem Nenhuma Saída TFT
+ *        Escreve no registrador 0x01 Chip Configuration Register (CCR)
+ *        bit [4-3] 0b00: Saída TFT 24-bits
+ *                  0b01: Saída TFT 18-bits
+ *                  0b10: Saída TFT 16-bits
+ *                  0b11: Sem Nenhuma Saída TFT
  * 
- * Outros pinos de saída TFT não utilizados são definidos como GPIO ou função de tecla.
+ *        Outros pinos de saída TFT não utilizados são definidos como GPIO ou 
+ *        função de tecla.
  *
  * @param None
  *
+ * @note None
  */
-void Panel_RA8889::TFT_SetInterface(TFTInterface mode)
+void Panel_RA8889::TFT_Interface(TFTInterface mode)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                 //0x01, Chip Configuration Register (CCR) 
+  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
   temp = SPI_DataRead();
-  temp &= ( cClrb4 & cClrb3);            //Limpa bits 4 e 3
-  temp |= static_cast<uint8_t>(mode);    //Converte enum para uint8_t
+  temp &= cClrb4;                              //Reset bits 4
+  temp &= cClrb3;                              //Reset bits 3
+  temp |= static_cast<uint8_t>(mode);          //Converte enum para uint8_t
   SPI_DataWrite(temp);
 }
 
@@ -738,6 +802,7 @@ void Panel_RA8889::HostDataBus_Select_8bit(void)
   temp &= cClrb0;                              //Reset bit 0
   SPI_DataWrite(temp);
 }
+
 
 /**
  * @brief Parallel Host Data Bus 16-bit Width Selection
@@ -845,6 +910,60 @@ void Panel_RA8889::HostReadMemoryDirection(MemoryDirection direction)
 
 
 /**
+ * @brief Muda o display para modo grafico
+ *
+ * @param None
+ *
+ * @note None
+ *
+ */
+//
+void Panel_RA8889::GraphicMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb2;                              //Reset bit 2
+  SPI_DataWrite(temp);                         //Ativa modo grafico
+}
+
+
+/**
+ * @brief Verifica se o modo grafico está ativo
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @return true: Modo Grafico, false: Modo texto
+ */
+bool Panel_RA8889::GraphicMode(void){
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  return ((temp == cSetb2) == 0x00);           //Verificar bit 2 está desligado
+}
+
+
+/**
+ * @brief Muda o display para modo texto
+ *
+ * @param None
+ *
+ * @note None
+ *        
+ */
+void Panel_RA8889::TextMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp |= cSetb2;                              //Set bit 2
+  SPI_DataWrite(temp);                         //Ativa o modo texto
+}
+
+
+/**
  * @brief Seleciona o destino da porta de memória do RA8889 para a SDRAM.
  *
  * Configura os bits [1:0]=00b do registrador ICR (0x03)
@@ -854,7 +973,7 @@ void Panel_RA8889::HostReadMemoryDirection(MemoryDirection direction)
  * @note Image buffer (SDRAM) for image data, pattern (palette), user-characters. 
  *        
  */
-void Panel_RA8889::Memory_Select_SDRAM(void)
+void Panel_RA8889::MemorySelect_SDRAM(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
@@ -863,6 +982,7 @@ void Panel_RA8889::Memory_Select_SDRAM(void)
   temp &= cClrb1;                      //Clear bit 1
   SPI_DataWrite(temp);                 //Atualiza registrador
 }
+
 
 /**
  * @brief Seleciona o destino da porta de memória do RA8889 para Tabela Gama.
@@ -874,7 +994,7 @@ void Panel_RA8889::Memory_Select_SDRAM(void)
  * @note Tabela Gama para cores Vermelho/Verde/Azul.
  *        
  */
-void Panel_RA8889::Memory_Select_Gamma_Table(void)
+void Panel_RA8889::MemorySelect_GammaTable(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
@@ -883,6 +1003,7 @@ void Panel_RA8889::Memory_Select_Gamma_Table(void)
   temp |= cSetb0;                      //Set bit 0
   SPI_DataWrite(temp);                 //Atualiza registrador
 }
+
 
 /**
  * @brief Seleciona o destino da porta de memória do RA8889 para Cursor Gráfico.
@@ -898,7 +1019,7 @@ void Panel_RA8889::Memory_Select_Gamma_Table(void)
  *       o conjunto de cursores gráficos de destino e continuar a gravação de 
  *       256 bytes..
  */
-void Panel_RA8889::Memory_Select_Graphic_Cursor_RAM(void)
+void Panel_RA8889::MemorySelect_GraphicCursorRAM(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
@@ -907,6 +1028,7 @@ void Panel_RA8889::Memory_Select_Graphic_Cursor_RAM(void)
   temp &= cClrb0;                      //Clear bit 0
   SPI_DataWrite(temp);                 //Atualiza registrador
 }
+
 
 /**
  * @brief Seleciona o destino da porta de memória do RA8889 para RAM de Palette.
@@ -922,7 +1044,7 @@ void Panel_RA8889::Memory_Select_Graphic_Cursor_RAM(void)
  *       o conjunto de cursores gráficos de destino e continuar a gravação de 
  *       256 bytes..
  */
-void Panel_RA8889::Memory_Select_Color_Palette_RAM(void)
+void Panel_RA8889::MemorySelect_ColorPaletteRAM(void)
 {
   uint8_t temp = 0;
   SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
@@ -931,6 +1053,7 @@ void Panel_RA8889::Memory_Select_Color_Palette_RAM(void)
   temp |= cSetb0;                      //Set bit 0
   SPI_DataWrite(temp);                 //Atualiza registrador
 }
+
 
 /**
  * @brief Seleciona o destino da porta de memória do RA8889.
@@ -944,59 +1067,1106 @@ void Panel_RA8889::Memory_Select_Color_Palette_RAM(void)
  * @param dest Destino da porta de memória (SDRAM, Tabela Gama, Cursor Grafico e Palete)
  *
  */
-void Panel_RA8889::MemoryPort_Select(MemoryPortDest dest);
+void Panel_RA8889::MemoryPort_Select(MemoryPortDest dest)
 {
-  uint8_t temp = 0;
-  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();               //Lê valor atual do registrador
-  temp &= 0xfc;                        //Limpa bit 1 e 0
-  temp |= static_cast<uint8_t>(dest);  //Define o destino
-  SPI_DataWrite(temp);                 //Atualiza registrador
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= 0xfc;                                //Reset bit 1 e 0
+  temp |= static_cast<uint8_t>(dest);          //Define o destino
+  SPI_DataWrite(temp);                         //Atualiza registrador
 }
 
 
+//================================================================================
+// [0x10] Main/PIP Window Control Register (MPWCTR)
+//================================================================================
 
 
+/**
+ * @brief Habilita o Picture-in-Picure (PIP 1) do display
+ *        PIP: Para entender, é uma pequena área de iamgem (janelinha) sobre 
+ *        outra área de imagem semelhante a uma janelinha da TV no canto 
+ *        esquerdo, enquanto vai zapeando os canais nas janelas principal.
+ *
+ *        REG[10h] Main/PIP Window Control Register (MPWCTR)
+ *        bit [7] PIP 1 window Enable/Disable
+ *                0b0: PIP 1 window disable.
+ *                0b1: PIP 1 window enable
+ *
+ * @param b: true, PIP enable, false, PIP disable
+ *
+ * @note PIP 1 window always on top of PIP 2 window
+ */
+void Panel_RA8889::Enable_PIP1(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = SPI_DataRead();
+  if (b) temp |= cSetb7 else temp &= cClrb7;
+  SPI_DataWrite(temp);
+}
 
 
+/**
+ * @brief Habilita o Picture-in-Picure (PIP 2) do display
+ *        PIP: Para entender, é uma pequena área de iamgem (janelinha) sobre 
+ *        outra área de imagem semelhante a uma janelinha da TV no canto 
+ *        esquerdo, enquanto vai zapeando os canais nas janelas principal.
+ *
+ *        REG[10h] Main/PIP Window Control Register (MPWCTR)
+ *        bit [6] PIP 2 window Enable/Disable
+ *                0b0: PIP 2 window disable.
+ *                0b1: PIP 2 window enable
+ *
+ * @param b: true, PIP enable, false, PIP disable
+ *
+ * @note PIP 1 window always on top of PIP 2 window
+ */
+void Panel_RA8889::Enable_PIP2(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = SPI_DataRead();
+  if (b) emp |= cSetb6 else temp &= cClrb6;
+  LCD_DataWrite(temp);
+}
 
 
+/**
+ * @brief Select Configure PIP 1 or 2 Window’s parameters
+ *
+ *        REG[10h] Main/PIP Window Control Register (MPWCTR)
+ *        bit [4] Select Configure PIP 1 or 2 Window’s parameters
+ *                PIP window’s parameter including Color Depth, starting address,
+ *                image width, display coordinates, window coordinates, window
+ *                width, and window height.
+ *                0b0: To configure PIP 1’s parameters.
+ *                0b1: To configure PIP 2’s parameters.
+ *
+ * @param PIPSelect::PIP1 : To configure PIP 1’s parameters
+ *        PIPSelect::PIP2 : To configure PIP 2’s parameters.
+ *
+ * @note None
+ */
+void Panel_RA8889::Select_PIP_Parameter(PIPSelect pip)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = SPI_DataRead();
+  temp &= cClrb4;                              //Reset bit 4
+  temp |= static_cast<uint8_t>(pip);           //Converte enum para uint8_t
+  SPI_DataWrite(temp);
+}
 
 
+/**
+ * @brief Seleciona Janela de imagem principal para 8bpp
+ *
+ *        REG[10h] Main/PIP Window Control Register (MPWCTR)
+ *        bit [3-2] Main Window Image Color Depth Setting
+ *                  0b00: 8-bpp generic TFT, i.e. 256 colors.
+ *                  0b01: 16-bpp generic TFT, i.e. 65K colors.
+ *                  0b1x: 24-bpp generic TFT, i.e. 1.67M colors.
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::Select_MainWindow_8bpp(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = SPI_DataRead();
+  temp &= cClrb3;                              //Reset bit 3
+  temp &= cClrb2;                              //Reset bit 2
+  SPI_DataWrite(temp);                         //Set main windows image to 8bpp
+}
 
 
+/**
+ * @brief Seleciona Janela de imagem principal para 16bpp
+ *
+ *        REG[10h] Main/PIP Window Control Register (MPWCTR)
+ *        bit [3-2] Main Window Image Color Depth Setting
+ *                  0b00: 8-bpp generic TFT, i.e. 256 colors.
+ *                  0b01: 16-bpp generic TFT, i.e. 65K colors.
+ *                  0b1x: 24-bpp generic TFT, i.e. 1.67M colors.
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::Select_MainWindow_16bpp(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = SPI_DataRead();
+  temp &= cClrb3;                              //Reset bit 3
+  temp |= cSetb2;                              //Set bit 2
+  SPI_DataWrite(temp);                         //Set main windows image to 16bpp
+}
 
 
+/**
+ * @brief Seleciona Janela de imagem principal para 24bpp
+ *
+ *        REG[10h] Main/PIP Window Control Register (MPWCTR)
+ *        bit [3-2] Main Window Image Color Depth Setting
+ *                  0b00: 8-bpp generic TFT, i.e. 256 colors.
+ *                  0b01: 16-bpp generic TFT, i.e. 65K colors.
+ *                  0b1x: 24-bpp generic TFT, i.e. 1.67M colors.
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::Select_MainWindow_24bpp(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = SPI_DataRead();
+  temp |= cSetb3;                              //Set bit 3
+  SPI_DataWrite(temp);                         //Set main windows image to 16bpp
+}
 
 
+/**
+ * @brief Controlar o sinal de modo de sincronização do painel LCD habilitando
+ *        o modo de sincronização XVSYNC, XHSYNC, XDE
+ *
+ *        REG[10h] Main/PIP Window Control Register (MPWCTR)
+ *        bit [0] To Control panel’s synchronous signals
+ *                0b0: Sync Mode: Enable XVSYNC, XHSYNC, XDE
+ *                0b1: DE Mode: Only XDE enable, XVSYNC & XHSYNC in idle state
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::Select_LCD_SyncMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = SPI_DataRead();
+  temp &= cClrb0;                              //Reset bit 0
+  SPI_DataWrite(temp);                         //Enable XVSYNC, XHSYNC, XDE
+}
 
 
+/**
+ * @brief Controlar o sinal de modo de sincronização do painel LCD habilitando
+ *        apenas o modo de sincronização XDE
+ *
+ *        REG[10h] Main/PIP Window Control Register (MPWCTR)
+ *        bit [0] To Control panel’s synchronous signals
+ *                0b0: Sync Mode: Enable XVSYNC, XHSYNC, XDE
+ *                0b1: DE Mode: Only XDE enable, XVSYNC & XHSYNC in idle state
+ *
+ * @param None
+ *
+ */
+void Panel_RA8889::Select_LCD_DEMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = SPI_DataRead();
+  temp |= cSetb0;                              //Set bit 0
+  LCD_DataWrite(temp);                         //Only XDE enable, XVSYNC & XHSYNC in idle state
+}
 
 
+//================================================================================
+// [0x12] Display Configuration Register (DPCR)
+//================================================================================
 
 
+/**
+ * @brief Liga o display
+ *
+ *        REG[12h] Display Configuration Register (DPCR)
+ *        bit [6] Display ON/OFF
+ *                0b0: Display Off.
+ *                0b1: isplay On.
+ *
+ * @param on: true, liga display, false: desliga display 
+ *
+ * @note None
+ *       
+ */
+void Panel_RA8889::DisplayOn(bool on)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb6;                              //Rest bit 
+  if (on) temp |= cSetb6;
+  SPI_DataWrite(temp);
+}
 
 
+/**
+ * @brief Horizontal Scan Direction Left to Right
+ *
+ *        bit [4] 0b0: Horizontal Scan Left to Right
+ *                0b1: Horizontal Scan Right to Left
+ *
+ * @param Nenhum
+ *
+ * @note O HSCAN deve acompanhar a configuração do registrador [0x02] bit [2-1]
+ *       PIP window will be disabled when HDIR set as 1.
+ *       
+ */
+void Panel_RA8889::HScanDirection_LeftToRight (void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb4;                              //reset bit 4
+  SPI_DataWrite(temp);                         //Write HDIR
+}
 
 
+/**
+ * @brief Horizontal Scan Direction Left to Right
+ *
+ *        bit [4] 0b0: Horizontal Scan Left to Right
+ *                0b1: Horizontal Scan Right to Left
+ *
+ * @param Nenhum
+ *
+ * @note O HSCAN deve acompanhar a configuração do registrador [0x02] bit [2-1]
+ *       PIP window will be disabled when HDIR set as 1.
+ *       
+ */
+void Panel_RA8889::HScanDirection_RightToLeft (void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp |= cSetb4;                              //Set bit 4
+  SPI_DataWrite(temp);                         //Write HDIR
+}
 
 
+/**
+ * @brief Horizontal Scan Direction Left to Right / Right to Left
+ *
+ *        bit [4] 0b0: Horizontal Scan Left to Right
+ *                0b1: Horizontal Scan Right to Left
+ *
+ * @param Nenhum
+ *
+ * @note O HSCAN deve acompanhar a configuração do registrador [0x02] bit [2-1]
+ *       PIP window will be disabled when HDIR set as 1.
+ *       
+ */
+void Panel_RA8889::HorizontalScanDirection (HSCANDir direction)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb4;                              //reset bit 4
+  temp |= static_cast<uint8_t>(direction);     //Define o destino
+  SPI_DataWrite(temp);                         //Write HDIR
+}
 
 
+/**
+ * @brief Vertical Scan Direction Top to Bottom
+ *
+ *        bit [3] 0b0: Vertical Scan from top to bottom
+ *                0b1: Vertical Scan from bottom to top
+ * 
+ * @note O VSCAN deve acompanhar a configuração do registrador [0x02] bit [2-1]
+ *       PIP window will be disabled when VDIR set as 1.
+ *       
+ */
+void Panel_RA8889::VScanDirection_TopToBottom(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb3;                              //Reset bit 3
+  SPI_DataWrite(temp);                         //Write VDIR
+}
 
 
+/**
+ * @brief Vertical Scan Direction Bottom to Top
+ *
+ *        bit [3] 0b0: Vertical Scan from top to bottom
+ *                0b1: Vertical Scan from bottom to top
+ * 
+ * @note O VSCAN deve acompanhar a configuração do registrador [0x02] bit [2-1]
+ *       PIP window will be disabled when VDIR set as 1.
+ *       
+ */
+void Panel_RA8889::VScanDirection_BottomToTop(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp |= cSetb3;                              //Set bit 3
+  SPI_DataWrite(temp);                         //Write VDIR
+}
 
 
+/**
+ * @brief Vertical Scan Direction Top to Bottom / Bottom to Top
+ *
+ *        bit [3] 0b0: Vertical Scan from top to bottom
+ *                0b1: Vertical Scan from bottom to top
+ *
+ * @param dir: VSCANDir::TopToBottom
+ *             VSCANDir::BottomToTop
+ * 
+ * @note O VSCAN deve acompanhar a configuração do registrador [0x02] bit [2-1]
+ *       PIP window will be disabled when VDIR set as 1.
+ */
+void Panel_RA8889::VerticalScanDirection(VSCANDir direction)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb3;                              //Reset bit 3
+  temp |= static_cast<uint8_t>(direction);     //Define o destino
+  SPI_DataWrite(temp);                         //Write VDIR
+}
 
 
+/**
+ * @brief Set the type of parallel data output sequence in RGB format
+ *
+ *        Parallel XPDAT[23:0] Output Sequence:
+ *        bit [2-0] 0b000 : RGB
+ *                  0b001 : RBG
+ *                  0b010 : GRB
+ *                  0b011 : GBR
+ *                  0b100 : BRG
+ *                  0b101 : BGR
+ *                  0b110 : Gray
+ *                  0b111 : Send out idle state (all 0 or 1, black or white color).
+
+ * @param None
+ * 
+ * @note None
+ */
+void Panel_RA8889::PDATA_ColorFmt(PDATAColorFmt: fmt)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb0                               //Reset bit 0 
+  temp &= cClrb1                               //Reset bit 1
+  temp &= cClrb2                               //Reset bit 2
+  temp |= static_cast<uint8_t>(fmt);           //Define o destino  
+  ER_TFT.LCD_DataWrite(temp);
+}
 
 
+/**
+ * @brief Panel Scan Clock PCLK Rising
+ *
+ *        PCLK Inversion:
+ *        bit [7] 0b0 : 0: PDAT, DE, HSYNC etc. Panel (Drive/change) fetches PDAT at PCLK rising edge.
+ *                0b1 : 1: PDAT, DE, HSYNC etc. Panel (Drive/change) fetches PDAT at PCLK falling edge.
+ *
+ * @param None
+ * 
+ * @note None
+ */
+void Panel_RA8889::PCLK_Rising(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb7;                              //Reset bit 7 
+  SPI_DataWrite(temp);
+}
 
 
+/**
+ * @brief Panel Scan Clock PCLK Failing
+ *
+ *        PCLK Inversion:
+ *        bit [7] 0b0 : 0: PDAT, DE, HSYNC etc. Panel (Drive/change) fetches PDAT at PCLK rising edge.
+ *                0b1 : 1: PDAT, DE, HSYNC etc. Panel (Drive/change) fetches PDAT at PCLK falling edge.
+ *
+ * @param None
+ * 
+ * @note None
+ */
+void Panel_RA8889::PCLK_Falling(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp |= cSetb7;                              //Set bit 7
+  SPI_DataWrite(temp);
+}
 
 
+/**
+ * @brief Panel Scan Clock PCLK Edge Type
+ *
+ *        PCLK Inversion:
+ *        bit [7] 0b0 : 0: PDAT, DE, HSYNC etc. Panel (Drive/change) fetches PDAT at PCLK rising edge.
+ *                0b1 : 1: PDAT, DE, HSYNC etc. Panel (Drive/change) fetches PDAT at PCLK falling edge.
+ *
+ * @param None
+ * 
+ * @note None
+ */
+void Panel_RA8889::PCLK_EdgeType(PCLKEdge edge)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb7;                              //Reset bit 7
+  temp |= static_cast<uint8_t>(edge);          
+  SPI_DataWrite(temp);
+}
 
 
+//================================================================================
+// [0x13] Panel scan Clock and Data Setting Register (PCSR)
+//================================================================================
+
+
+/**
+ * @brief HSYNC Polarity Active Low
+ *
+ *        Polarity:
+ *        bit [7] 0b0 : Low active
+ *                0b1 : High active
+ *
+ * @param None
+ * 
+ * @note None
+ */
+void Panel_RA8889::HSYNC_PolarityLow(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb7;                              //Reset bit 7
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief HSYNC Polarity Active High
+ *
+ *        Polarity:
+ *        bit [7] 0b0 : Low active
+ *                0b1 : High active
+ *
+ * @param None
+ * 
+ * @note None
+ */
+void Panel_RA8889::HSYNC_PolarityHigh(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp |= cSetb7;                              //Set bit 7
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief HSYNC Polarity
+ *
+ *        Polarity:
+ *        bit [7] 0b0 : Low active
+ *                0b1 : High active
+ *
+ * @param HSYNCPolarity::Low
+ *        HSYNCPolarity::High
+ *
+ * @note None
+ */
+void Panel_RA8889::HSYNC_Polarity(HSYNCPolarity val)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb7;                              //Reset bit 7
+  temp |= static_cast<uint8_t>(val);
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief VSYNC Polarity Active Low
+ *
+ *        Polarity:
+ *        bit [6] 0b0 : Low active
+ *                0b1 : High active
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::VSYNC_PolarityLow(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb6;                              //Reset bit 6
+  SPI_DataWrite(temp);
+}
+
+/**
+ * @brief VSYNC Polarity Active High
+ *
+ *        Polarity:
+ *        bit [6] 0b0 : Low active
+ *                0b1 : High active
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::VSYNC_PolarityHigh(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp = ER_TFT.LCD_DataRead();
+  temp |= cSetb6;                              //Set bit 6
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief VSYNC Polarity
+ *
+ *        Polarity:
+ *        bit [6] 0b0 : Low active
+ *                0b1 : High active
+ *
+ * @param VSYNCPolarity::Low
+ *        VSYNCPolarity::High
+ *
+ * @note None
+ */
+void Panel_RA8889::VSYNC_Polarity(VSYNCPolarity val)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb6;                              //Reset bit 6
+  temp |= static_cast<uint8_t>(val);
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Data Enable Polarity Low Active
+ *        Generic TFT interface signal for data valid or data enable.
+ *
+ *        bit [5] 0b0 : High active
+ *                0b1 : Low active
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::DE_PolarityLow(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp |= cSetb5;                              //Set bit 5
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Data Enable Polarity High
+ *        Generic TFT interface signal for data valid or data enable.
+ *
+ *        bit [5] 0b0 : High active
+ *                0b1 : Low active
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::DE_PolarityHigh(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb5;                              //Reset bit 5
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Data Enable Polarity
+ *        Generic TFT interface signal for data valid or data enable.
+ *
+ *        bit [5] 0b0 : High active
+ *                0b1 : Low active
+ *
+ * @param DataEnable::High
+ *        DataEnable::Low
+ *
+ * @note None
+ */
+void Panel_RA8889::DE_Polarity(DEPolarity val)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= cClrb5;                              //Reset bit 5
+  temp |= static_cast<uint8_t>(val);
+  SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+// [0x14] Horizontal Display Width Register (HDWR)
+// [0x15] Horizontal Display Width Fine Tune Register (HDWFTR)
+// [0x1a] Vertical Display Height Register 0(VDHR0)
+// [0x1b] Vertical Display Height Register 1 (VDHR1)
+//================================================================================
+
+
+/**
+ * @brief Define a resolução vertical e horizontal do display
+ *        
+ *        [14h] Horizontal Display Width Setting (HDWR) Bit[7:0]
+ *        [15h] Horizontal Display Width Fine Tuning (HDWFTR) [3:0]
+ *        The register specifies the LCD panel horizontal display width in
+ *        the unit of 8 pixels resolution.
+ *        Horizontal display width(pixels) = (HDWR + 1) * 8 + HDWFTR
+ *
+ *	      [1Ah] Vertical Display Height Bit[7:0] (low register) 
+ *        Vertical Display Height(Line) = VDHR + 1
+ *   
+ *        [1Bh] Vertical Display Height Bit[10:8] (high register)
+ *        Vertical Display Height(Line) = VDHR + 1
+ *
+ * @param wx Width horizontal
+ *        hy Height vertical
+ *        
+ *
+ * @note None
+ */
+void Panel_RA8889::HorizontalWidth_VerticalHeight(uint16_t wx, uint16_t hy)
+{
+  uint8_t temp;
+  
+  if (wx < 8) {
+    SPI_CmdWrite(REG_HDWR);                    //0x14, Horizontal Display Width Register (HDWR)
+    SPI_DataWrite(0x00);                       //
+    
+    SPI_CmdWrite(REG_HDWFTR);                  //0x15, Horizontal Display Width Fine Tune Register (HDWFTR)
+    SPI_DataWrite(wx);                         //
+    
+    temp = hy - 1;
+    SPI_CmdWrite(REG_VDHR0);                   //0x1a, Vertical Display Height Register 0(VDHR0)
+    SPI_DataWrite(temp);                       //Store bit [7-0]
+    
+    temp = (hy - 1) >> 8;                      //
+    SPI_CmdWrite(REG_VDHR1);                   //0x1b, Vertical Display Height Register 1 (VDHR1)
+    SPI_DataWrite(temp);                       //Store bit [2-0]
+  } else {
+    temp = (wx / 8) - 1;                       //exemplo: temp = (800/8)-1 = 99
+    SPI_CmdWrite(REG_HDWR);                    //0x14, Horizontal Display Width Register (HDWR)
+    SPI_DataWrite(temp);                       //
+    
+    temp = wx % 8;                             //temp = 800 % 8 = 0
+    SPI_CmdWrite(REG_HDWFTR);                  //0x15, Horizontal Display Width Fine Tune Register (HDWFTR)
+    SPI_DataWrite(temp);                       //
+    
+    temp = hy - 1;                             //temp = 480 - 1 = 479 = 0x01df -> low(0xdf) 
+    SPI_CmdWrite(REG_VDHR0);                   //0x1a, Vertical Display Height Register 0(VDHR0)
+    SPI_DataWrite(temp);                       //Store bit [7-0]
+    
+    temp = (hy - 1) >> 8;                      //temp = 480 - 1 = 479 = 0x01df -> high(0x01)
+    SPI_CmdWrite(REG_VDHR1);                   //0x1b, Vertical Display Height Register 1 (VDHR1)
+    SPI_DataWrite(temp);                       //Store bit [2-0]
+  }
+}
+
+
+//================================================================================
+// [0x16] Horizontal Non-Display Period Register (HNDR)
+// [0x17] Horizontal Non-Display Period Fine Tune Register (HNDFTR)
+//================================================================================
+
+
+/**
+ * @brief Define o Período Horizontal de Não Exibição do LCD
+ *        
+ *        [16h] Horizontal Non-Display Period(HNDR) Bit[4:0]
+ *        This register specifies the horizontal non-display period. Also called "back porch".
+ *        Horizontal non-display period(pixels) = (HNDR + 1) * 8 + HNDFTR
+ *
+ *        [17h] Horizontal Non-Display Period Fine Tuning(HNDFT) [3:0]
+ *        This register specifies the fine tuning for horizontal non-display
+ *        period; it is used to support the SYNC mode panel. Each level of
+ *        this modulation is 1-pixel.
+ *        Horizontal non-display period(pixels) = (HNDR + 1) * 8 + HNDFTR
+ *
+ * @param hbpd HS Back Porch (Blanking)
+ *
+ * @note None
+ */
+void Panel_RA8889::Horizontal_NonDisplay(uint16_t hbpd)
+{
+  uitn8_t temp;
+  if (hbpd < 8) {
+    SPI_CmdWrite(REG_HNDR);                    //0x16, Horizontal Non-Display Period Register (HNDR)
+    SPI_DataWrite(0x00);                       //
+    
+    SPI_CmdWrite(REG_HNDFTR);                  //0x17, Horizontal Non-Display Period Fine Tune Register (HNDFTR)
+    SPI_DataWrite(hbpd);
+  } else {
+    temp = (hbpd / 8) - 1;                     // 
+    SPI_CmdWrite(REG_HNDR);                    //0x16, Horizontal Non-Display Period Register (HNDR)
+    SPI_DataWrite(temp);
+    
+    temp = hbpd % 8;                           //
+    SPI_CmdWrite(REG_HNDFTR);                  //0x17, Horizontal Non-Display Period Fine Tune Register (HNDFTR)
+    SPI_DataWrite(temp);
+  }
+}
+
+
+//================================================================================
+// [0x18] HSYNC Start Position Register (HSTR)
+// [0x19] HSYNC Pulse Width Register (HPWR)
+//================================================================================
+
+
+/**
+ * @brief 
+ *        
+ *        [18h] HSYNC Start Position Register (HSTR)
+ *        bit [4:0] HSYNC Start Position
+ *                  The starting position from the end of display area to the
+ *                  beginning of HSYNC. Each level of this modulation is 8-pixel.
+ *                  Also called front porch.
+ *                  HSYNC Start Position(pixels) = (HSTR + 1)x8
+ *
+ * @param hfpd: HS Front Porch
+ *
+ * @note None
+ */
+void Panel_RA8889::HSYNC_StartPosition(uint16_t hfpd)
+{
+  uint8_t temp;
+  if(hfpd<8) {
+    SPI_CmdWrite(REG_HSTR);                    //0x18, HSYNC Start Position Register (HSTR)
+    SPI_DataWrite(0x00);                       //
+  } else {
+    temp = (hfpd / 8) - 1;                     //
+    SPI_CmdWrite(REG_HSTR);                    //0x18, HSYNC Start Position Register (HSTR)
+    SPI_DataWrite(temp);                       //
+  }
+}
+	
+
+/**
+ * @brief 
+ *        
+ *        [19h] HSYNC Pulse Width Register (HPWR) 
+ *        bit [4:0] HSYNC Pulse Width(HPW)
+ *                  The period width of HSYNC.
+ *                  HSYNC Pulse Width(pixels) = (HPW + 1) x 8
+ *
+ * @param hspw: HS Pulse Width
+ *
+ * @note None
+ */
+void Panel_RA8889::HSYNC_PulseWidth(uint16_t hspw)
+{
+  uint16_t temp;
+  if(hspw<8) {
+    SPI_CmdWrite(REG_HPWR);                    //0x19, HSYNC Pulse Width Register (HPWR)
+    SPI.LCD_DataWrite(0x00);                   //
+  } else {
+    temp = (hspw / 8) - 1;
+    SPI_CmdWrite(REG_HPWR);                    //0x19, HSYNC Pulse Width Register (HPWR)
+    SPI_DataWrite(temp);                       //
+  }
+}
+
+
+//================================================================================
+// [0x1c] Vertical Non-Display Period Register 0(VNDR0)
+// [0x1d] Vertical Non-Display Period Register 1(VNDR1)
+//================================================================================
+
+/**
+ * @brief Define o Período Vertical de Não Exibição do LCD
+ *        
+ *        [1Ch] Vertical Non-Display Period Bit[7:0]
+ *        Vertical Non-Display Period(Line) = (VNDR + 1)
+ *
+ *        [1Dh] Vertical Non-Display Period Bit[9:8]
+ *        Vertical Non-Display Period(Line) = (VNDR + 1)
+ *
+ * @param vbpd VS Back Porch (Blanking)
+ *
+ * @note None
+ */
+void Panel_RA8889::Vertical_NonDisplay(uint16_t vbpd)
+{
+  uint16_t temp;
+  temp = vbpd - 1;
+  SPI_CmdWrite(REG_VNDR0);                     //0x1c, Vertical Non-Display Period Register 0(VNDR0)       
+  SPI_DataWrite(temp);                         //
+  SPI_CmdWrite(REG_VNDR1);                     //0x1d, Vertical Non-Display Period Register 1(VNDR1)
+  SPI_DataWrite(temp >> 8);	                   //
+}
+
+
+//================================================================================
+// [0x1e] VSYNC Start Position Register (VSTR)
+//================================================================================
+
+
+/**
+ * @brief 
+ *        
+ *        [18h] HSYNC Start Position[4:0]
+ *        The starting position from the end of display area to the
+ *        beginning of HSYNC. Each level of this modulation is 8-pixel.
+ *        Also called front porch.
+ *        HSYNC Start Position(pixels) = (HSTR + 1)x8
+ *
+ * @param vfpd: VS Front Porch
+ *
+ * @note None
+ */
+void Panel_RA8889::VSYNC_StartPosition(uint16_t vfpd)
+{
+    uint8_t temp;
+    temp = vfpd - 1;
+    SPI_CmdWrite(REG_VSTR);                    //0x1e, VSYNC Start Position Register (VSTR)
+    SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+// [0x1f] VSYNC Pulse Width Register (VPWR)
+//================================================================================
+
+
+/**
+ * @brief 
+ *        
+ *         [1Fh] VSYNC Pulse Width[5:0]
+ *         The pulse width of VSYNC in lines.
+ *         VSYNC Pulse Width(Line) = (VPWR + 1)
+ *
+ * @param vspw: VS Pulse Width
+ *
+ * @note None
+ */
+void Panel_RA8889::VSYNC_PulseWidth(uint8_t vspw)
+{
+  uint8_t temp;
+  temp = vspw - 1;
+  SPI_CmdWrite(REG_VPWR);                //0x1f, VSYNC Pulse Width Register (VPWR)
+  SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+// [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+//================================================================================
+
+
+/**
+ * @brief Block Mode X-Y Coordinates Addressing
+ *        
+ *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
+ 8        bit [2] Canvas addressing mode
+ *                0b0: Block mode (X-Y coordinates addressing)
+ *                0b1: Linear mode
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Memory_XY_Mode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp &= cClrb2;                            //Reset bit 2
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Linear Mode Addressing
+ *        
+ *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
+ *        bit [2] Canvas addressing mode
+ *                0b0: Block mode (X-Y coordinates addressing)
+ *                0b1: Linear mode
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Memory_Linear_Mode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp |= cSetb2;                            //Set bit 2
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
+ *        e gravação da memória no modo de bloco 8bpp
+ *        
+ *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
+ *        bit [1-0] Canvas image’s color depth & memory R/W data width
+ *                  In Block Mode:
+ *                  00: 8bpp
+ *                  01: 16bpp
+ *                  1x: 24bpp
+ *                  In Linear Mode:
+ *                  x0: 8-bits memory data read/write.
+ *                  x1: 16-bits memory data read/write
+ *
+ * @param None
+ *
+ * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
+ */
+void Panel_RA8889::Memory_8bpp_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp &= cClrb1;                            //Reset bit 1
+  temp &= cClrb0;                            //Reset bit 2
+  SPI_DataWrite(temp);                       //Set block mode x-y 8bpp
+}
+
+
+/**
+ * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
+ *        e gravação da memória no modo de bloco 16bpp
+ *        
+ *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
+ *        bit [1-0] Canvas image’s color depth & memory R/W data width
+ *                  In Block Mode:
+ *                  00: 8bpp
+ *                  01: 16bpp
+ *                  1x: 24bpp
+ *                  In Linear Mode:
+ *                  x0: 8-bits memory data read/write.
+ *                  x1: 16-bits memory data read/write
+ *
+ * @param None
+ *
+ * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
+ */
+void Panel_RA8889::Memory_16bpp_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp &= cClrb1;                            //Reset bit 1
+  temp |= cSetb0;                            //Set bit 0
+  SPI_DataWrite(temp);                       //Set block mode x-y 16bpp
+}
+
+
+/**
+ * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
+ *        e gravação da memória no modo de bloco 24bpp
+ *        
+ *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
+ *        bit [1-0] Canvas image’s color depth & memory R/W data width
+ *                  In Block Mode:
+ *                  00: 8bpp
+ *                  01: 16bpp
+ *                  1x: 24bpp
+ *                  In Linear Mode:
+ *                  x0: 8-bits memory data read/write.
+ *                  x1: 16-bits memory data read/write
+ *
+ * @param None
+ *
+ * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
+ */
+void Panel_RA8889::Memory_24bpp_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp |= cSetb1;                            //Set bit 1
+  SPI_DataWrite(temp);                       //Set block mode x-y 24bpp
+}
+
+
+//================================================================================
+// [0x20] Main Image Start Address 0 (MISA0)
+// [0x21] Main Image Start Address 1 (MISA1)
+// [0x22] Main Image Start Address 2 (MISA2)
+// [0x23] Main Image Start Address 3 (MISA3)
+//================================================================================
+
+
+/**
+ * @brief Main Image Start Address
+ *        
+ *        REG [20h] Main Image Start Address[7:2]   : Deve ser divisível por 4. O bit [1:0] está vinculado a “0” internamente.
+ *        REG [21h] Main Image Start Address[15:8]
+ *        REG [22h] Main Image Start Address [23:16]
+ *        REG [23h] Main Image Start Address [31:24]
+ *
+ * @param addr
+ *
+ * @note None
+ */
+void Panel_RA8889::MainImage_StartAddress(unsigned long addr)
+{
+  RegisterWrite(REG_MISA0, addr);              //0x20, Main Image Start Address 0 (MISA0)
+  RegisterWrite(REG_MISA1, addr >> 8);         //0x21, Main Image Start Address 1 (MISA1)
+  RegisterWrite(REG_MISA2, addr >> 16);        //0x22, Main Image Start Address 2 (MISA2)
+  RegisterWrite(REG_MISA3, addr >> 24);	       //0x23, Main Image Start Address 3 (MISA3)
+}
+
+
+//================================================================================
+// [0x24] Main Image Width 0 (MIW0)
+// [0x25] Main Image Width 1 (MIW1)
+//================================================================================
+
+
+/**
+ * @brief Main Image Width
+ *        
+ *        REG [24h] Main Image Width [7:0]
+ *        REG [25h] Main Image Width [12:8]
+ *
+ *        Unit: Pixel.
+ *        It must be divisible by 4. MIW Bit [1:0] tie to “0” internally.
+ *        The value is physical pixel number.
+ *        Maximum value is 8188 pixels
+ *
+ * @param wx
+ *
+ * @note None
+ */
+void Panel_RA8889::MainImage_Width(uint16_t wx)
+{
+  RegisterWrite(REG_MIW0, wx);                 //0x24, Main Image Width 0 (MIW0) 
+  RegisterWrite(REG_MIW1, wx >> 8);            //0x25, Main Image Width 1 (MIW1)
+}
 
 
 

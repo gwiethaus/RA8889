@@ -23,10 +23,10 @@ NOTE: test OK:ESP32-WROOM-32
 #include <SPI.h>
 #include "Panel_RA8889.h"
 
-#define  LCD_RESET  16
-#define  LCD_CS     5
+#define  PIN_RESET  16
+#define  PIN_CS     5
 
-Panel_RA8889 gfx(LCD_CS, LCD_RESET);
+Panel_RA8889 gfx(PIN_CS, PIN_RESET);
 
 
 void setup() {
@@ -37,9 +37,15 @@ void setup() {
 }
 
 void loop() {
-  ER_TFT.Select_Main_Window_16bpp();
-  ER_TFT.Main_Image_Start_Address(layer1_start_addr);        
-  ER_TFT.Main_Image_Width(LCD_XSIZE_TFT);
+  //Fazer:
+  //essa funcao nao deveria ser publica
+  //verificar comof azer a selecao do tipo de memoria e pixel e cores padrao
+  //numca funcao e em configuracao de display
+  gfx.Select_MainWindow_16bpp();
+  
+  gfx.MainImage_StartAddress(layer1_start_addr);        
+  gfx.MainImage_Width(gfx.Width());
+  
   ER_TFT.Main_Window_Start_XY(0,0);
   ER_TFT.Canvas_Image_Start_address(0);
   ER_TFT.Canvas_image_width(LCD_XSIZE_TFT);
