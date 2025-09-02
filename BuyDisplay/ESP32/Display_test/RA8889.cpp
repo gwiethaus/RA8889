@@ -249,6 +249,7 @@ void ER_TFTBasic::Memory_Select_SDRAM(void)
   ER_TFT.LCD_DataWrite(temp);
 }
 
+//void HScanDirection_LeftToRight (void);
 void ER_TFTBasic::HSCAN_L_to_R(void)
 {
 /*  
@@ -264,6 +265,8 @@ PIP window will be disabled when HDIR set as 1.
   temp &= cClrb4;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void VScanDirection_TopToBottom(void);
 void ER_TFTBasic::VSCAN_T_to_B(void)
 {
 /*  
@@ -279,6 +282,8 @@ PIP window will be disabled when VDIR set as 1.
   temp &= cClrb3;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void ParallelData_ColorFmt(PDATAColorFmt: fmt)
 void ER_TFTBasic::PDATA_Set_RGB(void)
 {
 /*  
@@ -297,6 +302,8 @@ parallel PDATA[23:0] Output Sequence
     temp &=0xf8;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void PCLK_Rising(void)
 void ER_TFTBasic::PCLK_Rising(void)   
 {
 /*
@@ -310,6 +317,8 @@ PCLK Inversion
     temp &= cClrb7;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void PCLK_Falling(void)
 void ER_TFTBasic::PCLK_Falling(void)
 {
 /*
@@ -323,6 +332,8 @@ PCLK Inversion
     temp |= cSetb7;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void HSYNC_PolarityLow(void);
 void ER_TFTBasic::HSYNC_Low_Active(void)
 {
 /*  
@@ -337,6 +348,8 @@ HSYNC Polarity
   temp &= cClrb7;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void HSYNC_PolarityHigh(void);
 void ER_TFTBasic::HSYNC_High_Active(void)
 {
 /*  
@@ -351,6 +364,8 @@ HSYNC Polarity
   temp |= cSetb7;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void VSYNC_PolarityLow(void);
 void ER_TFTBasic::VSYNC_Low_Active(void)
 {
 /*  
@@ -365,6 +380,8 @@ VSYNC Polarity
   temp &= cClrb6; 
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void VSYNC_PolarityHigh(void);
 void ER_TFTBasic::VSYNC_High_Active(void)
 {
 /*  
@@ -379,6 +396,8 @@ VSYNC Polarity
   temp |= cSetb6;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void DE_PolarityLow(void)
 void ER_TFTBasic::DE_Low_Active(void)
 {
 /*  
@@ -393,6 +412,8 @@ DE Polarity
     temp |= cSetb5;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void DE_PolarityHigh(void);
 void ER_TFTBasic::DE_High_Active(void)
 {
 /*  
@@ -407,29 +428,36 @@ DE Polarity
   temp &= cClrb5;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void PCLK_EdgeType(PCLKEdge edge);
 void ER_TFTBasic::Set_PCLK(unsigned char val)
 {
   if(val == 1)  ER_TFT.PCLK_Falling();
   else      ER_TFT.PCLK_Rising();
 }
 
+//void HSYNC_Polarity(HSYNCPolarity val);
 void ER_TFTBasic::Set_HSYNC_Active(unsigned char val)
 {
   if(val == 1)  ER_TFT.HSYNC_High_Active();
   else      ER_TFT.HSYNC_Low_Active();
 }
 
+//void VSYNC_Polarity(VSYNCPolarity val);
 void ER_TFTBasic::Set_VSYNC_Active(unsigned char val)
 {
   if(val == 1)  ER_TFT.VSYNC_High_Active();
   else      ER_TFT.VSYNC_Low_Active();
 }
 
+//void DE_Polarity(DEPolarity val);
 void ER_TFTBasic::Set_DE_Active(unsigned char val)
 {
   if(val == 1)  ER_TFT.DE_High_Active();
   else      ER_TFT.DE_Low_Active();
 }
+
+//void HorizontalWidth_VerticalHeight(uint16_t WX, uint16_t HY)
 void ER_TFTBasic::LCD_HorizontalWidth_VerticalHeight(unsigned short WX,unsigned short HY)
 {
   unsigned char temp;
@@ -468,7 +496,10 @@ void ER_TFTBasic::LCD_HorizontalWidth_VerticalHeight(unsigned short WX,unsigned 
   ER_TFT.LCD_DataWrite(temp);
   }
 }
+
 //[16h][17h]=========================================================================
+
+//void Horizontal_NonDisplay(uint16_t hbpd);
 void ER_TFTBasic::LCD_Horizontal_Non_Display(unsigned short WX)
 {
   unsigned char temp;
@@ -491,7 +522,10 @@ void ER_TFTBasic::LCD_Horizontal_Non_Display(unsigned short WX)
   ER_TFT.LCD_DataWrite(temp);
   } 
 }
+
 //[18h]=========================================================================
+
+//void HSYNC_StartPosition(uint16_t hfpd);
 void ER_TFTBasic::LCD_HSYNC_Start_Position(unsigned short WX)
 {
   unsigned char temp;
@@ -507,7 +541,10 @@ void ER_TFTBasic::LCD_HSYNC_Start_Position(unsigned short WX)
   ER_TFT.LCD_DataWrite(temp);  
   }
 }
+
 //[19h]=========================================================================
+
+//void HSYNC_PulseWidth(uint16_t hspw);
 void ER_TFTBasic::LCD_HSYNC_Pulse_Width(unsigned short WX)
 {
   unsigned char temp;
@@ -524,6 +561,8 @@ void ER_TFTBasic::LCD_HSYNC_Pulse_Width(unsigned short WX)
   }
 }
 //[1Ch][1Dh]=========================================================================
+
+//void Vertical_NonDisplay(uint16_t vbpd);
 void ER_TFTBasic::LCD_Vertical_Non_Display(unsigned short HY)
 {
   unsigned char temp;
@@ -534,7 +573,10 @@ void ER_TFTBasic::LCD_Vertical_Non_Display(unsigned short HY)
   ER_TFT.LCD_CmdWrite(0x1D);
   ER_TFT.LCD_DataWrite(temp>>8);
 }
+
 //[1Eh]=========================================================================
+
+//void VSYNC_StartPosition(uint16_t vfpd);
 void ER_TFTBasic::LCD_VSYNC_Start_Position(unsigned short HY)
 {
   unsigned char temp;
@@ -542,7 +584,10 @@ void ER_TFTBasic::LCD_VSYNC_Start_Position(unsigned short HY)
   ER_TFT.LCD_CmdWrite(0x1E);
   ER_TFT.LCD_DataWrite(temp);
 }
+
 //[1Fh]=========================================================================
+
+//void VSYNC_PulseWidth(uint8_t vspw);
 void ER_TFTBasic::LCD_VSYNC_Pulse_Width(unsigned short HY)
 {
   unsigned char temp;
@@ -550,6 +595,8 @@ void ER_TFTBasic::LCD_VSYNC_Pulse_Width(unsigned short HY)
   ER_TFT.LCD_CmdWrite(0x1F);
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void Memory_XY_Mode(void);
 void ER_TFTBasic::Memory_XY_Mode(void) 
 {
   unsigned char temp;
@@ -559,6 +606,8 @@ void ER_TFTBasic::Memory_XY_Mode(void)
   temp &= cClrb2;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void Memory_16bpp_BlockMode(void);
 void ER_TFTBasic::Memory_16bpp_Mode(void)  
 {
   unsigned char temp;
@@ -569,6 +618,8 @@ void ER_TFTBasic::Memory_16bpp_Mode(void)
   temp |= cSetb0;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void Select_MainWindow_16bpp(void);
 void ER_TFTBasic::Select_Main_Window_16bpp(void)
 {
   unsigned char temp;
@@ -578,6 +629,8 @@ void ER_TFTBasic::Select_Main_Window_16bpp(void)
     temp |= cSetb2;
   ER_TFT.LCD_DataWrite(temp);
 }
+
+//void MainImage_StartAddress(unsigned long addr);
 void ER_TFTBasic::Main_Image_Start_Address(unsigned long Addr) 
 {
 /*
@@ -591,6 +644,8 @@ void ER_TFTBasic::Main_Image_Start_Address(unsigned long Addr)
   ER_TFT.LCD_RegisterWrite(0x22,Addr>>16);
   ER_TFT.LCD_RegisterWrite(0x23,Addr>>24);
 }
+
+//void MainImage_Width(uint16_t wx);
 void ER_TFTBasic::Main_Image_Width(unsigned short WX)  
 {
 /*
@@ -3513,12 +3568,13 @@ void ER_TFTBasic::initial(void)
   ER_TFT.Set_DE_Active(LCD_DE_Active_Polarity);
  
   ER_TFT.LCD_HorizontalWidth_VerticalHeight(LCD_XSIZE_TFT ,LCD_YSIZE_TFT);
-  ER_TFT.LCD_Horizontal_Non_Display(LCD_HBPD);                          
-  ER_TFT.LCD_HSYNC_Start_Position(LCD_HFPD);                              
-  ER_TFT.LCD_HSYNC_Pulse_Width(LCD_HSPW);                              
-  ER_TFT.LCD_Vertical_Non_Display(LCD_VBPD);                               
-  ER_TFT.LCD_VSYNC_Start_Position(LCD_VFPD);                               
-  ER_TFT.LCD_VSYNC_Pulse_Width(LCD_VSPW);                              
+  ER_TFT.LCD_Horizontal_Non_Display(LCD_HBPD);  //20                        
+  ER_TFT.LCD_HSYNC_Start_Position(LCD_HFPD);    //160                          
+  ER_TFT.LCD_HSYNC_Pulse_Width(LCD_HSPW);       //5                       
+  
+  ER_TFT.LCD_Vertical_Non_Display(LCD_VBPD);    //20                           
+  ER_TFT.LCD_VSYNC_Start_Position(LCD_VFPD);    //12                           
+  ER_TFT.LCD_VSYNC_Pulse_Width(LCD_VSPW);       //3                       
       
   ER_TFT.Select_Main_Window_16bpp();
 
