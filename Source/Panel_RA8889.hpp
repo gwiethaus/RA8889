@@ -523,28 +523,59 @@ enum class PIPSelect : uint8_t {              //bit [4]
 //Required LCD clock ≒ LCD vertical Pixel * LCD horizontal Pixel * 60(Hz) * 1.1 
 //If Required LCD Clock > SCLK, the LCD refresh rate (Refresh Rate or VSYNC rate) will be lower than 
 //60Hz under this application condition.
-enum class PanelResolution : uint_t {
-  320x240,                       //QVGA:  320 x 240 x 16/18/24-bit LCD panel 
-  480x272,                       //WQVGA: 480 x 272 x 16/18/24-bit LCD panel
-  640x480,                       //VGA:   640 x 480 x 16/18/24-bit LCD panel 
-  800x480,                       //WVGA:  800 x 480 x 16/18/24-bit LCD panel   
-  800x600,                       //SVGA:  800 x 600 x 16/18/24-bit LCD panel
-  960x540,                       //QHD:   960 x 540 x 16/18/24-bit LCD panel
-  1024x600,                      //WSVGA: 1024 x 600 x 16/18/24-bit LCD panel
-  1024x768,                      //XGA:   1024 x 768 x 16/18/24-bit LCD panel 
-  1280x768,                      //WXGA:  1280 x 768 x 16/18/24-bit LCD panel
-  1280x800,                      //WXGA:  1280 x 800 x 16/18/24-bit LCD panel 
-  1366x768                       //WXGA:  1366 x 768 x 16/18/24-bit LCD panel
+enum class PanelResolution : uint8_t {
+  r320x240,                       //QVGA:  320 x 240 x 16/18/24-bit LCD panel 
+  r480x272,                       //WQVGA: 480 x 272 x 16/18/24-bit LCD panel
+  r640x480,                       //VGA:   640 x 480 x 16/18/24-bit LCD panel 
+  r800x480,                       //WVGA:  800 x 480 x 16/18/24-bit LCD panel   
+  r800x600,                       //SVGA:  800 x 600 x 16/18/24-bit LCD panel
+  r960x540,                       //QHD:   960 x 540 x 16/18/24-bit LCD panel
+  r1024x600,                      //WSVGA: 1024 x 600 x 16/18/24-bit LCD panel
+  r1024x768,                      //XGA:   1024 x 768 x 16/18/24-bit LCD panel 
+  r1280x768,                      //WXGA:  1280 x 768 x 16/18/24-bit LCD panel
+  r1280x800,                      //WXGA:  1280 x 800 x 16/18/24-bit LCD panel 
+  r1366x768                       //WXGA:  1366 x 768 x 16/18/24-bit LCD panel
 }
 
-#define layer1_start_addr 0	 
-#define layer2_start_addr 768000
-#define layer3_start_addr 1536000
-#define layer4_start_addr 2304000
-#define layer5_start_addr 3072000
-#define layer6_start_addr 3840000
-#define layer7_start_addr 4608000
-#define layer8_start_addr 5376000
+/*Page(image buffer) configure*/
+/*The maximum number of pages is based on SDRAM capacity and color depth and width and height of one page*/
+/*For example we used 128Mbit SDRAM that capacity =  16Mbyte */
+/*The SDRAM is divided into several image buffers and the maximum number of image buffers is limited by the 
+memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximum number = 16/0.96 = 16.6 */
+/*vertical mulit page application*/
+#define MAX_LAYER 8     //numero maxim o de layer para endereçar
+
+//se tornar obsoleto
+#define LAYER1_START_ADDR  800*480*2*0
+#define LAYER2_START_ADDR  800*480*2*1
+#define LAYER3_START_ADDR  800*480*2*2
+#define LAYER4_START_ADDR  800*480*2*3
+#define LAYER5_START_ADDR  800*480*2*4
+#define LAYER6_START_ADDR  800*480*2*5
+#define LAYER7_START_ADDR  800*480*2*6
+#define LAYER8_START_ADDR  800*480*2*7
+#define LAYER9_START_ADDR  800*480*2*8
+#define LAYER10_START_ADDR 800*480*2*9
+
+
+//minha nova impelemtnacao, colocar isso de forma ajustada no sistema apra selecao do COLOR DEPTH 8/16/24 bpp
+enum class ColorDepthBPP : uint8_t {
+  bpp8  = 8,       //Color Depth 8bpp
+  bpp16 = 16,      //Color Depth 16bpp
+  bpp24 = 24       //Color Depth 24bpp
+}
+
+
+enum class Color : uint32_t {
+  clBlack  =  0x00000000,
+  clWhite  =  0x0000ffff,
+  clRed    =  0x0000f800,
+  clGreen  =  0x000007e0,
+  clBlue   =  0x0000001f,
+  clYellow = clRed | clGreen,
+  clCyan   =  clGreen | clBlue,
+  clPurple = clRed | clBlue
+}
 
 
 class Panel_RA8889 {
@@ -559,20 +590,53 @@ class Panel_RA8889 {
 		uint16_t Width(void);
 		uint16_t Height(void);
 		
+		unsigned long LayerStartAddr(uint8_t layer)
 		void MainImage_StartAddress(unsigned long addr);
 		void MainImage_Width(uint16_t wx);
+		void MainWindow_StartXY(uint16_t wx, uint16_t hy);
+		void CanvasImage_StartAddr(unsigned long addr);
+		void CanvasImage_Width(uint16_t wx);
+		void ActiveWindow_XY(uint16_t wx, uint16_t hy);
+		void ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy); 
 		
+		void ForegroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue);
+		void ForegroundColor_256(uint8_t color);
+		void ForegroundColor_65k(uint16_t color);
+		void ForegroundColor_16M(uint32_t color);
+		void BackgroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue);
+		void BackgroundColor_256(uint8_t color);
+		void BackgroundColor_65k(uint16_t color);
+		void BackgroundColor_16M(uint32_t color);
+		
+		void DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t color);
+		void DrawSquare (uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t forecolor, bfill = false);
+		void DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint32_t forecolor, bool bfill = false);
+        void DrawCircle (uint16_t x1, uint16_t y1, uint16_t R, uint32_t forecolor, bfill = false);
+		void DrawEllipse (uint16_t x1, uint16_t y1, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
+        void DrawCurveLeftUp(uint16_t x1, uint16_t y1, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
+        void DrawCurveRightDown(uint16_t x1, uint16_t y1, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
+        void DrawCurveRightUp(uint16_t x1, uint16_t y1, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
+		void DrawCurveLeftDown(uint16_t x1, uint16_t y1, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
+		void DrawCircleSquare(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
 	private
 		uint8_t StatusRead(void);
         void RegisterWrite(uint8_t Cmd, uint8_t Data);
 	    uint8_t RegisterRead(uint8_t Cmd);
 		void HardwareReset(void);
-
+        void CoreTask_WaitReady(void);
+		void Draw_WaitReady(void);
+		bool IC_WaitReady(void);
+		void Wait_WriteFIFO_NotFull(void);
+		void Wait_WriteFIFO_Empty(void);
+		void Wait_ReadFIFO_NotFull(void);
+		void Wait_ReadFIFO_NotEmpty(void);
 	protected
-		uint8_t _cs;	      //chip select pin
-		uint8_t _rst;	      //chip reset pin
-		unsigned int _width;  //lardura do display
-		unsigned int _height; //altura do display
+		uint8_t _cs;	       //chip select pin
+		uint8_t _rst;	       //chip reset pin
+		uint16_t _width;       //lardura do display
+		uint16_t _height;      //altura do display
+		uint8_t _bpp           //color depht 8/16/24 bit per pixel (bpp)
+		uint8_t _colorfmt      //formato da cor RGB, RBG, GRB, GBR, ....
 		
 		void PanelResolution(PanelResolution resolution);
 		
@@ -586,7 +650,7 @@ class Panel_RA8889 {
 		
 		void PLL_WaitReady(void);
 		void PLL_ConfigClocks(void);		
-		void SDRAM_WaitReady(void);
+		bool SDRAM_WaitReady(void);
 		void SDRAM_Init(void);
 		
 		void MemorySelect_SDRAM(void);
@@ -651,6 +715,37 @@ class Panel_RA8889 {
 		void Memory_8bpp_BlockMode(void);
 		void Memory_16bpp_BlockMode(void);
 		void Memory_24bpp_BlockMode(void);
+		
+		void DrawEnable_AA(bool b);             //Verificar se funcao do RA8876/RA8877
+		void LineMode_Start(void);
+        void TriangleMode_Start(bool fill);
+        void CircleMode_Start(bool fill);
+		void EllipseMode_Start(bool fill);
+		void CurveLeftDownMode_Start(bool fill)
+		void CurveLeftUpMode_Start(bool fill);
+		void CurveRightUpMode_Start(bool fill);
+		void CurveRightDownMode_Start(bool fill);
+		void SquareMode_Start(bool fill);
+		void CircleSquareMode_Start(bool fill);
+		
+        void Point1_XY(uint16_t wx, uint16_t hy);
+		void Point2_XY(uint16_t wx, uint16_t hy);
+		void Point3_XY(uint16_t wx, uint16_t hy);
+		void Line_Point1XY(uint16_t wx, uint16_t hy);            //Mesmo que Point1_XY()
+		void Line_Point2XY(uint16_t wx, uint16_t hy);            //Mesmo que Point2_XY()
+		void Triangle_Point1XY(uint16_t wx, uint16_t hy);        //Mesmo que Point1_XY()
+		void Triangle_Point2XY(uint16_t wx, uint16_t hy);        //Mesmo que Point2_XY()
+		void Triangle_Point3XY(uint16_t wx, uint16_t hy);        //Mesmo que Point3_XY()
+		void Square_Point1XY(uint16_t wx, uint16_t hy);          //Mesmo que Point1_XY()
+		void Square_Point2XY(uint16_t wx, uint16_t hy);          //Mesmo que Point2_XY()
+        void Radius_RxRy(uint16_t Rx, uint16_t Ry);
+		void CircleRadius_R(uint16_t R);                         //Adaptado, mesmo que Radius_RxRy()
+        void EllipseRadius_RxRy(uint16_t Rx, uint16_t Ry);       //Mesmo que Radius_RxRy()
+        void CircleSquareRadius_RxRy(uint16_t Rx, uint16_t Ry);  //Mesmo que Radius_RxRy()
+		void Center_XY(uint16_t Wx, uint16_t Hy);
+		void CircleCenter_XY(uint16_t Wx, uint16_t Hy);          //Mesmo que Center_XY()
+        void EllipseCenter_XY(uint16_t Wx, uint16_t Hy);         //Mesmo que Center_XY()
+
 }
 		
 

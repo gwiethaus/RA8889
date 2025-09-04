@@ -32,8 +32,35 @@ Contributors:
 	- Determinar manual das portas MISO, MOSI, CLK da micrcontroladora
 	- tipo de comunciacao SPI MODO 0, 1, 2 dependedo da microcontroladora
     - Sistema da porta de itnerrupção para a tela de toque do display
-	
+	- Verificar a funcao DrawEnable_AA() deve ser do RA8876, pois no RA8889 deve ser zero
+	- usar a variavel _bpp, apra definir a cores de fundo ao inves de usar ForegroundColor_24bpp, usar ForegroundColor()
+	  e detnrod esta funcao seleciona entao o nivel de cores pela variavel. O sistema fica dinamico podendo fazer troca de profundicade no momento desejao, 
+	  evitando que isso seja fixo em um display mna hora da compilacao. Principalmente em sistema que requerem otimizacao de cores pelo usuario.
+	  
+	Tarefas:
+    Fazendo as funções: void GotoPixelXY(uint16_t Wx, uint16_t Hy)	
+	                    void GotoLinearAddr(uint32_t addr)  
+						void Goto_Text_XY(unsigned short WX, unsigned short HY)
+						void DrawPixel(unsigned short x,unsigned short y,unsigned short color)
+                        void Show_picture(unsigned long numbers,const unsigned char *datap)
+                        void Show_String(char *str)
+						void putPixel(
+						
+
 */
+
+
+//================================================================================
+// Funções auxiliar
+//================================================================================
+
+
+// Template genérico para qualquer enum class
+template <typename E>
+constexpr auto toValue(E e) -> typename std::underlying_type<E>::type {
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
 
 //================================================================================
 // Funções Principais de Inicializacao
@@ -52,6 +79,7 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst) {
   _rst    = rst;
   _width  = LCD_HW;
   _height = LCD_VH;
+  _colorfmt = static_cast<uint8_t>PDATAColorFmt::RGB; //iniciar com o formato de cor RGB
 }
 
 
@@ -68,17 +96,17 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst) {
  */
 void Panel_RA8889::PanelResolution(PanelResolution resolution);
 {
-  if (resolution::320x240)  {_width=320;  _height=240;}
-  if (resolution::480x272)  {_width=480;  _height=272;}
-  if (resolution::640x480)  {_width=640;  _height=480;}
-  if (resolution::800x480)  {_width=800;  _height=480;}
-  if (resolution::800x600)  {_width=800;  _height=600;}
-  if (resolution::960x540)  {_width=960;  _height=540;}
-  if (resolution::1024x600) {_width=1024; _height=600;}
-  if (resolution::1024x768) {_width=1024; _height=768;}
-  if (resolution::1280x768) {_width=1280; _height=768;}
-  if (resolution::1280x800) {_width=1280; _height=800;}
-  if (resolution::1366x768) {_width=1366; _height=768;}
+  if (resolution::r320x240)  {_width=320;  _height=240;}
+  if (resolution::r480x272)  {_width=480;  _height=272;}
+  if (resolution::r640x480)  {_width=640;  _height=480;}
+  if (resolution::r800x480)  {_width=800;  _height=480;}
+  if (resolution::r800x600)  {_width=800;  _height=600;}
+  if (resolution::r960x540)  {_width=960;  _height=540;}
+  if (resolution::r1024x600) {_width=1024; _height=600;}
+  if (resolution::r1024x768) {_width=1024; _height=768;}
+  if (resolution::r1280x768) {_width=1280; _height=768;}
+  if (resolution::r1280x800) {_width=1280; _height=800;}
+  if (resolution::r1366x768) {_width=1366; _height=768;}
 }
 
 
@@ -130,6 +158,8 @@ uint8_t Panel_RA8889::init(void) {
   Memory_BlockMode();                          //Set Block mode (X-Y coordination addressing)
   Memory_16bpp_BlockMode(void);                //Set 16bpp Block mode
   
+  _bpp =  ColorDepthBPP::bpp16                 //Indica que selecionou Color depth 16bpp
+  
 }
 
 
@@ -143,6 +173,7 @@ uint16_t Panel_RA8889::Height(void);
 {
   return _height;
 }
+
 
 /**
  * @brief Inicializa a configuração da Tela LCD (Screen) de acordo com a 
@@ -351,6 +382,198 @@ void Panel_RA8889::HardwareReset(void)
   digitalWrite(_rst, HIGH);
   delay(500);
 }
+
+
+/**
+ * @brief Aguarde o sistema estaeja em modo de operação normal
+ *        apos uma inicilização, ou termine de sair do estado de 
+ *        economia de energia.
+ *
+ *        Status Register (STSR)
+ *        bit [1] Operation mode status
+ *                0b0 : Normal operation state  → inicialização concluída
+ *                0b1 : Inhibit operation state → inicialização em andamento
+ *                      Inhibit operation state means internal reset event 
+ *                      keep running or initial display still running or chip 
+ *                      enter power saving state.
+ *
+ *        Aplicação: Até que a inicialização do IC (Core) tenha terminado uma 
+ *                   operação de inicialização (rest) ou um retorno de uma 
+ *                   economia de energia.
+ *
+ * @param true:  IC em modo operação normal e pronto,
+ *        false: IC ainda não concluiu a inicializacao
+ *
+ * @note None
+ */
+bool Panel_RA8889::IC_WaitReady(void)
+{
+  unint8_t temp;
+  for(unsigned long i = 0; i < 1000000; i++) { //de acordo com o uso, altere o valor de i.
+    temp = StatusRead();
+    if( (temp & 0x02) == 0x00 ) {return true;}
+	delayMicroseconds(1);
+  }
+  return false;
+}
+
+
+/**
+ * @brief Aguarde até as tarefas do sistema estejam prontas
+ *              
+ *        Status Register (STSR)
+ *        bit [3] Core task is busy
+ *                0b0 : task is done or idle.
+ *                0b1 : task is busy
+ *                      Following task is running:
+ *                      BTE, Geometry engine, Serial flash DMA, Text write 
+ *                      or Graphic write.
+ *
+ *        Aplicação: Quando o envio de certos comandos o controlador fica 
+ *                   ocupado até o momento de terminar a tarefa. Envie este 
+ *                   comando para aguardar até que a tarefa saia no modo 
+ *                   ocupado (busy) para o modo ocioso (idle) ou feito (done)
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::CoreTask_WaitReady(void)
+{
+  uint8_t temp = 0;
+  for(unsigned long i = 0; i < 1000000; i++) {  //Ajuste valor de i de acordo com a necessidade
+	temp = StatusRead();
+    if((temp & 0x08) == 0x00) {break;}
+    delayMicroseconds(1);
+  } 
+}  
+
+
+/**
+ * @brief Aguarde até as tarefas de desenho grafico e texto estejam prontos
+ *              
+ *        Status Register (STSR)
+ *        bit [3] Core task is busy
+ *                0b0 : task is done or idle.
+ *                0b1 : task is busy
+ *                      Following task is running:
+ *                      BTE, Geometry engine, Serial flash DMA, Text write 
+ *                      or Graphic write.
+ *
+ *        Aplicação: Quando o envio de certos comandos o controlador fica 
+ *                   ocupado até o momento de terminar a tarefa. Envie este 
+ *                   comando para aguardar até que a tarefa saia no modo 
+ *                   ocupado (busy) para o modo ocioso (idle) ou feito (done)
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Draw_WaitReady(void)  {CoreTask_WaitReady();}
+
+
+/**
+ * @brief Aguarde até que a memória de escrita FIFO tenha algo nela
+ *              
+ *        Status Register (STSR)
+ *        bit [7] Host Memory Write FIFO full
+ *                0b0 : Memory Write FIFO is not full.
+ *                0b1 : Memory Write FIFO is full.
+ * 
+ *        Only when Memory Write FIFO is not full, MPU may write another one 
+ *        pixel.
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Wait_WriteFIFO_NotFull(void)
+{  
+  uint8_t temp = 0;
+  for(uint16_t i = 0; i < 10000; i++) {        //Ajuste valor de i de acordo com a necessidade
+	temp = StatusRead();
+    if( (temp & 0x80) == 0x00 ){break;}
+  }
+}
+
+
+/**
+ * @brief Aguarde até que a memória de escrita FIFO esteja livre para escrever
+ *              
+ *        Status Register (STSR)
+ *        bit [6] Host Memory Write FIFO empty
+ *                0b0 : Memory Write FIFO is not empty.
+ *                0b1 : Memory Write FIFO is empty.
+ * 
+ *        When Memory Write FIFO is empty, MPU may write 8bpp data 64
+ *        pixels, or 16bpp data 32 pixels, 24bpp data 16 pixels directly.
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Wait_WriteFIFO_Empty(void)
+{
+  uint8_t temp = 0;
+  for(uint16_t i = 0; i < 10000; i++) {        //Ajuste valor de i de acordo com a necessidade
+	temp = StatusRead();    
+    if( (temp & 0x40) == 0x40 ){break;}
+  }
+}
+
+
+/**
+ * @brief Aguarde até que a memória de leitura FIFO Não esteja cheio
+ *              
+ *        Status Register (STSR)
+ *        bit [5] Host Memory Read FIFO full
+ *                0b0 : Memory Read FIFO is not full.
+ *                0b1 : Memory Read FIFO is full.
+ *        
+ *        When Memory Read FIFO is full, MPU may read 8bpp data 32
+ *        pixels, or 16bpp data 16 pixels, 24bpp data 8 pixels directly.
+ *
+ *        Dizer que algo nao está cheio, quer dizer que está pela metade,
+ *        nem vazio, nem cheio.
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Wait_ReadFIFO_NotFull(void)
+{
+  uint8_t temp = 0;
+  for(uint16_t i = 0; i < 10000; i++) {        //Ajuste valor de i de acordo com a necessidade
+	temp = StatusRead();    
+    if( (temp & 0x20) == 0x00 ){break;}
+}
+
+
+/**
+ * @brief Aguarde até que a memória de leitura FIFO tenha algo para ler
+ *              
+ *        Status Register (STSR)
+ *        bit [4] Host Memory Read FIFO empty
+ *                0b0 : Memory Read FIFO is not empty.
+ *                0b1 : Memory Read FIFO is empty.
+ * 
+ *        Dizer que algo não está vazio, quer dizer que tem alguma coisa 
+ *        ou esta completo (totalmente cheio)
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Wait_ReadFIFO_NotEmpty(void)
+{ 
+  uint8_t temp = 0;
+  for(uint16_t i = 0; i < 10000; i++) {        //Ajuste valor de i de acordo com a necessidade
+	temp = StatusRead();    
+	if( (temp & 0x10) == 0x00 ){break;}
+  }
+}
+
+
 
 
 //================================================================================
@@ -568,17 +791,15 @@ void Panel_RA8889::PLL_ConfigClocks(void)
  *   0: SDRAM não está pronta para acesso.
  *   1: SDRAM pronta para acesso.
  */
-void Panel_RA8889::SDRAM_WaitReady(void)
+bool Panel_RA8889::SDRAM_WaitReady(void)
 {
-  //Bit 2 do registrador STSR
-  //0: SDRAM is not ready for access
-  //1: SDRAM is ready for access
-  uint8_t temp;
-  do
-  {
-    temp = StatusRead();
+  uint8_t temp = 0;
+  for (unsigned long i = 0; i < 1000000; i++) {
+	temp = StatusRead();
+	if ((temp & 0x04) == 0x04) return true;
+    delayMicroseconds(1);
   }
-  while( (temp & 0x04) == 0x00 );
+  return false;
 }
 
 
@@ -1444,7 +1665,7 @@ void Panel_RA8889::VerticalScanDirection(VSCANDir direction)
  *                  0b110 : Gray
  *                  0b111 : Send out idle state (all 0 or 1, black or white color).
 
- * @param None
+ * @param fmt: Formato de cor (PDATAColorFmt)
  * 
  * @note None
  */
@@ -1456,7 +1677,8 @@ void Panel_RA8889::PDATA_ColorFmt(PDATAColorFmt: fmt)
   temp &= cClrb0                               //Reset bit 0 
   temp &= cClrb1                               //Reset bit 1
   temp &= cClrb2                               //Reset bit 2
-  temp |= static_cast<uint8_t>(fmt);           //Define o destino  
+  _colorfmt = static_cast<uint8_t>(fmt);       //Guarda o formato da cor
+  temp |= _colorfmt;                           //Define o destino  
   ER_TFT.LCD_DataWrite(temp);
 }
 
@@ -2121,6 +2343,31 @@ void Panel_RA8889::Memory_24bpp_BlockMode(void)
 
 
 /**
+ * @brief Page Layer Start Address
+ *
+ * @param layer: camada 0..8 (layer 0, layer 1, layer 2....)
+ *
+ * @note  Page (image buffer) Configure: 
+ *        The maximum number of pages is based on SDRAM capacity and color 
+ *        depth and width and height of one page.
+ *        For example we used 128Mbit SDRAM that capacity =  16Mbyte
+ *        The SDRAM is divided into several image buffers and the maximum 
+ *        number of image buffers is limited by the memory size. For example : 
+ *        page_size = 800*600*2byte(16bpp) = 960000byte, 
+ *        maximum number = 16/0.96 = 16.6
+ *        
+ *        Vertical mulit page application
+ *
+ * @return Page layer start address
+ */
+unsigned long Panel_RA8889::LayerStartAddr(uint8_t layer)
+{
+  if (layer > MAX_LAYER) return 0;
+  return _width * _height * (_bpp/8) * layer;   //ex. 800x480 * (16 (16bpp)/8) * 1 = 768000 = 0xbb800
+}
+
+
+/**
  * @brief Main Image Start Address
  *        
  *        REG [20h] Main Image Start Address[7:2]   : Deve ser divisível por 4. O bit [1:0] está vinculado a “0” internamente.
@@ -2167,6 +2414,1896 @@ void Panel_RA8889::MainImage_Width(uint16_t wx)
   RegisterWrite(REG_MIW0, wx);                 //0x24, Main Image Width 0 (MIW0) 
   RegisterWrite(REG_MIW1, wx >> 8);            //0x25, Main Image Width 1 (MIW1)
 }
+
+
+//================================================================================
+// [0x26] Main Window Upper-Left corner X-coordinates 0 (MWULX0)
+// [0x27] Main Window Upper-Left corner X-coordinates 1 (MWULX1)
+// [0x28] Main Window Upper-Left corner Y-coordinates 0 (MWULY0)
+// [0x29] Main Window Upper-Left corner Y-coordinates 1 (MWULY1)
+//================================================================================
+
+
+/**
+ * @brief Main Windows Start Position
+ *
+ *        
+ *        REG [26h] Main Window Upper-Left corner X-coordinates 0 (MWULX0)
+ *                  Main Window Upper-Left corner X-coordination [7:0] 
+ *        REG [27h] Main Window Upper-Left corner X-coordinates 1 (MWULX1)
+ *                  Main Window Upper-Left corner X-coordination [12:8]  
+ *        
+ *        Reference Main Image coordinates.
+ *        It must be divisible by 4. MWULX Bit [1:0] tie to "0" internally.
+ *        X-axis coordination plus Horizontal display width cannot large 
+ *        than 8188.
+ *
+ *        [28h] Main Window Upper-Left corner Y-coordinates 0 (MWULY0)
+ *              Main Window Upper-Left corner Y-coordination [7:0]
+ *        [29h] Main Window Upper-Left corner Y-coordinates 1 (MWULY1)
+ *              Main Window Upper-Left corner Y-coordination [12:8]
+ * 
+ *        Reference Main Image coordinates.
+ *        Range is between 0 and 8191.
+ *
+ * @param wx, hy : coordinate (x, y) in pixel
+ *
+ * @note None
+ */
+void Panel_RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)  
+{
+  RegisterWrite(REG_MWULX0, wx);               //0x026, Main Window Upper-Left corner X-coordinates 0 (MWULX0)
+  RegisterWrite(REG_MWULX1, wx >> 8);          //0x027, Main Window Upper-Left corner X-coordinates 1 (MWULX1)
+  RegisterWrite(REG_MWULY0, hy);               //0x028, Main Window Upper-Left corner Y-coordinates 0 (MWULY0)
+  RegisterWrite(REG_MWULY1, hy >> 8);          //0x029, Main Window Upper-Left corner Y-coordinates 1 (MWULY1)
+}
+
+
+//================================================================================
+// [0x50] Canvas Start address 0 (CVSSA0)
+// [0x51] Canvas Start address 1 (CVSSA1)
+// [0x52] Canvas Start address 2 (CVSSA2)
+// [0x53] Canvas Start address 3 (CVSSA3)
+//================================================================================
+
+
+/**
+ * @brief 
+ *
+ *        
+ *        REG [50h] Canvas Start address 0 (CVSSA0)
+ *                  Start address of Canvas [7:0]
+ *        REG [51h] Canvas Start address 1 (CVSSA1)
+ *                  Start address of Canvas [15:8]
+ *        REG [52h] Canvas Start address 2 (CVSSA2)
+ *                  Start address of Canvas [23:16]
+ *        REG [53h] Canvas Start address 3 (CVSSA3)
+ *                  Start address of Canvas [31:24]
+ *
+ * @param addr: endereço
+ *
+ * @note None
+ */
+void Panel_RA8889::CanvasImage_StartAddr(unsigned long addr)
+{
+  RegisterWrite(REG_CVSSA0, addr);             //0x50, Canvas Start address 0 (CVSSA0)
+  RegisterWrite(REG_CVSSA1, addr >> 8);        //0x51, Canvas Start address 1 (CVSSA1)
+  RegisterWrite(REG_CVSSA2, addr >> 16);       //0x52, Canvas Start address 2 (CVSSA2)
+  RegisterWrite(REG_CVSSA3, addr >> 24);       //0x53, Canvas Start address 3 (CVSSA3)
+}
+
+
+//================================================================================
+// [0x54] Canvas image width 0 (CVS_IMWTH0)
+// [0x55] Canvas image width 1 (CVS_IMWTH1)
+//================================================================================
+
+
+/**
+ * @brief 
+ *        
+ *        REG [54h] Canvas image width 0 (CVS_IMWTH0)
+ *                  Canvas image width [7:2]
+ *                  The bits are Canvas image width.
+ *                  Unit: Pixel, it is 4 pixel resolutions.
+ *                  Width = Set Value
+ *                  Ignored if canvas is in linear addressing mode.
+ *        REG [55h] Canvas image width 1 (CVS_IMWTH1)
+ *                  Canvas image width [12:8]
+ *                  The bits are Canvas image width
+ *                  Ignored if canvas is in linear addressing mode.
+ *
+ * @param wx: width
+ *
+ * @note None
+ */
+void Panel_RA8889::CanvasImage_Width(uint16_t wx)
+{
+  RegisterWrite(REG_CVS_IMWTH0, wx);           //0x54, Canvas image width 0 (CVS_IMWTH0)
+  RegisterWrite(REG_CVS_IMWTH1, wx >> 8);      //0x55, Canvas image width 1 (CVS_IMWTH1)
+}
+
+
+//================================================================================
+// [0x56] Active Window Upper-Left corner X-coordinates 0 (AWUL_X0)
+// [0x57] Active Window Upper-Left corner X-coordinates 1 (AWUL_X1)
+// [0x58] Active Window Upper-Left corner Y-coordinates 0 (AWUL_Y0)
+// [0x59] Active Window Upper-Left corner Y-coordinates 1 (AWUL_Y1)
+//================================================================================
+
+
+/**
+ * @brief 
+ *        
+ *        REG [56h] Active Window Upper-Left corner X-coordinates 0 (AWUL_X0)
+ *                  Active Window Upper-Left corner X-coordination [7:0]
+ *                  Please refer to the Canvas image coordinates.
+ *                  Unit: Pixel
+ *                  X-axis coordinates plus Active Window width cannot be larger than 8188.
+ *                  Ignored if canvas is in linear addressing mode.
+ *        REG [57h] Active Window Upper-Left corner X-coordinates 1 (AWUL_X1)
+ *                  Active Window Upper-Left corner X-coordination [12:8]
+ *                  Please refer to the Canvas image coordinates.
+ *                  Unit: Pixel
+ *                  X-axis coordinates plus Active Window width cannot be larger than 8188.
+ *                  Ignored if canvas is in linear addressing mode.
+ *        REG [58h] Active Window Upper-Left corner Y-coordinates 0 (AWUL_Y0)
+ *                  Active Window Upper-Left corner Y-coordination [7:0]
+ *                  Please refer to the Canvas image coordinates.
+ *                  Unit: Pixel
+ *                  Y-axis coordinates plus Active Window height cannot be larger than 8191.
+ *                  Ignored if canvas is in linear addressing mode.
+ *        REG [59h] Active Window Upper-Left corner Y-coordinates 1 (AWUL_Y1)
+ *                  Active Window Upper-Left corner Y-coordination [12:8] 
+ *                  Please refer to the Canvas image coordinates.
+ *                  Unit: Pixel
+ *                  Y-axis coordinates plus Active Window height cannot large than 8191.
+ *                  Ignored if canvas is in linear addressing mode.
+ *
+ * @param wx: width, hy: height
+ *
+ * @note None
+ */
+void Panel_RA8889::ActiveWindow_XY(uint16_t wx, uint16_t hy)  
+{
+  RegisterWrite(REG_AWUL_X0, wx);              //0x56, Active Window Upper-Left corner X-coordinates 0 (AWUL_X0)
+  RegisterWrite(REG_AWUL_X1, wx >> 8);         //0x57, Active Window Upper-Left corner X-coordinates 1 (AWUL_X1)
+  RegisterWrite(REG_AWUL_Y0, hy);              //0x58, Active Window Upper-Left corner Y-coordinates 0 (AWUL_Y0)
+  RegisterWrite(REG_AWUL_Y1, hy >> 8);         //0x59, Active Window Upper-Left corner Y-coordinates 1 (AWUL_Y1)
+}
+
+
+//================================================================================
+// [0x5A] Active Window Width 0 (AW_WTH0)
+// [0x5B] Active Window Width 1 (AW_WTH1)
+// [0x5C] Active Window Height 0 (AW_HT0)
+// [0x5D] Active Window Height 1 (AW_HT1)
+//================================================================================
+
+
+/**
+ * @brief 
+ *        
+ *        REG [0x5A] Active Window Width 0 (AW_WTH0)
+ *                   Width of Active Window [7:0]
+ *        REG [0x5B] Active Window Width 1 (AW_WTH1)
+ *                   Width of Active Window [12:8]
+ *        REG [0x5C] Active Window Height 0 (AW_HT0)
+ *                   Height of Active Window [7:0]
+ *        REG [0x5D] Active Window Height 1 (AW_HT1)
+ *                   Height of Active Window [12:8]
+ *
+ * @param wx: width, hy: height
+ *
+ * @note None
+ */
+void Panel_RA8889::ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy)  
+{
+  RegisterWrite(REG_AW_WTH0, wx);              //0x5a, Active Window Width 0 (AW_WTH0)
+  RegisterWrite(REG_AW_WTH1, wx >> 8);         //0x5b, Active Window Width 1 (AW_WTH1)
+  RegisterWrite(REG_AW_HT0, hy);               //0x5c, Active Window Height 0 (AW_HT0)
+  RegisterWrite(REG_AW_HT1, hy >> 8);          //0x5d, Active Window Height 1 (AW_HT1)
+}
+
+
+//================================================================================
+// [0x5F] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+// [0x60] Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+// [0x61] Graphic Read/Write position Vertical Position Register 0 (CURV0)
+// [0x62] Graphic Read/Write position Vertical Position Register 1 (CURV1)
+//================================================================================
+
+
+/**
+ * @brief Set Graphic Read/Write Position
+ *        
+ *        User should program proper active window related parameters before configure this register.
+ *                   
+ *        REG [0x5F] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+ *                   bit [7~0] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [7:0]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:
+ *                             Graphic Read/Write Horizontal Position 0 [7:0]
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel                   
+ *        REG [0x60] Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+ *                   bit [7~5] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [15:13]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode: NA
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *                   bit [4~0] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [12:8]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:
+ *                             Graphic Read/Write Horizontal Position 1 [12:8]
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *        REG [0x61] Graphic Read/Write position Vertical Position Register 0 (CURV0)
+ *                   bit [7~0] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [23:16]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:
+ *                             Graphic Read/Write Vertical Position 0 [7:0]
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *        REG [0x62] Graphic Read/Write position Vertical Position Register 1 (CURV1)
+ *                   bit [7~5] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [31:29]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:NA
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *                   bit [4~0] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [28:24]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:
+ *                             Graphic Read/Write Vertical Position 1 [12:8]
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *
+ *
+ * @param (Wx, Hy): Posicao de coordenada
+ *
+ *        
+ *        REG[5Eh] bit 3 Não existe no RA8889/8877/8876 ?????????
+ *
+ * @note  REG[5Eh] bit3, Select to read back Graphic Read/Write position.
+ *                 When DPRAM Linear mode:Graphic Read/Write Position [31:24][23:16][15:8][7:0]
+ *                 When DPRAM Active window mode:Graphic Read/Write
+ *                 Horizontal Position [12:8][7:0],
+ *                 Vertical Position [12:8][7:0].
+ *                 Reference Canvas image coordinate. Unit: Pixel
+ *
+ */
+void GotoPixelXY(uint16_t Wx, uint16_t Hy)
+{
+    LCD_CmdWrite(0x5F);
+    LCD_DataWrite(WX);
+    LCD_CmdWrite(0x60);
+    LCD_DataWrite(WX >> 8);
+    LCD_CmdWrite(0x61);
+    LCD_DataWrite(HY);
+    LCD_CmdWrite(0x62);
+    LCD_DataWrite(HY >> 8);
+}
+
+
+void GotoLinearAddr(uint32_t addr)
+{
+    /*
+    Set Graphic Read/Write position
+
+    REG[5Eh] bit3, Select to read back Graphic Read/Write position.
+    When DPRAM Linear mode:Graphic Read/Write Position [31:24][23:16][15:8][7:0]
+    When DPRAM Active window mode:Graphic Read/Write
+    Horizontal Position [12:8][7:0],
+    Vertical Position [12:8][7:0].
+    Reference Canvas image coordinate. Unit: Pixel
+    */
+    LCD_CmdWrite(0x5F);
+    LCD_DataWrite(Addr);
+    LCD_CmdWrite(0x60);
+    LCD_DataWrite(Addr >> 8);
+    LCD_CmdWrite(0x61);
+    LCD_DataWrite(Addr >> 16);
+    LCD_CmdWrite(0x62);
+    LCD_DataWrite(Addr >> 24);
+}
+
+
+//================================================================================
+// [0x63] Text Write X-coordinates Register 0 (F_CURX0)
+// [0x64] Text Write X-coordinates Register 1 (F_CURX1)
+// [0x65] Text Write Y-coordinates Register 0 (F_CURY0)
+// [0x66] Text Write Y-coordinates Register 1 (F_CURY1)
+//================================================================================
+
+void Goto_Text_XY(unsigned short WX, unsigned short HY)
+{
+    /*
+    Set Text Write position
+    Text Write X-coordinate [12:8][7:0]
+    Text Write Y-coordinate [12:8][7:0]
+    Reference Canvas image coordinate.
+    Unit: Pixel
+    */
+    LCD_CmdWrite(0x63);
+    LCD_DataWrite(WX);
+    LCD_CmdWrite(0x64);
+    LCD_DataWrite(WX >> 8);
+    LCD_CmdWrite(0x65);
+    LCD_DataWrite(HY);
+    LCD_CmdWrite(0x66);
+    LCD_DataWrite(HY >> 8);
+}
+
+
+
+
+
+//================================================================================
+// [0xD2] Foreground Color Register - Red (FGCR)
+// [0xD3] Foreground Color Register - Green (FGCG)
+// [0xD4] Foreground Color Register - Blue (FGCB)
+//================================================================================
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (R,G,B)
+ *        
+ *        REG [0xd2] Foreground Color Register - Red (FGCR)
+ *                   bit [7~0] Foreground Color - Red; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd3] Foreground Color Register - Green (FGCG)
+ *                   bit [7~0] Foreground Color - Green; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:2].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd4] Foreground Color Register - Blue (FGCB)
+ *                   bit [7~0] Foreground Color - Blue; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:6].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *
+ * @param red:   componente cor vermelha
+ *        green: componente cor verde
+ *        blue:  componente cor azul
+ *
+ * @note use o determinado numero de bits para compor o n umero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::ForegroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
+{
+  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  SPI_DataWrite(red);                          //Escreve o formato da cor vermelha 
+  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  SPI_DataWrite(green);                        //Escreve o formato da cor verde
+  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  SPI_DataWrite(blue);                         //Escreve o formato da cor azul
+}
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB3:3:2) de 256 cores
+ *        
+ *        Color depht de 8bpp
+ *
+ *        REG [0xd2] Foreground Color Register - Red (FGCR)
+ *                   bit [7~0] Foreground Color - Red; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd3] Foreground Color Register - Green (FGCG)
+ *                   bit [7~0] Foreground Color - Green; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:2].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd4] Foreground Color Register - Blue (FGCB)
+ *                   bit [7~0] Foreground Color - Blue; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:6].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *
+ * @param color: entrada de dados no formato R3G3B2 (3 bits para o vermelho, 
+ *        3 bits para o verde e 2 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ *       
+ */
+void Panel_RA8889::ForegroundColor_256(uint8_t color)
+{
+  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  SPI_DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
+  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  SPI_DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
+  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  SPI_DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
+}
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB5:6:5) de 65k cores
+ *        
+ *        Color depht de 16bpp
+ *
+ *        REG [0xd2] Foreground Color Register - Red (FGCR)
+ *                   bit [7~0] Foreground Color - Red; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd3] Foreground Color Register - Green (FGCG)
+ *                   bit [7~0] Foreground Color - Green; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:2].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd4] Foreground Color Register - Blue (FGCB)
+ *                   bit [7~0] Foreground Color - Blue; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:6].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *
+ * @param color: entrada de dados no formato R5G6B5 (5 bits para o vermelho, 
+ *        6 bits para o verde e 5 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::ForegroundColor_65k(uint16_t color)
+{
+  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  SPI_DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
+  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  SPI_DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado
+  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  SPI_DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
+}
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB8:8:8) de 16.7M cores
+ *        
+ *        Color depht de 24bpp
+ *
+ *        REG [0xd2] Foreground Color Register - Red (FGCR)
+ *                   bit [7~0] Foreground Color - Red; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd3] Foreground Color Register - Green (FGCG)
+ *                   bit [7~0] Foreground Color - Green; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:2].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd4] Foreground Color Register - Blue (FGCB)
+ *                   bit [7~0] Foreground Color - Blue; for draw, text or color expansion
+ *                             256 colors, the register only uses Bit[7:6].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *
+ * @param color: entrada de dados no formato R8G8B8 (8 bits para o vermelho, 
+ *        8 bits para o verde e 8 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ *       
+ */ 
+void Panel_RA8889::ForegroundColor_16M(uint32_t color)
+{
+  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  SPI_DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
+  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  SPI_DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
+  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  SPI_DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
+}
+
+
+//================================================================================
+// [0xD5] Background Color Register - Red (BGCR)
+// [0xD6] Background Color Register - Green (BGCG)
+// [0xD7] Background Color Register - Blue (BGCB)
+//================================================================================
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (R,G,B)
+ *        
+ *        REG [0xd5] Background Color Register - Red (BGCR)
+ *                   bit [7~0] Background Color - Red, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd6] Background Color Register - Green (BGCG)
+ *                   bit [7~0] Background Color - Green, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:2].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd7] Background Color Register - Blue (BGCB)
+ *                   bit [7~0] Background Color - Blue, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:6].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *
+ *        ***Note: No matter background transparency is enabled or not, don’t 
+ *           set same value with Foreground Color otherwise image or text will 
+ *           become a square with Foreground Color even BTE function.   
+ *
+ *        *** Note: If user wants to change rotate attribute, character line gap, 
+ *            character-to-character space, foreground color, background color 
+ *            and Text/graphic mode setting, please make sure core_busy (fontwr_
+ *            busy) status bit is low.
+ *
+ * @param red:   componente cor vermelha
+ *        green: componente cor verde
+ *        blue:  componente cor azul
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::BackgroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
+{
+  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  SPI_DataWrite(red);                          //Escreve o formato da cor vermelha 
+  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  SPI_DataWrite(green);                        //Escreve o formato da cor verde
+  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  SPI_DataWrite(blue);                         //Escreve o formato da cor azul
+}
+
+
+/**
+ * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB3:3:2) de 256 cores
+ *        
+ *        Color depht de 8bpp
+ *        
+ *        REG [0xd5] Background Color Register - Red (BGCR)
+ *                   bit [7~0] Background Color - Red, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd6] Background Color Register - Green (BGCG)
+ *                   bit [7~0] Background Color - Green, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:2].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd7] Background Color Register - Blue (BGCB)
+ *                   bit [7~0] Background Color - Blue, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:6].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *
+ *        ***Note: No matter background transparency is enabled or not, don’t 
+ *           set same value with Foreground Color otherwise image or text will 
+ *           become a square with Foreground Color even BTE function.   
+ *
+ *        *** Note: If user wants to change rotate attribute, character line gap, 
+ *            character-to-character space, foreground color, background color 
+ *            and Text/graphic mode setting, please make sure core_busy (fontwr_
+ *            busy) status bit is low.
+ *
+ * @param color: entrada de dados no formato R3G3B2 (3 bits para o vermelho, 
+ *        3 bits para o verde e 2 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::BackgroundColor_256(uint8_t color)
+{
+  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  SPI_DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
+  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  SPI_DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
+  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  SPI_DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
+}
+
+
+// Input data format:R5G6B6
+/**
+ * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB5:6:5) de 65k cores
+ *        
+ *        Color depht de 16bpp
+ *
+ *        REG [0xd5] Background Color Register - Red (BGCR)
+ *                   bit [7~0] Background Color - Red, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd6] Background Color Register - Green (BGCG)
+ *                   bit [7~0] Background Color - Green, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:2].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd7] Background Color Register - Blue (BGCB)
+ *                   bit [7~0] Background Color - Blue, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:6].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *
+ *        ***Note: No matter background transparency is enabled or not, don’t 
+ *           set same value with Foreground Color otherwise image or text will 
+ *           become a square with Foreground Color even BTE function.   
+ *
+ *        *** Note: If user wants to change rotate attribute, character line gap, 
+ *            character-to-character space, foreground color, background color 
+ *            and Text/graphic mode setting, please make sure core_busy (fontwr_
+ *            busy) status bit is low.
+ *
+ * @param color: entrada de dados no formato R5G6B5 (5 bits para o vermelho, 
+ *        6 bits para o verde e 5 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::BackgroundColor_65k(uint16_t color)
+{
+  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  SPI_DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
+  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  SPI_DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado 
+  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  SPI_DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
+}
+
+
+/**
+ * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB8:8:8) de 16.7M cores
+ *        
+ *        Color depht de 24bpp
+ *
+ *        REG [0xd5] Background Color Register - Red (BGCR)
+ *                   bit [7~0] Background Color - Red, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd6] Background Color Register - Green (BGCG)
+ *                   bit [7~0] Background Color - Green, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:5].
+ *                             65K colors, the register uses Bit[7:2].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *        REG [0xd7] Background Color Register - Blue (BGCB)
+ *                   bit [7~0] Background Color - Blue, for Text or color expansion
+ *                             256 colors, the register only uses Bit[7:6].
+ *                             65K colors, the register uses Bit[7:3].
+ *                             16.7M colors, the register uses Bit[7:0].
+ *
+ *        ***Note: No matter background transparency is enabled or not, don’t 
+ *           set same value with Foreground Color otherwise image or text will 
+ *           become a square with Foreground Color even BTE function.   
+ *
+ *        *** Note: If user wants to change rotate attribute, character line gap, 
+ *            character-to-character space, foreground color, background color 
+ *            and Text/graphic mode setting, please make sure core_busy (fontwr_
+ *            busy) status bit is low.
+ *
+ * @param color: entrada de dados no formato R8G8B8 (8 bits para o vermelho, 
+ *        8 bits para o verde e 8 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */ 
+void Panel_RA8889::BackgroundColor_16M(uint32_t color)
+{
+  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  SPI_DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
+  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  SPI_DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
+  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  SPI_DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
+}
+
+
+//================================================================================
+// [0x67] Draw Line / Triangle Control Register 0 (DCR0)
+//================================================================================
+
+
+/**
+ * Talvez seja uma funcao do RA8876 (verificar no manual)
+ * @brief Enable/Disable Drawing
+ *        
+ * @param b: true habilita, false: desabilita a linha de desenhos
+ *
+ * @note Não está descrito no maual. indica apenas que o bit[0] precisa 
+ *       ser zero.
+ */ 
+void Panel_RA8889::DrawEnable_AA(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR0);           //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = SPI_DataRead();
+  temp &= cClrb0;                   //Reset bit 0
+  if (b) temp |= cSetb0 else temp &= cClrb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de Linha
+ *
+ *        Draw Line Start Signal Write Function
+ *
+ *        REG[67h] Draw Line / Triangle Control Register 0 (DCR0)
+ *                 bit [7] Draw Line / Triangle Start Signal 
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0 : Drawing function complete.
+ *                         0b1 : Drawing function is processing.
+ *                 bit [1] Draw Triangle or Line Select Signal
+ *                         0b0: Draw Line
+ *                         0b1: Draw Triangle
+ *
+ * @param None
+ *
+ * @note Antes de executar esta função precisa entrar com os valores em registradores de coordenadas
+ *       através das funções Point1_XY(), Point2_XY().
+ */ 
+void Panel_RA8889::LineMode_Start(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = SPI_DataRead();                       
+  temp &= cClrb1;                              //Reset bit 1, Select Draw Line
+  temp |= cSetb7;                              //Set bit 7, Start draw function
+  SPI_DataWrite(temp);                         
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de Triangulo
+ *        
+ *        Draw Triangle Start Signal Write Function Non-Fill
+ *
+ *        REG[67h] Draw Line / Triangle Control Register 0 (DCR0)
+ *                 bit [7] Draw Line / Triangle Start Signal 
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0 : Drawing function complete.
+ *                         0b1 : Drawing function is processing.
+ *                 bit [5] Fill function for Triangle Signal
+ *                         0b0: Non fill.
+ *                         0b1: Fill 
+ *                 bit [1] Draw Triangle or Line Select Signal
+ *                         0b0: Draw Line
+ *                         0b1: Draw Triangle
+ *
+ * @param None
+ *
+ * @note Antes de executar esta função precisa entrar com os valores em registradores de coordenadas
+ *       através das funções Point1_XY(), Point2_XY() e Point3_XY().
+*/ 
+void Panel_RA8889::TriangleMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = SPI_DataRead();                       
+  temp |= cSetb1;                              //Set bit 1, Select Draw Triangle
+  if (fill) temp |= cClrb5 else temp &= cClrb5; //Set bit 5, Com preenchimento do triangulo
+  temp |= cSetb7;                              //Set bit 7, Draw Triangle
+  SPI_DataWrite(temp);
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+//================================================================================
+// [0x76] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+//================================================================================
+
+
+/**
+ * @brief Ativa o Modo de desenho de Circulo / Elipse
+ *        
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ *
+ * @param fill: true preenche figura, false não preenche figura
+ *
+ * @note None
+ */
+void Panel_RA8889::CircleMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  temp &= cClrb5 & cClrb4;                     //Reset bit 5-4, Draw Circle / Ellipse
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp &= cClrb1 & cClrb0;                     //Reset bit 1-0, bottom-left Ellipse Curve
+  SPI_DataWrite(temp);                         //0b1n00 xx00, n=0/1
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+void Panel_RA8889::EllipseMode_Start(bool fill) { CircleMode_Start(fill);}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular / eliptica 
+ *        Quadrante Esquerda e Abaixo
+ *
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CurveLeftDownMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
+  temp &= cClrb1 & cClrb0;                     //Reset bit 1-0, bottom-left Ellipse Curve  
+  SPI_DataWrite(temp);                         //0b1n01 xx00   n=1/0 
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular / eliptica 
+ *        Quadrante Esquerda e Acima
+ *
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CurveLeftUpMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
+  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
+  temp &= cClrb1                               //Reset bit 1, upper-left Ellipse Curve  
+  temp |= cSetb0;                              //Set bit 0, upper-left Ellipse Curve 
+  SPI_DataWrite(temp);                         //0b1n01 xx01   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular / eliptica 
+ *        Quadrante Direita e Acima
+ *
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CurveRightUpMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead(); 
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
+  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
+  temp &= cSetb1                               //Set bit 1, upper-right Ellipse Curve
+  temp |= cClrb0;                              //Reset bit 0, upper-right Ellipse Curve
+  SPI_DataWrite(temp);                         //0b1n01 xx10   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular / eliptica 
+ *        Quadrante Esquerda e Abaixo
+ *
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CurveRightDownMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();  
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
+  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
+  temp &= cSetb1                               //Set bit 1, bottom-right Ellipse Curve
+  temp |= cSetb0;                              //Set bit 0, bottom-right Ellipse Curve
+  SPI_DataWrite(temp);                         //0b1n01 xx11   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de quadrado
+ *
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::SquareMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();  
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp |= cSetb5;                              //Set bit 5, Draw Square.
+  temp &= cClrb4;                              //Reset bit 4, Draw Square.
+  SPI_DataWrite(temp);                         //0b1n10 xxxx   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular no canto quadrado
+ *        
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CircleSquareMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();  
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp |= cSetb5;                              //Set bit 5, Draw Circle Square
+  temp |= cSetb4;                              //Set bit 4, Draw Circle Square
+  SPI_DataWrite(temp);                         //0b1n11 xxxx   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+//================================================================================
+// [0x77] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
+// [0x78] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
+// [0x79] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
+// [0x7a] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
+// [0x7b] Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
+// [0x7c] Draw Circle/Ellipse/Circle Square Center X-coordinates Register1 (DEHR1)
+// [0x7d] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
+// [0x7e] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register1 (DEVR1)
+//================================================================================
+
+
+/**
+ * @brief Raio do círculo                           Rx = Ry
+ *        Raio da elipse                            Rx > Ry or Rx < Ry
+ *        Raio da curva circular no canto quadrado  Rx = Ry, Rx > Ry or Rx < Ry
+ *
+ *        REG[0x77] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
+ *                  bit [7~0] Draw Circle/Ellipse/Circle Square Major radius [7:0]
+ *        REG[0x78] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
+ *                  bit [4~0] Draw Circle/Ellipse/Circle Square Major radius [12:8]
+ *
+ *        Unit: Pixel
+ *        To draw a circle needs to set major axis equal to minor radius.
+ * 
+ *        REG[0x79] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
+ *                  bit [7~0] Draw Circle/Ellipse/Circle Square Minor radius [7:0]
+ *        REG[0x7a] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
+ *                  bit [4~0] Draw Circle/Ellipse/Circle Square Minor radius [12:8]
+ *
+ *        Unit: Pixel
+ *        To draw a circle needs to set major axis equal to minor radius.
+ *
+ * @param radius: raio do circulo
+ *
+ * @note No criculo o R = Rx = Ry e na elipse Rx > Ry ou Rx < Ry
+ */
+void Panel_RA8889::Radius_RxRy(uint16_t Rx, uint16_t Ry)
+{
+  SPI_CmdWrite(REG_ELL_A0);                    //0x77, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
+  SPI_DataWrite(Rx);                           //
+  SPI_CmdWrite(REG_ELL_A1);                    //0x78, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
+  SPI_DataWrite(Rx >> 8);                      //
+  
+  SPI_CmdWrite(REG_ELL_B0);                    //0x79, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
+  SPI_DataWrite(Ry);                           //
+  SPI_CmdWrite(REG_ELL_B1);                    //0x7a, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
+  SPI_DataWrite(Ry >> 8);                      //
+}
+void Panel_RA8889::CircleRadius_R(uint16_t R) {Radius_RxRy(R, R);}
+void Panel_RA8889::EllipseRadius_RxRy(uint16_t Rx, uint16_t Ry) {Radius_RxRy(Rx, Ry);}
+void Panel_RA8889::CircleSquareRadius_RxRy(uint16_t Rx, uint16_t Ry) {Radius_RxRy(Rx, Ry);}
+
+
+/**
+ * @brief Posição do Centro do Círculo/Elipse/Circulo do quadrado
+ *
+ *        REG[0x7b] Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
+ *                  bit [7~0] Draw Circle/Ellipse/Circle Square Center X-coordinates [7:0]
+ *        REG[0x7c] Draw Circle/Ellipse/Circle Square Center X-coordinates Register1 (DEHR1)
+ *                  bit [4~0] Draw Circle/Ellipse/Circle Square Center X-coordinates [12:8]
+ *        REG[0x7d] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
+ *                  bit [7~0] Draw Circle/Ellipse/Circle Square Center Y-coordinates [7:0]
+ *        REG[0x7e] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register1 (DEVR1)
+ *                  bit [4~0] Draw Circle/Ellipse/Circle Square Center Y-coordinates [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel
+ *
+ * @param Wx, Hy: coordenada central (x,y)
+ *
+ * @note 
+ */
+ void Panel_RA8889::Center_XY(uint16_t Wx, uint16_t Hy)
+ {
+  SPI_CmdWrite(REG_DEHR0);      //0x7b, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
+  SPI_DataWrite(Wx);            //
+  SPI_CmdWrite(REG_DEHR1);      //0x7c, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR1)
+  SPI_DataWrite(Wx >> 8);       //
+						   
+  SPI_CmdWrite(REG_DEVR0);      //0x7d, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
+  SPI_DataWrite(Hy);            //
+  SPI_CmdWrite(REG_DEVR1);      //0x7e, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR1)
+  SPI_DataWrite(Hy >> 8);       //
+ }
+void Panel_RA8889::CircleCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
+void Panel_RA8889::EllipseCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
+
+
+//================================================================================
+// [0x68] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+// [0x69] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+// [0x6a] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+// [0x6b] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+// [0x6c] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+// [0x6d] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+// [0x6e] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+// [0x6f] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+// [0x70] Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
+// [0x71] Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
+// [0x72] Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
+// [0x73] Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
+//================================================================================
+
+
+/**
+ * @brief Line Start Point
+ *        
+ *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
+ *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
+ *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
+ *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */
+void Panel_RA8889::Point1_XY(uint16_t wx, uint16_t hy)
+{
+  SPI_CmdWrite(REG_DLHSR0);                    //0x68, Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+  SPI_DataWrite(wx);                           
+  SPI_CmdWrite(REG_DLHSR1);                    //0x69, Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+  SPI_DataWrite(wx >> 8);                      
+  SPI_CmdWrite(REG_DLVSR0);                    //0x6a, Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+  SPI_DataWrite(hy);                           
+  SPI_CmdWrite(REG_DLVSR1);                    //0x6b, Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+  SPI_DataWrite(hy >> 8);                      
+}
+void Panel_RA8889::Line_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
+
+
+/**
+ * @brief Line End Point
+ *        
+ *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
+ *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
+ *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
+ *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */
+void Panel_RA8889::Point2_XY(uint16_t wx, uint16_t hy)
+{
+  SPI_CmdWrite(REG_DLHER0);                    //0x6c, Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+  SPI_DataWrite(wx);                           //
+  SPI_CmdWrite(REG_DLHER1);                    //0x6d, Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+  SPI_DataWrite(wx >> 8);                      //
+  SPI_CmdWrite(REG_DLVER0);                    //0x6e, Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+  SPI_DataWrite(hy);                           //
+  SPI_CmdWrite(REG_DLVER1);                    //0x6f, Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+  SPI_DataWrite(hy >> 8);                      //
+}
+void Panel_RA8889::Line_Point2XY(uint16_t wx, uint16_t hy) {Point2_XY(wx, hy);}
+
+
+/**
+ * @brief Triangle Point 1
+ *        
+ *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
+ *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
+ *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
+ *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */ 
+void Panel_RA8889::Triangle_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
+
+/**
+ * @brief Triangle Point 2
+ *        
+ *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
+ *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
+ *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
+ *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */ 
+void Panel_RA8889::Triangle_Point2XY(uint16_t wx, uint16_t hy)  {Point2_XY(wx, hy);}
+
+
+/**
+ * @brief Triangle Point 3
+ *        
+ *        REG [70h] Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
+ *                  bit [7~0] Draw Triangle Point 3 X-coordination [7:0]
+ *        REG [71h] Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
+ *                  bit [7~0] Draw Triangle Point 3 X-coordination [12:8]
+ *        REG [72h] Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
+ *                  bit [7~0] Draw Triangle Point 3 Y-coordination [7:0]
+ *        REG [73h] Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
+ *                  bit [7~0] Draw Triangle Point 3 Y-coordination [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */ 
+void Panel_RA8889::Point3_XY(uint16_t wx, uint16_t hy)
+{
+  SPI_CmdWrite(REG_DTPH0);                     //0x70, Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
+  SPI_DataWrite(wx);                           
+  SPI_CmdWrite(REG_DTPH1);                     //0x71, Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
+  SPI_DataWrite(wx >> 8);                      
+  SPI_CmdWrite(REG_DTPV0);                     //0x72, Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
+  SPI_DataWrite(hy);                           
+  SPI_CmdWrite(REG_DTPV1);                     //0x73, Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
+  SPI_DataWrite(hy >> 8);                      
+}
+void Panel_RA8889::Triangle_Point3XY(uint16_t wx, uint16_t hy) {Point3_XY(wx, hy)}
+
+
+/**
+ * @brief Square Start Point
+ *        
+ *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
+ *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
+ *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
+ *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */ 
+void Panel_RA8889::Square_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
+
+
+/**
+ * @brief Square End Point
+ *        
+ *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
+ *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
+ *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
+ *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */
+void Panel_RA8889::Square_Point2XY(uint16_t wx, uint16_t hy) {Point2_XY(wx, hy);}
+
+
+
+
+
+
+
+//================================================================================
+// Funções de Desenho
+// 
+// 
+//================================================================================
+
+
+/**
+ * @brief Desenha uma linha
+ *        
+ *        Color depht de 16bpp
+ *
+ *
+ * @param (x1,y1):   primeiro ponto de coordenada na tela
+ *        (x2,y2):   segundo ponto de coordenada na tela
+ *        color: cor da linha
+ *
+ * @note A cor da linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */ 
+void Panel_RA8889::DrawLine(uint16_t x1,
+                            uint16_t y1,
+                            uint16_t x2,
+                            uint16_t y2,
+                            uint32_t color
+                           )
+{
+  ForegroundColor_65k(color);
+  Point1_XY(x1, y1);
+  Point2_XY(x2, y2);
+  LineMode_Start();
+}
+
+
+/**
+ * @brief Desenha um retangulo/quadrado
+ *        
+ *        Color depht de 16bpp
+ *
+ *
+ * @param (x1,y1):   primeiro ponto de coordenada na tela
+ *        (x2,y2):   segundo ponto de coordenada na tela
+ *        forecolor: cor de frente de preenchimento
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor de preenchimeno/linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */ 
+void Panel_RA8889::DrawSquare ( uint16_t x1,
+                                uint16_t y1,
+                                uint16_t x2,
+                                uint16_t y2,
+                                uint32_t forecolor,
+								bool bfill = false
+                              )
+{
+  ForegroundColor_65k(forecolor);
+  Point1_XY(x1, y1);
+  Point2_XY(x2, y2);
+  SquareMode_Start(bfill);
+}
+
+
+/**
+ * @brief Desenha um triangulo
+ *        
+ *        Color depht de 16bpp
+ *
+ *
+ * @param (x1,y1):   primeiro ponto de coordenada na tela
+ *        (x2,y2):   segundo ponto de coordenada na tela
+ *        (x3,y3):   terceiro ponto de coordenada na tela
+ *        forecolor: cor da linha/preenchimento
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor da linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */
+void Panel_RA8889::DrawTriangle(uint16_t x1,
+                                uint16_t y1,
+                                uint16_t x2,
+                                uint16_t y2,
+                                uint16_t x3,
+                                uint16_t y3,
+                                uint32_t forecolor,
+								bool bfill = false
+                               )
+{
+  ForegroundColor_65k(forecolor);
+  Point1_XY(x1, y1);
+  Point2_XY(x2, y2);
+  Point3_XY(x3, y3);
+  TriangleMode_Start(bfill);
+}
+
+
+/**
+ * @brief Desenha um circulo
+ *        
+ *        Color depht de 16bpp
+ *
+ * @param (x1,y1):   coordenada de posicionamento central do circulo
+ *        R:         raio do circulo 
+ *        forecolor: cor de frente de preenchimento
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor de preenchimeno/linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */ 
+void Panel_RA8889::DrawCircle (uint16_t x1,
+                               uint16_t y1,
+                               uint16_t R,
+                               uint32_t forecolor,
+                               bool bfill = false
+                              )
+{
+  ForegroundColor_65k(forecolor);
+  Center_XY(x1,y1);
+  Radius_R(R);
+  CircleMode_Start(bfill);
+}
+
+
+/**
+ * @brief Desenha uma elipse
+ *        
+ *        Color depht de 16bpp
+ *
+ * @param (x1,y1):   coordenada de posicionamento central da elispse
+ *        Rx:        Raio de largura do eixo x
+ *        Ry:        Raio de comprimento do eixo y
+ *        forecolor: cor da linha
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor de preenchimeno/linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */
+void Panel_RA8889::DrawEllipse (uint16_t x1,
+                                uint16_t y1,
+								uint16_t Rx,
+								uint16_t Ry,
+								uint32_t forecolor,
+                                bool bfill = false
+                               )
+{
+  ForegroundColor_65k(forecolor);
+  Center_XY(x1, y1);
+  Radius_RxRy(Rx, Ry);
+  EllipseMode_Start(bfill);
+}
+
+
+/**
+ * @brief Desenha uma curva com curvatura esquerda/superior
+ *        
+ *        Color depht de 16bpp
+ *
+ * @param (x1,y1):   coordenada de posicionamento central da curvatura
+ *        Rx:        Raio de largura do eixo x
+ *        Ry:        Raio de comprimento do eixo y
+ *        forecolor: cor da linha
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor de preenchimeno/linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */ 
+void Panel_RA8889::DrawCurveLeftUp(uint16_t x1,
+                                   uint16_t y1,
+                                   uint16_t Rx,
+                                   uint16_t Ry,
+                                   uint32_t forecolor,
+                                   bool bfill = false
+                                  )
+{
+  ForegroundColor_65k(forecolor);
+  Center_XY(x1, y1);
+  Radius_RxRy(Rx, Ry);
+  CurveLeftUpMode_Start(bfill);
+}
+
+
+/**
+ * @brief Desenha uma curva com curvatura direita/inferior
+ *        
+ *        Color depht de 16bpp
+ *
+ * @param (x1,y1):   coordenada de posicionamento central da curvatura
+ *        Rx:        Raio de largura do eixo x
+ *        Ry:        Raio de comprimento do eixo y
+ *        forecolor: cor da linha
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor de preenchimeno/linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */ 
+void Panel_RA8889::DrawCurveRightDown(uint16_t x1,
+                                      uint16_t y1,
+                                      uint16_t Rx,
+                                      uint16_t Ry,
+                                      uint32_t forecolor,
+                                      bool bfill = false
+                                     )
+{
+  ForegroundColor_65k(forecolor);
+  Center_XY(x1, y1);
+  Radius_RxRy(Rx, Ry);
+  CurveRightDownMode_Start(bfill);
+}
+
+
+/**
+ * @brief Desenha uma curva com curvatura direita/superior
+ *        
+ *        Color depht de 16bpp
+ *
+ * @param (x1,y1):   coordenada de posicionamento central da curvatura
+ *        Rx:        Raio de largura do eixo x
+ *        Ry:        Raio de comprimento do eixo y
+ *        forecolor: cor da linha
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor de preenchimeno/linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */
+void Panel_RA8889::DrawCurveRightUp(uint16_t x1,
+                                    uint16_t y1,
+                                    uint16_t Rx,
+                                    uint16_t Ry,
+                                    uint32_t forecolor,
+                                    bool bfill = false
+                                   )
+{
+  ForegroundColor_65k(forecolor);
+  Center_XY(x1, y1);
+  Radius_RxRy(Rx, Ry);
+  CurveRightUpMode_Start(bfill);
+}
+
+
+/**
+ * @brief Desenha uma curva com curvatura esquerda/inferior
+ *        
+ *        Color depht de 16bpp
+ *
+ * @param (x1,y1):   coordenada de posicionamento central da curvatura
+ *        Rx:        Raio de largura do eixo x
+ *        Ry:        Raio de comprimento do eixo y
+ *        forecolor: cor da linha
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor de preenchimeno/linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */
+void Panel_RA8889::DrawCurveLeftDown(uint16_t x1,
+                                     uint16_t y1,
+                                     uint16_t Rx,
+                                     uint16_t Ry,
+                                     uint32_t forecolor,
+                                     bool bfill = false
+                                    )
+{
+  ForegroundColor_65k(forecolor);
+  Center_XY(x1, y1);
+  Radius_RxRy(Rx, Ry);
+  CurveLeftDownMode_Start(bfill); 
+}
+
+
+/**
+ * @brief Desenha um triangulo
+ *        
+ *        Color depht de 16bpp
+ *
+ *
+ * @param (x1,y1):   primeiro ponto de coordenada na tela
+ *        (x2,y2):   segundo ponto de coordenada na tela
+ *        Rx:        Raio de largura do eixo x
+ *        Ry:        Raio de comprimento do eixo y
+ *        forecolor: cor da linha/preenchimento
+ *        bfill:     fazer preenchimento, default é false (sem preenchimento)
+ *
+ * @note A cor da linha vai depender do Color Depth escolhido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ */
+void Panel_RA8889::DrawCircleSquare(uint16_t x1,
+                                    uint16_t y1,
+                                    uint16_t x2,
+                                    uint16_t y2,
+                                    uint16_t Rx,
+                                    uint16_t Ry,
+                                    uint32_t forecolor,
+						            bool bfill = false
+                                   )
+{
+  ForegroundColor_65k(forecolor);
+  Point1_XY(x1, y1);
+  Point2_XY(x2, y2);
+  Radius_RxRy(Rx, Ry);
+  CircleSquareMode_Start();
+}
+
+
+
+
+
+
+
+void Show_String(char *str)
+{   
+    Text_Mode();     
+    ER_TFT.LCD_CmdWrite(0x04);
+    while(*str != '\0')
+    {
+      ER_TFT.LCD_DataWrite(*str);
+      Check_Mem_WR_FIFO_not_Full();
+      ++str;   
+    }
+    Check_2D_Busy();
+
+    Graphic_Mode(); //back to graphic mode;
+}
+
+void DrawPixel(unsigned short x,unsigned short y,unsigned short color)
+{  
+ //   ER_TFT.Goto_Pixel_XY(x,y);
+    ER_TFT.LCD_CmdWrite(0x04); 
+    ER_TFT.LCD_DataWrite(color);
+    Check_Mem_WR_FIFO_not_Full();
+    ER_TFT.LCD_DataWrite(color>>8);
+    Check_Mem_WR_FIFO_not_Full();  
+}  
+
+
+void Show_picture(unsigned long numbers,const unsigned char *datap)
+{   
+  unsigned long i;
+
+  ER_TFT.LCD_CmdWrite(0x04);  
+  for(i=0;i<numbers*2;i+=2)
+  {
+    ER_TFT.LCD_DataWrite(pgm_read_byte(&datap[i+1]));
+    Check_Mem_WR_FIFO_not_Full();
+    ER_TFT.LCD_DataWrite(pgm_read_byte(&datap[i]));
+    Check_Mem_WR_FIFO_not_Full();
+  }
+
+
+
+
+// Note. this API does not support the case that MCU=16bit, 24bpp and mode1
+void putPixel(
+    unsigned short x // x of coordinate
+    ,
+    unsigned short y // y of coordinate
+    ,
+    unsigned long color
+    /*color : 8bpp:R3G3B2
+    16bpp:R5G6B5
+    24bpp:R8G8B8 */
+)
+
+{
+
+    Goto_Pixel_XY(x, y);
+    LCD_CmdWrite(0x04);
+    Check_Mem_WR_FIFO_not_Full();
+
+#ifdef MCU_8bit_ColorDepth_8bpp
+    LCD_DataWrite(color);
+#endif
+#ifdef MCU_8bit_ColorDepth_16bpp
+    LCD_DataWrite(color);
+    Check_Mem_WR_FIFO_not_Full();
+    LCD_DataWrite(color >> 8);
+#endif
+#ifdef MCU_8bit_ColorDepth_24bpp
+    LCD_DataWrite(color);
+    Check_Mem_WR_FIFO_not_Full();
+    LCD_DataWrite(color >> 8);
+    Check_Mem_WR_FIFO_not_Full();
+    LCD_DataWrite(color >> 16);
+#endif
+#ifdef MCU_16bit_ColorDepth_16bpp
+    LCD_DataWrite(color);
+#endif
+#ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
+    LCD_DataWrite(color);
+    Check_Mem_WR_FIFO_not_Full();
+    LCD_DataWrite(color >> 16);
+#endif
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
