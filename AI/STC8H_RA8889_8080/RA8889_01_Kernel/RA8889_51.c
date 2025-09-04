@@ -738,6 +738,8 @@ void Disable_SFlash_SPI(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void HostDataBus_Select_8bit(void);
 void Host_Bus_8bit(void)
 {
     /*  Parallel Host Data Bus Width Selection
@@ -749,6 +751,8 @@ void Host_Bus_8bit(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void HostDataBus_Select_16bit(void);
 void Host_Bus_16bit(void)
 {
     /*  Parallel Host Data Bus Width Selection
@@ -2109,6 +2113,8 @@ void XPDAT0_Set_KIN1(void)
 }
 
 //[10h]=========================================================================
+
+//wiethaus, void Enable_PIP1(bool b)
 void Enable_PIP1(void)
 {
     /*
@@ -2123,6 +2129,7 @@ void Enable_PIP1(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+//wiethaus, void Enable_PIP1(bool b)
 void Disable_PIP1(void)
 {
     /*
@@ -2137,6 +2144,7 @@ void Disable_PIP1(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+//wiethaus, void Enable_PIP2(bool b)
 void Enable_PIP2(void)
 {
     /*
@@ -2151,6 +2159,7 @@ void Enable_PIP2(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+//wiethaus, void Enable_PIP2(bool b)
 void Disable_PIP2(void)
 {
     /*
@@ -2165,6 +2174,7 @@ void Disable_PIP2(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+//Wiethaus, void Select_PIP_Parameter(PIPSelect pip)
 void Select_PIP1_Parameter(void)
 {
     /*
@@ -2177,6 +2187,7 @@ void Select_PIP1_Parameter(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+//Wiethaus, void Select_PIP_Parameter(PIPSelect pip)
 void Select_PIP2_Parameter(void)
 {
     /*
@@ -2234,6 +2245,7 @@ void Select_Main_Window_24bpp(void)
     LCD_DataWrite(temp);
 }
 
+//void Select_LCD_SyncMode(void)
 void Select_LCD_Sync_Mode(void)
 {
     /*
@@ -2247,6 +2259,8 @@ void Select_LCD_Sync_Mode(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void Select_LCD_DEMode(void)
 void Select_LCD_DE_Mode(void)
 {
     /*
@@ -3032,6 +3046,7 @@ void LCD_VSYNC_Pulse_Width(unsigned short HY)
     LCD_DataWrite(temp);
 }
 //[20h][21h][22h][23h]=========================================================================
+//void MainImage_StartAddress(unsigned long addr);
 void Main_Image_Start_Address(unsigned long Addr)
 {
     /*
@@ -3829,8 +3844,10 @@ void Start_Triangle_Fill(void)
 
     Check_2D_Busy();
 }
+
 //[68h][69h][6Ah][6Bh]=========================================================================
-// 線起點
+
+// Line start point
 void Line_Start_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3852,7 +3869,7 @@ void Line_Start_XY(unsigned short WX, unsigned short HY)
     LCD_DataWrite(HY >> 8);
 }
 //[6Ch][6Dh][6Eh][6Fh]=========================================================================
-// 線終點
+// Line End Point
 void Line_End_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3874,7 +3891,7 @@ void Line_End_XY(unsigned short WX, unsigned short HY)
     LCD_DataWrite(HY >> 8);
 }
 //[68h]~[73h]=========================================================================
-// 三角-點1
+// Triangle-Point 1
 void Triangle_Point1_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3895,7 +3912,7 @@ void Triangle_Point1_XY(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0x6B);
     LCD_DataWrite(HY >> 8);
 }
-// 三角-點2
+// Triangle-Point 2
 void Triangle_Point2_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3916,7 +3933,7 @@ void Triangle_Point2_XY(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0x6F);
     LCD_DataWrite(HY >> 8);
 }
-// 三角-點3
+// Triangle-Point 3
 void Triangle_Point3_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3937,7 +3954,7 @@ void Triangle_Point3_XY(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0x73);
     LCD_DataWrite(HY >> 8);
 }
-// 方起點
+// Square Start
 void Square_Start_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3958,7 +3975,7 @@ void Square_Start_XY(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0x6B);
     LCD_DataWrite(HY >> 8);
 }
-// 方終點
+// Square End
 void Square_End_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -4174,7 +4191,7 @@ void Circle_Square_Radius_RxRy(unsigned short WX, unsigned short HY)
     LCD_DataWrite(HY >> 8);
 }
 
-// 圓中心
+// Centro do círculo
 void Circle_Center_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -4195,7 +4212,8 @@ void Circle_Center_XY(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0x7E);
     LCD_DataWrite(HY >> 8);
 }
-// 橢圓中心
+
+// Centro Elipse
 void Ellipse_Center_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -6533,7 +6551,9 @@ void Set_Font_to_Font_Width(unsigned char temp)
     LCD_CmdWrite(0xD1);
     LCD_DataWrite(temp);
 }
+
 //[D2h]~[D4h]=========================================================================
+//void ForegroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
 void Foreground_RGB(unsigned char RED, unsigned char GREEN, unsigned char BLUE)
 {
     /*
@@ -7197,6 +7217,7 @@ void Set_LCD_Panel(void)
     VSCAN_T_to_B();
     //	VSCAN_B_to_T();
 
+    //wiethaus voide PDATA_ColorFmt(PDATAColorFmt::RGB);
     PDATA_Set_RGB();
     //	PDATA_Set_RBG();
     //	PDATA_Set_GRB();
@@ -7395,7 +7416,7 @@ void Set_LCD_Panel(void)
     */
     LCD_Horizontal_Non_Display(10); //
     LCD_HSYNC_Start_Position(10);   //
-    LCD_HSYNC_Pulse_Width(100);     // 刻意加大給 76+ 用
+    LCD_HSYNC_Pulse_Width(100);     // Deliberately increase for 76+
 
     /*	[1Ch][1Dh] : Figure 19-3 [VND]	Non-Display Period(Line)	= (VNDR + 1)
         [1Eh] :		 Figure 19-3 [VST]	Start Position(Line)		= (VSTR + 1)
@@ -7403,7 +7424,7 @@ void Set_LCD_Panel(void)
     */
     LCD_Vertical_Non_Display(4); //
     LCD_VSYNC_Start_Position(4); //
-    LCD_VSYNC_Pulse_Width(50);   // 刻意加大給 76+ 用
+    LCD_VSYNC_Pulse_Width(50);   // Deliberately increase for 76+
 #endif
 
 #ifdef G121XN01_V0 // ##AUO1366x768_B116XW03 V0
@@ -7757,7 +7778,7 @@ void Set_LCD_Panel(void)
 
 #endif
 
-#ifdef AT070TN92
+#ifdef AT070TN92  //innolux AT070TN92
 
     //**[10h]**//
     Select_LCD_Sync_Mode(); // Enable XVSYNC, XHSYNC, XDE.
@@ -7775,13 +7796,14 @@ void Set_LCD_Panel(void)
     DE_High_Active();
     // DE_Low_Active();
 
+    //Wiethaus
     LCD_HorizontalWidth_VerticalHeight(800, 480); // INNOLUX 800x480。
-    LCD_Horizontal_Non_Display(30);               // INNOLUX800x600，46。
-    LCD_HSYNC_Start_Position(210);                // INNOLUX800x600，16~354。
-    LCD_HSYNC_Pulse_Width(16);                    // INNOLUX800x600，1~40。
-    LCD_Vertical_Non_Display(13);                 // INNOLUX800x600，23。
-    LCD_VSYNC_Start_Position(22);                 // INNOLUX800x600，1~147。
-    LCD_VSYNC_Pulse_Width(10);                    // INNOLUX800x600，1~20。
+    LCD_Horizontal_Non_Display(30);               // INNOLUX800x600，46。     (HS Blanking)
+    LCD_HSYNC_Start_Position(210);                // INNOLUX800x600，16~354。 (HS Front Porch)
+    LCD_HSYNC_Pulse_Width(16);                    // INNOLUX800x600，1~40。   (HS pulse width)
+    LCD_Vertical_Non_Display(13);                 // INNOLUX800x600，23。     (VS Blanking)
+    LCD_VSYNC_Start_Position(22);                 // INNOLUX800x600，7~147。  (VS Front Porch)
+    LCD_VSYNC_Pulse_Width(10);                    // INNOLUX800x600，1~20。   (VS pulse width)
 
 #endif
 	
