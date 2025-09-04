@@ -180,7 +180,6 @@ void ER_TFTBasic::Check_SDRAM_Ready(void)
   while( (temp&0x04) == 0x00 );
 }
 
-
 //void TFT_SetInterface(TFTInterface mode)
 //void TFT_16bit(void)
 void ER_TFTBasic::TFT_16bit(void)
@@ -658,7 +657,10 @@ The value is physical pixel number. Maximum value is 8188 pixels
   ER_TFT.LCD_RegisterWrite(0x24,WX);
   ER_TFT.LCD_RegisterWrite(0x25,WX>>8);
 }
+
 //[26h][27h][28h][29h]=========================================================================
+
+//void Panel_RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)  
 void ER_TFTBasic::Main_Window_Start_XY(unsigned short WX,unsigned short HY)  
 {
 /*
@@ -681,7 +683,9 @@ Range is between 0 and 8191.
   ER_TFT.LCD_RegisterWrite(0x28,HY);
   ER_TFT.LCD_RegisterWrite(0x29,HY>>8);
 }
-void ER_TFTBasic::Canvas_Image_Start_address(unsigned long Addr) 
+
+//void CanvasImage_StartAddr(unsigned long addr);
+void ER_TFTBasic::Canvas_Image_Start_address(unsigned long Addr)
 {
 /*
 [50h] Start address of Canvas [7:0]
@@ -694,7 +698,10 @@ void ER_TFTBasic::Canvas_Image_Start_address(unsigned long Addr)
   ER_TFT.LCD_RegisterWrite(0x52,Addr>>16);
   ER_TFT.LCD_RegisterWrite(0x53,Addr>>24);
 }
+
+
 //[54h][55h]=========================================================================
+//void CanvasImage_Width(uint16_t wx)
 void ER_TFTBasic::Canvas_image_width(unsigned short WX)  
 {
 /*
@@ -704,7 +711,9 @@ void ER_TFTBasic::Canvas_image_width(unsigned short WX)
   ER_TFT.LCD_RegisterWrite(0x54,WX);
   ER_TFT.LCD_RegisterWrite(0x55,WX>>8);
 }
+
 //[56h][57h][58h][59h]=========================================================================
+//void ActiveWindow_XY(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Active_Window_XY(unsigned short WX,unsigned short HY)  
 {
 /*
@@ -719,7 +728,9 @@ void ER_TFTBasic::Active_Window_XY(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_RegisterWrite(0x58,HY);
   ER_TFT.LCD_RegisterWrite(0x59,HY>>8);
 }
+
 //[5Ah][5Bh][5Ch][5Dh]=========================================================================
+//void ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Active_Window_WH(unsigned short WX,unsigned short HY)  
 {
 /*
@@ -734,6 +745,8 @@ void ER_TFTBasic::Active_Window_WH(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_RegisterWrite(0x5C,HY);
   ER_TFT.LCD_RegisterWrite(0x5D,HY>>8);
 }
+
+//void ForegroundColor_65k(uint16_t color);
 void ER_TFTBasic::Foreground_color_65k(unsigned short temp)
 {
     ER_TFT.LCD_CmdWrite(0xD2);
@@ -746,6 +759,7 @@ void ER_TFTBasic::Foreground_color_65k(unsigned short temp)
   ER_TFT.LCD_DataWrite(temp<<3);
 }
 
+//void BackgroundColor_65k(uint16_t color);
 //Input data format:R5G6B6
 void ER_TFTBasic::Background_color_65k(unsigned short temp)
 {
@@ -760,7 +774,8 @@ void ER_TFTBasic::Background_color_65k(unsigned short temp)
 }
 
 
-
+//void CoreTask_WaitReady(void) ou 
+//void Draw_WaitReady(void);
 void ER_TFTBasic::Check_Busy_Draw(void)
 {
   unsigned char temp;
@@ -769,9 +784,9 @@ void ER_TFTBasic::Check_Busy_Draw(void)
     temp=ER_TFT.LCD_StatusRead();
   }
   while(temp&0x08);
-
 }
 
+//void CoreTask_WaitReady(void);
 void ER_TFTBasic::Check_2D_Busy(void)
 {
   do
@@ -781,7 +796,7 @@ void ER_TFTBasic::Check_2D_Busy(void)
   while( ER_TFT.LCD_StatusRead()&0x08 );
 }
 
-
+//void Wait_WriteFIFO_NotFull(void);
 void ER_TFTBasic::Check_Mem_WR_FIFO_not_Full(void)
 {
 /*  0: Memory Write FIFO is not full.
@@ -792,6 +807,8 @@ void ER_TFTBasic::Check_Mem_WR_FIFO_not_Full(void)
   }
   while( ER_TFT.LCD_StatusRead()&0x80 );
 }
+
+//void Wait_WriteFIFO_Empty(void);
 void ER_TFTBasic::Check_Mem_WR_FIFO_Empty(void)
 {
 /*  0: Memory Write FIFO is not empty.
@@ -802,6 +819,8 @@ void ER_TFTBasic::Check_Mem_WR_FIFO_Empty(void)
   }
   while( (ER_TFT.LCD_StatusRead()&0x40) == 0x00 );
 }
+
+//void Wait_ReadFIFO_NotFull(void);
 void ER_TFTBasic::Check_Mem_RD_FIFO_not_Full(void)
 {
 /*  0: Memory Read FIFO is not full.
@@ -812,6 +831,8 @@ void ER_TFTBasic::Check_Mem_RD_FIFO_not_Full(void)
   }
   while( ER_TFT.LCD_StatusRead()&0x20 );
 }
+
+//void Wait_ReadFIFO_NotEmpty(void);
 void ER_TFTBasic::Check_Mem_RD_FIFO_not_Empty(void)
 {
 /*  0: Memory Read FIFO is not empty.
@@ -824,7 +845,7 @@ void ER_TFTBasic::Check_Mem_RD_FIFO_not_Empty(void)
   while( ER_TFT.LCD_StatusRead()&0x10 );
 }
 
-
+//
 void ER_TFTBasic::DrawSquare_Fill
 (
  unsigned short X1                
@@ -870,6 +891,7 @@ void ER_TFTBasic::Enable_SFlash_SPI(void)
   ER_TFT.LCD_DataWrite(temp);     
 }
 
+//void GotoPixelXY(uint16_t Wx, uint16_t Hy);
 void ER_TFTBasic::Goto_Pixel_XY(unsigned short WX,unsigned short HY) 
 {
 /*
@@ -890,6 +912,7 @@ Reference Canvas image coordination. Unit: Pixel
   ER_TFT.LCD_RegisterWrite(0x62,HY>>8);
 }
 
+
 void ER_TFTBasic::Goto_Text_XY(unsigned short WX,unsigned short HY)  
 {
 /*
@@ -907,7 +930,6 @@ Unit: Pixel
   ER_TFT.LCD_RegisterWrite(0x66,HY>>8);
 }
 
-
 //[67h]=========================================================================
 /*
 [bit7]Draw Line / Triangle Start Signal
@@ -924,18 +946,23 @@ Read Function
 0 : Draw Line
 1 : Draw Triangle
 */
+//void DrawLineMode_Start(void);
 void ER_TFTBasic::Start_Line(void)
 {
   ER_TFT.LCD_CmdWrite(0x67);
   ER_TFT.LCD_DataWrite(0x80);
   Check_Busy_Draw();
 }
+
+//void DrawTriangleMode_Start(bool fill);
 void ER_TFTBasic::Start_Triangle(void)
 {
   ER_TFT.LCD_CmdWrite(0x67);
   ER_TFT.LCD_DataWrite(0x82);//B1000_0010
   Check_Busy_Draw();
 }
+
+//void DrawTriangleMode_Start(bool fill);
 void ER_TFTBasic::Start_Triangle_Fill(void)
 {
 
@@ -943,8 +970,11 @@ void ER_TFTBasic::Start_Triangle_Fill(void)
   ER_TFT.LCD_DataWrite(0xA2);//B1010_0010
   Check_Busy_Draw();
 }
+
 //[68h][69h][6Ah][6Bh]=========================================================================
-//�����
+
+//void Point1_XY(uint16_t wx, uint16_t hy);
+//void Line_Point1XY(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Line_Start_XY(unsigned short WX,unsigned short HY)
 {
 /*
@@ -965,8 +995,11 @@ void ER_TFTBasic::Line_Start_XY(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_CmdWrite(0x6B);
   ER_TFT.LCD_DataWrite(HY>>8);
 }
+
 //[6Ch][6Dh][6Eh][6Fh]=========================================================================
-//���յ�
+
+//void Point2_XY(uint16_t wx, uint16_t hy);
+//void Line_Point2XY(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Line_End_XY(unsigned short WX,unsigned short HY)
 {
 /*
@@ -988,7 +1021,9 @@ void ER_TFTBasic::Line_End_XY(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_DataWrite(HY>>8);
 }
 //[68h]~[73h]=========================================================================
-//�T��-�I1
+
+//void Point1_XY(uint16_t wx, uint16_t hy);
+//void Triangle_Point1XY(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Triangle_Point1_XY(unsigned short WX,unsigned short HY)
 {
 /*
@@ -1009,7 +1044,9 @@ void ER_TFTBasic::Triangle_Point1_XY(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_CmdWrite(0x6B);
   ER_TFT.LCD_DataWrite(HY>>8);
 }
-//�T��-�I2
+
+//void Point2_XY(uint16_t wx, uint16_t hy);
+//void Triangle_Point2XY(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Triangle_Point2_XY(unsigned short WX,unsigned short HY)
 {
 /*
@@ -1030,7 +1067,9 @@ void ER_TFTBasic::Triangle_Point2_XY(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_CmdWrite(0x6F);
   ER_TFT.LCD_DataWrite(HY>>8);
 }
-//�T��-�I3
+
+//void Point3_XY(uint16_t wx, uint16_t hy);
+//void Triangle_Point3XY(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Triangle_Point3_XY (unsigned short WX,unsigned short HY)
 {
 /*
@@ -1052,6 +1091,8 @@ void ER_TFTBasic::Triangle_Point3_XY (unsigned short WX,unsigned short HY)
   ER_TFT.LCD_DataWrite(HY>>8);
 }
 
+//void Point1_XY(uint16_t wx, uint16_t hy);
+//void Square_Point1XY(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Square_Start_XY(unsigned short WX,unsigned short HY)
 {
 /*
@@ -1073,6 +1114,8 @@ void ER_TFTBasic::Square_Start_XY(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_DataWrite(HY>>8);
 }
 
+//void Point2_XY(uint16_t wx, uint16_t hy);
+//void Square_Point2XY(uint16_t wx, uint16_t hy);
 void ER_TFTBasic::Square_End_XY(unsigned short WX,unsigned short HY)
 {
 /*
@@ -1120,87 +1163,114 @@ Draw Circle / Ellipse Curve Part Select
 10 : 
 11 : 
 */
+
+//void CircleMode_Start(bool fill);
+//void EllipseMode_Start(bool fill);
 void ER_TFTBasic::Start_Circle_or_Ellipse(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0x80);//B1000_XXXX
   Check_Busy_Draw();  
 }
+
+//void CircleMode_Start(bool fill);
+//void EllipseMode_Start(bool fill);
 void ER_TFTBasic::Start_Circle_or_Ellipse_Fill(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0xC0);//B1100_XXXX
   Check_Busy_Draw();  
 }
-//
+
+//void CurveLeftDownMode_Start(bool fill)
 void ER_TFTBasic::Start_Left_Down_Curve(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0x90);//B1001_XX00
   Check_Busy_Draw();  
 }
+
+//void CurveLeftUpMode_Start(bool fill);
 void ER_TFTBasic::Start_Left_Up_Curve(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0x91);//B1001_XX01
   Check_Busy_Draw();  
 }
+
+//void CurveRightUpMode_Start(bool fill);
 void ER_TFTBasic::Start_Right_Up_Curve(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0x92);//B1001_XX10
   Check_Busy_Draw();  
 }
+
+//void CurveRightDownMode_Start(bool fill);
 void ER_TFTBasic::Start_Right_Down_Curve(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0x93);//B1001_XX11
   Check_Busy_Draw();  
 }
-//
+
+//void CurveLeftDownMode_Start(bool fill)
 void ER_TFTBasic::Start_Left_Down_Curve_Fill(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0xD0);//B1101_XX00
   Check_Busy_Draw();
 }
+
+//void CurveLeftUpMode_Start(bool fill);
 void ER_TFTBasic::Start_Left_Up_Curve_Fill(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0xD1);//B1101_XX01
   Check_Busy_Draw();
 }
+
+//void CurveRightUpMode_Start(bool fill);
 void ER_TFTBasic::Start_Right_Up_Curve_Fill(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0xD2);//B1101_XX10
   Check_Busy_Draw();
 }
+
+//void CurveRightDownMode_Start(bool fill);
 void ER_TFTBasic::Start_Right_Down_Curve_Fill(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0xD3);//B1101_XX11
   Check_Busy_Draw();
 }
-//
+
+//void SquareMode_Start(bool fill);
 void ER_TFTBasic::Start_Square(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0xA0);//B1010_XXXX
   Check_Busy_Draw();
 }
+
+//void SquareMode_Start(bool fill);
 void ER_TFTBasic::Start_Square_Fill(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0xE0);//B1110_XXXX
   Check_Busy_Draw();
 }
+
+//void CircleSquareMode_Start(bool fill);
 void ER_TFTBasic::Start_Circle_Square(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
   ER_TFT.LCD_DataWrite(0xB0);//B1011_XXXX
   Check_Busy_Draw();  
 }
+
+//void CircleSquareMode_Start(bool fill);
 void ER_TFTBasic::Start_Circle_Square_Fill(void)
 {
   ER_TFT.LCD_CmdWrite(0x76);
@@ -1209,6 +1279,8 @@ void ER_TFTBasic::Start_Circle_Square_Fill(void)
 }
 //[77h]~[7Eh]=========================================================================
 
+//void Center_XY(uint16_t Wx, uint16_t Hy);
+//void CircleCenter_XY(uint16_t Wx, uint16_t Hy);
 void ER_TFTBasic::Circle_Center_XY(unsigned short WX,unsigned short HY)
 {
 /*
@@ -1230,6 +1302,8 @@ void ER_TFTBasic::Circle_Center_XY(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_DataWrite(HY>>8);
 }
 
+//void Center_XY(uint16_t Wx, uint16_t Hy);
+//void EllipseCenter_XY(uint16_t Wx, uint16_t Hy);
 void ER_TFTBasic::Ellipse_Center_XY(unsigned short WX,unsigned short HY)
 {
 /*
@@ -1251,6 +1325,7 @@ void ER_TFTBasic::Ellipse_Center_XY(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_DataWrite(HY>>8);
 }
 
+//void Radius_RxRy(uint16_t Rx, uint16_t Ry); onde Rx=Ry=WX
 void ER_TFTBasic::Circle_Radius_R(unsigned short WX)
 {
 /*
@@ -1272,7 +1347,8 @@ void ER_TFTBasic::Circle_Radius_R(unsigned short WX)
   ER_TFT.LCD_DataWrite(WX>>8);
 }
 
-
+//void EllipseRadius_RxRy(uint16_t Rx, uint16_t Ry);
+//void Radius_RxRy(uint16_t Rx, uint16_t Ry);
 void ER_TFTBasic::Ellipse_Radius_RxRy(unsigned short WX,unsigned short HY)
 {
 /*
@@ -1294,7 +1370,8 @@ void ER_TFTBasic::Ellipse_Radius_RxRy(unsigned short WX,unsigned short HY)
   ER_TFT.LCD_DataWrite(HY>>8);
 }
 
-
+//void CircleSquareRadius_RxRy(uint16_t Rx, uint16_t Ry);
+//void Radius_RxRy(uint16_t Rx, uint16_t Ry);
 void ER_TFTBasic::Circle_Square_Radius_RxRy(unsigned short WX,unsigned short HY)
 {
 /*

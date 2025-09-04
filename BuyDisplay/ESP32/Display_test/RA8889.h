@@ -5,6 +5,7 @@
 
 #define Arduino_SPI     1 //1:use SPI to drive
 
+//usando: unsigned long Panel_RA8889::LayerStartAddr(uint8_t layer); para calcular o endereço e MAX_LAYER
 #define layer1_start_addr 0 		 
 #define layer2_start_addr 768000   
 #define layer3_start_addr 1536000     
@@ -33,7 +34,7 @@
 #define CORE_FREQ    120  // Core (system) clock frequency, unit: MHz 
 #define SCAN_FREQ     34 // Panel Scan clock frequency, unit: MHz
 
-#define LCD_PCLK_Falling_Rising     1      // 1:FallingEdge    0:RisingEdge
+#define LCD_PCLK_Falling_Rising     1      // 1:FallingEdge  0:RisingEdge
 #define LCD_HSYNC_Active_Polarity   0      // 1:HighLevel    0:LowLevel
 #define LCD_VSYNC_Active_Polarity   0      // 1:HighLevel    0:LowLevel
 #define LCD_DE_Active_Polarity      1      // 1:HighLevel    0:LowLevel
