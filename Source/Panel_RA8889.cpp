@@ -1,30 +1,12 @@
-//Notas:
-// substitua "unsigned char" por "uint8_t", embora ambos funcionam do mesmo jeito
+#include "Arduino.h"
+#include "Panel_RA8889.h"
+#include "SPI.h"
 
-/*----------------------------------------------------------------------------/
-  Lovyan GFX - Graphics library for embedded devices.
-
-Original Source:
- https://github.com/lovyan03/LovyanGFX/
-
-Licence:
- [FreeBSD](https://github.com/lovyan03/LovyanGFX/blob/master/license.txt)
-
-Author:
- [lovyan03](https://twitter.com/lovyan03)
-
-Contributors:
- [gwiethaus](https://github.com/gwiethaus)
- [ciniml](https://github.com/ciniml)
- [mongonta0716](https://github.com/mongonta0716)
- [tobozo](https://github.com/tobozo)
-/----------------------------------------------------------------------------*/
-#include "Panel_RA8889.hpp"
-#include "../Bus.hpp"
-#include "../platforms/common.hpp"
-#include "../misc/pixelcopy.hpp"
-
-#include "../platforms/device.hpp"
+//#include "Panel_RA8889.hpp"
+//#include "../Bus.hpp"
+//#include "../platforms/common.hpp"
+//#include "../misc/pixelcopy.hpp"
+//#include "../platforms/device.hpp"
 
 /*
 	Notas para Fazer:
@@ -33,20 +15,32 @@ Contributors:
 	- tipo de comunciacao SPI MODO 0, 1, 2 dependedo da microcontroladora
     - Sistema da porta de itnerrupção para a tela de toque do display
 	- Verificar a funcao DrawEnable_AA() deve ser do RA8876, pois no RA8889 deve ser zero
-	- usar a variavel _bpp, apra definir a cores de fundo ao inves de usar ForegroundColor_24bpp, usar ForegroundColor()
+	- usar a variavel _bpp, para definir a cores de fundo ao inves de usar ForegroundColor_24bpp, usar ForegroundColor()
 	  e detnrod esta funcao seleciona entao o nivel de cores pela variavel. O sistema fica dinamico podendo fazer troca de profundicade no momento desejao, 
 	  evitando que isso seja fixo em um display mna hora da compilacao. Principalmente em sistema que requerem otimizacao de cores pelo usuario.
 	  
 	Tarefas:
-    Fazendo as funções: void GotoPixelXY(uint16_t Wx, uint16_t Hy)	
-	                    void GotoLinearAddr(uint32_t addr)  
-						void Goto_Text_XY(unsigned short WX, unsigned short HY)
-						void DrawPixel(unsigned short x,unsigned short y,unsigned short color)
+    Fazendo as funções: void DrawPixel(unsigned short x,unsigned short y,unsigned short color)
                         void Show_picture(unsigned long numbers,const unsigned char *datap)
                         void Show_String(char *str)
 						void putPixel(
 						
+                        void ER_TFTBasic::Select_SFI_Waveform_Mode_0(void)
+                        void ER_TFTBasic::Select_SFI_Waveform_Mode_3(void)
+						void Enable_SPI_Master_Interrupt(void)
+                        void Disable_SPI_Master_Interrupt(void)
+                        void nSS_Inactive(void)
+                        void nSS_Active(void)
+                        void Mask_FIFO_overflow_error_Interrupt(void)
+                        void Unmask_FIFO_overflow_error_Interrupt(void)
+                        void Mask_EMTIRQEN_Interrupt(void)
+                        void Unmask_EMTIRQEN_Interrupt(void)
+                        void Reset_CPOL(void)
+                        void Set_CPOL(void)
+                        void Reset_CPHA(void)
+                        void Set_CPHA(void)
 
+						
 */
 
 
@@ -1018,8 +1012,8 @@ void Panel_RA8889::TFT_Interface(TFTInterface mode)
 void Panel_RA8889::HostDataBus_Select_8bit(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(0x01);                          //0x01, Chip Configuration Register (CCR) 
-  temp = SI_LCD_DataRead();
+  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
+  temp = SI_DataRead();
   temp &= cClrb0;                              //Reset bit 0
   SPI_DataWrite(temp);
 }
@@ -1043,9 +1037,40 @@ void Panel_RA8889::HostDataBus_Select_8bit(void)
 void Panel_RA8889::HostDataBus_Select_16bit(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(0x01);                          //0x01, Chip Configuration Register (CCR) 
-  temp = SI_LCD_DataRead();
+  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
+  temp = SI_DataRead();
   temp |= cSetb0;                              //Set bit 0
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Ativa ou desativa a interface SPI da Serial Flash
+ *
+ * @verbatim
+ *	      REG [01h] Chip Configuration Register (CCR)  
+ *                  bit [1] Serial Flash or SPI Interface Enable/Disable
+ *                          0b0: Disable (GPIO function)
+ *                          0b1: Enable (SPI master function)
+ *           
+ *                  When SDR SDRAM 32bits bus function enable, this bit is ignored
+ *                  & Serial flash pins become SDR SDRAM bus function.
+ * @endverbatim
+ * 
+ * @code
+ * SFlashSPI_Enable(true);
+ * @endcode
+ *
+ * @param b: true/false
+ * 
+ * @note None
+ */
+void Panel_RA8889::SFlashSPI_Enable(bool b)
+{
+  unsigned char temp;
+  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
+  temp = SPI_DataRead();
+  if (b) temp |= cSetb1 else temp &= cClrb1;
   SPI_DataWrite(temp);
 }
 
@@ -1094,8 +1119,8 @@ void Panel_RA8889::HostColorDepthFormat(uint_t type)
 
 
 /**
- * @brief Host Read/Write Memory Direction (Only for Graphic Mode)
- *        Video memory write direction setting
+ * @brief Host Read Memory Direction (Only for Graphic Mode)
+ *        Video memory read direction setting
  *        
  *        Efeito somente no modo gráfico
  *
@@ -1110,24 +1135,194 @@ void Panel_RA8889::HostColorDepthFormat(uint_t type)
  *        MemoryDirection::BotomTop_LeftRight 
  *
  *
- * @note Esta função só tem efeito no modo gráfico. O modo grafico pode ser 
- *       ativado após o uso desta função.
+ * @note Only for Graphic Mode. Graphics mode can be activated after using 
+ *       this function.
  */
 void Panel_RA8889::HostReadMemoryDirection(MemoryDirection direction)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
   temp = SPI_DataRead();
-  temp &= cClrb5;                              //Reset bit 5
-  temp &= cClrb4;                              //Reset bit 4
-  temp |= static_cast<uint8_t>(direction);     //Converte enum para uint8_t
+  temp &= ~(cSetb5 | cSetb4);                  //Reset bit 5 e 4
+  temp |= (static_cast<uint8_t>(direction) << 4);  //posiciona o valor para o bit 5 e 4
   SPI_DataWrite(temp);                         //Host Read Memory Direction
+}
+
+
+/**
+ * @brief Host Write Memory Direction (Only for Graphic Mode)
+ *        Video memory write direction setting
+ *        
+ *        Efeito somente no modo gráfico
+ *
+ *        REG [02h] Memory Access Control Register (MACR)
+ *                  bit [2-1] 0b00: Left to Right then Top to Bottom (Original)
+ *                            0b01: Right to Left then Top to Bottom (Horizontal flip)
+ *                            0b10: Top to Bottom then Left to Right (Rotate right 90˚& Horizontal flip)
+ *                            0b11: Bottom to Top then Left to Right (Rotate left 90˚)
+ *
+ * @param MemoryDirection::LeftRight_TopBotom 
+ *        MemoryDirection::RightLeft_TopBotom
+ *        MemoryDirection::TopBotom_LeftRight
+ *        MemoryDirection::BotomTop_LeftRight 
+ *
+ *
+ * @note Only for Graphic Mode. Ignored if canvas in linear addressing mode.
+ */
+void Panel_RA8889::HostWriteMemoryDirection(MemoryDirection direction)
+{
+  uint8_t temp;
+  SPI_CmdWrite(0x02);
+  temp = SPI_DataRead();
+  temp &= ~(cSetb2 | cSetb1);                         //Reset bit 2 e 1
+  temp |= (static_cast<uint8_t>(direction) << 1);     //posiciona o valor para o bit 2 e 1
+  SPI_DataWrite(temp);
 }
 
 
 //================================================================================
 // [0x03] Input Control Register (ICR)
 //================================================================================
+
+
+
+/**
+ * @brief Seleciona o nível lógico que a interrupção fica ativa
+ *
+ *        REG[0x03] Input Control Register (ICR)
+ *                  bit [7] Output to MPU Interrupt pin’s active level
+ *                         0b0 : active low.
+ *                         0b1 : active high.
+ *
+ * @param InterruptLevel::Low
+ *        InterruptLevel::High
+ *
+ */
+void Panel_RA8889::Interrupt_ActiveLevel(InterruptLevel level)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       
+  temp &= cClrb7;
+  temp |= static_cast<uint8_t>(level);         //Define o nível
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief External interrupt input (XPS[0] pin) with de-bounce
+ *
+ *        REG[0x03] Input Control Register (ICR)
+ *                  bit [6] External interrupt input (XPS[0] pin) de-bounce
+ *                         0b0 : without de-bounce
+ *                         0b1 : enable de-bounce (1024 OSC clock)	
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::ExtInterrupt_Debounce(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb6;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief External interrupt input (XPS[0] pin) without de-bounce
+ *
+ *        REG[0x03] Input Control Register (ICR)
+ *                  bit [6] External interrupt input (XPS[0] pin) de-bounce
+ *                          0b0 : without de-bounce
+ *                          0b1 : enable de-bounce (1024 OSC clock)	
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::ExtInterrupt_NoDebounce(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       
+  temp &= cSetb6;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief External interrupt input (XPS[0] pin) trigger type
+ *
+ *        REG[0x03] Input Control Register (ICR)
+ *                  bit [5-4] External interrupt input (XPS[0] pin) trigger type
+ *                            0b00 : low level trigger
+ *                            0b01 : falling edge trigger
+ *                            0b10 : high level trigger
+ *                            0b11 : rising edge trigger
+ *                            
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::ExtInterrupt_InputLevelTrigger(InterrupLevelTrigger leveltrg)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       
+  temp &= ~(cSetb5 | cSetb4);
+  temp |= (static_cast<uint8_t>(leveltrg) << 3); 
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select LVDS Data Format VESA Standard
+ *
+ *        REG[0x03] Input Control Register (ICR)
+ *                  bit [3] FPD-Link Data Format / LVDS Data Format
+ *                          0b0 : Format 1 (VESA format) --- use with displays expecting the 2 MSB to be transmitted over the 4th data channel Y3.
+ *                          0b1 : Format 2 (JEIDA format) --- use with displays expecting the 2 LSB to be transmitted over the 4th data channel Y3.
+ *                            
+ *
+ * @param None
+ *
+ * @note RA8877 only
+ */
+void Panel_RA8889::LVDS_DataFormat_VESA(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       
+  temp &= cClrb3;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select LVDS Data Format JEIDA Standard
+ *
+ *        REG[0x03] Input Control Register (ICR)
+ *                  bit [3] FPD-Link Data Format / LVDS Data Format
+ *                          0b0 : Format 1 (VESA format) --- use with displays expecting the 2 MSB to be transmitted over the 4th data channel Y3.
+ *                          0b1 : Format 2 (JEIDA format) --- use with displays expecting the 2 LSB to be transmitted over the 4th data channel Y3.
+ *                            
+ *
+ * @param None
+ *
+ * @note RA8877 only
+ */
+void Panel_RA8889::LVDS_DataFormat_JEIDA(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb3;
+  SPI_DataWrite(temp);
+}
 
 
 /**
@@ -1294,8 +1489,504 @@ void Panel_RA8889::MemoryPort_Select(MemoryPortDest dest)
   SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
   temp = SPI_DataRead();                       //Lê valor atual do registrador
   temp &= 0xfc;                                //Reset bit 1 e 0
-  temp |= static_cast<uint8_t>(dest);          //Define o destino
+  temp |= static_cast<uint8_t>(dest);          //
   SPI_DataWrite(temp);                         //Atualiza registrador
+}
+
+
+//================================================================================
+// [0x0B] Interrupt Enable Register (INTEN)
+//================================================================================
+
+
+/**
+ * @brief Interrupt Resume Enable/Disable
+ *
+ *        REG [0x0B] Interrupt Enable Register (INTEN)
+ *                   bit [7] Wakeup/resume Interrupt Enable
+ *                           0: Disable.
+ *                           1: Enable.
+ *
+ * @param b: true Active Interrupt, False Deactive Interrupt
+ *
+ */
+void Panel_RA8889::Interrupt_Resume_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb7 : temp &= cClrb7;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief External Interrupt Input Enable/Disable
+ *
+ *        REG [0x0B] Interrupt Enable Register (INTEN)
+ *                   bit [6] External Interrupt (PS[0] pin) Enable
+ *                           0: Disable.
+ *                           1: Enable.
+ *
+ * @param b: true Active Interrupt, False Deactive Interrupt
+ *
+ */
+void Panel_RA8889::ExtInterrupt_Input_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb6 : temp &= cClrb6;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Interrupt I2C Master Enable/Disable
+ *
+ *        REG [0x0B] Interrupt Enable Register (INTEN)
+ *                   bit [5] I2C Master Interrupt Enable
+ *                           0: Disable.
+ *                           1: Enable.
+ *
+ * @param b: true Active Interrupt, False Deactive Interrupt
+ *
+ */
+void Panel_RA8889::Interrupt_I2CM_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb5 : temp &= cClrb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Interrupt Vertical Synchronization time base Enable/Disable
+ *
+ *        REG [0x0B] Interrupt Enable Register (INTEN)
+ *                   bit [4] Vsync time base interrupt Enable Bit
+ *                           0: Disable Interrupt.
+ *                           1: Enable Interrupt.
+ *
+ * @param b: true Active Interrupt, False Deactive Interrupt
+ *
+ */
+void Panel_RA8889::Interrupt_VSync_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb4 : temp &= cClrb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Interrupt Key Scan Enable/Disable
+ *
+ *        REG [0x0B] Interrupt Enable Register (INTEN)
+ *                   bit [3] Key Scan Interrupt Enable Bit
+ *                           0: Disable Key scan interrupt.
+ *                           1: Enable Key scan interrupt.
+ *
+ * @param b: true Active Interrupt, False Deactive Interrupt
+ *
+ */
+void Panel_RA8889::Interrupt_KeyScan_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb3 : temp &= cClrb3;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Interrupt Serial Flash DMA, Draw Task, BTE Process Complete, etc. Enable/Disable
+ *
+ *        REG [0x0B] Interrupt Enable Register (INTEN)
+ *                   bit [2] Serial flash DMA Complete | Draw task finished | 
+ *                           BTE Process Complete etc. Interrupt Enable
+ *                           0: Disable interrupt.
+ *                           1: Enable interrupt.
+ *
+ * @param b: true Active Interrupt, False Deactive Interrupt
+ *
+ */
+void Panel_RA8889::Interrupt_ClearMultiEventTask_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb2 : temp &= cClrb2;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Interrupt PWM Timer 1 Enable/Disable
+ *
+ *        REG [0x0B] Interrupt Enable Register (INTEN)
+ *                   bit [1] PWM timer 1 Interrupt Enable Bit
+ *                           0: Disable interrupt.
+ *                           1: Enable interrupt.
+ *
+ * @param b: true Active Interrupt, False Deactive Interrupt
+ *
+ */
+void Panel_RA8889::Interrupt_PWM1_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb1 : temp &= cClrb1;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Interrupt PWM Timer 0 Enable/Disable
+ *
+ *        REG [0x0B] Interrupt Enable Register (INTEN)
+ *                   bit [0] PWM timer 0 Interrupt Enable Bit
+ *                           0: Disable interrupt.
+ *                           1: Enable interrupt.
+ *
+ * @param b: true Active Interrupt, False Deactive Interrupt
+ *
+ */
+void Panel_RA8889::Interrupt_PWM0_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb0 : temp &= cClrb0;
+  SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+// [0x0C] Interrupt Event Flag Register (INTF)
+//  *If you received an interrupt but cannot identify it on Interrupt Event Flag 
+//  Register, please check SPI master status register’s interrupt flag bits 
+//  REG[BAh].
+//================================================================================
+
+
+/**
+ * @brief Read Interrupt Status
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [7] Read Function ..Resume Interrupt Status
+ *                           0: No Resume interrupt happens.
+ *                           1: Resume interrupt happens.
+ *                   Bit [6] Read Function .. PS[0] pin Interrupt Status
+ *                           0: No PS[0] pin interrupt happens.
+ *                           1: PS[0] pin interrupt happens.
+ *                   Bit [5] Read Function .. I2C master Interrupt Status
+ *                           0: No I2C master interrupt happens.
+ *                           1: I2C master interrupt happens.
+ *                   Bit [4] Read Function .. Vsync Interrupt Status
+ *                           0: No interrupt happens.
+ *                           1: interrupt happens.
+ *                   Bit [3] Read Function ..Key Scan Interrupt Status
+ *                           0: No Key Scan interrupt happens.
+ *                           1: Key Scan interrupt happens.
+ *                   Bit [2] Read Function..Interrupt Status
+ *                           0: No interrupt happens.
+ *                           1: interrupt happens.
+ *                   Bit [1] Read Function..Interrupt Status
+ *                           0: No interrupt happens.
+ *                           1: interrupt happens.
+ *                   Bit [0] Read Function..Interrupt Status
+ *                           0: No interrupt happens.
+ *                           1: interrupt happens.
+ *                         
+ * @param b: true, PIP enable, false, PIP disable
+ *
+ * @note PIP 1 window always on top of PIP 2 window
+ */
+uint8_t Panel_RA8889::Interrupt_Status(void)
+{
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  return LCD_DataRead();
+}
+
+
+/**
+ * @brief Aguarde até o VSync termine de fazer o sincronismo vertical
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [4] Read Function .. Vsync Interrupt Status
+ *                           0: No interrupt happens.
+ *                           1: interrupt happens.
+ *                         
+ * @param None
+ *
+ * @note É enviado um comando de verificaçãod a interrupção, pois pode estar 
+ *       no meio do caminho ainda fazendo o VSync, antes de atualizar a tela ou
+ *       escrever novos dados. 
+ */
+void Panel_RA8889::VSYNC_WaitReady(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  SPI_DataWrite(cSetb4);                       //Set bit 4, solicita que verifique se o VSync está pronto
+  do {
+      temp = SPI_DataRead();                   //Leia o status
+  } while ( (temp & 0x10) == 0x00);            //Aguarde ate que seja resetado o bit, terminou o retraço
+}
+
+
+/**
+ * @brief Clear Resume Interrupt Flag
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [7] Wakeup/resume Interrupt flag
+ *                           Write Function ➔ Wakeup/resume Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear Wakeup/resume interrupt.
+ *                           
+ *                           Read Function ➔ Wakeup/resume Interrupt Status
+ *                           0: No Wakeup/resume interrupt happens.
+ *                           1: Wakeup/resume interrupt happens.
+ *                         
+ * @param None
+ *
+ * @note None
+ * 
+ */
+void Panel_RA8889::Interrupt_ClearResume_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  temp |= cSetb7;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Clear External Interrupt Input (PS[0] pin) Flag
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [6] External Interrupt (PS[0] pin) flag
+ *                           Write Function ➔ XPS[0] pin edge Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear the XPS[0] pin edge interrupt.
+ *                           
+ *                           Read Function ➔ XPS[0] pin Interrupt Status
+ *                           0: No XPS[0] pin interrupt happens.
+ *                           1: XPS[0] pin interrupt happens.
+ *                           
+ * @param None
+ *
+ * @note None
+ * 
+ */
+void Panel_RA8889::ExtInterrupt_ClearInput_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  temp |= cSetb6;                              //Resetar interrupção
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Clear I2C Master Interrupt Flag
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [5] IIC master Interrupt flag
+ *                           Write Function➔ IIC master Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear the IIC master interrupt.
+ *
+ *                           Read Function ➔ IIC master Interrupt Status
+ *                           0: No IIC master interrupt happens.
+ *                           1: IIC master interrupt happens.
+ *                           
+ * @param None
+ *
+ * @note None
+ * 
+ */
+void Panel_RA8889::Interrupt_ClearI2CM_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  temp |= cSetb5;                              //Resetar interrupção
+  SPI_DataWrite(temp);                         
+}
+
+
+/**
+ * @brief Clear Interrupt Vertical Synchronization Flag
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [4] Vsync Time base interrupt flag
+ *                           Write Function ➔Vsync Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear the Vsync interrupt.
+ *                           Read Function ➔ Vsync Interrupt Status
+ *                           0: No Vsync interrupt happens.
+ *                           1: Vsync interrupt happens.
+ *                         
+ * @param None
+ *
+ * @note None
+ * 
+ */
+void Panel_RA8889::Interrupt_ClearVSync_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  temp |= cSetb4;                              //Resetar interrupção
+  SPI_DataWrite(temp);                         //Limpa status de interrupção VSync
+}
+
+
+/**
+ * @brief Clear Interrupt Key Scan Flag
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [3] Key Scan Interrupt flag
+ *                           Write Function ➔ Key Scan Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear the Key Scan interrupt.
+ *
+ *                           Read Function ➔ Key Scan Interrupt Status
+ *                           0: No Key Scan interrupt happens.
+ *                           1: Key Scan interrupt happens.
+ *                         
+ * @param None
+ *
+ * @note None
+ * 
+ */
+void Panel_RA8889::Interrupt_ClearKeyScan_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  temp |= cSetb3;                              //Resetar interrupção
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Check for Interrupt Key Scan Occurred
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [3] Key Scan Interrupt flag
+ *                           Write Function ➔ Key Scan Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear the Key Scan interrupt.
+ *
+ *                           Read Function ➔ Key Scan Interrupt Status
+ *                           0: No Key Scan interrupt happens.
+ *                           1: Key Scan interrupt happens.
+ *                         
+ * @param None
+ *
+ * @note Para limpar a interrupção de teclas (Key Scan) após tratamento, use a funcao
+ *       Interrupt_ClearKeyScan_Flag()
+ */
+bool Panel_RA8889::Interrupt_IsKeyPressed(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  return (temp & 0x08);                        //Recebeu a interrupção
+}
+
+
+/**
+ * @brief  Clear Interrupt Serial Flash DMA, Draw Task, BTE Process Complete, etc. Flag
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [2] Serial flash DMA Complete | Draw task finished | 
+ *                           BTE Process Complete | etc. Interrupt flag
+ *                           Write Function➔ Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear interrupt.
+ *                           Read Function➔Interrupt Status
+ *                           0: No interrupt happens.
+ *                           1: interrupt happens.
+ *                         
+ * @param None
+ *
+ * @note De acordo com a requisição de evento de Serial Flash DMA, Draw Task 
+ *       ou processos completos de BTE ou outros este flag é setado ou pode 
+ *       ser limpo para qualquer um destes casos.
+ */
+void Panel_RA8889::Interrupt_ClearMultiEventTask_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  temp |= cSetb2;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Clear Interrupt PWM 0 Timer Flag
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [0] PWM 0 timer Interrupt flag
+ *                           Write Function ➔ Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear PWM0 interrupt.
+ *
+ *                           Read Function ➔ Interrupt Status
+ *                           0: No PWM0 interrupt happens.
+ *                           1: PWM0 interrupt happens.
+ *                         
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Interrupt_ClearPWM0_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  temp |= cSetb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Clear Interrupt PWM 1 Timer Flag
+ *        
+ *        REG [0x0c] Interrupt Event Flag Register (INTF)
+ *                   Bit [1] PWM 1 timer Interrupt flag
+ *                           Write Function ➔ Interrupt Clear Bit
+ *                           0: No operation.
+ *                           1: Clear PWM1 interrupt.
+ *
+ *                           Read Function ➔ Interrupt Status
+ *                           0: No PWM1 interrupt happens.
+ *                           1: PWM1 interrupt happens.
+ *                         
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Interrupt_ClearPWM1_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = SPI_DataRead();
+  temp |= cSetb1;
+  SPI_DataWrite(temp);
 }
 
 
@@ -1837,6 +2528,7 @@ void Panel_RA8889::VSYNC_PolarityLow(void)
   SPI_DataWrite(temp);
 }
 
+
 /**
  * @brief VSYNC Polarity Active High
  *
@@ -2216,7 +2908,7 @@ void Panel_RA8889::VSYNC_PulseWidth(uint8_t vspw)
  *
  * @note None
  */
-void Panel_RA8889::Memory_XY_Mode(void)
+void Panel_RA8889::Memory_BlockMode(void)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
@@ -2224,6 +2916,29 @@ void Panel_RA8889::Memory_XY_Mode(void)
   temp &= cClrb2;                            //Reset bit 2
   SPI_DataWrite(temp);
 }
+void Panel_RA8889::Memory_XYMode(void) {Memory_BlockMode();}
+
+
+/**
+ * @brief Check for Block Mode X-Y Coordinates Addressing
+ *        
+ *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
+ 8        bit [2] Canvas addressing mode
+ *                0b0: Block mode (X-Y coordinates addressing)
+ *                0b1: Linear mode
+ *
+ * @param None
+ *
+ * @note None
+ */
+bool Panel_RA8889::Memory_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  return (temp &= cSetb2) == 0x00;
+}
+bool Panel_RA8889::Memory_XYMode(void) {return Memory_BlockMode();}
 
 
 /**
@@ -2238,13 +2953,34 @@ void Panel_RA8889::Memory_XY_Mode(void)
  *
  * @note None
  */
-void Panel_RA8889::Memory_Linear_Mode(void)
+void Panel_RA8889::Memory_LinearMode(void)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp = SPI_DataRead();
   temp |= cSetb2;                            //Set bit 2
   SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Check for Linear Mode Addressing
+ *        
+ *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
+ *        bit [2] Canvas addressing mode
+ *                0b0: Block mode (X-Y coordinates addressing)
+ *                0b1: Linear mode
+ *
+ * @param None
+ *
+ * @note None
+ */
+bool Panel_RA8889::Memory_LinearMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  return (temp &= cSetb2) == cSetb2;
 }
 
 
@@ -2460,6 +3196,37 @@ void Panel_RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)
 
 
 //================================================================================
+// [0x46] PAGE Switch
+//================================================================================
+
+
+
+/**
+ * @brief PAGE Switch
+ *
+ *        REG [46h] PAGE Switch
+ *                  bit [0] Page switch, and SPIM bus switch
+ *                          0: page 0, SPIM bus 0, for lower 256 register setting (Default)
+ *                          1: page 1, SPIM bus 1, for the register settings of media decoder
+ *
+ * @param PageReg::Page0, PageReg::Page1
+ *
+ * @note RA8889 has two page-page0 / page1 registers. Users can switch 
+ *       page1 / page0 at REG [46h] bit0 of page0 / page1. Default is Page 0
+ */
+void Panel_RA8889::PageRegister(PageReg pr);
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PAGE_SWITCH);              //0x46, PAGE Switch
+  temp = SPI_DataRead();
+  temp &= cClrb0;                             //Rest bit 0
+  temp |= static_cast<uint8_t>(pr);           //Converte enum para uint8_t  
+  SPI_DataWrite(temp);
+  delay(1);
+}
+
+
+//================================================================================
 // [0x50] Canvas Start address 0 (CVSSA0)
 // [0x51] Canvas Start address 1 (CVSSA1)
 // [0x52] Canvas Start address 2 (CVSSA2)
@@ -2615,7 +3382,7 @@ void Panel_RA8889::ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy)
 
 
 /**
- * @brief Set Graphic Read/Write Position
+ * @brief Set Graphic Read/Write Position X,Y
  *        
  *        User should program proper active window related parameters before configure this register.
  *                   
@@ -2670,54 +3437,137 @@ void Panel_RA8889::ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy)
  *                             Please refer to the Canvas image coordinates.
  *                             Unit: Pixel
  *
- *
  * @param (Wx, Hy): Posicao de coordenada
  *
- *        
- *        REG[5Eh] bit 3 Não existe no RA8889/8877/8876 ?????????
+ * @note        
+ *        REG[5Eh].bit[3] Não exsite a funcionalidade descrita por alguns autores 
+ *        no RA8889/8877/8876/8875/8870
  *
- * @note  REG[5Eh] bit3, Select to read back Graphic Read/Write position.
- *                 When DPRAM Linear mode:Graphic Read/Write Position [31:24][23:16][15:8][7:0]
- *                 When DPRAM Active window mode:Graphic Read/Write
+ *        Nota: REG[0x5E].bit2 = AW_COLOR Linear/Block mode (em RA8889 family).
+ *        Quando Linear Mode = 1, registradores DMA (C0..C3) são interpretados como
+ *        Destination Address [7:0]..[31:2] na SDRAM (32-bit). 
+ *        Quando em Block Mode = 0, registrador de DMR (C0..C3) são interpretados como
+ *        coordenadas X e Y a partir de 0,0. Não existe REG[0x5E].bit3 com essa função.
+ *
+ *        Precisa estar no modo SDRAM de Bloco, ou seja de coordenadas x,y. Para 
+ *        verificar o modo atual, leia o registrador [5Eh].bit[2]
+ *
+ *        Original da RAIO:
+ *  
+ *        REG[5Eh] bit3, Select to read back Graphic Read/Write position.
+ *                 When DPRAM Linear mode:        Graphic Read/Write Position [31:24][23:16][15:8][7:0]
+ *                 When DPRAM Active window mode: Graphic Read/Write
  *                 Horizontal Position [12:8][7:0],
  *                 Vertical Position [12:8][7:0].
  *                 Reference Canvas image coordinate. Unit: Pixel
  *
  */
-void GotoPixelXY(uint16_t Wx, uint16_t Hy)
+void Panel_RA8889::GotoPixel_XY(uint16_t Wx, uint16_t Hy)
 {
-    LCD_CmdWrite(0x5F);
-    LCD_DataWrite(WX);
-    LCD_CmdWrite(0x60);
-    LCD_DataWrite(WX >> 8);
-    LCD_CmdWrite(0x61);
-    LCD_DataWrite(HY);
-    LCD_CmdWrite(0x62);
-    LCD_DataWrite(HY >> 8);
+  SPI_CmdWrite(REG_CURH0);       //0x5f, Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+  SPI_DataWrite(Wx);             //byte baixo de x
+  SPI_CmdWrite(REG_CURH1);       //0x60, Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+  SPI_DataWrite(Wx >> 8);        //byte alto de x
+							     
+  SPI_CmdWrite(REG_CURV0);       //0x61, Graphic Read/Write position Vertical Position Register 0 (CURV0)
+  SPI_DataWrite(Hy);             //byte baixo de y
+  SPI_CmdWrite(REG_CURV1);       //0x62, raphic Read/Write position Vertical Position Register 1 (CURV1)
+  SPI_DataWrite(Hy >> 8);        //byte alto de y
 }
 
 
-void GotoLinearAddr(uint32_t addr)
+/**
+ * @brief Set Graphic Read/Write Position Linear
+ *        
+ *        User should program proper active window related parameters before configure this register.
+ *                   
+ *        REG [0x5F] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+ *                   bit [7~0] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [7:0]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:
+ *                             Graphic Read/Write Horizontal Position 0 [7:0]
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel                   
+ *        REG [0x60] Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+ *                   bit [7~5] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [15:13]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode: NA
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *                   bit [4~0] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [12:8]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:
+ *                             Graphic Read/Write Horizontal Position 1 [12:8]
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *        REG [0x61] Graphic Read/Write position Vertical Position Register 0 (CURV0)
+ *                   bit [7~0] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [23:16]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:
+ *                             Graphic Read/Write Vertical Position 0 [7:0]
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *        REG [0x62] Graphic Read/Write position Vertical Position Register 1 (CURV1)
+ *                   bit [7~5] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [31:29]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:NA
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *                   bit [4~0] Write: Set Graphic Read/Write position
+ *                             When Canvas In Linear mode:
+ *                             Memory Read/Write address [28:24]
+ *                             Unit: Byte
+ *                             When Canvas In Block mode:
+ *                             Graphic Read/Write Vertical Position 1 [12:8]
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *
+ * @param (Wx, Hy): Posicao de coordenada
+ *
+ * @note        
+ *        REG[5Eh].bit[3] Não exsite a funcionalidade descrita por alguns autores 
+ *        no RA8889/8877/8876/8875/8870
+ *
+ *        Nota: REG[0x5E].bit2 = AW_COLOR Linear/Block mode (em RA8889 family).
+ *        Quando Linear Mode = 1, registradores DMA (C0..C3) são interpretados como
+ *        Destination Address [7:0]..[31:2] na SDRAM (32-bit). 
+ *        Quando em Block Mode = 0, registrador de DMR (C0..C3) são interpretados como
+ *        coordenadas X e Y a partir de 0,0. Não existe REG[0x5E].bit3 com essa função.
+ *
+ *        Precisa estar no modo SDRAM de Bloco, ou seja de coordenadas x,y. Para 
+ *        verificar o modo atual, leia o registrador [5Eh].bit[2]
+ *
+ *        Original da RAIO:
+ *  
+ *        REG[5Eh] bit3, Select to read back Graphic Read/Write position.
+ *                 When DPRAM Linear mode:        Graphic Read/Write Position [31:24][23:16][15:8][7:0]
+ *                 When DPRAM Active window mode: Graphic Read/Write
+ *                 Horizontal Position [12:8][7:0],
+ *                 Vertical Position [12:8][7:0].
+ *                 Reference Canvas image coordinate. Unit: Pixel
+ */
+void Panel_RA8889::GotoPixel_Linear(uint32_t addr)
 {
-    /*
-    Set Graphic Read/Write position
-
-    REG[5Eh] bit3, Select to read back Graphic Read/Write position.
-    When DPRAM Linear mode:Graphic Read/Write Position [31:24][23:16][15:8][7:0]
-    When DPRAM Active window mode:Graphic Read/Write
-    Horizontal Position [12:8][7:0],
-    Vertical Position [12:8][7:0].
-    Reference Canvas image coordinate. Unit: Pixel
-    */
-    LCD_CmdWrite(0x5F);
-    LCD_DataWrite(Addr);
-    LCD_CmdWrite(0x60);
-    LCD_DataWrite(Addr >> 8);
-    LCD_CmdWrite(0x61);
-    LCD_DataWrite(Addr >> 16);
-    LCD_CmdWrite(0x62);
-    LCD_DataWrite(Addr >> 24);
+  SPI_CmdWrite(REG_CURH0);       //0x5f, Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+  SPI_DataWrite(addr);           //bit [7..0] do endreço
+  SPI_CmdWrite(REG_CURH1);       //0x60, Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+  SPI_DataWrite(addr >> 8);      //bit [15..8] do endereço
+  SPI_CmdWrite(REG_CURV0);       //0x61, Graphic Read/Write position Vertical Position Register 0 (CURV0)
+  SPI_DataWrite(Addr >> 16);     //bit [23..16] do endereço
+  SPI_CmdWrite(REG_CURV1);       //0x62, raphic Read/Write position Vertical Position Register 1 (CURV1)
+  SPI_DataWrite(Addr >> 24);     //bit [31..24] do endereço
 }
+void Panel_RA8889::GotoLinearAddr(uint32_t addr) {GotoPixel_Linear(addr);}
 
 
 //================================================================================
@@ -2727,27 +3577,904 @@ void GotoLinearAddr(uint32_t addr)
 // [0x66] Text Write Y-coordinates Register 1 (F_CURY1)
 //================================================================================
 
-void Goto_Text_XY(unsigned short WX, unsigned short HY)
+
+/**
+ * @brief Set Text Write Position X-Y
+ *        
+ *        User should program proper active window related parameters before configure this register.
+ *                   
+ *        REG [0x63] Text Write X-coordinates Register 0 (F_CURX0)
+ *                   bit [7~0] Write: Set Text Write position
+ *                             Read: Current Text Write position
+ *                             Text Write X-coordinates [7:0]
+ *                             The setting of the horizontal cursor position for text writing.
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *          
+ *        REG [0x64] Text Write X-coordinates Register 1 (F_CURX1)
+ *                   bit [4~0] Write: Set Text Write position
+ *                             Read: Current Text Write position
+ *                             Text Write X-coordinates [12:8]
+ *                             The setting of the horizontal cursor position for text writing.
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *        REG [0x65] Text Write Y-coordinates Register 0 (F_CURY0)
+ *                   bit [7~0] Write: Set Text Write position
+ *                             Read: Current Text Write position
+ *                             Text Write Y-coordinates [7:0]
+ *                             The setting of the vertical cursor position for text writing.
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *        REG [0x66] Text Write Y-coordinates Register 1 (F_CURY1)
+ *                   bit [4~0] Write: Set Text Write position
+ *                             Read: Current Text Write position
+ *                             Text Write Y-coordinates [12:8]
+ *                             The setting of the vertical cursor position for text writing.
+ *                             Please refer to the Canvas image coordinates.
+ *                             Unit: Pixel
+ *
+ * @param (Wx, Hy): Posicao de coordenada
+ *
+ * @note  Precisa estar no modo SDRAM de Bloco, ou seja de coordenadas x,y. Para 
+ *        verificar o modo atual, leia o registrador [5Eh].bit[2]
+ *
+ */
+void Panel_RA8889::GotoText_XY(uint16_t Wx, uint16_t Hy)
 {
-    /*
-    Set Text Write position
-    Text Write X-coordinate [12:8][7:0]
-    Text Write Y-coordinate [12:8][7:0]
-    Reference Canvas image coordinate.
-    Unit: Pixel
-    */
-    LCD_CmdWrite(0x63);
-    LCD_DataWrite(WX);
-    LCD_CmdWrite(0x64);
-    LCD_DataWrite(WX >> 8);
-    LCD_CmdWrite(0x65);
-    LCD_DataWrite(HY);
-    LCD_CmdWrite(0x66);
-    LCD_DataWrite(HY >> 8);
+  SPI_CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
+  SPI_DataWrite(Wx);                           //Text Write X-coordinate [7:0]
+  SPI_CmdWrite(REG_F_CURX1);                   //0x64, Text Write X-coordinates Register 1 (F_CURX1)
+  SPI_DataWrite(Wx >> 8);                      //Text Write X-coordinate [12:8]
+  SPI_CmdWrite(REG_F_CURY0);                   //0x65, Text Write Y-coordinates Register 0 (F_CURY0)
+  SPI_DataWrite(Hy);                           //Text Write Y-coordinate [7:0]
+  SPI_CmdWrite(REG_F_CURY1);                   //0x66, Text Write Y-coordinates Register 1 (F_CURY1)
+  SPI_DataWrite(Hy >> 8);                      //Text Write Y-coordinate [12:8]
+}
+
+
+//================================================================================
+// [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+// [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+//================================================================================
+
+
+/**
+ * @brief Serial Flash DMA Start
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [0] Write: DMA Start Bit
+ *                           Set to 1 by MPU and reset to 0 automatically
+ *                           The bit cannot start when fontwr_busy is 1. On 
+ *                           the contrary, if DMA is enabled, the text mode & 
+ *                           sending character code are disabled.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note  None
+ *
+ * @result None
+ */
+void SFI_DMA_Start(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = SPI_DataRead();                       
+  temp |= cSetb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Aguarde até que o Serial flash DMA Controller esteja pronto/ocioso
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [0] Read: DMA Busy Check Bit
+ *                           0: Idle
+ *                           1: Bsy
+ *                           *** about DMA transfer of serial flash, its 
+ *                           destination starting address, destination image 
+ *                           width, color depth & address mode in SDRAM are 
+ *                           followed by Canvas’ setting and only operate in 
+ *                           graphic mode.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note  None
+ *
+ * @result None
+ */
+void Panel_RA8889::SFI_DMA_WaitReady(void)
+{
+  uint8_t temp;
+  //Case 1: Using DMA Function Control Register
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  do {
+    temp = LCD_DataRead();
+  } while (temp & 0x01);                       //Enquanto estiver em Busy 
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM Access Font Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [6] Serial Flash / ROM Access Mode
+ *                           0b0: Font mode – for external CGROM
+ *                           0b1: DMA mode – for CGRAM , pattern , boot start image or OSD
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note  None
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_FontMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= cClrb6;                              //Reset bit 6
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM Access DMA Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [6] Serial Flash / ROM Access Mode
+ *                           0b0: Font mode – for external CGROM
+ *                           0b1: DMA mode – for CGRAM, pattern, boot start image or OSD
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note  None
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_DMAMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp |= cSetb6;                              //Set bit 6
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM Address 24-bit Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [5] Serial Flash / ROM Access Mode
+ *                           0b0: 24 bits address mode
+ *                           0b1: 32 bits address mode
+ *                           
+ *                           If user wants to use 32 bits address mode, user 
+ *                           must manual send EX4B command (B7h) to serial 
+ *                           flash then set this bit to 1.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note  None
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_24bitAddress(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= cClrb5;                              //Reset bit 5
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM Address 32-bit Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [5] Serial Flash / ROM Access Mode
+ *                           0b0: 24 bits address mode
+ *                           0b1: 32 bits address mode
+ *                           
+ *                           If user wants to use 32 bits address mode, user 
+ *                           must manual send EX4B command (B7h) to serial 
+ *                           flash then set this bit to 1.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note  None
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_32bitAddress(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp |= cSetb5;                              //Set bit 5
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM for Single Data Without Dummy Cycles Normal Read Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7-6] 0b00: use [B7h] B3-0
+ *                             0b01: 4x read command code – 6Bh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3. 
+ *                             0b10: 4x read command code – EBh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3   
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [3-0] Read Command code & behavior selection
+ *                             0b000x: 1x read command code – 03h. Normal read 
+ *                             speed. Single data input on xmiso. Without 
+ *                             dummy cycle between address and data.
+ *                             
+ *                             0b010x: 1x read command code – 0Bh. To some 
+ *                             serial flash provide faster read speed. Single 
+ *                             data input on xmiso. 8 dummy cycles inserted 
+ *                             between address and data.
+ *                             
+ *                             0b1x0x: 1x read command code – 1Bh. To some 
+ *                             serial flash provide fastest read speed. Single 
+ *                             data input on xmiso. 16 dummy cycles inserted 
+ *                             between address and data.
+ *
+ *                             0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                             data input on xmiso & xmosi. 8 dummy cycles 
+ *                             inserted between address and data phase. (dual 
+ *                             mode 0, reference Figure 16-7).
+ *
+ * Summary:
+ *   000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
+ *   010xb: 1x read command code = 0Bh. 8 dummy (8T) cycles inserted between address and data.
+ *   1x0xb: 1x read command code = 1Bh. 16 dummy (16T) cycles inserted between address and data.
+ *   xx10b: 2x read command code = 3Bh. 8 dummy cycles inserted between address and data phase. (mode 0)
+ *   xx11b: 2x read command code = BBh. 4 dummy cycles inserted between address and data phase. (mode 1)
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_SingleData_03h(void);
+{
+  uint8_t temp;
+
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = SPI_DataRead();                       
+  temp &= (cClrbi7 | cClrb6);                  //Use [0xb7] bit [3-0]
+  SPI_DataWrite(temp);
+  
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= 0xF0;                                //Reset bit [3~0]
+  SPI_DataWrite(temp);                         
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM for Single Data 8 Dummy Cycles Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7-6] 0b00: use [B7h] B3-0
+ *                             0b01: 4x read command code – 6Bh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3. 
+ *                             0b10: 4x read command code – EBh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3   
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [3-0] Read Command code & behavior selection
+ *                             0b000x: 1x read command code – 03h. Normal read 
+ *                             speed. Single data input on xmiso. Without 
+ *                             dummy cycle between address and data.
+ *                             
+ *                             0b010x: 1x read command code – 0Bh. To some 
+ *                             serial flash provide faster read speed. Single 
+ *                             data input on xmiso. 8 dummy cycles inserted 
+ *                             between address and data.
+ *                             
+ *                             0b1x0x: 1x read command code – 1Bh. To some 
+ *                             serial flash provide fastest read speed. Single 
+ *                             data input on xmiso. 16 dummy cycles inserted 
+ *                             between address and data.
+ *
+ *                             0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                             data input on xmiso & xmosi. 8 dummy cycles 
+ *                             inserted between address and data phase. (dual 
+ *                             mode 0, reference Figure 16-7).
+ *
+ * Summary: 
+ * 000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
+ * 010xb: 1x read command code = 0Bh. 8 dummy (8T) cycles inserted between address and data.
+ * 1x0xb: 1x read command code = 1Bh. 16 dummy (16T) cycles inserted between address and data.
+ * xx10b: 2x read command code = 3Bh. 8 dummy cycles inserted between address and data phase. (mode 0)
+ * xx11b: 2x read command code = BBh. 4 dummy cycles inserted between address and data phase. (mode 1)
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+ void Panel_RA8889::Select_SFI_SingleData_0Bh(void)
+{
+  uint8_t temp;
+
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = SPI_DataRead();                       
+  temp &= (cClrb7 | cClrb6);                   //Use [0xb7] bit [3-0]
+  SPI_DataWrite(temp);
+  
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= 0xF0;                                //Reset bit [3~0]
+  temp |= cSetb2;                              //Set x read command code = 0Bh. 8 dummy cycles inserted between address and data.
+  SPI_DataWrite(temp);                         
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM Single Data 16 Dummy Cycles Fast Read Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7-6] 0b00: use [B7h] B3-0
+ *                             0b01: 4x read command code – 6Bh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3. 
+ *                             0b10: 4x read command code – EBh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3   
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [3-0] Read Command code & behavior selection
+ *                             0b000x: 1x read command code – 03h. Normal read 
+ *                             speed. Single data input on xmiso. Without 
+ *                             dummy cycle between address and data.
+ *                             
+ *                             0b010x: 1x read command code – 0Bh. To some 
+ *                             serial flash provide faster read speed. Single 
+ *                             data input on xmiso. 8 dummy cycles inserted 
+ *                             between address and data.
+ *                             
+ *                             0b1x0x: 1x read command code – 1Bh. To some 
+ *                             serial flash provide fastest read speed. Single 
+ *                             data input on xmiso. 16 dummy cycles inserted 
+ *                             between address and data.
+ *
+ *                             0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                             data input on xmiso & xmosi. 8 dummy cycles 
+ *                             inserted between address and data phase. (dual 
+ *                             mode 0, reference Figure 16-7).
+ *
+ *                   Note: Not serial flash support above read command, please 
+ *                   according to serial flash’s datasheet to select proper read 
+ *                   command.
+ *
+ * Summary:
+ * 000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
+ * 010xb: 1x read command code = 0Bh. 8 dummy (8T) cycles inserted between address and data.
+ * 1x0xb: 1x read command code = 1Bh. 16 dummy (16T) cycles inserted between address and data.
+ * xx10b: 2x read command code = 3Bh. 8 dummy cycles inserted between address and data phase. (mode 0)
+ * xx11b: 2x read command code = BBh. 4 dummy cycles inserted between address and data phase. (mode 1)
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+ void Panel_RA8889::Select_SFI_SingleData_1Bh(void)
+{
+  uint8_t temp;
+
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = SPI_DataRead();                       
+  temp &= (cClrb7 | cClrb6);                   //Use [0xb7] bit [3-0]
+  SPI_DataWrite(temp);
+
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= 0xF0;                                //Reset bit [3~0]
+  temp |= cSetb3;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM for Dual Data 8 Dummy Cycles Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7-6] 0b00: use [B7h] B3-0
+ *                             0b01: 4x read command code – 6Bh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3. 
+ *                             0b10: 4x read command code – EBh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3   
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [3-0] Read Command code & behavior selection
+ *                             0b000x: 1x read command code – 03h. Normal read 
+ *                             speed. Single data input on xmiso. Without 
+ *                             dummy cycle between address and data.
+ *                             
+ *                             0b010x: 1x read command code – 0Bh. To some 
+ *                             serial flash provide faster read speed. Single 
+ *                             data input on xmiso. 8 dummy cycles inserted 
+ *                             between address and data.
+ *                             
+ *                             0b1x0x: 1x read command code – 1Bh. To some 
+ *                             serial flash provide fastest read speed. Single 
+ *                             data input on xmiso. 16 dummy cycles inserted 
+ *                             between address and data.
+ *
+ *                             0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                             data input on xmiso & xmosi. 8 dummy cycles 
+ *                             inserted between address and data phase. (dual 
+ *                             mode 0, reference Figure 16-7).
+ *
+ * Summary:
+ * 000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
+ * 010xb: 1x read command code = 0Bh. 8 dummy (8T) cycles inserted between address and data.
+ * 1x0xb: 1x read command code = 1Bh. 16 dummy (16T) cycles inserted between address and data.
+ * xx10b: 2x read command code = 3Bh. 8 dummy cycles inserted between address and data phase. (mode 0)
+ * xx11b: 2x read command code = BBh. 4 dummy cycles inserted between address and data phase. (mode 1)
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_DualData_3Bh(void)
+{
+  uint8_t temp;
+
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = SPI_DataRead();                       
+  temp &= (cClrb7 | cClrb6);                   //Use [0xb7] bit [3-0]
+  SPI_DataWrite(temp);
+
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= 0xF0;                                //Reset bit [3~0]
+  temp |= cSetb1;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM for Dual Data 4 Dummy Cycles Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7-6] 0b00: use [B7h] B3-0
+ *                             0b01: 4x read command code – 6Bh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3. 
+ *                             0b10: 4x read command code – EBh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3   
+ *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *                   bit [3-0] Read Command code & behavior selection
+ *                             0b000x: 1x read command code – 03h. Normal read 
+ *                             speed. Single data input on xmiso. Without 
+ *                             dummy cycle between address and data.
+ *                             
+ *                             0b010x: 1x read command code – 0Bh. To some 
+ *                             serial flash provide faster read speed. Single 
+ *                             data input on xmiso. 8 dummy cycles inserted 
+ *                             between address and data.
+ *                             
+ *                             0b1x0x: 1x read command code – 1Bh. To some 
+ *                             serial flash provide fastest read speed. Single 
+ *                             data input on xmiso. 16 dummy cycles inserted 
+ *                             between address and data.
+ *
+ *                             0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                             data input on xmiso & xmosi. 8 dummy cycles 
+ *                             inserted between address and data phase. (dual 
+ *                             mode 0, reference Figure 16-7).
+ *
+ * Summary:
+ * 000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
+ * 010xb: 1x read command code = 0Bh. 8 dummy (8T) cycles inserted between address and data.
+ * 1x0xb: 1x read command code = 1Bh. 16 dummy (16T) cycles inserted between address and data.
+ * xx10b: 2x read command code = 3Bh. 8 dummy cycles inserted between address and data phase. (mode 0)
+ * xx11b: 2x read command code = BBh. 4 dummy cycles inserted between address and data phase. (mode 1)
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Apenas aplicado ao RA8876 e RA8877, esse modo 1 BBh não existe no RA8889
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_DualData_BBh(void)
+{
+  uint8_t temp;
+
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = SPI_DataRead();                       
+  temp &= (cClrb7 | cClrb6);                   //Use [0xb7] bit [3-0]
+  SPI_DataWrite(temp);
+
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= 0xF0;                                //Reset bit [3~0]
+  temp |= (cSetb1 | cSetb0);
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM for Quad Data 8 Dummy Cycles Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7-6] 0b00: use [B7h] B3-0
+ *                             0b01: 4x read command code – 6Bh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3. 
+ *                             0b10: 4x read command code – EBh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3   
+ *
+ * Summary:
+ * 01b: 4x read command code – 6Bh.
+ * 10b: 4x read command code – EBh.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_QuadData_6Bh(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = SPI_DataRead();                       
+  temp &= 0x3F;
+  temp |= cSetb6;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Serial Flash/ROM for Quad Data 4 Dummy Cycles Mode
+ *        
+ * @verbatim                  
+ *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7-6] 0b00: use [B7h] B3-0
+ *                             0b01: 4x read command code – 6Bh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3. 
+ *                             0b10: 4x read command code – EBh.
+ *                                   Address output & data input interleaved 
+ *                                   on xmiso & xmosi & xsio2 & xsio3   
+ *
+ * Summary:
+ * 01b: 4x read command code – 6Bh.
+ * 10b: 4x read command code – EBh.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Select_SFI_QuadData_EBh(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = SPI_DataRead();                       
+  temp &= 0x3F;
+  temp |= cSetb7;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Serial Flash/ROM 0 I/F is Selected
+ *        
+ * @verbatim                  
+ *        REG [0xb7] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7] Page 0 FONT/DMA Serial Flash/ROM I/F # Select
+ *                           0b0: Serial Flash/ROM 0 I/F is selected.
+ *                           0b1: Serial Flash/ROM 1 I/F is selected.
+ *                           Note: when page1 B7h bit 7 = 1, then serial flash 
+ *                           chip select 2,3
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::SFI_Select_ROM0(void);
+{
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= cClrb7;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Serial Flash/ROM 1 I/F is Selected
+ *        
+ * @verbatim                  
+ *        REG [0xb7] Serial flash DMA Controller REG (DMA_CTRL)
+ *                   bit [7] Page 0 FONT/DMA Serial Flash/ROM I/F # Select
+ *                           0b0: Serial Flash/ROM 0 I/F is selected.
+ *                           0b1: Serial Flash/ROM 1 I/F is selected.
+ *                           Note: when page1 B7h bit 7 = 1, then serial flash 
+ *                           chip select 2,3
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::SFI_Select_ROM1(void)
+{
+  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp |= cSetb7;
+  SPI_DataWrite(temp);
 }
 
 
 
+void ER_TFTBasic::Select_SFI_Waveform_Mode_0(void)
+{
+/*[bit4]
+Serial Flash/ROM Waveform Mode
+Mode 0.
+Mode 3.
+*/
+  unsigned char temp;
+  ER_TFT.LCD_CmdWrite(0xB7);
+  temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb4;
+  ER_TFT.LCD_DataWrite(temp);
+}
+
+
+void ER_TFTBasic::Select_SFI_Waveform_Mode_3(void)
+{
+/*[bit4]
+Serial Flash/ROM Waveform Mode
+Mode 0.
+Mode 3.
+*/
+  unsigned char temp;
+  ER_TFT.LCD_CmdWrite(0xB7);
+  temp = ER_TFT.LCD_DataRead();
+    temp |= cSetb4;
+  ER_TFT.LCD_DataWrite(temp);
+}
+
+
+//================================================================================
+// [0xb8] SPI master Tx /Rx FIFO Data Register (SPIDR)
+//================================================================================
+
+
+unsigned char SPI_Master_FIFO_Data_Put(unsigned char Data)
+{
+    unsigned char temp;
+    LCD_CmdWrite(0xB8);
+    LCD_DataWrite(Data);
+    do {
+        temp = Tx_FIFO_Empty_Flag();
+    } while (temp == 0);
+    //	while(Tx_FIFO_Empty_Flag()==0);	//空了再執行下一筆
+    temp = SPI_Master_FIFO_Data_Get();
+
+    return temp;
+}
+
+unsigned char SPI_Master_FIFO_Data_Get(void)
+{
+    unsigned char temp;
+
+    while (Rx_FIFO_Empty_Flag() == 1)
+        ; // 不是空的往下執行
+    LCD_CmdWrite(0xB8);
+    temp = LCD_DataRead();
+    // while(Rx_FIFO_full_flag()); //連續寫入16筆資料才需要
+    return temp;
+}
+
+
+//================================================================================
+// [0xb9] SPI master Control Register (SPIMCR2)
+//================================================================================
+
+
+void Enable_SPI_Master_Interrupt(void)
+{
+    /*
+    SPI Master Interrupt enable
+    0: Disable interrupt.
+    1: Enable interrupt.
+    */
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp |= cSetb6;
+    LCD_DataWrite(temp);
+}
+
+void Disable_SPI_Master_Interrupt(void)
+{
+    /*
+    SPI Master Interrupt enable
+    0: Disable interrupt.
+    1: Enable interrupt.
+    */
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp &= cClrb6;
+    LCD_DataWrite(temp);
+}
+
+// 0: inactive (nSS port will goes high)
+void nSS_Inactive(void)
+{
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp &= cClrb4;
+    LCD_DataWrite(temp);
+}
+
+// 1: active (nSS port will goes low)
+void nSS_Active(void)
+{
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp |= cSetb4;
+    LCD_DataWrite(temp);
+}
+
+void Mask_FIFO_overflow_error_Interrupt(void)
+{
+    /*
+    Mask interrupt for FIFO overflow error [OVFIRQEN]
+    0: unmask
+    1: mask
+    */
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp |= cSetb3;
+    LCD_DataWrite(temp);
+}
+
+void Unmask_FIFO_overflow_error_Interrupt(void)
+{
+    /*
+    Mask interrupt for FIFO overflow error [OVFIRQEN]
+    0: unmask
+    1: mask
+    */
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp &= cClrb3;
+    LCD_DataWrite(temp);
+}
+
+void Mask_EMTIRQEN_Interrupt(void)
+{
+    /*
+    Mask interrupt for while Tx FIFO empty & SPI engine/FSM idle [EMTIRQEN]
+    0: unmask
+    1: mask
+    */
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp |= cSetb2;
+    LCD_DataWrite(temp);
+}
+
+void Unmask_EMTIRQEN_Interrupt(void)
+{
+    /*
+    Mask interrupt for while Tx FIFO empty & SPI engine/FSM idle [EMTIRQEN]
+    0: unmask
+    1: mask
+    */
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp &= cClrb2;
+    LCD_DataWrite(temp);
+}
+
+/*
+SPI operation mode
+Only support mode 0 & mode 3, when enable serial flash’s DMA
+or access Getop’s character serial ROM device.
+mode / CPOL:Clock Polarity bit / CPHA:Clock Phase bit
+    0	0	0
+    1	0	1
+    2	1	0
+    3	1	1
+*/
+
+void Reset_CPOL(void)
+{
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp &= cClrb1;
+    LCD_DataWrite(temp);
+}
+
+void Set_CPOL(void)
+{
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp |= cSetb1;
+    LCD_DataWrite(temp);
+}
+
+void Reset_CPHA(void)
+{
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp &= cClrb0;
+    LCD_DataWrite(temp);
+}
+
+void Set_CPHA(void)
+{
+    unsigned char temp;
+    LCD_CmdWrite(0xB9);
+    temp = LCD_DataRead();
+    temp |= cSetb0;
+    LCD_DataWrite(temp);
+}
 
 
 //================================================================================
@@ -2984,6 +4711,7 @@ void Panel_RA8889::BackgroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
 /**
  * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB3:3:2) de 256 cores
  *        
+ * @verbatim
  *        Color depht de 8bpp
  *        
  *        REG [0xd5] Background Color Register - Red (BGCR)
@@ -3010,6 +4738,7 @@ void Panel_RA8889::BackgroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
  *            character-to-character space, foreground color, background color 
  *            and Text/graphic mode setting, please make sure core_busy (fontwr_
  *            busy) status bit is low.
+ * @endverbatim
  *
  * @param color: entrada de dados no formato R3G3B2 (3 bits para o vermelho, 
  *        3 bits para o verde e 2 bits para o azul.
@@ -3038,6 +4767,7 @@ void Panel_RA8889::BackgroundColor_256(uint8_t color)
 /**
  * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB5:6:5) de 65k cores
  *        
+ * @verbatim 
  *        Color depht de 16bpp
  *
  *        REG [0xd5] Background Color Register - Red (BGCR)
@@ -3064,6 +4794,7 @@ void Panel_RA8889::BackgroundColor_256(uint8_t color)
  *            character-to-character space, foreground color, background color 
  *            and Text/graphic mode setting, please make sure core_busy (fontwr_
  *            busy) status bit is low.
+ * @endverbatim
  *
  * @param color: entrada de dados no formato R5G6B5 (5 bits para o vermelho, 
  *        6 bits para o verde e 5 bits para o azul.
@@ -3516,6 +5247,7 @@ void Panel_RA8889::SquareMode_Start(bool fill)
 /**
  * @brief Ativa o Modo de desenho de curva circular no canto quadrado
  *        
+ * @verbatim  
  *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
  *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
  *                         Write Function:
@@ -3537,6 +5269,7 @@ void Panel_RA8889::SquareMode_Start(bool fill)
  *                         0b01: upper-left Ellipse Curve
  *                         0b10: upper-right Ellipse Curve
  *                         0b11: bottom-right Ellipse Curve 
+ * @endverbatim  
  *
  * @param fill: true preenche região da curva figura, false não preenche a região da curva
  *
@@ -3866,6 +5599,1001 @@ void Panel_RA8889::Square_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);
 void Panel_RA8889::Square_Point2XY(uint16_t wx, uint16_t hy) {Point2_XY(wx, hy);}
 
 
+//================================================================================
+// [0xcc] Character Control Register 0 (CCR0)
+//================================================================================
+
+
+/**
+ * @brief Select User-defined Font in Text Mode
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [7-6] Character source selection
+ *                            User-defined Font /CGROM Font Selection Bit in Text Mode
+ *                            0b00: Select internal CGROM Character.
+ *                            0b01: Select external CGROM Character. (Genitop serial flash)
+ *                            0b10: Select user-defined Character.
+ *                            0b11: NA
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_UseUserDefined(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;                              //Set bit 7, Select user-defined Character
+  temp &= cClrb6;                              //Reset bit 6, Select user-defined Character
+  SPI_DataWrite(temp);                         //Set selection user-defined Character
+}
+
+
+/**
+ * @brief Select Internal CGROM Font in Text Mode
+ *        
+ * @verbatim
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [7-6] Character source selection
+ *                            User-defined Font /CGROM Font Selection Bit in Text Mode
+ *                            0b00: Select internal CGROM Character.
+ *                            0b01: Select external CGROM Character. (Genitop serial flash)
+ *                            0b10: Select user-defined Character.
+ *                            0b11: NA
+ * @endverbatim
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_UseInternalCGROM(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp &= cClrb7;                              //Reset bit 7, Select internal CGROM Character
+  temp &= cClrb6;                              //Reset bit 6, Select internal CGROM Character
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select External CGROM Font (enitop serial flash) in Text Mode
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [7-6] Character source selection
+ *                            User-defined Font /CGROM Font Selection Bit in Text Mode
+ *                            0b00: Select internal CGROM Character.
+ *                            0b01: Select external CGROM Character. (Genitop serial flash)
+ *                            0b10: Select user-defined Character.
+ *                            0b11: NA
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_UseExternalCGROM(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp &= cClrb7;                              //Reset bit 7, Select external CGROM Character. (Genitop serial flash)
+  temp |= cSetb6;                              //Set bit 6, Select external CGROM Character. (Genitop serial flash)
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Character source selection
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [7-6] Character source selection
+ *                            User-defined Font /CGROM Font Selection Bit in Text Mode
+ *                            0b00: Select internal CGROM Character.
+ *                            0b01: Select external CGROM Character. (Genitop serial flash)
+ *                            0b10: Select user-defined Character.
+ *                            0b11: NA
+ *
+ * @param FontSource::Internal : Select internal CGROM Character.
+ *        FontSource::External : Select external CGROM Character. (Genitop serial flash)
+ *        FontSource::User     : Select user-defined Character.
+ *
+ * @note Exemplo: Font_SetSource(FontSource::ExternalCGROM); 
+ */
+void Panel_RA8889::Font_SetSource(FontSource source);
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp &= ~(cSetb6 | cSetb7);                  //Reset bits 6 e 7 de uma vez
+  temp |= static_cast<uint8_t>(source);        //Converte enum para uint8_t
+  SPI_DataWrite(temp);                         //Set Character source selection
+}
+
+
+/**
+ * @brief Select Fonte Height 8x16 / 16x16
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [5-4] Character source selection
+ *                            0b00 : 16; ex.  8x16 / 16x16 / variable character width x 16
+ *                            0b01 : 24; ex. 12x24 / 24x24 / variable character width x 24
+ *                            0b10 : 32; ex. 16x32 / 32x32 / variable character width x 32
+ *
+ *                  - for internal CGROM (12x24)
+ *                  - for external CGROM (16x16, 24x24, 32x32, other)
+ *                    Character ROM of Genitop Inc., CI GT21L16T1W, GT30L16U2W, GT30L24T3Y, 
+ *                    GT30L24M1Z, GT30L32S4W, GT20L24F6Y, GT21L24S1W, there are different 
+ *                    resolutions for character.
+ *					- for user-defined Character (8x16,12x24,16x32)
+ *                  
+ *                  Note:
+ *                  1. User-defined character width is decided by character 
+ *                     code; width for code < 8000h is 8/12/16 and width for 
+ *                     code >=8000h is 16/24/32.
+ *                  2. The character width of Genitop’s serial flash is 
+ *                     decided by chosen character sets and need to configure 
+ *                     GT Font ROM registers (CEh, CFh).
+ *                  3. Internal CGROM supports size 12x24.
+ *
+ *
+ * @param None
+ *
+ * @note User-defined Font width is decided by font code. Genitop
+ *       serial flash's font width is decided by font code or GT Font ROM
+ *       control register.
+ */
+void Font_SetHeight_16(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp &= cClrb5;
+  temp &= cClrb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Fonte Height 12x24 / 24x24
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [5-4] Character source selection
+ *                            0b00 : 16; ex.  8x16 / 16x16 / variable character width x 16
+ *                            0b01 : 24; ex. 12x24 / 24x24 / variable character width x 24
+ *                            0b10 : 32; ex. 16x32 / 32x32 / variable character width x 32
+ *
+ *                  - for internal CGROM (12x24)
+ *                  - for external CGROM (16x16, 24x24, 32x32, other)
+ *                    Character ROM of Genitop Inc., CI GT21L16T1W, GT30L16U2W, GT30L24T3Y, 
+ *                    GT30L24M1Z, GT30L32S4W, GT20L24F6Y, GT21L24S1W, there are different 
+ *                    resolutions for character.
+ *					- for user-defined Character (8x16,12x24,16x32)
+ *                  
+ *                  Note:
+ *                  1. User-defined character width is decided by character 
+ *                     code; width for code < 8000h is 8/12/16 and width for 
+ *                     code >=8000h is 16/24/32.
+ *                  2. The character width of Genitop’s serial flash (Intrnal 
+ *                     CGROM) is decided by chosen character sets and need to 
+ *                     configure GT Font ROM registers (CEh, CFh).
+ *                  3. Internal CGROM supports size 12x24.
+ *
+ * @param None
+ *
+ * @note User-defined Font width is decided by font code. Genitop
+ *       serial flash's font width is decided by font code or GT Font ROM
+ *       control register.
+ */
+void Font_SetHeight_24(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp &= cClrb5;
+  temp |= cSetb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Fonte Height 16x32 / 32x32
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [5-4] Character source selection
+ *                            0b00 : 16; ex.  8x16 / 16x16 / variable character width x 16
+ *                            0b01 : 24; ex. 12x24 / 24x24 / variable character width x 24
+ *                            0b10 : 32; ex. 16x32 / 32x32 / variable character width x 32
+ *
+ *                  - for internal CGROM (12x24)
+ *                  - for external CGROM (16x16, 24x24, 32x32, other)
+ *                    Character ROM of Genitop Inc., CI GT21L16T1W, GT30L16U2W, GT30L24T3Y, 
+ *                    GT30L24M1Z, GT30L32S4W, GT20L24F6Y, GT21L24S1W, there are different 
+ *                    resolutions for character.
+ *					- for user-defined Character (8x16,12x24,16x32)
+ *                  
+ *                  Note:
+ *                  1. User-defined character width is decided by character 
+ *                     code; width for code < 8000h is 8/12/16 and width for 
+ *                     code >=8000h is 16/24/32.
+ *                  2. The character width of Genitop’s serial flash is 
+ *                     decided by chosen character sets and need to configure 
+ *                     GT Font ROM registers (CEh, CFh).
+ *                  3. Internal CGROM supports size 12x24.
+ *
+ * @param None
+ *
+ * @note User-defined Font width is decided by font code. Genitop
+ *       serial flash's font width is decided by font code or GT Font ROM
+ *       control register.
+ */
+void Font_SetHeight_32(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp |= cSetb5;
+  temp &= cClrb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Fonte Height (8x16 / 16x16 / 12x24 / 24x24 / 16x32 / 32x32)
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [5-4] Character source selection
+ *                            0b00 : 16; ex.  8x16 / 16x16 / variable character width x 16
+ *                            0b01 : 24; ex. 12x24 / 24x24 / variable character width x 24
+ *                            0b10 : 32; ex. 16x32 / 32x32 / variable character width x 32
+ *
+ *                  - for internal CGROM (12x24)
+ *                  - for external CGROM (16x16, 24x24, 32x32, other)
+ *                    Character ROM of Genitop Inc., CI GT21L16T1W, GT30L16U2W, GT30L24T3Y, 
+ *                    GT30L24M1Z, GT30L32S4W, GT20L24F6Y, GT21L24S1W, there are different 
+ *                    resolutions for character.
+ *					- for user-defined Character (8x16,12x24,16x32)
+ *                  
+ *                  Note:
+ *                  1. User-defined character width is decided by character 
+ *                     code; width for code < 8000h is 8/12/16 and width for 
+ *                     code >=8000h is 16/24/32.
+ *                  2. The character width of Genitop’s serial flash is 
+ *                     decided by chosen character sets and need to configure 
+ *                     GT Font ROM registers (CEh, CFh).
+ *                  3. Internal CGROM supports size 12x24.
+ *
+ * @param enum FontHeight height: Altura desejada da fonte
+ *             FontHeight::H16  :  8x16 / 16x16
+ *             FontHeight::H24  : 12x24 / 24x24
+ *             FontHeight::H32  : 16x32 / 32x32
+ *
+ * @note User-defined Font width is decided by font code. Genitop
+ *       serial flash's font width is decided by font code or GT Font ROM
+ *       control register.
+ */ 
+void Font_SetHeight(FontHeight height)
+{
+  uint8_t temp;
+  uint8_t bits = 0;
+  
+  // Mapear enum para bits [5:4] do CCR0
+  switch(height)
+  {
+      case FontHeight::H16: bits = 0x00;   break;
+      case FontHeight::H24: bits = cSetb0; break;
+      case FontHeight::H32: bits = cSetb1; break;
+      default: 
+          return; // nunca deve acontecer
+  }
+  
+  SPI_CmdWrite(REG_CCR0);       //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();        //Lê valor atual
+  temp &= ~(cSetb5 | cSetb4);   //Limpa bits 5:4
+  temp |= bits;                 //Seta bits corretos
+  SPI_DataWrite(temp);          //Escreve de volta
+}
+
+
+/**
+ * @brief Font Selection for internal CGROM ISO/IEC 8859-1
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [1-0] Character Selection for internal CGROM
+ *                            When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                            supports character sets with the standard coding 
+ *                            of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                            and most of European country languages
+ *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_1(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp &= cClrb1;
+  temp &= cClrb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for internal CGROM ISO/IEC 8859-2
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [1-0] Character Selection for internal CGROM
+ *                            When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                            supports character sets with the standard coding 
+ *                            of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                            and most of European country languages
+ *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_2(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp &= cClrb1;
+  temp |= cSetb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for internal CGROM ISO/IEC 8859-4
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [1-0] Character Selection for internal CGROM
+ *                            When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                            supports character sets with the standard coding 
+ *                            of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                            and most of European country languages
+ *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_4(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp |= cSetb1;
+  temp &= cClrb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for internal CGROM ISO/IEC 8859-5
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [1-0] Character Selection for internal CGROM
+ *                            When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                            supports character sets with the standard coding 
+ *                            of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                            and most of European country languages
+ *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_5(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = SPI_DataRead();                       
+  temp |= cSetb1;
+  temp |= cSetb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for internal CGROM ISO/IEC 8859
+ *        
+ *        REG [CCh] Character Control Register 0 (CCR0)
+ *                  bit [1-0] Character Selection for internal CGROM
+ *                            When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                            supports character sets with the standard coding 
+ *                            of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                            and most of European country languages
+ *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @param iso ISO/IEC 8859 code to select (InternalCGROM_ISO8859)
+ *
+ * @note None
+ */
+void Panel_RA8889::Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR0);                      // Seleciona o registrador CCR0
+  temp = SPI_DataRead();                       // Lê valor atual
+  temp &= ~(cSetb1 | cSetb0);                  // Limpa os bits B1:B0
+  temp |= static_cast<uint8_t>(iso);           // Seta bits conforme enum
+  SPI_DataWrite(temp);                         // Escreve no registrador
+}
+
+
+//================================================================================
+// [0xcd] Character Control Register 1 (CCR1)
+//================================================================================
+
+
+/**
+ * @brief Characer Full Alignment Set
+ *        
+ *        REG [CDh] Character Control Register 1 (CCR1)
+ *                  bit [7] Full Alignment Selection Bit
+ *                          0b0 : Full alignment disable.
+ *                          0b1 : Full alignment enable.
+ *                          
+ *                          When Full alignment is enabled, the character 
+ *                          width is equal to half of the character height, 
+ *                          width = height / 2, (the condition is character 
+ *                          width is equal to or small than half of the 
+ *                          character height), otherwise the character width 
+ *                          is equal to character height.
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_FullAlignmentEnable(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;                              //Set full alignment
+  SPI_DataWrite(temp);                         
+}
+
+
+/**
+ * @brief Characer Full Alignment Set
+ *        
+ * @verbatim  
+ *        REG [CDh] Character Control Register 1 (CCR1)
+ *                  bit [7] Full Alignment Selection Bit
+ *                          0b0 : Full alignment disable.
+ *                          0b1 : Full alignment enable.
+ *                          
+ *                          When Full alignment is enabled, the character 
+ *                          width is equal to half of the character height, 
+ *                          width = height / 2, (the condition is character 
+ *                          width is equal to or small than half of the 
+ *                          character height), otherwise the character width 
+ *                          is equal to character height.
+ * @endverbatim  
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_FullAlignmentDisable(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = SPI_DataRead();                       
+  temp &= cClrb7;                               //Disable full alignment
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Background Transparency
+ *        
+ *        REG [CDh] Character Control Register 1 (CCR1)
+ *                  bit [6] Chroma keying enable on Text input
+ *                          0b0 : Character’s background displayed with specified color.
+ *                          0b1 : Character’s background displayed with original canvas’ background (transparency).
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_UseBackgroundTransparency(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb6;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Background Color
+ *        
+ *        REG [CDh] Character Control Register 1 (CCR1)
+ *                  bit [6] Chroma keying enable on Text input
+ *                          0b0 : Character’s background displayed with specified color.
+ *                          0b1 : Character’s background displayed with original canvas’ background (transparency).
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_UseBackgroundColor(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = SPI_DataRead();                       
+  temp &= cClrb6;                              //Set original canva's color 
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Rotete 0 degree
+ *        
+ *        REG [CDh] Character Control Register 1 (CCR1)
+ *                  bit [4] Character Rotation
+ *                          0b0 : Normal
+ *                                Text direction from left to right then from top to bottom
+ *                          0b1 : Counterclockwise 90 degree & horizontal flip
+ *                                Text direction from top to bottom then from left to right
+ *                                (it should accommodate with set VDIR as 1)
+ *                          This attribute can be changed only when previous font write
+ *                          finished (core_busy = 0)
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_0degree(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = SPI_DataRead();                       
+  temp &= cClrb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Rotete 90 degree
+ *        
+ *        REG [CDh] Character Control Register 1 (CCR1)
+ *                  bit [4] Character Rotation
+ *                          0b0 : Normal
+ *                                Text direction from left to right then from top to bottom
+ *                          0b1 : Counterclockwise 90 degree & horizontal flip
+ *                                Text direction from top to bottom then from left to right
+ *                                (it should accommodate with set VDIR as 1)
+ *                          This attribute can be changed only when previous font write
+ *                          finished (core_busy = 0)
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_90degree(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Character width enlargement factor
+ *        
+ * @verbatim  
+ *        REG [CDh] Character Control Register 1 (CCR1)
+ *                  bit [3-2] Character width enlargement factor
+ *                          0b00 : factor x1
+ *                          0b01 : factor x2
+ *                          0b10 : factor x3
+ *                          0b11 : factor x4
+ * @endverbatim  
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_WidthEnlargFactor(FontEnlargFactor factor)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = SPI_DataRead();
+  temp &= ~(cSetb3 | cSetb2);                  //Reset bits 3 e 2 de uma vez
+  temp |= (static_cast<uint8_t>factor << 2);   //Posiciona para o bit 3-2
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Character height enlargement factor
+ *        
+ * @verbatim  
+ *        REG [CDh] Character Control Register 1 (CCR1)
+ *                  bit [1-0] Character height enlargement factor
+ *                          0b00 : factor x1
+ *                          0b01 : factor x2
+ *                          0b10 : factor x3
+ *                          0b11 : factor x4
+ * @endverbatim  
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_HeightEnlargFactor(FontEnlargFactor factor)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = SPI_DataRead();      
+  temp &= ~(cSetb1 | cSetb0);                  //Reset bits 1 e 0 de uma vez
+  temp |= (static_cast<uint8_t>factor);
+  ER_TFT.LCD_DataWrite(temp);
+}
+
+
+//================================================================================
+// [0xce] GT Character ROM Select (GTFNT_SEL)
+//================================================================================
+
+
+/**
+ * @brief Font Selection for External CGROM Genitop's GT21L16T1W IC
+ *        
+ * @verbatim  
+ *        REG [CEh] GT Character ROM Select (GTFNT_SEL)
+ *                  bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
+ *                            0b000 : Circuito Integrado External CGROM GT21L16T1W
+ *                            0b001 : Circuito Integrado External CGROM GT30L16U2W
+ *                            0b010 : Circuito Integrado External CGROM GT30L24T3Y
+ *                            0b011 : Circuito Integrado External CGROM GT30L24M1Z
+ *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
+ *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
+ *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
+ * @endverbatim  
+ *                            
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::GTFont_Select_GT21L16T1W(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = SPI_DataRead();                       
+  temp &= cClrb7;
+  temp &= cClrb6;
+  temp &= cClrb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for External CGROM Genitop's GT30L16U2W IC
+ * @verbatim       
+ *        REG [CEh] GT Character ROM Select (GTFNT_SEL)
+ *                  bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
+ *                            0b000 : Circuito Integrado External CGROM GT21L16T1W
+ *                            0b001 : Circuito Integrado External CGROM GT30L16U2W
+ *                            0b010 : Circuito Integrado External CGROM GT30L24T3Y
+ *                            0b011 : Circuito Integrado External CGROM GT30L24M1Z
+ *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
+ *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
+ *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
+ * @endverbatim                           
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::GTFont_Select_GT30L16U2W(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = SPI_DataRead();                       
+  temp &= cClrb7;
+  temp &= cClrb6;
+  temp |= cSetb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for External CGROM Genitop's GT30L24T3Y IC
+ *        
+ * @verbatim  
+ *        REG [CEh] GT Character ROM Select (GTFNT_SEL)
+ *                  bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
+ *                            0b000 : Circuito Integrado External CGROM GT21L16T1W
+ *                            0b001 : Circuito Integrado External CGROM GT30L16U2W
+ *                            0b010 : Circuito Integrado External CGROM GT30L24T3Y
+ *                            0b011 : Circuito Integrado External CGROM GT30L24M1Z
+ *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
+ *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
+ *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
+ * @endverbatim  
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::GTFont_Select_GT30L24T3Y(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = SPI_DataRead();                       
+  temp &= cClrb7;
+  temp |= cSetb6;
+  temp &= cClrb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for External CGROM Genitop's GT30L24M1Z IC
+ *        
+ *        REG [CEh] GT Character ROM Select (GTFNT_SEL)
+ *                  bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
+ *                            0b000 : Circuito Integrado External CGROM GT21L16T1W
+ *                            0b001 : Circuito Integrado External CGROM GT30L16U2W
+ *                            0b010 : Circuito Integrado External CGROM GT30L24T3Y
+ *                            0b011 : Circuito Integrado External CGROM GT30L24M1Z
+ *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
+ *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
+ *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
+ *                            
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::GTFont_Select_GT30L24M1Z(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = SPI_DataRead();                       
+  temp &= cClrb7;
+  temp |= cSetb6;
+  temp |= cSetb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for External CGROM Genitop's GT30L32S4W IC
+ *        
+ *        REG [CEh] GT Character ROM Select (GTFNT_SEL)
+ *                  bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
+ *                            0b000 : Circuito Integrado External CGROM GT21L16T1W
+ *                            0b001 : Circuito Integrado External CGROM GT30L16U2W
+ *                            0b010 : Circuito Integrado External CGROM GT30L24T3Y
+ *                            0b011 : Circuito Integrado External CGROM GT30L24M1Z
+ *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
+ *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
+ *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
+ *                            
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::GTFont_Select_GT30L32S4W(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;
+  temp &= cClrb6;
+  temp &= cClrb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for External CGROM Genitop's GT20L24F6Y IC
+ *        
+ *        REG [CEh] GT Character ROM Select (GTFNT_SEL)
+ *                  bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
+ *                            0b000 : Circuito Integrado External CGROM GT21L16T1W
+ *                            0b001 : Circuito Integrado External CGROM GT30L16U2W
+ *                            0b010 : Circuito Integrado External CGROM GT30L24T3Y
+ *                            0b011 : Circuito Integrado External CGROM GT30L24M1Z
+ *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
+ *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
+ *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
+ *                            
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::GTFont_Select_GT20L24F6Y(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;
+  temp &= cClrb6;
+  temp |= cSetb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Font Selection for External CGROM Genitop's GT21L24S1W IC
+ *        
+ *        REG [CEh] GT Character ROM Select (GTFNT_SEL)
+ *                  bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
+ *                            0b000 : Circuito Integrado External CGROM GT21L16T1W
+ *                            0b001 : Circuito Integrado External CGROM GT30L16U2W
+ *                            0b010 : Circuito Integrado External CGROM GT30L24T3Y
+ *                            0b011 : Circuito Integrado External CGROM GT30L24M1Z
+ *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
+ *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
+ *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
+ *                            
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::GTFont_Select_GT21L24S1W(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;
+  temp |= cSetb6;
+  temp &= cClrb5;
+  SPI_DataWrite(temp);
+}
+
+//================================================================================
+// [0xcf] GT Character ROM Control register (GTFNT_CR)
+//================================================================================
+
+
+/**
+ * @brief Genitop's Character Set and Decoder
+ * @verbatim  
+ *        REG [CFh] GT Character ROM Control register (GTFNT_CR)
+ *                  bit [7-3] Character sets
+ *                            FONT ROM Coding Setting
+ *                            For specific GT serial Font ROM, the coding method must be set for decoding.
+ *                            
+ *                            b. Two byte character code for following character sets:
+ *                               0b00000: GB2312
+ *                               0b00001: GB12345/GB18030
+ *                               0b00010: BIG5
+ *                               0b00011: UNICODE
+ *                               0b00100: ASCII
+ *                               0b00101: UNI-Japanese
+ *                               0b00110: JIS0208
+ *                               0b00111: Latin/Greek/ Cyrillic / Arabic/Thai/Hebrew
+ *
+ *                            a. Single byte character code for following character sets:
+ *                               0b01000: Korea
+ *                               0b10001: ISO-8859-1
+ *                               0b10010: ISO-8859-2
+ *                               0b10011: ISO-8859-3
+ *                               0b10100: ISO-8859-4
+ *                               0b10101: ISO-8859-5
+ *                               0b10110: ISO-8859-6
+ *                               0b10111: ISO-8859-7
+ *                               0b11000: ISO-8859-8
+ *                               0b11001: ISO-8859-9
+ *                               0b11010: ISO-8859-10
+ *                               0b11011: ISO-8859-11
+ *                               0b11100: ISO-8859-12
+ *                               0b11101: ISO-8859-13
+ *                               0b11110: ISO-8859-14
+ *                               0b11111: ISO-8859-15
+ *
+ *                  [bit 1-0] GT Character width setting
+ *                            00b: for fix width’s font sets. Its width is half of character height.
+ *                             Ex. ISO-8859, GB2312, GB12345/GB18030, BIG5,
+ *                             UNI-Japanese, JIS0208, Thai.
+ *                             Others: variable width for following character sets: ASCII, Latin,
+ *                             Greek, Cyrillic & Arabic.
+ *                             
+ *                             ASCII / Latin/Greek/ Cyrillic / Arabic
+ *                                
+ *                                      (ASCII)   (Latin/Greek/Cyrillic)      (Arabic)
+ *                             00b       Normal            Normal                NA
+ *                             01b       Arial         Variable Width     Presentation Forms-A
+ *                             10b       Roman               NA           Presentation Forms-B
+ *                             11b       Bold                NA                  NA
+ * @endverbatim
+ * @param temp
+ *
+ * @note None
+ */
+void Panel_RA8889::GTFont_SetDecoder(uint8_t temp)
+{
+  SPI_CmdWrite(REG_GTFNT_CR);                  //0xcf, GT Character ROM Control register (GTFNT_CR)
+  SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+// [0xd0] Character Line gap Setting Register (FLDR)
+//================================================================================
+
+
+/**
+ * @brief Character Line gap Setting
+ *        
+ *        REG [D0h] Character Line gap Setting Register (FLDR)
+ *                  bit [4-0] Character Line gap Setting
+ *                            Setting the character line distance when setting 
+ *                            memory font write cursor auto move in active 
+ *                            window. (Unit: pixel)
+ *                            Color of gap will fill-in background color.
+ *                            *** It won’t be enlarged by character enlargement function.
+ *                            
+ * @param temp
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_LineDistance(uint8_t gap)
+{
+  SPI_CmdWrite(REG_FLDR);                      //0xd0, Character Line gap Setting Register (FLDR)
+  SPI_DataWrite(gap);
+}
+
+
+//================================================================================
+// [0xd1] Character to Character Space Setting Register (F2FSSR)
+//================================================================================
+
+
+/**
+ * @brief Character Line gap Setting
+ *        
+ *        REG [D1h] Character to Character Space Setting Register (F2FSSR)
+ *                  bit [5-0] Character to Character Space Setting
+ *                            00h : 0 pixel
+ *                            01h : 1 pixel
+ *                            02h : 2 pixels
+ *                            ...
+ *                            3Fh : 63 pixels
+ *                  Color of space will fill-in background color.
+ *                  *** It won’t be enlarged by character enlargement function.
+ *                            
+ * @param pixels: pixels spaces bethween character
+ *
+ * @note None
+ */
+void Panel_RA8889::Font_toFontWidthSetting(uint8_t pixels)
+{
+  SPI_CmdWrite(REG_F2FSSR);          //0xd1,  Character to Character Space Setting Register (F2FSSR)
+  SPI_DataWrite(temp);
+}
+
+
+
+
+
+
 
 
 
@@ -4104,9 +6832,9 @@ void Panel_RA8889::DrawCurveRightDown(uint16_t x1,
 
 /**
  * @brief Desenha uma curva com curvatura direita/superior
- *        
+ * @verbatim
  *        Color depht de 16bpp
- *
+ * @endverbatim
  * @param (x1,y1):   coordenada de posicionamento central da curvatura
  *        Rx:        Raio de largura do eixo x
  *        Ry:        Raio de comprimento do eixo y
@@ -4208,20 +6936,9 @@ void Panel_RA8889::DrawCircleSquare(uint16_t x1,
 
 
 
-void Show_String(char *str)
-{   
-    Text_Mode();     
-    ER_TFT.LCD_CmdWrite(0x04);
-    while(*str != '\0')
-    {
-      ER_TFT.LCD_DataWrite(*str);
-      Check_Mem_WR_FIFO_not_Full();
-      ++str;   
-    }
-    Check_2D_Busy();
 
-    Graphic_Mode(); //back to graphic mode;
-}
+
+
 
 void DrawPixel(unsigned short x,unsigned short y,unsigned short color)
 {  
@@ -4232,20 +6949,6 @@ void DrawPixel(unsigned short x,unsigned short y,unsigned short color)
     ER_TFT.LCD_DataWrite(color>>8);
     Check_Mem_WR_FIFO_not_Full();  
 }  
-
-
-void Show_picture(unsigned long numbers,const unsigned char *datap)
-{   
-  unsigned long i;
-
-  ER_TFT.LCD_CmdWrite(0x04);  
-  for(i=0;i<numbers*2;i+=2)
-  {
-    ER_TFT.LCD_DataWrite(pgm_read_byte(&datap[i+1]));
-    Check_Mem_WR_FIFO_not_Full();
-    ER_TFT.LCD_DataWrite(pgm_read_byte(&datap[i]));
-    Check_Mem_WR_FIFO_not_Full();
-  }
 
 
 
@@ -4291,6 +6994,95 @@ void putPixel(
     Check_Mem_WR_FIFO_not_Full();
     LCD_DataWrite(color >> 16);
 #endif
+}
+
+
+
+
+/**
+ * @brief Mostra uma figura
+ *        
+ *        Color depht de 16bpp (2 bytes por pixel)
+ *
+ *        Deve se lenvar em consideração a profundicade de cores 8/16/24bpp na matriz da figura
+ *        O tamanho da matriz com uma figura de 80 x 80 profundidade de cores de 16bpp será:
+ *        Size: Color Depth 16: 80 * 80 * (16 / 8) = 12.800 bytes
+ *              Color Depth 24: 80 * 80 * (24 / 8) = 19.200 bytes
+ *
+ * @param size:   tamanho de bytes da figura da matriz com color depth
+ *        *datap  ponteiro para dados no PROGMEM
+ *       
+ * @note A cor do pixel vai depender do Color Depth definido
+ *       8bpp:  R3G3B2
+ *       16bpp: R5G6B5
+ *       24bpp: R8G8B8
+ *
+ * Exemplo: const uint8_t pic_80x80[] PROGMEM ={0X19,0X88,0X09,0X48,0X11,0XD2,0X01,...}
+ *          ShowPicture(80*80*(16/2), pic_80x80);
+ *
+ */
+void Panel_RA8889::ShowPicture(uint32_t size, const uint8_t *datap)
+{   
+  uint32_t i;
+  SPI_CmdWrite(REG_MRWDP);                            //0x04, Memory Data Read/Write Port (MRWDP)
+  for(i=0; i < size; i+=2) {                          //total_bytes = tamanho da image * (byte_per_pixel/8)
+	//declare Arduino.h, para usar a funcao pgm_read_byte()
+    SPI_DataWrite( pgm_read_byte(&datap[i+1]) );      //Envia cada byte declarados em PROGMEM byte posterior
+    Wait_WriteFIFO_NotFull();
+    SPI_DataWrite(pgm_read_byte(&datap[i]));          //Envia cada byte declarados em PROGMEM byte anterior
+    Wait_WriteFIFO_NotFull();
+  }
+}
+
+
+/**
+ * @brief Draw Picture
+ *        
+ *        Color depht de 16bpp (2 bytes por pixel)
+ *
+ * @param (Wx,Hy):         coordenada na tela
+ *        (width, height): dimensão da figura
+ *        *datap           Ponteiro para dados no PROGMEM
+ *           
+ * @note Exemplo: const uint8_t pic_80x80[] PROGMEM ={0X19,0X88,0X09,0X48,0X11,0XD2,0X01,...}
+ *                DrawPicture(0, 0, 80, 80, pic_80x80);
+ *
+ */
+void Panel_RA8889::DrawPicture(uint16_t Wx, uint16_t Hy, uint16_t width, uint16_t height, const uint8_t *datap)
+{
+  ActiveWindow_XY(Wx, Hy);
+  ActiveWindow_WidhtHeight(width, height);
+  GotoPixel_XY(Wx, Hy);
+  ShowPicture(width * height * (_bpp / 8), *datap);
+}
+
+
+
+
+
+
+
+//metodo protegido
+void ShowText(char *str)
+{   
+  Text_Mode();  //<-- remover, avisar que o usuario controla isso 
+    
+  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  while(*str != '\0') {                        //Até final de string
+    SPI_DataWrite(*str);
+    Wait_WriteFIFO_NotFull();
+    ++str;
+  }
+  CoreTask_WaitReady();
+  
+  Graphic_Mode(); //back to graphic mode;   //<-- remover, avisar que o usuario controla isso 
+}
+
+
+//metodo publico
+void Text(char *str);
+{
+  void ShowText(char *str);
 }
 
 

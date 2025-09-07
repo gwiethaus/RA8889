@@ -336,6 +336,7 @@ Contributors:
 #define REG_AVI_PAUSE          0xd3            //Page 1 AVI pause
 #define REG_AVI_STOP           0xd4            //Page 1 AVI stop                        
 
+
 //uso para Set bits (or apply)
 #define cSetb0    0x01
 #define cSetb1    0x02
@@ -345,6 +346,7 @@ Contributors:
 #define cSetb5    0x20
 #define cSetb6    0x40
 #define cSetb7    0x80
+
 
 //Uso para Clear bits (and apply)
 #define cClrb0    0xfe
@@ -440,6 +442,14 @@ Contributors:
   #define LCD_VSPW         10                  //VS Pulse Width - 1~20
 #endif
 
+
+//Troca de pagina de registrador
+enum class PageReg : uint8_t {
+  Page0 = 0x00,                                //Page 0 Register Set
+  Page1 = cSetb0,                              //Page 1 Register Set
+}
+
+
 //Tipo de seleção de destino da porta de memória do RA8889
 enum class MemoryPortDest : uint8_t {          //bit 1-0
   SDRAM            = 0x0,
@@ -457,11 +467,11 @@ enum class TFTInterface : uint8_t {            //bit 4-3
 };
 
 //Host Read/Write Memory Direction
-enum class MemoryDirection : uint8_t {         //bit 5-4
-  LeftRight_TopBotom = 0x0,
-  RightLeft_TopBotom = cSetb4,
-  TopBotom_LeftRight = cSetb5,        
-  BotomTop_LeftRight = cSetb5 | cSetb4
+enum class MemoryDirection : uint8_t {
+  LeftRight_TopBotom = 0b00,
+  RightLeft_TopBotom = 0b01,
+  TopBotom_LeftRight = 0b10,        
+  BotomTop_LeftRight = 0b11
 }
 
 //Horizontal Scan Direction
@@ -578,6 +588,55 @@ enum class Color : uint32_t {
 }
 
 
+enum class FontSource : uint8_t {
+  InternalCGROM =  0x00                             //0b00 Select internal CGROM Character.
+  ExternalCGROM =  cSetb6                           //0b01 Select external CGROM Character. (Genitop serial flash) 
+  UserDefined   =  cSetb7                           //0b10 Select user-defined Character.
+}
+
+
+// Enum para os padrões ISO/IEC 8859 suportados pela CGROM interna
+enum class InternalCGROM_ISO8859 : uint8_t {
+    ISO8859_1 = 0x0,                           // 0b00: Character ISO/IEC 8859-1
+    ISO8859_2 = cSetb0,                        // 0b01: Character ISO/IEC 8859-2.
+    ISO8859_4 = cSetb1,                        // 0b10: Character ISO/IEC 8859-4.
+    ISO8859_5 = cSetb1 | cSetb0                // 0b11: Character ISO/IEC 8859-5.
+};
+
+
+// Enum para alturas de fonte suportadas
+enum class FontHeight : uint8_t
+{
+  H16 = 16,                                    // 8x16 / 16x16
+  H24 = 24,                                    // 12x24 / 24x24
+  H32 = 32                                     // 16x32 / 32x32
+};
+
+
+// Enum Font Horizontal/Vertical Enlagement Factors
+enum class FontEnlargFactor : uint8_t
+{
+  X1 = 0,                           //factor 1x
+  X2 = 1,                           //factor 2x
+  X3 = 2,                           //factor 3x
+  X4 = 3                            //factor 4x
+}
+
+
+enum class InterruptLevel : uint8_t {
+  Low  = 0x0,                      //Reset bit 7
+  High = cSetb7                    //Set bit 7
+}
+
+
+enum class InterrupLevelTrigger : uint8_t {
+  Low      = 0b00                  //low level trigger    
+  Falling  = 0b01                  //falling edge trigger
+  High     = 0b10                  //high level trigger
+  rising   = 0b11                  //rising edge trigger
+}
+
+
 class Panel_RA8889 {
 	
 	public
@@ -618,6 +677,9 @@ class Panel_RA8889 {
         void DrawCurveRightUp(uint16_t x1, uint16_t y1, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
 		void DrawCurveLeftDown(uint16_t x1, uint16_t y1, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
 		void DrawCircleSquare(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
+		
+		void DrawPicture(uint16_t Wx, uint16_t Hy, uint16_t width, uint16_t height, const uint8_t *datap);
+		
 	private
 		uint8_t StatusRead(void);
         void RegisterWrite(uint8_t Cmd, uint8_t Data);
@@ -630,6 +692,12 @@ class Panel_RA8889 {
 		void Wait_WriteFIFO_Empty(void);
 		void Wait_ReadFIFO_NotFull(void);
 		void Wait_ReadFIFO_NotEmpty(void);
+		void GotoLinearAddr(uint32_t addr);
+		void GotoPixel_Linear(uint32_t addr);
+		void GotoPixel_XY(uint16_t Wx, uint16_t Hy);
+		void GotoText_XY(uint16_t Wx, uint16_t Hy);
+		void ShowPicture(uint32_t size, const uint8_t *datap)
+		
 	protected
 		uint8_t _cs;	       //chip select pin
 		uint8_t _rst;	       //chip reset pin
@@ -639,6 +707,7 @@ class Panel_RA8889 {
 		uint8_t _colorfmt      //formato da cor RGB, RBG, GRB, GBR, ....
 		
 		void PanelResolution(PanelResolution resolution);
+		void PageRegister(PageReg pr);
 		
 		void SPISetCS(bool active);
 		uint8_t SPIRwByte(uint8_t value);
@@ -659,6 +728,26 @@ class Panel_RA8889 {
 		void MemorySelect_ColorPaletteRAM(void);
 		void MemoryPort_Select(MemoryPortDest dest);
 		
+		void Interrupt_Resume_Enable(bool b);
+		void ExtInterrupt_Input_Enable(bool b);
+		void Interrupt_I2CM_Enable(bool b);
+		void Interrupt_VSync_Enable(bool b);
+		void Interrupt_KeyScan_Enable(bool b);
+		void Interrupt_ClearMultiEventTask_Enable(bool b);
+		void Interrupt_PWM1_Enable(bool b);
+		void Interrupt_PWM0_Enable(bool b);
+		uint8_t Interrupt_Status(void);
+		void VSYNC_WaitReady(void);
+		void Interrupt_ClearResume_Flag(void);
+		void ExtInterrupt_ClearInput_Flag(void);
+		void Interrupt_ClearI2CM_Flag(void);
+		void Interrupt_ClearVSync_Flag(void);
+		void Interrupt_ClearKeyScan_Flag(void);
+		bool Interrupt_IsKeyPressed(void);
+		void Interrupt_ClearMultiEventTask_Flag(void);
+		void Interrupt_ClearPWM0_Flag(void);
+		void Interrupt_ClearPWM1_Flag(void);
+		
 		void Enable_PIP1(bool b);
 		void Enable_PIP2(bool b);
 		void Select_PIP_Parameter(PIPSelect pip);
@@ -676,13 +765,15 @@ class Panel_RA8889 {
 		
 		void HostDataBus_Select_8bit(void);
 		void HostDataBus_Select_16bit(void);
-
+        void SFlashSPI_Enable(bool b);
+		
         void HostColorDepthFormat(uint_t type);
 		void HostReadMemoryDirection(MemoryDirection direction);
+		void HostWriteMemoryDirection(MemoryDirection direction);
 		
-		void HScanDirection_LeftToRight (void);
-		void HScanDirection_RightToLeft (void);
-		void HorizontalScanDirection (HSCANDir direction);
+		void HScanDirection_LeftToRight(void);
+		void HScanDirection_RightToLeft(void);
+		void HorizontalScanDirection(HSCANDir direction);
 		void VScanDirection_TopToBottom(void);
 		void VScanDirection_BottomToTop(void);
 		void VerticalScanDirection(VSCANDir direction);
@@ -711,11 +802,22 @@ class Panel_RA8889 {
 		void LCD_SetPanel(void);
 		
 		void Memory_BlockMode(void);
-		void Memory_Linear_Mode(void);
+		bool Memory_BlockMode(void);
+		void Memory_XYMode(void);
+		bool Memory_XYMode(void);
+		void Memory_LinearMode(void);
+		bool Memory_LinearMode(void);
 		void Memory_8bpp_BlockMode(void);
 		void Memory_16bpp_BlockMode(void);
 		void Memory_24bpp_BlockMode(void);
 		
+		void Interrupt_ActiveLevel(InterruptLevel level);
+		void ExtInterrupt_Debounce(void)
+		void ExtInterrupt_NoDebounce(void)
+		void ExtInterrupt_InputLevelTrigger(InterrupLevelTrigger leveltrg);
+		void LVDS_DataFormat_VESA(void);
+		void LVDS_DataFormat_JEIDA(void);
+				
 		void DrawEnable_AA(bool b);             //Verificar se funcao do RA8876/RA8877
 		void LineMode_Start(void);
         void TriangleMode_Start(bool fill);
@@ -745,6 +847,59 @@ class Panel_RA8889 {
 		void Center_XY(uint16_t Wx, uint16_t Hy);
 		void CircleCenter_XY(uint16_t Wx, uint16_t Hy);          //Mesmo que Center_XY()
         void EllipseCenter_XY(uint16_t Wx, uint16_t Hy);         //Mesmo que Center_XY()
+
+        void Font_UseUserDefined(void);
+        void Font_UseInternalCGROM(void);
+		void Font_UseExternalCGROM(void);
+		void Font_SetSource(FontSource source);
+        void Font_SetHeight_16(void);
+		void Font_SetHeight_24(void);
+		void Font_SetHeight_32(void);
+		void Font_SetHeight(FontHeight height);
+        void Select_Internal_CGROM_ISOIEC8859_1(void);
+		void Select_Internal_CGROM_ISOIEC8859_2(void);
+		void Select_Internal_CGROM_ISOIEC8859_4(void);
+		void Select_Internal_CGROM_ISOIEC8859_5(void);
+        void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso);
+		void GTFont_Select_GT21L16T1W(void);
+		void GTFont_Select_GT30L16U2W(void);
+		void GTFont_Select_GT30L24T3Y(void);
+		void GTFont_Select_GT30L24M1Z(void);
+		void GTFont_Select_GT30L32S4W(void);
+		void GTFont_Select_GT20L24F6Y(void);
+		void GTFont_Select_GT21L24S1W(void);
+		void GTFont_SetDecoder(uint8_t temp);
+		void Font_LineDistance(uint8_t gap);
+		void Font_toFontWidthSetting(uint8_t pixels);
+		
+		void Font_FullAlignmentEnable(void);
+		void Font_FullAlignmentDisable(void);
+        void Font_UseBackgroundTransparency(void);
+        void Font_UseBackgroundColor(void);
+        void Font_0degree(void);
+		void Font_90degree(void);
+		void Font_WidthEnlargFactor(FontEnlargFactor factor);
+		void Font_HeightEnlargFactor(FontEnlargFactor factor);
+				
+		void SFI_DMA_WaitReady(void);
+		void SFI_DMA_Start(void);
+		void Select_SFI_FontMode(void);
+		void Select_SFI_DMAMode(void);
+		void Select_SFI_24bitAddress(void);
+		void Select_SFI_32bitAddress(void);
+		
+		void Select_SFI_SingleData_03h(void);
+		void Select_SFI_SingleData_0Bh(void);
+		void Select_SFI_SingleData_1Bh(void);
+        void Select_SFI_DualData_3Bh(void);
+		void Select_SFI_DualData_BBh(void);  //somente para RA8876 e RA8877
+		void Select_SFI_QuadData_6Bh(void);
+		void Select_SFI_QuadData_EBh(void);
+		
+		void SFI_Select_ROM0(void);
+		void SFI_Select_ROM1(void);
+		
+		
 
 }
 		
