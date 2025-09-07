@@ -868,6 +868,7 @@ void Data_Format_16b_24bpp_mode2(void)
     LCD_DataWrite(temp);
 }
 
+//void HostReadMemoryDirection(MemoryDirection direction)
 void MemRead_Left_Right_Top_Down(void)
 {
     /* Host Read Memory Direction (Only for Graphic Mode)
@@ -880,6 +881,8 @@ void MemRead_Left_Right_Top_Down(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void HostReadMemoryDirection(MemoryDirection direction)
 void MemRead_Right_Left_Top_Down(void)
 {
     /* Host Read Memory Direction (Only for Graphic Mode)
@@ -892,6 +895,8 @@ void MemRead_Right_Left_Top_Down(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void HostReadMemoryDirection(MemoryDirection direction)
 void MemRead_Top_Down_Left_Right(void)
 {
     /* Host Read Memory Direction (Only for Graphic Mode)
@@ -904,6 +909,8 @@ void MemRead_Top_Down_Left_Right(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void HostReadMemoryDirection(MemoryDirection direction)
 void MemRead_Down_Top_Left_Right(void)
 {
     /* Host Read Memory Direction (Only for Graphic Mode)
@@ -916,6 +923,8 @@ void MemRead_Down_Top_Left_Right(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void HostWriteMemoryDirection(MemoryDirection direction);
 void MemWrite_Left_Right_Top_Down(void)
 {
     /* Host Write Memory Direction (Only for Graphic Mode)
@@ -928,6 +937,8 @@ void MemWrite_Left_Right_Top_Down(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void HostWriteMemoryDirection(MemoryDirection direction);
 void MemWrite_Right_Left_Top_Down(void)
 {
     /* Host Write Memory Direction (Only for Graphic Mode)
@@ -940,6 +951,8 @@ void MemWrite_Right_Left_Top_Down(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void HostWriteMemoryDirection(MemoryDirection direction);
 void MemWrite_Top_Down_Left_Right(void)
 {
     /* Host Write Memory Direction (Only for Graphic Mode)
@@ -952,6 +965,8 @@ void MemWrite_Top_Down_Left_Right(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void HostWriteMemoryDirection(MemoryDirection direction);
 void MemWrite_Down_Top_Left_Right(void)
 {
     /* Host Write Memory Direction (Only for Graphic Mode)
@@ -964,7 +979,9 @@ void MemWrite_Down_Top_Left_Right(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
 //[03h][03h][03h][03h][03h][03h][03h][03h][03h][03h][03h][03h][03h][03h][03h][03h]
+//void Interrupt_ActiveLevel(InterruptLevel: level);
 void Interrupt_Active_Low(void)
 {
     /*  Output to MPU Interrupt active level
@@ -976,6 +993,8 @@ void Interrupt_Active_Low(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_ActiveLevel(InterruptLevel: level);
 void Interrupt_Active_High(void)
 {
     /*  Output to MPU Interrupt active level
@@ -987,6 +1006,8 @@ void Interrupt_Active_High(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_Debounce(void)
 void ExtInterrupt_Debounce(void)
 {
     /*  External interrupt input (XPS[0] pin) de-bounce
@@ -998,6 +1019,8 @@ void ExtInterrupt_Debounce(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_NoDebounce(void)
 void ExtInterrupt_Nodebounce(void)
 {
     /*  External interrupt input (XPS[0] pin) de-bounce
@@ -1009,6 +1032,8 @@ void ExtInterrupt_Nodebounce(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_InputLevelTrigger(InterrupLevelTrigger : leveltrg)
 void ExtInterrupt_Input_Low_Level_Trigger(void)
 {
     /* External interrupt input (XPS[0] pin) trigger type
@@ -1021,6 +1046,8 @@ void ExtInterrupt_Input_Low_Level_Trigger(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_InputLevelTrigger(InterrupLevelTrigger : leveltrg)
 void ExtInterrupt_Input_High_Level_Trigger(void)
 {
     /* External interrupt input (XPS[0] pin) trigger type
@@ -1034,6 +1061,8 @@ void ExtInterrupt_Input_High_Level_Trigger(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_InputLevelTrigger(InterrupLevelTrigger : leveltrg)
 void ExtInterrupt_Input_Falling_Edge_Trigger(void)
 {
     /* External interrupt input (XPS[0] pin) trigger type
@@ -1046,6 +1075,8 @@ void ExtInterrupt_Input_Falling_Edge_Trigger(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_InputLevelTrigger(InterrupLevelTrigger : leveltrg)
 void ExtInterrupt_Input_Rising_Edge_Trigger(void)
 {
     /* External interrupt input (XPS[0] pin) trigger type
@@ -1058,6 +1089,8 @@ void ExtInterrupt_Input_Rising_Edge_Trigger(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void LVDS_DataFormat_VESA(void)
 void LVDS_Format1(void) // RA8877 only
 {
     /* FPD-Link Data Format / LVDS Data Format
@@ -1069,6 +1102,8 @@ void LVDS_Format1(void) // RA8877 only
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void LVDS_DataFormat_JEIDA(void)
 void LVDS_Format2(void) // RA8877 only
 {
     /* FPD-Link Data Format / LVDS Data Format
@@ -1080,6 +1115,8 @@ void LVDS_Format2(void) // RA8877 only
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+
 void Graphic_Mode(void)
 {
     unsigned char temp;
@@ -1142,6 +1179,8 @@ void Memory_Select_Color_Palette_RAM(void)
 //[0Ah]=========================================================================
 //[0Bh]=========================================================================
 
+
+//void Interrupt_Resume_Enable(bool b);
 void Enable_Resume_Interrupt(void)
 {
     /*
@@ -1155,6 +1194,8 @@ void Enable_Resume_Interrupt(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_Resume_Enable(bool b);
 void Disable_Resume_Interrupt(void)
 {
     /*
@@ -1168,6 +1209,8 @@ void Disable_Resume_Interrupt(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_Input_Enable(bool b);
 void Enable_ExtInterrupt_Input(void)
 {
     /*
@@ -1181,6 +1224,8 @@ void Enable_ExtInterrupt_Input(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_Input_Enable(bool b);
 void Disable_ExtInterrupt_Input(void)
 {
     /*
@@ -1194,6 +1239,8 @@ void Disable_ExtInterrupt_Input(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_I2CM_Enable(bool b);
 void Enable_I2CM_Interrupt(void)
 {
     /*
@@ -1207,6 +1254,8 @@ void Enable_I2CM_Interrupt(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_I2CM_Enable(bool b);
 void Disable_I2CM_Interrupt(void)
 {
     /*
@@ -1220,6 +1269,8 @@ void Disable_I2CM_Interrupt(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_VSync_Enable(bool b);
 void Enable_Vsync_Interrupt(void)
 {
     /*
@@ -1233,6 +1284,8 @@ void Enable_Vsync_Interrupt(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_VSync_Enable(bool b);
 void Disable_Vsync_Interrupt(void)
 {
     /*
@@ -1246,6 +1299,8 @@ void Disable_Vsync_Interrupt(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_KeyScan_Enable(bool b);
 void Enable_KeyScan_Interrupt(void)
 {
     /*
@@ -1259,6 +1314,8 @@ void Enable_KeyScan_Interrupt(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_KeyScan_Enable(bool b);
 void Disable_KeyScan_Interrupt(void)
 {
     /*
@@ -1272,6 +1329,8 @@ void Disable_KeyScan_Interrupt(void)
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_ClearMultiEventTask_Enable(bool b);
 void Enable_DMA_Draw_BTE_Interrupt(void)
 {
     /*
@@ -1286,6 +1345,8 @@ void Enable_DMA_Draw_BTE_Interrupt(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_ClearMultiEventTask_Enable(bool b);
 void Disable_DMA_Draw_BTE_Interrupt(void)
 {
     /*
@@ -1300,6 +1361,8 @@ void Disable_DMA_Draw_BTE_Interrupt(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_PWM1_Enable(bool b);
 void Enable_PWM1_Interrupt(void)
 {
     /*
@@ -1313,6 +1376,8 @@ void Enable_PWM1_Interrupt(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_PWM1_Enable(bool b);
 void Disable_PWM1_Interrupt(void)
 {
     /*
@@ -1326,6 +1391,8 @@ void Disable_PWM1_Interrupt(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+////void Interrupt_PWM0_Enable(bool b);
 void Enable_PWM0_Interrupt(void)
 {
     /*
@@ -1339,6 +1406,8 @@ void Enable_PWM0_Interrupt(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_PWM0_Enable(bool b);
 void Disable_PWM0_Interrupt(void)
 {
     /*
@@ -1354,6 +1423,8 @@ void Disable_PWM0_Interrupt(void)
 }
 
 //[0Ch]=========================================================================
+
+//uint8_t Interrupt_Status(void)
 unsigned char Read_Interrupt_status(void)
 {
     /*
@@ -1388,6 +1459,7 @@ unsigned char Read_Interrupt_status(void)
     return temp;
 }
 
+//void VSYNC_WaitReady(void);
 void Check_Vsync_finished(void)
 {
     /*[Bit4]
@@ -1405,6 +1477,7 @@ void Check_Vsync_finished(void)
     } while ((temp & 0x10) == 0x00);
 }
 
+//void Interrupt_ClearResume_Flag(void);
 void Clear_Resume_Interrupt_Flag(void)
 {
     /*
@@ -1419,6 +1492,8 @@ void Clear_Resume_Interrupt_Flag(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
+//void ExtInterrupt_ClearInput_Flag(void);
 void Clear_ExtInterrupt_Input_Flag(void)
 {
     /*
@@ -1433,6 +1508,8 @@ void Clear_ExtInterrupt_Input_Flag(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//Interrupt_ClearI2CM_Flag
 void Clear_I2CM_Interrupt_Flag(void)
 {
     /*
@@ -1447,6 +1524,8 @@ void Clear_I2CM_Interrupt_Flag(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//Interrupt_ClearVSync_Flag(void);
 void Clear_Vsync_Interrupt_Flag(void)
 {
     /*
@@ -1461,6 +1540,8 @@ void Clear_Vsync_Interrupt_Flag(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//Interrupt_ClearKeyScan_Flag(void)
 void Clear_KeyScan_Interrupt_Flag(void)
 {
     /*
@@ -1475,6 +1556,8 @@ void Clear_KeyScan_Interrupt_Flag(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//bool Interrupt_IsKeyPressed(void);
 unsigned char Chk_Key_Press(void)
 {
     unsigned char temp;
@@ -1487,6 +1570,9 @@ unsigned char Chk_Key_Press(void)
         return 0;
 }
 
+
+
+//void Interrupt_ClearMultiEventTask_Flag(void);
 void Clear_DMA_Draw_BTE_Interrupt_Flag(void)
 {
     /*
@@ -1502,6 +1588,8 @@ void Clear_DMA_Draw_BTE_Interrupt_Flag(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_ClearPWM1_Flag(void);
 void Clear_PWM1_Interrupt_Flag(void)
 {
     /*
@@ -1516,6 +1604,8 @@ void Clear_PWM1_Interrupt_Flag(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_ClearPWM0_Flag(void);
 void Clear_PWM0_Interrupt_Flag(void)
 {
     /*
@@ -5314,6 +5404,8 @@ void BTE_Alpha_Blending_Effect(unsigned char temp)
 
 //[B6h]=========================================================================
 
+
+//void Select_SFI_QuadDummyMode8T6Bh(void)
 void Select_SFI_Quad_Mode_Dummy_8T_6Bh(void) //
 {
     /*[B6h]bit7-6=
@@ -5329,6 +5421,8 @@ void Select_SFI_Quad_Mode_Dummy_8T_6Bh(void) //
     temp |= 0x40;
     LCD_DataWrite(temp);
 }
+
+//void Select_SFI_QuadDummyMode4TEBh(void);
 void Select_SFI_Quad_Mode_Dummy_4T_EBh(void) //
 {
     /*[B6h]bit7-6=
@@ -5345,6 +5439,7 @@ void Select_SFI_Quad_Mode_Dummy_4T_EBh(void) //
     LCD_DataWrite(temp);
 }
 
+//void SFI_DMA_Start(void);
 void Start_SFI_DMA(void)
 {
     /*[bit0]
@@ -5360,6 +5455,7 @@ void Start_SFI_DMA(void)
     LCD_DataWrite(temp);
 }
 
+//void SFI_DMA_WaitReady(void)
 void Check_Busy_SFI_DMA(void)
 {
     /*[bit0]
@@ -5430,6 +5526,9 @@ void Select_SFI_32bit_Address(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//Wiethaus Minha Nota: Este registrador nao existe o bit 4 no RA8875 e 
+//no RA8889 PAGE 1 e no PAGE 0 precisa ser setado para 1 sempre
 void Select_standard_SPI_Mode0_or_Mode3(void)
 {
     /*[bit4]
@@ -5443,6 +5542,7 @@ void Select_standard_SPI_Mode0_or_Mode3(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
 void Select_RA8875_SPI_Mode0_and_Mode3(void)
 {
     /*[bit4]
@@ -5457,6 +5557,7 @@ void Select_RA8875_SPI_Mode0_and_Mode3(void)
     LCD_DataWrite(temp);
 }
 
+//void Select_SFI_SingleDummy0T03hMode(void);
 void Select_SFI_Single_Mode_Dummy_0T_03h(void)
 {
     /*
@@ -5478,6 +5579,8 @@ void Select_SFI_Single_Mode_Dummy_0T_03h(void)
     temp &= 0xF0;
     LCD_DataWrite(temp);
 }
+
+//void Select_SFI_SingleDummyMode8T0Bh(void)
 void Select_SFI_Single_Mode_Dummy_8T_0Bh(void)
 {
     /*
@@ -5500,6 +5603,8 @@ void Select_SFI_Single_Mode_Dummy_8T_0Bh(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void Select_SFI_SingleDummyMode16T1Bh(void)
 void Select_SFI_Single_Mode_Dummy_16T_1Bh(void)
 {
     /*
@@ -5522,6 +5627,8 @@ void Select_SFI_Single_Mode_Dummy_16T_1Bh(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void Select_SFI_DualDummyMode8T3Bh(void)
 void Select_SFI_Dual_Mode_Dummy_8T_3Bh(void)
 {
     /*
@@ -5543,6 +5650,8 @@ void Select_SFI_Dual_Mode_Dummy_8T_3Bh(void)
     temp |= 0x02;
     LCD_DataWrite(temp);
 }
+
+//void Select_SFI_DualDummyMode4TBBh(void)
 void Select_SFI_Dual_Mode_Dummy_4T_BBh(void)
 {
     /*
@@ -6129,6 +6238,7 @@ void Internal_CGROM_Select_ISOIEC8859_5(void)
     LCD_DataWrite(temp);
 }
 //[CDh]=========================================================================
+//void Font_FullAlignmentEnable(void);
 void Enable_Font_Alignment(void)
 {
     /*
@@ -6142,6 +6252,8 @@ void Enable_Font_Alignment(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
+//void Panel_RA8889::Font_FullAlignmentDisable(void)
 void Disable_Font_Alignment(void)
 {
     /*
@@ -6155,6 +6267,7 @@ void Disable_Font_Alignment(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
 void Font_Background_select_Original_Canvas(void)
 {
     /*
@@ -8955,7 +9068,7 @@ void SPIM_Fixed_Bus_mode(void) //
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
-
+//void PageRegister(PageReg pr);
 void REG_Switch_to_REG0(void) //(default)
 {
     /*
@@ -8971,6 +9084,7 @@ void REG_Switch_to_REG0(void) //(default)
 
     delay_ms(1); // for test
 }
+//void PageRegister(PageReg pr);
 void REG_Switch_to_REG1(void) //
 {
     /*
@@ -9766,6 +9880,7 @@ void IDEC_Select_SFI_32bit_Address(void)
 
     REG_Switch_to_REG0();
 }
+
 
 void IDEC_Select_standard_SPI_Mode0_or_Mode3(void)
 {
