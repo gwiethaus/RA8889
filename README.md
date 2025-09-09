@@ -3,4 +3,6 @@ Desenvolvimento e Adaptação de Driver para uso de display com controladora RA8
 
 # Notas
 
-Não usar este projeto. Está em fase de desenvolvimento. Não está funcional. A ideia principal é portar e ajustar para orientação a objeto. Será portado o código e adaptado para biblioteca LovyanGFX numa ocasião futura.
+Não usar este projeto. Está em fase de desenvolvimento. Não está funcional. 
+
+As bibliotecas serão feitas em orientação a objeto. Após conclusão e feito os testes e então iniciado a protabilidade para as biblioteca LovyanGFX.
