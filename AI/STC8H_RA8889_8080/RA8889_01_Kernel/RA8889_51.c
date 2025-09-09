@@ -4790,7 +4790,7 @@ void Set_Timer1_Count_Buffer(unsigned short WX)
 
 //[90h]~[B5h]=========================================================================
 
-//[90h]=========================================================================
+//void BTE_Enable(bool b);
 void BTE_Enable(void)
 {
     /*
@@ -4806,6 +4806,8 @@ void BTE_Enable(void)
 }
 
 //[90h]=========================================================================
+
+//void BTE_Enable(bool b);
 void BTE_Disable(void)
 {
     /*
@@ -4820,7 +4822,7 @@ void BTE_Disable(void)
     LCD_DataWrite(temp);
 }
 
-//[90h]=========================================================================
+//void BTE_DualWaitReady(void);
 void Check_BTE_Busy(void)
 {
     /*
@@ -4846,7 +4848,10 @@ void Check_BTE_Busy(void)
         temp = LCD_StatusRead();
     } while (temp & 0x08);
 }
+
 //[90h]=========================================================================
+
+//void BTE_PatternFormat8X8(void)
 void Pattern_Format_8X8(void)
 {
     /*
@@ -4860,7 +4865,8 @@ void Pattern_Format_8X8(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
-//[90h]=========================================================================
+
+//void BTE_PatternFormat16X16(void)
 void Pattern_Format_16X16(void)
 {
     /*
@@ -4876,6 +4882,8 @@ void Pattern_Format_16X16(void)
 }
 
 //[91h]=========================================================================
+
+//void BTE_ROPCode(eBTEROPCode code);
 void BTE_ROP_Code(unsigned char setx)
 {
     /*
@@ -4907,6 +4915,8 @@ void BTE_ROP_Code(unsigned char setx)
 }
 
 //[91h]=========================================================================
+
+//void BTE_OperationCode(eBTEOpCode opcode);
 void BTE_Operation_Code(unsigned char setx)
 {
     /*
@@ -4937,6 +4947,8 @@ void BTE_Operation_Code(unsigned char setx)
     LCD_DataWrite(temp);
 }
 //[92h]=========================================================================
+
+//void BTE_S0_ColorDeph(eColorDepthBPP bpp);
 void BTE_S0_Color_8bpp(void)
 {
     /*
@@ -4952,7 +4964,8 @@ void BTE_S0_Color_8bpp(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
-//[92h]=========================================================================
+
+//void BTE_S0_ColorDeph(eColorDepthBPP bpp);
 void BTE_S0_Color_16bpp(void)
 {
     /*
@@ -4968,7 +4981,9 @@ void BTE_S0_Color_16bpp(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
-//[92h]=========================================================================
+
+
+//void BTE_S0_ColorDeph(eColorDepthBPP bpp);
 void BTE_S0_Color_24bpp(void)
 {
     /*
