@@ -336,6 +336,11 @@ Contributors:
 #define REG_AVI_PAUSE          0xd3            //Page 1 AVI pause
 #define REG_AVI_STOP           0xd4            //Page 1 AVI stop                        
 
+//SPI
+#define RA8889_SPI_CMDWRITE    0x00            //Write Command for SPI
+#define RA8889_SPI_DATAWRITE   0x80            //Write Data for SPI
+#define RA8889_SPI_DATAREAD    0xc0            //Read Data from SPI 
+#define RA8889_SPI_STATUSREAD  0x40            //Read Status from SPI
 
 //uso para Set bits (or apply)
 #define cSetb0    0x01
@@ -637,6 +642,23 @@ enum class InterrupLevelTrigger : uint8_t {
 }
 
 
+enum class eNSS_Channel : uint8_t {
+    XNSFCS0 = 0,                   
+    XNSFCS1 = 1,                 
+    XNSFCS2 = 2,               
+    XNSFCS3 = 3                
+};
+
+
+enum class eDividerClock : uint8_t {
+    X1 = 0b00,                      //divided by 1, 1/1 
+    X2 = 0b01,                      //divided by 2, 1/2  
+    X4 = 0b10,                      //divided by 4, 1/4
+    X8 = 0b11                       //divided by 8, 1/8
+};
+
+
+
 class Panel_RA8889 {
 	
 	public
@@ -707,7 +729,7 @@ class Panel_RA8889 {
 		uint8_t _colorfmt      //formato da cor RGB, RBG, GRB, GBR, ....
 		
 		void PanelResolution(PanelResolution resolution);
-		void PageRegister(PageReg pr);
+		void PageSwitch(PageReg pr);
 		
 		void SPISetCS(bool active);
 		uint8_t SPIRwByte(uint8_t value);
@@ -811,13 +833,37 @@ class Panel_RA8889 {
 		void Memory_16bpp_BlockMode(void);
 		void Memory_24bpp_BlockMode(void);
 		
+		uint8_t SPIM_TxRxFIFOData_Get(void);
+		uint8_t SPIM_TxRxFIFOData_Put(uint8_t data);
+		bool SPIM_TxFIFO_Empty(void);
+        bool SPIM_TxFIFO_Full(void);
+		bool SPIM_RxFIFO_Empty(void);
+		bool SPIM_RxFIFO_full(void);
+		bool Interrupt_Overflow_Flag(void);
+		void Interrupt_ClearOverflow_Flag(void);
+		bool EMTI_Flag(void);
+		void EMTI_Clear_Flag(void);
+		
+		void SPI_Clock_Period(uint8_t divisor);
+		
 		void Interrupt_ActiveLevel(InterruptLevel level);
 		void ExtInterrupt_Debounce(void)
 		void ExtInterrupt_NoDebounce(void)
 		void ExtInterrupt_InputLevelTrigger(InterrupLevelTrigger leveltrg);
 		void LVDS_DataFormat_VESA(void);
 		void LVDS_DataFormat_JEIDA(void);
-				
+		
+		void nSS_Select_Channel(NSS_Channel channel);
+		void Interrupt_SPIM_Enable(bool b);
+		void nSS_Inactive(void);
+		void nSS_Active(void);
+		void Interrupt_FIFOOverflow_Enable(bool b);
+		void Interrupt_EMTIRQEN_Enable(bool b);
+		void Reset_CPOL(void)
+		void Set_CPOL(void)
+		void Reset_CPHA(void)
+		void Set_CPHA(void)/
+		
 		void DrawEnable_AA(bool b);             //Verificar se funcao do RA8876/RA8877
 		void LineMode_Start(void);
         void TriangleMode_Start(bool fill);
@@ -880,7 +926,8 @@ class Panel_RA8889 {
 		void Font_90degree(void);
 		void Font_WidthEnlargFactor(FontEnlargFactor factor);
 		void Font_HeightEnlargFactor(FontEnlargFactor factor);
-				
+		void CGRAM_StartAddress(uint32_t addr);
+		
 		void SFI_DMA_WaitReady(void);
 		void SFI_DMA_Start(void);
 		void Select_SFI_FontMode(void);
@@ -892,15 +939,52 @@ class Panel_RA8889 {
 		void Select_SFI_SingleData_0Bh(void);
 		void Select_SFI_SingleData_1Bh(void);
         void Select_SFI_DualData_3Bh(void);
-		void Select_SFI_DualData_BBh(void);  //somente para RA8876 e RA8877
+		void Select_SFI_DualData_BBh(void);               //Only RA8876/RA8877
 		void Select_SFI_QuadData_6Bh(void);
 		void Select_SFI_QuadData_EBh(void);
 		
 		void SFI_Select_ROM0(void);
 		void SFI_Select_ROM1(void);
 		
+		void IDEC_SPI_Select_StandardMode0orMode3(void);  //Only RA8876/RA8887
+		void IDEC_RA8875_SPI_Select_Mode0andMode3(void);  //Only RA8876/RA8887
+		void SFI_Select_WaveformMode0(void);              //Only RA8876/RA8887
+		void Select_SFI_WaveformMode3(void);              //Only RA8876/RA8887
 		
-
+		void PWM_Prescaler(uint8_t prescaler);
+        void PWM0_ClockDividedBy(DividerClock divider);
+		void PWM1_ClockDividedBy(DividerClock divider);
+		void PWM1_Select_ErrorFlag(void);
+		void PWM1_Select(void);
+		void PWM1_Select_OscillatorClock(void);
+		void PWM0_Select_GPIOC7(void);
+		void PWM0_Select(void);
+		void PWM0_Select_CoreClock(void);
+		
+		void PWM1_InverterOn(boolean on);
+		void PWM1_Select_AutoReload(void);
+		void PWM1_Select_OneShot(void);
+		void PWM1_StartTimer(void);
+		void PWM1_StopTimer(void);
+		void PWM0_DeadZoneEnable(bool b);
+		void PWM0_InverterOn(bool on);
+		void PWM0_Select_AutoReload(void);
+		void PWM0_Select_OneShot(void);
+		void PWM0_StartTimer(void);
+		void PWM0_StopTimer(void);
+        void PWM0_DeadZoneLength(uint8_t len);
+		void PWM0_SetCompareBuffer(uint16_t Wx);
+		void PWM0_SetCountBuffer(uint16_t Wx);
+		void PWM1_SetCompareBuffer(uint16_t Wx);
+		void PWM1_SetCountBuffer(uint16_t Wx);
+		
+		void SFI_SetDMASourceAddress(uint32_t addr);
+		void SFI_SetDMADestinationAddress(uint32_t addr);
+		void SFI_DMA_DestinationUpperLeftCorner(uint16_t Wx, uint16_t Hy);
+		void SFI_DMA_TransferNumber(uint32_t addr);
+		void SFI_DMA_TransferWidthHeight(uint16_t Wx, uint16_t Hy);
+		void SFI_DMA_SourceWidth(uint16_t Wx);
+		
 }
 		
 

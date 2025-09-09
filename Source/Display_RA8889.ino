@@ -858,29 +858,29 @@ void loop() {
   gfx.ActiveWindow_XY(0,0);
   gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );
   
-  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, toValue(Color::clRed), true);
+  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, Color::clRed, true);
   delay(1000);
-  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, toValue(Color::clGreen), true);
+  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, Color::clGreen, true);
   delay(1000);
-  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, toValue(Color::clBlue), true);
+  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, Color::clBlue, true);
   delay(1000);
 
-  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, toValue(Color::clCyan), true);
+  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, Color::clCyan, true);
   delay(1000);
-  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, toValue(Color::clYellow, true);
+  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, Color::clYellow, true);
   delay(1000); 
-  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, toValue(Color::clPurple), true);
+  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, Color::clPurple, true);
   delay(1000);   
  
-  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, toValue(Color::clBlack), true);
+  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, Color::clBlack, true);
   delay(1000); 
-  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, toValue(Color::clWhite), true);
+  gfx.DrawSquare(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT, Color::clWhite, true);
   delay(1000);
 
   ////////BackLight Brightness control test  whit ER's PWM0
   unsigned char  brightness=10;
-  gfx.ForegroundColor_65k(toValue(Color::clWhite));
-  gfx.BackgroundColor_65k(toValue(Color::clRed));
+  gfx.ForegroundColor_65k(Color::clWhite);
+  gfx.BackgroundColor_65k(Color::clRed);
   gfx.Font_UseInternalCGROM();
   gfx.Font_SetHeight_24();
   gfx.GotoText_XY(0,10); 
@@ -904,22 +904,22 @@ void loop() {
   gfx.MainImage_StartAddress( LayerStartAddr(0) );				
   gfx.MainImage_Width( gfx.Width() );
   gfx.MainWindow_StartXY(0,0);
-  ER_TFT.Canvas_Image_Start_address(layer1_start_addr);
-  ER_TFT.Canvas_image_width(LCD_XSIZE_TFT);
+  gfx.CanvasImage_StartAddr(layer1_start_addr);
+  gfx.CanvasImage_Width(LCD_XSIZE_TFT);
   gfx.ActiveWindow_XY(0,0);
   gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );
 
-  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlack), true);
-  //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlack, true);
+  //gfx.ForegroundColor_65k(Color::clBlack);
   //ER_TFT.Line_Start_XY(0,0);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-    gfx.DrawSquare(0+i, 0+i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, toValue(Color::clRed));
+    gfx.DrawSquare(0+i, 0+i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, Color::clRed);
 	delay(10);
-	//gfx.ForegroundColor_65k(toValue(Color::clRed));
+	//gfx.ForegroundColor_65k(Color::clRed);
     //ER_TFT.Line_Start_XY(0+i,0+i);
     //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1-i,LCD_YSIZE_TFT-1-i);
     //ER_TFT.Start_Square();
@@ -928,9 +928,9 @@ void loop() {
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-	gfx.DrawSquare(0+i, 0+i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, toValue(Color::clBlack));
+	gfx.DrawSquare(0+i, 0+i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, Color::clBlack);
 	delay(10);
-    //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+    //gfx.ForegroundColor_65k(Color::clBlack);
     //ER_TFT.Line_Start_XY(0+i,0+i);
     //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1-i,LCD_YSIZE_TFT-1-i);
     //ER_TFT.Start_Square();
@@ -939,17 +939,17 @@ void loop() {
  delay(100);
  
 ///////////////////////////Square Of Circle
-  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlack), true);
-  //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlack, true);
+  //gfx.ForegroundColor_65k(Color::clBlack);
   //ER_TFT.Line_Start_XY(0,0);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-    gfx.DrawCircleSquare(0+i, 0+i, CD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, 10, 10, toValue(Color::clGreen));
+    gfx.DrawCircleSquare(0+i, 0+i, CD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, 10, 10, Color::clGreen);
 	delay(10);
-	//gfx.ForegroundColor_65k(toValue(Color::clGreen));
+	//gfx.ForegroundColor_65k(Color::clGreen);
     //ER_TFT.Line_Start_XY(0+i,0+i);
     //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1-i,LCD_YSIZE_TFT-1-i);
     //ER_TFT.Circle_Square_Radius_RxRy(10,10);
@@ -959,9 +959,9 @@ void loop() {
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-   	gfx.DrawCircleSquare(0+i, 0+i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, 10, 10, toValue(Color::clBlack));
+   	gfx.DrawCircleSquare(0+i, 0+i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, 10, 10, Color::clBlack);
     delay(10);
-	//gfx.ForegroundColor_65k(toValue(Color::clBlack));
+	//gfx.ForegroundColor_65k(Color::clBlack);
     //ER_TFT.Line_Start_XY(0+i,0+i);
     //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1-i,LCD_YSIZE_TFT-1-i);
     //ER_TFT.Circle_Square_Radius_RxRy(10,10);
@@ -971,17 +971,17 @@ void loop() {
   delay(100);
 
 ///////////////////////////Circle
-  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlack), true);
-  //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlack, true);
+  //gfx.ForegroundColor_65k(Color::clBlack);
   //ER_TFT.Line_Start_XY(0,0);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-	gfx.DrawCircle(LCD_XSIZE_TFT/2, LCD_YSIZE_TFT/2, i, toValue(Color::clBlue));
+	gfx.DrawCircle(LCD_XSIZE_TFT/2, LCD_YSIZE_TFT/2, i, Color::clBlue);
     delay(10);
-    //gfx.ForegroundColor_65k(toValue(Color::clBlue));
+    //gfx.ForegroundColor_65k(Color::clBlue);
     //ER_TFT.Circle_Center_XY(LCD_XSIZE_TFT/2,LCD_YSIZE_TFT/2);
     //ER_TFT.Circle_Radius_R(i);
     //ER_TFT.Start_Circle_or_Ellipse();
@@ -990,9 +990,9 @@ void loop() {
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-	gfx.DrawCircle(LCD_XSIZE_TFT/2, LCD_YSIZE_TFT/2, i, toValue(Color::clBlack));
+	gfx.DrawCircle(LCD_XSIZE_TFT/2, LCD_YSIZE_TFT/2, i, Color::clBlack);
     delay(10);
-    //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+    //gfx.ForegroundColor_65k(Color::clBlack);
     //ER_TFT.Circle_Center_XY(LCD_XSIZE_TFT/2,LCD_YSIZE_TFT/2);
     //ER_TFT.Circle_Radius_R(i);
     //ER_TFT.Start_Circle_or_Ellipse();
@@ -1001,17 +1001,17 @@ void loop() {
   delay(100);
 
 ///////////////////////////Ellipse
-  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlack), true);
-  //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlack, true);
+  //gfx.ForegroundColor_65k(Color::clBlack);
   //ER_TFT.Line_Start_XY(0,0);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-	gfx.DrawEllipse(LCD_XSIZE_TFT/2, LCD_YSIZE_TFT/2, i+100, i, toValue(Color::clWhite));
+	gfx.DrawEllipse(LCD_XSIZE_TFT/2, LCD_YSIZE_TFT/2, i+100, i, Color::clWhite);
     delay(10);
-	//gfx.ForegroundColor_65k(toValue(Color::clWhite));
+	//gfx.ForegroundColor_65k(Color::clWhite);
     //ER_TFT.Circle_Center_XY(LCD_XSIZE_TFT/2,LCD_YSIZE_TFT/2);
     //ER_TFT.Ellipse_Radius_RxRy(i+100,i);
     //ER_TFT.Start_Circle_or_Ellipse();
@@ -1020,9 +1020,9 @@ void loop() {
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-    gfx.DrawEllipse(LCD_XSIZE_TFT/2, LCD_YSIZE_TFT/2, i+100, i, toValue(Color::clBlack));
+    gfx.DrawEllipse(LCD_XSIZE_TFT/2, LCD_YSIZE_TFT/2, i+100, i, Color::clBlack);
 	delay(10);
-    //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+    //gfx.ForegroundColor_65k(Color::clBlack);
     //ER_TFT.Circle_Center_XY(LCD_XSIZE_TFT/2,LCD_YSIZE_TFT/2);
     //ER_TFT.Ellipse_Radius_RxRy(i+100,i);
     //ER_TFT.Start_Circle_or_Ellipse();
@@ -1031,17 +1031,17 @@ void loop() {
   delay(100);
 
  ////////////////////////////Triangle
-  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlack), true);
-  //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlack, true);
+  //gfx.ForegroundColor_65k(Color::clBlack);
   //ER_TFT.Line_Start_XY(0,0);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-    gfx.DrawTriangle(LCD_XSIZE_TFT/2, i, i, LCD_YSIZE_TFT-1-i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, toValue(Color::clYellow));
+    gfx.DrawTriangle(LCD_XSIZE_TFT/2, i, i, LCD_YSIZE_TFT-1-i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, Color::clYellow);
     delay(10);
-	//gfx.ForegroundColor_65k(toValue(Color::clYellow));
+	//gfx.ForegroundColor_65k(Color::clYellow);
     //ER_TFT.Triangle_Point1_XY(LCD_XSIZE_TFT/2, i);
     //ER_TFT.Triangle_Point2_XY(i, LCD_YSIZE_TFT-1-i);
     //ER_TFT.Triangle_Point3_XY(LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i);
@@ -1051,8 +1051,8 @@ void loop() {
 
   for(i=0;i<=LCD_YSIZE_TFT/2-10;i+=8)
   {
-	gfx.DrawTriangle(LCD_XSIZE_TFT/2, i, i, LCD_YSIZE_TFT-1-i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, toValue(Color::clBlack));  
-    //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+	gfx.DrawTriangle(LCD_XSIZE_TFT/2, i, i, LCD_YSIZE_TFT-1-i, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1-i, Color::clBlack);  
+    //gfx.ForegroundColor_65k(Color::clBlack);
     //ER_TFT.Triangle_Point1_XY(LCD_XSIZE_TFT/2,i);
     //ER_TFT.Triangle_Point2_XY(i,LCD_YSIZE_TFT-1-i);
     //ER_TFT.Triangle_Point3_XY(LCD_XSIZE_TFT-1-i,LCD_YSIZE_TFT-1-i);
@@ -1062,17 +1062,17 @@ void loop() {
   delay(100);
 
  ////////////////////////////line
-  gfx.DrawLine(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlack))
-  //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+  gfx.DrawLine(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlack);
+  //gfx.ForegroundColor_65k(Color::clBlack);
   //ER_TFT.Line_Start_XY(0,0);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();
 
   for(i=0;i<=LCD_XSIZE_TFT;i+=8)
   {
-	gfx.DrawLine(i, 0, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1, toValue(Color::clRed))
+	gfx.DrawLine(i, 0, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1, Color::clRed);
 	delay(10);
-	//gfx.ForegroundColor_65k(toValue(Color::clRed));
+	//gfx.ForegroundColor_65k(Color::clRed);
     //ER_TFT.Line_Start_XY(i,0);
     //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1-i,LCD_YSIZE_TFT-1);
     //ER_TFT.Start_Line();
@@ -1080,7 +1080,7 @@ void loop() {
   }
   for(i=0;i<=LCD_YSIZE_TFT;i+=8)
   {
-	gfx.DrawLine(0, LCD_YSIZE_TFT-1-i, LCD_XSIZE_TFT-1, i, toValue(Color::clRed))
+	gfx.DrawLine(0, LCD_YSIZE_TFT-1-i, LCD_XSIZE_TFT-1, i, Color::clRed);
 	delay(10);
     //gfx.ForegroundColor_65k();
     //Point1_XY();
@@ -1091,9 +1091,9 @@ void loop() {
 
   for(i=0;i<=LCD_XSIZE_TFT;i+=8)
   {
-	gfx.DrawLine(i, 0, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1, toValue(Color::clBlack))
+	gfx.DrawLine(i, 0, LCD_XSIZE_TFT-1-i, LCD_YSIZE_TFT-1, Color::clBlack);
 	delay(10);
-    //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+    //gfx.ForegroundColor_65k(Color::clBlack);
     //ER_TFT.Line_Start_XY(i,0);
     //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1-i,LCD_YSIZE_TFT-1);
     //ER_TFT.Start_Line();
@@ -1101,9 +1101,9 @@ void loop() {
   }
   for(i=0;i<=LCD_YSIZE_TFT;i+=8)
   {
-    gfx.DrawLine(0, LCD_YSIZE_TFT-1-i, LCD_XSIZE_TFT-1, i, toValue(Color::clBlack))
+    gfx.DrawLine(0, LCD_YSIZE_TFT-1-i, LCD_XSIZE_TFT-1, i, Color::clBlack);
 	delay(10);
-	//gfx.ForegroundColor_65k(toValue(Color::clBlack));
+	//gfx.ForegroundColor_65k(Color::clBlack);
     //ER_TFT.Line_Start_XY(0,LCD_YSIZE_TFT-1-i);
     //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,i);
     //ER_TFT.Start_Line();
@@ -1117,33 +1117,32 @@ void loop() {
   gfx.MainImage_StartAddress( LayerStartAddr(0) );				
   gfx.MainImage_Width( gfx.Width() );
   gfx.MainWindow_StartXY(0,0);
-  ER_TFT.Canvas_Image_Start_address(layer1_start_addr);
-  ER_TFT.Canvas_image_width(LCD_XSIZE_TFT);
+  gfx.CanvasImage_StartAddr(layer1_start_addr);
+  gfx.CanvasImage_Width(LCD_XSIZE_TFT);
   gfx.ActiveWindow_XY(0,0);
   gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );	
  
-  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlack), true);
-  //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlack, true);
+  //gfx.ForegroundColor_65k(Color::clBlack);
   //ER_TFT.Line_Start_XY(0,0);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();
 
-  gfx.ForegroundColor_65k(toValue(Color::clGreen));
+  gfx.ForegroundColor_65k(Color::clGreen);
   gfx.Font_SetHeight_24();
   gfx.GotoText_XY(0,26);
   ER_TFT.Show_String("buydisplay.com");
 
-  gfx.BackgroundColor_65k(toValue(Color::clBlack)); 
-  gfx.ForegroundColor_65k(toValue(Color::clRed));
-  ER_TFT.Font_Width_X4(); 
-  ER_TFT.Font_Height_X4();
+  gfx.BackgroundColor_65k(Color::clBlack); 
+  gfx.ForegroundColor_65k(Color::clRed);
+  gfx.Font_WidthEnlargFactor(FontEnlargFactor::X4); 
+  gfx.Font_HeightEnlargFactor(FontEnlargFactor::X4);
   gfx.GotoText_XY(0,90);
   ER_TFT.Show_String("buydisplay.com");    
   delay(2000); 
-  ER_TFT.Font_Width_X1(); 
-  ER_TFT.Font_Height_X1();
-  
-  
+  gfx.Font_WidthEnlargFactor(FontEnlargFactor::X1); 
+  gfx.Font_HeightEnlargFactor(FontEnlargFactor::X1);
+    
   unsigned int temp;
   unsigned long im=1;
   gfx.Select_MainWindow_16bpp();
@@ -1151,30 +1150,31 @@ void loop() {
   gfx.MainImage_Width( gfx.Width() );							
   gfx.MainWindow_StartXY(0,0);
 
-  ER_TFT.Canvas_Image_Start_address(0);//Layer 1
-  ER_TFT.Canvas_image_width(LCD_XSIZE_TFT);//
+  gfx.CanvasImage_StartAddr(0);//Layer 1
+  gfx.CanvasImage_Width(LCD_XSIZE_TFT);//
   gfx.ActiveWindow_XY(0,0);
   gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );
 
-  gfx.ForegroundColor_65k(toValue(Color::clBlack));
-  ER_TFT.Line_Start_XY(0,0);
-  ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-25);
-  ER_TFT.Start_Square_Fill();
+  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-25, Color::clBlack, true);
+  //gfx.ForegroundColor_65k(Color::clBlack);
+  //gfx.Point1_XY(0,0);
+  //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-25);
+  //ER_TFT.Start_Square_Fill();
 
-  gfx.DrawSquare(0, LCD_YSIZE_TFT-24, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlue), true);
-  //gfx.ForegroundColor_65k(toValue(Color::clBlue));
+  gfx.DrawSquare(0, LCD_YSIZE_TFT-24, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlue, true);
+  //gfx.ForegroundColor_65k(Color::clBlue);
   //ER_TFT.Line_Start_XY(0,LCD_YSIZE_TFT-24);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();
   
-  gfx.ForegroundColor_65k(toValue(Color::clWhite));
-  gfx.BackgroundColor_65k(toValue(Color::clBlue));
+  gfx.ForegroundColor_65k(Color::clWhite);
+  gfx.BackgroundColor_65k(Color::clBlue);
   gfx.Font_UseInternalCGROM();
   gfx.Font_SetHeight_24();
   gfx.GotoText_XY(0,LCD_YSIZE_TFT-24);
   ER_TFT.Show_String("  Demo BTE Compare");
-  gfx.ForegroundColor_65k(toValue(Color::clBlack));
-  gfx.BackgroundColor_65k(toValue(Color::clWhite));
+  gfx.ForegroundColor_65k(Color::clBlack);
+  gfx.BackgroundColor_65k(Color::clWhite);
  
   gfx.GotoText_XY(0,LCD_YSIZE_TFT-48);
   ER_TFT.Show_String("Execute Logic 'OR' 0xf000");
@@ -1199,8 +1199,8 @@ void loop() {
   
   gfx.ActiveWindow_XY(0,0);
   gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );
-  gfx.ForegroundColor_65k(toValue(Color::clBlack));
-  gfx.BackgroundColor_65k(toValue(Color::clWhite));
+  gfx.ForegroundColor_65k(Color::clBlack);
+  gfx.BackgroundColor_65k(Color::clWhite);
   gfx.Font_UseInternalCGROM();
  
   gfx.GotoText_XY(20,130 );
@@ -1216,19 +1216,19 @@ void loop() {
   delay(1000);
   gfx.ActiveWindow_XY(20,40);
   gfx.ActiveWindow_WidhtHeight(80,80); 
-  ER_TFT. Goto_Pixel_XY(20,40);
-  ER_TFT.LCD_CmdWrite(0x04);
-  temp =   ER_TFT.LCD_DataRead();
-  ER_TFT.Check_Mem_RD_FIFO_not_Empty();  //dummy
+  gfx.GotoPixel_XY(20,40);
+  gfx.SPI_CmdWrite(0x04);
+  temp =   gfx.SPI_DataRead();
+  gfx.Wait_ReadFIFO_NotEmpty();  //dummy
   for(i=0; i<80*80;i++)
   {				
     temp =   ER_TFT.LCD_DataRead();		   
     temp=temp|(  ER_TFT.LCD_DataRead()<<8);
-    ER_TFT.Check_Mem_RD_FIFO_not_Empty();
+    gfx.Wait_ReadFIFO_NotEmpty();
     temp |= 0xf000; 
-    ER_TFT.LCD_DataWrite(temp);
-    ER_TFT.LCD_DataWrite(temp>>8);
-    ER_TFT.Check_Mem_WR_FIFO_not_Full();
+    gfx.SPI_DataWrite(temp);
+    gfx.SPI_DataWrite(temp>>8);
+    gfx.Wait_WriteFIFO_NotFull();
   }
   gfx.ActiveWindow_XY(0,0);
   gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );
@@ -1255,19 +1255,19 @@ void loop() {
   {				
   ER_TFT.LCD_DataWrite(0xf000);
   ER_TFT.LCD_DataWrite(0xf000>>8);
-  ER_TFT.Check_Mem_WR_FIFO_not_Full();
+  gfx.Wait_WriteFIFO_NotFull();
   }
-  ER_TFT.Check_Mem_WR_FIFO_Empty();//糶Ч浪琩
+  gfx.Wait_WriteFIFO_Empty();//糶Ч浪琩
   ER_TFT.Check_BTE_Busy();
 
   delay(1000);   
 	  //third block, BTE MOVE with ROP
-  ER_TFT.Canvas_Image_Start_address(layer2_start_addr);//
-  ER_TFT.Canvas_image_width(LCD_XSIZE_TFT);//
+  gfx.CanvasImage_StartAddr(layer2_start_addr);//
+  gfx.CanvasImage_Width(LCD_XSIZE_TFT);//
   gfx.ActiveWindow_XY(0,0);
   gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );
 
-  gfx.BackgroundColor_65k(toValue(Color::clBlack));
+  gfx.BackgroundColor_65k(Color::clBlack);
   gfx.DrawSquare(0, 40, 80, 120, 0xf000, true);
   //gfx.ForegroundColor_65k(0xf000);
   //ER_TFT.Line_Start_XY(0,40);
@@ -1303,13 +1303,13 @@ void loop() {
   gfx.MainImage_StartAddress( LayerStartAddr(0) );				
   gfx.MainImage_Width( gfx.Width() );
   gfx.MainWindow_StartXY(0,0);
-  ER_TFT.Canvas_Image_Start_address(layer1_start_addr);
-  ER_TFT.Canvas_image_width(LCD_XSIZE_TFT);
+  gfx.CanvasImage_StartAddr(layer1_start_addr);
+  gfx.CanvasImage_Width(LCD_XSIZE_TFT);
   gfx.ActiveWindow_XY(0,0);
   gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );	
   
-  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, toValue(Color::clBlack), true);  
-  //gfx.ForegroundColor_65k(toValue(Color::clBlack));
+  gfx.DrawSquare(0, 0, LCD_XSIZE_TFT-1, LCD_YSIZE_TFT-1, Color::clBlack, true);  
+  //gfx.ForegroundColor_65k(Color::clBlack);
   //ER_TFT.Line_Start_XY(0,0);
   //ER_TFT.Line_End_XY(LCD_XSIZE_TFT-1,LCD_YSIZE_TFT-1);
   //ER_TFT.Start_Square_Fill();

@@ -607,3 +607,166 @@ attachInterrupt(digitalPinToInterrupt(VSYNC_PIN), vsyncISR, RISING);
 
 Usar o Vsync para sincronizar atualizações de buffer é essencial para evitar artefatos visuais. Espere pelo Vsync antes de atualizar a imagem no display.
 
+PWM0 Compare Buffer
+-------------------
+
+  REG [0x88] low value e [0x89] high value
+  
+  Nota: PWM0 pode e comumente tambem chamado de PWM Timer 0 ou Timer 0 ou PWM 0
+  
+  1 O que é o Compare Buffer
+  --------------------------
+  
+  No RA8889, o Compare Buffer é um registrador de 16 bits associado ao PWM Timer 0:
+
+  - REG[0x88] → Low byte
+  - REG[0x89] → High byte
+
+  Ele serve como um limite de comparação para o contador do Timer.
+  
+  2 Como o Timer funciona com ele
+  -------------------------------
+  
+  O PWM Timer 0 conta de 0 até o valor máximo do período configurado. A cada ciclo:
+
+  - Se o contador ≤ valor do Compare Buffer, o pino XPWM[0] é colocado em nível alto (ou invertido se o bit de inversão estiver ativo).
+  - Quando o contador ultrapassa o valor do Compare Buffer, o pino vai para nível baixo.
+
+  Em outras palavras: o Compare Buffer define o duty cycle do PWM.
+  
+  3 O efeito prático da função
+  ----------------------------
+  
+  void PWM0_SetCompareBuffer(uint16_t Wx)
+
+  - Recebe Wx (0 a 65535) → quanto maior o valor, maior o tempo em que o PWM fica em nível alto durante o ciclo.
+  - Escreve os dois bytes no registrador (Low e High).
+
+  Resultado: você controla o duty cycle do PWM 0.
+
+  💡 Então a finalidade real é: ajustar dinamicamente o duty cycle do PWM Timer 0.
+  
+  4 Analogias para ficar mais fácil
+  ---------------------------------
+
+  Imagine que o PWM é uma luz piscando:
+  
+    - Compare Buffer = tempo que a luz fica acesa.
+    - Período do Timer = tempo total do ciclo.
+  
+  Exemplo:
+  
+  - Período do Timer = 1000 ticks
+  - Compare Buffer = 250 → PWM fica 25% do tempo em HIGH.
+  - Compare Buffer = 750 → PWM fica 75% do tempo em HIGH.
+
+  5 Diagrama
+  ----------
+  
+  🔹 Conceito de Compare Buffer no PWM
+
+  Imagine o PWM Timer 0 como um contador que sobe de 0 até o valor do período configurado. O Compare Buffer define até que ponto do ciclo a saída PWM fica em nível alto.
+
+  Timer 0 Counts: 0 → PERIOD
+  Compare Buffer: Wx
+  XPWM[0] Output:
+     HIGH  ┌───────
+           │
+           │
+     LOW   └─────────────
+  
+  🔹 Exemplo Numérico
+
+  Timer Count    XPWM[0] (inverter off)
+  --------------------------------------
+  0              HIGH
+  ...            HIGH
+  Wx             HIGH → LOW
+  PERIOD         LOW
+  0 (next cycle) HIGH
+  
+  - Período do Timer = 1000 ticks
+  - Compare Buffer Wx = 250 → PWM fica 25% do ciclo em HIGH
+  - Compare Buffer Wx = 750 → PWM fica 75% do ciclo em HIGH
+
+  Isso controla o duty cycle diretamente.
+  
+  🔹 Como a função faz isso
+  
+  void PWM0_SetCompareBuffer(uint16_t Wx)
+  {
+    SPI_CmdWrite(REG_TCMPB0L);    // Low byte
+    SPI_DataWrite(Wx);             
+    SPI_CmdWrite(REG_TCMPB0H);    // High byte
+    SPI_DataWrite(Wx >> 8);       
+  }
+  
+  
+  1.Escreve o byte baixo do valor do Compare Buffer no registrador 0x88.
+  2. Escreve o byte alto no registrador 0x89.
+  3. Agora o Timer 0 sabe em que ponto do ciclo ele deve mudar XPWM[0] de HIGH para LOW.
+
+  🔹 Resumo visual do PWM 0
+  
+  XPWM[0] Output
+   HIGH ─────┐
+             │
+             │
+   LOW       └─────────────
+              ↑
+              Compare Buffer Wx
+  
+  - O ponto de transição HIGH → LOW depende do valor que você configurou com PWM0_SetCompareBuffer().
+  - Quanto maior Wx, mais tempo a saída fica HIGH, maior o duty cycle.
+
+  Mapa visual completo do PWM Timer 0 do RA8889
+  ---------------------------------------------
+  
+  Integrando Compare Buffer, Dead Zone, Start/Stop e Inverter, pra você ver tudo de forma intuitiva.
+  
+  🔹 Diagrama do PWM Timer 0
+  
+    Timer 0 Counter
+  0 ──────────────────────────────────> PERIOD
+  │
+  │ Compare Buffer (TCMPB0)
+  │   ┌───────────── HIGH ─────────────┐
+  │   │                                 │
+  │   │                                 │
+  │   └───────────── LOW ──────────────┘
+  │           ^
+  │           |---- Valor configurado em PWM0_SetCompareBuffer(Wx)
+  │
+  │ Dead Zone (DZ_LENGTH)
+  │   ┌─── LOW ───┐
+  │   │           │
+  │   └───────────┘
+  │       ↑
+  │       |---- Intervalo de proteção contra overlap, configurado por PWM0_DeadZoneLength()
+  │
+  │ Output Inverter (PWM0_InverterEnable(true/false))
+  │   ┌──────────── HIGH → LOW (inverso se inverter ligado) ┐
+  │
+  XPWM[0] Output ────────────── HIGH / LOW conforme Timer, Compare Buffer, Dead Zone e Inverter
+
+  🔹 Explicando cada bloco
+  
+  Bloco / Registrador             Função
+  -------------------------------------------------------------------------------------------------------------------
+  Timer 0 Counter                 Conta de 0 até o período configurado, determina a base do PWM.
+  Compare Buffer (TCMPB0L/H)      Define o ponto no ciclo em que XPWM[0] passa de HIGH para LOW.
+  Dead Zone (DZ_LENGTH 0x87)      Intervalo de proteção que força LOW em XPWM[0] para evitar sobreposição de sinais.
+  Output Inverter (PCFGR bit 6)   Se ativado, inverte os níveis HIGH/LOW do XPWM[0].
+  Start/Stop Timer (PCFGR bit 0)  Liga ou desliga o Timer 0.
+  XPWM[0] Output                  Pino físico que gera o sinal PWM com duty cycle ajustado pelo Compare Buffer.
+  
+  🔹 Resumo do fluxo
+  
+  1. Start Timer → contador inicia.
+  2. Compare Buffer → enquanto contador ≤ Wx → saída HIGH.
+  3. Dead Zone → aplica LOW em períodos críticos para proteção.
+  4. Fim do ciclo → contador reseta, XPWM[0] repete o ciclo.
+  5. Inverter → opcional, troca HIGH ↔ LOW.
+  
+  💡 Observação:
+  Se você combinar Dead Zone + Compare Buffer + Inverter, consegue controlar duty cycle, proteção contra overlap e polaridade do PWM de forma independente — totalmente configurável pelo software.

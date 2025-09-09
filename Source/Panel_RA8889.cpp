@@ -25,21 +25,47 @@
                         void Show_String(char *str)
 						void putPixel(
 						
-                        void ER_TFTBasic::Select_SFI_Waveform_Mode_0(void)
-                        void ER_TFTBasic::Select_SFI_Waveform_Mode_3(void)
-						void Enable_SPI_Master_Interrupt(void)
-                        void Disable_SPI_Master_Interrupt(void)
-                        void nSS_Inactive(void)
-                        void nSS_Active(void)
-                        void Mask_FIFO_overflow_error_Interrupt(void)
-                        void Unmask_FIFO_overflow_error_Interrupt(void)
-                        void Mask_EMTIRQEN_Interrupt(void)
-                        void Unmask_EMTIRQEN_Interrupt(void)
-                        void Reset_CPOL(void)
-                        void Set_CPOL(void)
-                        void Reset_CPHA(void)
-                        void Set_CPHA(void)
-
+				unsigned char RA8889_I2CM_Receiver_Data(void)
+                void RA8889_I2CM_Transmit_Data(unsigned char temp)
+                void RA8889_I2CM_Clock_Prescale(unsigned short WX)
+                void Power_Saving_Sleep_Mode(void)
+                void Power_Saving_Suspend_Mode(void)
+                void Power_Saving_Standby_Mode(void)
+                void Power_Normal_Mode(void)
+                void ER_TFTBasic::BTE_Alpha_Blending_Effect(unsigned char temp)
+                void ER_TFTBasic::BTE_Window_Size(unsigned short WX, unsigned short WY)
+                void ER_TFTBasic::BTE_Destination_Window_Start_XY(unsigned short WX,unsigned short HY) 
+                void ER_TFTBasic::BTE_Destination_Image_Width(unsigned short WX) 
+                void ER_TFTBasic::BTE_Destination_Memory_Start_Address(unsigned long Addr) 
+                void ER_TFTBasic::BTE_S1_Window_Start_XY(unsigned short WX,unsigned short HY)  
+                void ER_TFTBasic::BTE_S1_Image_Width(unsigned short WX)  
+                void ER_TFTBasic::S1_Constant_color_16M(unsigned long temp)
+                void ER_TFTBasic::S1_Constant_color_65k(unsigned short temp)
+                void ER_TFTBasic::S1_Constant_color_256(unsigned char temp)
+                void ER_TFTBasic::BTE_S1_Memory_Start_Address(unsigned long Addr)  
+                void ER_TFTBasic::BTE_S0_Window_Start_XY(unsigned short WX,unsigned short HY)  
+                void ER_TFTBasic::BTE_S0_Image_Width(unsigned short WX)  
+                void ER_TFTBasic::BTE_S0_Memory_Start_Address(unsigned long Addr)  
+                void ER_TFTBasic::BTE_Destination_Color_24bpp(void)
+                void ER_TFTBasic::BTE_Destination_Color_16bpp(void)
+                void ER_TFTBasic::BTE_Destination_Color_8bpp(void)
+                void ER_TFTBasic::BTE_S1_Color_16bit_Alpha(void)
+                void ER_TFTBasic::BTE_S1_Color_8bit_Alpha(void)
+                void ER_TFTBasic::BTE_S1_Color_Constant(void)
+                void ER_TFTBasic::BTE_S1_Color_24bpp(void)
+                void ER_TFTBasic::BTE_S1_Color_16bpp(void)
+                void ER_TFTBasic::BTE_S1_Color_8bpp(void)
+                void ER_TFTBasic::BTE_S0_Color_24bpp(void)
+                void ER_TFTBasic::BTE_S0_Color_16bpp(void)
+                void ER_TFTBasic::BTE_S0_Color_8bpp(void)
+                void ER_TFTBasic::BTE_Operation_Code(unsigned char setx)
+                void ER_TFTBasic::BTE_ROP_Code(unsigned char setx)
+                void ER_TFTBasic::BTE_Enable(void)
+                void ER_TFTBasic::BTE_Disable(void)
+                void ER_TFTBasic::Check_BTE_Busy(void)
+                void ER_TFTBasic::Pattern_Format_8X8(void)
+                void ER_TFTBasic::Pattern_Format_16X16(void)
+                		
 						
 */
 
@@ -49,11 +75,6 @@
 //================================================================================
 
 
-// Template genérico para qualquer enum class
-template <typename E>
-constexpr auto toValue(E e) -> typename std::underlying_type<E>::type {
-    return static_cast<typename std::underlying_type<E>::type>(e);
-}
 
 
 //================================================================================
@@ -274,10 +295,10 @@ uint8_t Panel_RA8889::SPIRwByte(uint8_t value)
 //Escreve um comando para o SPI do Display
 void Panel_RA8889::SPI_CmdWrite(uint8_t cmd)
 {
-  SPISetCS(false);    //SS_RESET;
-  SPIRwByte(0x00);    //Indica Commando para escrever 
-  SPIRwByte(cmd);     //Envia um comando byte para o SPI 
-  SPISetCS(true);     //SS_SET;
+  SPISetCS(false);                             //SS_RESET;
+  SPIRwByte(RA8889_SPI_CMDWRITE);              //0x00, Indica Commando para escrever 
+  SPIRwByte(cmd);                              //Envia um comando byte para o SPI 
+  SPISetCS(true);                              //SS_SET;
 }
 
 
@@ -285,25 +306,25 @@ void Panel_RA8889::SPI_CmdWrite(uint8_t cmd)
 //Escreve dados para o SPI
 void Panel_RA8889::SPI_DataWrite(uint8_t data)
 {
-  SPISetCS(false);    //SS_RESET;
-  SPIRwByte(0x80);    //Indica Dados para escrever
-  SPIRwByte(data);    //Envia um byte de Dado para o SPI
-  SPISetCS(true);     //SS_SET;
+  SPISetCS(false);                             //SS_RESET;
+  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
+  SPIRwByte(data);                             //Envia um byte de Dado para o SPI
+  SPISetCS(true);                              //SS_SET;
 }
 
 
 //SPI_DataWritePixel
 void Panel_RA8889::SPI_DataWrite_Pixel(uint16_t data)
 {
-  SPISetCS(false);          //SS_RESET;
-  SPIRwByte(0x80);          //Indica Dados para escrever
-  SPIRwByte(data);          //Escreve a parte baixa da palavra
-  SPISetCS(true);           //SS_SET;
-  
-  SPISetCS(false);          //SS_RESET;
-  SPIRwByte(0x80);          //Indica Dados para escrever
-  SPIRwByte(data >> 8);     //escreve a parte alta da palavra
-  SPISetCS(true);           //SS_SET;
+  SPISetCS(false);                             //SS_RESET;
+  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
+  SPIRwByte(data);                             //Escreve a parte baixa da palavra
+  SPISetCS(true);                              //SS_SET;
+											   
+  SPISetCS(false);                             //SS_RESET;
+  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
+  SPIRwByte(data >> 8);                        //Escreve a parte alta da palavra
+  SPISetCS(true);                              //SS_SET;
 }
 
 
@@ -312,10 +333,10 @@ void Panel_RA8889::SPI_DataWrite_Pixel(uint16_t data)
 uint8_t Panel_RA8889::SPI_DataRead(void)
 {
   uint8_t temp = 0;
-  SPISetCS(false);          //SS_RESET;
-  SPIRwByte(0xc0);
+  SPISetCS(false);                         //SS_RESET;
+  SPIRwByte(RA8889_SPI_DATAREAD);          //0xc0, Leitura de dados
   temp = SPIRwByte(0x00);
-  SPISetCS(true);           //SS_SET;
+  SPISetCS(true);                          //SS_SET;
   return temp;
 }
 
@@ -330,10 +351,10 @@ uint8_t Panel_RA8889::SPI_DataRead(void)
 uint8_t Panel_RA8889::StatusRead(void)
 {
   int temp = 0;
-  SPISetCS(false);       //SS_RESET;
-  SPIRwByte(0x40);   
-  temp = SPIRwByte(REG_STSR);
-  SPISetCS(true);        //SS_SET;
+  SPISetCS(false);                        //SS_RESET;
+  SPIRwByte(RA8889_SPI_STATUSREAD);       //0x40, Read Status SPI
+  temp = SPIRwByte(REG_STSR);             //Read STSR Register
+  SPISetCS(true);                         //SS_SET;
   return temp;
 }
 
@@ -566,8 +587,6 @@ void Panel_RA8889::Wait_ReadFIFO_NotEmpty(void)
 	if( (temp & 0x10) == 0x00 ){break;}
   }
 }
-
-
 
 
 //================================================================================
@@ -857,7 +876,9 @@ void Panel_RA8889::SDRAM_Init(void)
 
 
 //================================================================================
+//
 // [0x01] Chip Configuration Register (CCR)
+//
 //================================================================================
 
 
@@ -1076,7 +1097,9 @@ void Panel_RA8889::SFlashSPI_Enable(bool b)
 
 
 //================================================================================
+//
 // [0x02] Memory Access Control Register (MACR)
+//
 //================================================================================
 
 
@@ -1181,7 +1204,9 @@ void Panel_RA8889::HostWriteMemoryDirection(MemoryDirection direction)
 
 
 //================================================================================
+//
 // [0x03] Input Control Register (ICR)
+//
 //================================================================================
 
 
@@ -1495,7 +1520,9 @@ void Panel_RA8889::MemoryPort_Select(MemoryPortDest dest)
 
 
 //================================================================================
+//
 // [0x0B] Interrupt Enable Register (INTEN)
+//
 //================================================================================
 
 
@@ -1669,10 +1696,12 @@ void Panel_RA8889::Interrupt_PWM0_Enable(bool b)
 
 
 //================================================================================
+//
 // [0x0C] Interrupt Event Flag Register (INTF)
 //  *If you received an interrupt but cannot identify it on Interrupt Event Flag 
 //  Register, please check SPI master status register’s interrupt flag bits 
 //  REG[BAh].
+//
 //================================================================================
 
 
@@ -1991,7 +2020,9 @@ void Panel_RA8889::Interrupt_ClearPWM1_Flag(void)
 
 
 //================================================================================
+//
 // [0x10] Main/PIP Window Control Register (MPWCTR)
+//
 //================================================================================
 
 
@@ -2185,7 +2216,9 @@ void Panel_RA8889::Select_LCD_DEMode(void)
 
 
 //================================================================================
+//
 // [0x12] Display Configuration Register (DPCR)
+//
 //================================================================================
 
 
@@ -2439,7 +2472,9 @@ void Panel_RA8889::PCLK_EdgeType(PCLKEdge edge)
 
 
 //================================================================================
+//
 // [0x13] Panel scan Clock and Data Setting Register (PCSR)
+//
 //================================================================================
 
 
@@ -2640,10 +2675,12 @@ void Panel_RA8889::DE_Polarity(DEPolarity val)
 
 
 //================================================================================
+//
 // [0x14] Horizontal Display Width Register (HDWR)
 // [0x15] Horizontal Display Width Fine Tune Register (HDWFTR)
 // [0x1a] Vertical Display Height Register 0(VDHR0)
 // [0x1b] Vertical Display Height Register 1 (VDHR1)
+//
 //================================================================================
 
 
@@ -2707,8 +2744,10 @@ void Panel_RA8889::HorizontalWidth_VerticalHeight(uint16_t wx, uint16_t hy)
 
 
 //================================================================================
+//
 // [0x16] Horizontal Non-Display Period Register (HNDR)
 // [0x17] Horizontal Non-Display Period Fine Tune Register (HNDFTR)
+//
 //================================================================================
 
 
@@ -2751,8 +2790,10 @@ void Panel_RA8889::Horizontal_NonDisplay(uint16_t hbpd)
 
 
 //================================================================================
+//
 // [0x18] HSYNC Start Position Register (HSTR)
 // [0x19] HSYNC Pulse Width Register (HPWR)
+//
 //================================================================================
 
 
@@ -2811,8 +2852,10 @@ void Panel_RA8889::HSYNC_PulseWidth(uint16_t hspw)
 
 
 //================================================================================
+//
 // [0x1c] Vertical Non-Display Period Register 0(VNDR0)
 // [0x1d] Vertical Non-Display Period Register 1(VNDR1)
+//
 //================================================================================
 
 /**
@@ -2840,7 +2883,9 @@ void Panel_RA8889::Vertical_NonDisplay(uint16_t vbpd)
 
 
 //================================================================================
+//
 // [0x1e] VSYNC Start Position Register (VSTR)
+//
 //================================================================================
 
 
@@ -2867,7 +2912,9 @@ void Panel_RA8889::VSYNC_StartPosition(uint16_t vfpd)
 
 
 //================================================================================
+//
 // [0x1f] VSYNC Pulse Width Register (VPWR)
+//
 //================================================================================
 
 
@@ -2892,189 +2939,12 @@ void Panel_RA8889::VSYNC_PulseWidth(uint8_t vspw)
 
 
 //================================================================================
-// [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
-//================================================================================
-
-
-/**
- * @brief Block Mode X-Y Coordinates Addressing
- *        
- *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
- 8        bit [2] Canvas addressing mode
- *                0b0: Block mode (X-Y coordinates addressing)
- *                0b1: Linear mode
- *
- * @param None
- *
- * @note None
- */
-void Panel_RA8889::Memory_BlockMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
-  temp &= cClrb2;                            //Reset bit 2
-  SPI_DataWrite(temp);
-}
-void Panel_RA8889::Memory_XYMode(void) {Memory_BlockMode();}
-
-
-/**
- * @brief Check for Block Mode X-Y Coordinates Addressing
- *        
- *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
- 8        bit [2] Canvas addressing mode
- *                0b0: Block mode (X-Y coordinates addressing)
- *                0b1: Linear mode
- *
- * @param None
- *
- * @note None
- */
-bool Panel_RA8889::Memory_BlockMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
-  return (temp &= cSetb2) == 0x00;
-}
-bool Panel_RA8889::Memory_XYMode(void) {return Memory_BlockMode();}
-
-
-/**
- * @brief Linear Mode Addressing
- *        
- *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
- *        bit [2] Canvas addressing mode
- *                0b0: Block mode (X-Y coordinates addressing)
- *                0b1: Linear mode
- *
- * @param None
- *
- * @note None
- */
-void Panel_RA8889::Memory_LinearMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
-  temp |= cSetb2;                            //Set bit 2
-  SPI_DataWrite(temp);
-}
-
-
-/**
- * @brief Check for Linear Mode Addressing
- *        
- *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
- *        bit [2] Canvas addressing mode
- *                0b0: Block mode (X-Y coordinates addressing)
- *                0b1: Linear mode
- *
- * @param None
- *
- * @note None
- */
-bool Panel_RA8889::Memory_LinearMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
-  return (temp &= cSetb2) == cSetb2;
-}
-
-
-/**
- * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
- *        e gravação da memória no modo de bloco 8bpp
- *        
- *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
- *        bit [1-0] Canvas image’s color depth & memory R/W data width
- *                  In Block Mode:
- *                  00: 8bpp
- *                  01: 16bpp
- *                  1x: 24bpp
- *                  In Linear Mode:
- *                  x0: 8-bits memory data read/write.
- *                  x1: 16-bits memory data read/write
- *
- * @param None
- *
- * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
- */
-void Panel_RA8889::Memory_8bpp_BlockMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
-  temp &= cClrb1;                            //Reset bit 1
-  temp &= cClrb0;                            //Reset bit 2
-  SPI_DataWrite(temp);                       //Set block mode x-y 8bpp
-}
-
-
-/**
- * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
- *        e gravação da memória no modo de bloco 16bpp
- *        
- *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
- *        bit [1-0] Canvas image’s color depth & memory R/W data width
- *                  In Block Mode:
- *                  00: 8bpp
- *                  01: 16bpp
- *                  1x: 24bpp
- *                  In Linear Mode:
- *                  x0: 8-bits memory data read/write.
- *                  x1: 16-bits memory data read/write
- *
- * @param None
- *
- * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
- */
-void Panel_RA8889::Memory_16bpp_BlockMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
-  temp &= cClrb1;                            //Reset bit 1
-  temp |= cSetb0;                            //Set bit 0
-  SPI_DataWrite(temp);                       //Set block mode x-y 16bpp
-}
-
-
-/**
- * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
- *        e gravação da memória no modo de bloco 24bpp
- *        
- *        [5Eh] Color Depth of Canvas & Active Window (AW_COLOR)
- *        bit [1-0] Canvas image’s color depth & memory R/W data width
- *                  In Block Mode:
- *                  00: 8bpp
- *                  01: 16bpp
- *                  1x: 24bpp
- *                  In Linear Mode:
- *                  x0: 8-bits memory data read/write.
- *                  x1: 16-bits memory data read/write
- *
- * @param None
- *
- * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
- */
-void Panel_RA8889::Memory_24bpp_BlockMode(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
-  temp |= cSetb1;                            //Set bit 1
-  SPI_DataWrite(temp);                       //Set block mode x-y 24bpp
-}
-
-
-//================================================================================
+//
 // [0x20] Main Image Start Address 0 (MISA0)
 // [0x21] Main Image Start Address 1 (MISA1)
 // [0x22] Main Image Start Address 2 (MISA2)
 // [0x23] Main Image Start Address 3 (MISA3)
+//
 //================================================================================
 
 
@@ -3125,8 +2995,10 @@ void Panel_RA8889::MainImage_StartAddress(unsigned long addr)
 
 
 //================================================================================
+//
 // [0x24] Main Image Width 0 (MIW0)
 // [0x25] Main Image Width 1 (MIW1)
+//
 //================================================================================
 
 
@@ -3153,10 +3025,12 @@ void Panel_RA8889::MainImage_Width(uint16_t wx)
 
 
 //================================================================================
+//
 // [0x26] Main Window Upper-Left corner X-coordinates 0 (MWULX0)
 // [0x27] Main Window Upper-Left corner X-coordinates 1 (MWULX1)
 // [0x28] Main Window Upper-Left corner Y-coordinates 0 (MWULY0)
 // [0x29] Main Window Upper-Left corner Y-coordinates 1 (MWULY1)
+//
 //================================================================================
 
 
@@ -3196,9 +3070,10 @@ void Panel_RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)
 
 
 //================================================================================
+//
 // [0x46] PAGE Switch
+//
 //================================================================================
-
 
 
 /**
@@ -3214,7 +3089,7 @@ void Panel_RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)
  * @note RA8889 has two page-page0 / page1 registers. Users can switch 
  *       page1 / page0 at REG [46h] bit0 of page0 / page1. Default is Page 0
  */
-void Panel_RA8889::PageRegister(PageReg pr);
+void Panel_RA8889::PageSwitch(PageReg pr);
 {
   uint8_t temp;
   SPI_CmdWrite(REG_PAGE_SWITCH);              //0x46, PAGE Switch
@@ -3227,17 +3102,19 @@ void Panel_RA8889::PageRegister(PageReg pr);
 
 
 //================================================================================
+//
 // [0x50] Canvas Start address 0 (CVSSA0)
 // [0x51] Canvas Start address 1 (CVSSA1)
 // [0x52] Canvas Start address 2 (CVSSA2)
 // [0x53] Canvas Start address 3 (CVSSA3)
+//
 //================================================================================
 
 
 /**
  * @brief 
  *
- *        
+ * @verbatim
  *        REG [50h] Canvas Start address 0 (CVSSA0)
  *                  Start address of Canvas [7:0]
  *        REG [51h] Canvas Start address 1 (CVSSA1)
@@ -3246,6 +3123,7 @@ void Panel_RA8889::PageRegister(PageReg pr);
  *                  Start address of Canvas [23:16]
  *        REG [53h] Canvas Start address 3 (CVSSA3)
  *                  Start address of Canvas [31:24]
+ * @endverbatim
  *
  * @param addr: endereço
  *
@@ -3261,14 +3139,17 @@ void Panel_RA8889::CanvasImage_StartAddr(unsigned long addr)
 
 
 //================================================================================
+//
 // [0x54] Canvas image width 0 (CVS_IMWTH0)
 // [0x55] Canvas image width 1 (CVS_IMWTH1)
+//
 //================================================================================
 
 
 /**
  * @brief 
- *        
+ *
+ * @verbatim
  *        REG [54h] Canvas image width 0 (CVS_IMWTH0)
  *                  Canvas image width [7:2]
  *                  The bits are Canvas image width.
@@ -3279,6 +3160,7 @@ void Panel_RA8889::CanvasImage_StartAddr(unsigned long addr)
  *                  Canvas image width [12:8]
  *                  The bits are Canvas image width
  *                  Ignored if canvas is in linear addressing mode.
+ * @endverbatim
  *
  * @param wx: width
  *
@@ -3292,16 +3174,19 @@ void Panel_RA8889::CanvasImage_Width(uint16_t wx)
 
 
 //================================================================================
+//
 // [0x56] Active Window Upper-Left corner X-coordinates 0 (AWUL_X0)
 // [0x57] Active Window Upper-Left corner X-coordinates 1 (AWUL_X1)
 // [0x58] Active Window Upper-Left corner Y-coordinates 0 (AWUL_Y0)
 // [0x59] Active Window Upper-Left corner Y-coordinates 1 (AWUL_Y1)
+//
 //================================================================================
 
 
 /**
  * @brief 
  *        
+ * @verbatim
  *        REG [56h] Active Window Upper-Left corner X-coordinates 0 (AWUL_X0)
  *                  Active Window Upper-Left corner X-coordination [7:0]
  *                  Please refer to the Canvas image coordinates.
@@ -3326,6 +3211,7 @@ void Panel_RA8889::CanvasImage_Width(uint16_t wx)
  *                  Unit: Pixel
  *                  Y-axis coordinates plus Active Window height cannot large than 8191.
  *                  Ignored if canvas is in linear addressing mode.
+ * @endverbatim
  *
  * @param wx: width, hy: height
  *
@@ -3341,24 +3227,28 @@ void Panel_RA8889::ActiveWindow_XY(uint16_t wx, uint16_t hy)
 
 
 //================================================================================
+//
 // [0x5A] Active Window Width 0 (AW_WTH0)
 // [0x5B] Active Window Width 1 (AW_WTH1)
 // [0x5C] Active Window Height 0 (AW_HT0)
 // [0x5D] Active Window Height 1 (AW_HT1)
+//
 //================================================================================
 
 
 /**
  * @brief 
- *        
- *        REG [0x5A] Active Window Width 0 (AW_WTH0)
+ *
+ * @endverbatim
+ *        REG [0x5a] Active Window Width 0 (AW_WTH0)
  *                   Width of Active Window [7:0]
- *        REG [0x5B] Active Window Width 1 (AW_WTH1)
+ *        REG [0x5b] Active Window Width 1 (AW_WTH1)
  *                   Width of Active Window [12:8]
- *        REG [0x5C] Active Window Height 0 (AW_HT0)
+ *        REG [0x5c] Active Window Height 0 (AW_HT0)
  *                   Height of Active Window [7:0]
- *        REG [0x5D] Active Window Height 1 (AW_HT1)
+ *        REG [0x5d] Active Window Height 1 (AW_HT1)
  *                   Height of Active Window [12:8]
+ * @endverbatim
  *
  * @param wx: width, hy: height
  *
@@ -3374,19 +3264,217 @@ void Panel_RA8889::ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy)
 
 
 //================================================================================
+//
+// [0x5E] Color Depth of Canvas & Active Window (AW_COLOR)
+//
+//================================================================================
+
+
+/**
+ * @brief Block Mode X-Y Coordinates Addressing
+ *        
+ * @verbatim
+ * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ *            bit [2] Canvas addressing mode
+ *                    0b0: Block mode (X-Y coordinates addressing)
+ *                    0b1: Linear mode
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Memory_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp &= cClrb2;                            //Reset bit 2
+  SPI_DataWrite(temp);
+}
+void Panel_RA8889::Memory_XYMode(void) {Memory_BlockMode();}
+
+
+/**
+ * @brief Check for Block Mode X-Y Coordinates Addressing
+ *
+ * @verbatim
+ *        REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ *                   bit [2] Canvas addressing mode
+ *                           0b0: Block mode (X-Y coordinates addressing)
+ *                           0b1: Linear mode
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+bool Panel_RA8889::Memory_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  return (temp &= cSetb2) == 0x00;
+}
+bool Panel_RA8889::Memory_XYMode(void) {return Memory_BlockMode();}
+
+
+/**
+ * @brief Linear Mode Addressing
+ *
+ * @verbatim
+ *        REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ *                   bit [2] Canvas addressing mode
+ *                           0b0: Block mode (X-Y coordinates addressing)
+ *                           0b1: Linear mode
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Memory_LinearMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp |= cSetb2;                            //Set bit 2
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Check for Linear Mode Addressing
+ *
+ * @verbatim
+ * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ *            bit [2] Canvas addressing mode
+ *                    0b0: Block mode (X-Y coordinates addressing)
+ *                    0b1: Linear mode
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+bool Panel_RA8889::Memory_LinearMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  return (temp &= cSetb2) == cSetb2;
+}
+
+
+/**
+ * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
+ *        e gravação da memória no modo de bloco 8bpp
+ *
+ * @verbatim
+ * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ *            bit [1-0] Canvas image’s color depth & memory R/W data width
+ *                      In Block Mode:
+ *                      00: 8bpp
+ *                      01: 16bpp
+ *                      1x: 24bpp
+ *                      In Linear Mode:
+ *                      x0: 8-bits memory data read/write.
+ *                      x1: 16-bits memory data read/write
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
+ */
+void Panel_RA8889::Memory_8bpp_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp &= cClrb1;                            //Reset bit 1
+  temp &= cClrb0;                            //Reset bit 2
+  SPI_DataWrite(temp);                       //Set block mode x-y 8bpp
+}
+
+
+/**
+ * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
+ *        e gravação da memória no modo de bloco 16bpp
+ *
+ * @verbatim
+ * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ *            bit [1-0] Canvas image’s color depth & memory R/W data width
+ *                      In Block Mode:
+ *                      00: 8bpp
+ *                      01: 16bpp
+ *                      1x: 24bpp
+ *                      In Linear Mode:
+ *                      x0: 8-bits memory data read/write.
+ *                      x1: 16-bits memory data read/write
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
+ */
+void Panel_RA8889::Memory_16bpp_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp &= cClrb1;                            //Reset bit 1
+  temp |= cSetb0;                            //Set bit 0
+  SPI_DataWrite(temp);                       //Set block mode x-y 16bpp
+}
+
+
+/**
+ * @brief Profundidade de cor da imagem da tela e largura dos dados de leitura 
+ *        e gravação da memória no modo de bloco 24bpp
+ *
+ * @verbatim
+ * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ *            bit [1-0] Canvas image’s color depth & memory R/W data width
+ *                      In Block Mode:
+ *                      00: 8bpp
+ *                      01: 16bpp
+ *                      1x: 24bpp
+ *                      In Linear Mode:
+ *                      x0: 8-bits memory data read/write.
+ *                      x1: 16-bits memory data read/write
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Use esta funcao somente se ativou o modo de Bloco de endereçamento X-Y bit[2]=0b0
+ */
+void Panel_RA8889::Memory_24bpp_BlockMode(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = SPI_DataRead();
+  temp |= cSetb1;                            //Set bit 1
+  SPI_DataWrite(temp);                       //Set block mode x-y 24bpp
+}
+
+
+//================================================================================
+//
 // [0x5F] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
 // [0x60] Graphic Read/Write position Horizontal Position Register 1 (CURH1)
 // [0x61] Graphic Read/Write position Vertical Position Register 0 (CURV0)
 // [0x62] Graphic Read/Write position Vertical Position Register 1 (CURV1)
+//
 //================================================================================
 
 
 /**
  * @brief Set Graphic Read/Write Position X,Y
- *        
+ *
+ * @verbatim
  *        User should program proper active window related parameters before configure this register.
  *                   
- *        REG [0x5F] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+ *        REG [0x5f] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
  *                   bit [7~0] Write: Set Graphic Read/Write position
  *                             When Canvas In Linear mode:
  *                             Memory Read/Write address [7:0]
@@ -3436,6 +3524,7 @@ void Panel_RA8889::ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy)
  *                             Graphic Read/Write Vertical Position 1 [12:8]
  *                             Please refer to the Canvas image coordinates.
  *                             Unit: Pixel
+ * @endverbatim
  *
  * @param (Wx, Hy): Posicao de coordenada
  *
@@ -3460,7 +3549,6 @@ void Panel_RA8889::ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy)
  *                 Horizontal Position [12:8][7:0],
  *                 Vertical Position [12:8][7:0].
  *                 Reference Canvas image coordinate. Unit: Pixel
- *
  */
 void Panel_RA8889::GotoPixel_XY(uint16_t Wx, uint16_t Hy)
 {
@@ -3478,7 +3566,8 @@ void Panel_RA8889::GotoPixel_XY(uint16_t Wx, uint16_t Hy)
 
 /**
  * @brief Set Graphic Read/Write Position Linear
- *        
+ *
+ * @verbatim
  *        User should program proper active window related parameters before configure this register.
  *                   
  *        REG [0x5F] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
@@ -3531,6 +3620,7 @@ void Panel_RA8889::GotoPixel_XY(uint16_t Wx, uint16_t Hy)
  *                             Graphic Read/Write Vertical Position 1 [12:8]
  *                             Please refer to the Canvas image coordinates.
  *                             Unit: Pixel
+ * @endverbatim
  *
  * @param (Wx, Hy): Posicao de coordenada
  *
@@ -3571,47 +3661,51 @@ void Panel_RA8889::GotoLinearAddr(uint32_t addr) {GotoPixel_Linear(addr);}
 
 
 //================================================================================
+//
 // [0x63] Text Write X-coordinates Register 0 (F_CURX0)
 // [0x64] Text Write X-coordinates Register 1 (F_CURX1)
 // [0x65] Text Write Y-coordinates Register 0 (F_CURY0)
 // [0x66] Text Write Y-coordinates Register 1 (F_CURY1)
+//
 //================================================================================
 
 
 /**
  * @brief Set Text Write Position X-Y
- *        
- *        User should program proper active window related parameters before configure this register.
- *                   
- *        REG [0x63] Text Write X-coordinates Register 0 (F_CURX0)
- *                   bit [7~0] Write: Set Text Write position
- *                             Read: Current Text Write position
- *                             Text Write X-coordinates [7:0]
- *                             The setting of the horizontal cursor position for text writing.
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *          
- *        REG [0x64] Text Write X-coordinates Register 1 (F_CURX1)
- *                   bit [4~0] Write: Set Text Write position
- *                             Read: Current Text Write position
- *                             Text Write X-coordinates [12:8]
- *                             The setting of the horizontal cursor position for text writing.
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *        REG [0x65] Text Write Y-coordinates Register 0 (F_CURY0)
- *                   bit [7~0] Write: Set Text Write position
- *                             Read: Current Text Write position
- *                             Text Write Y-coordinates [7:0]
- *                             The setting of the vertical cursor position for text writing.
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *        REG [0x66] Text Write Y-coordinates Register 1 (F_CURY1)
- *                   bit [4~0] Write: Set Text Write position
- *                             Read: Current Text Write position
- *                             Text Write Y-coordinates [12:8]
- *                             The setting of the vertical cursor position for text writing.
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
+ *
+ * @verbatim
+ * User should program proper active window related parameters before configure this register.
+ *            
+ * REG [0x63] Text Write X-coordinates Register 0 (F_CURX0)
+ *            bit [7~0] Write: Set Text Write position
+ *                      Read: Current Text Write position
+ *                      Text Write X-coordinates [7:0]
+ *                      The setting of the horizontal cursor position for text writing.
+ *                      Please refer to the Canvas image coordinates.
+ *                      Unit: Pixel
+ *   
+ * REG [0x64] Text Write X-coordinates Register 1 (F_CURX1)
+ *            bit [4~0] Write: Set Text Write position
+ *                      Read: Current Text Write position
+ *                      Text Write X-coordinates [12:8]
+ *                      The setting of the horizontal cursor position for text writing.
+ *                      Please refer to the Canvas image coordinates.
+ *                      Unit: Pixel
+ * REG [0x65] Text Write Y-coordinates Register 0 (F_CURY0)
+ *            bit [7~0] Write: Set Text Write position
+ *                      Read: Current Text Write position
+ *                      Text Write Y-coordinates [7:0]
+ *                      The setting of the vertical cursor position for text writing.
+ *                      Please refer to the Canvas image coordinates.
+ *                      Unit: Pixel
+ * REG [0x66] Text Write Y-coordinates Register 1 (F_CURY1)
+ *            bit [4~0] Write: Set Text Write position
+ *                      Read: Current Text Write position
+ *                      Text Write Y-coordinates [12:8]
+ *                      The setting of the vertical cursor position for text writing.
+ *                      Please refer to the Canvas image coordinates.
+ *                      Unit: Pixel
+ * @endverbatim
  *
  * @param (Wx, Hy): Posicao de coordenada
  *
@@ -3633,8 +3727,2329 @@ void Panel_RA8889::GotoText_XY(uint16_t Wx, uint16_t Hy)
 
 
 //================================================================================
-// [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
-// [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+//
+// [0x67] Draw Line / Triangle Control Register 0 (DCR0)
+//
+//================================================================================
+
+
+/**
+ * @brief Enable/Disable Drawing
+ *        
+ * @param b: true habilita, false: desabilita a linha de desenhos
+ *
+ * @note Não está descrito no manual. indica apenas que o bit[0] precisa 
+ *       ser zero. Não existe descrição apra o RA8875/RA8876/RA8877/RA8889
+ */ 
+void Panel_RA8889::DrawEnable_AA(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR0);           //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = SPI_DataRead();
+  temp &= cClrb0;                   //Reset bit 0
+  if (b) temp |= cSetb0 else temp &= cClrb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de Linha
+ *
+ * @verbatim
+ * Draw Line Start Signal Write Function
+ *
+ * REG[67h] Draw Line / Triangle Control Register 0 (DCR0)
+ *          bit [7] Draw Line / Triangle Start Signal 
+ *                  Write Function:
+ *                  0b0: Stop the drawing function.
+ *                  0b1: Start the drawing function.
+ *                  Read Function:
+ *                  0b0 : Drawing function complete.
+ *                  0b1 : Drawing function is processing.
+ *          bit [1] Draw Triangle or Line Select Signal
+ *                  0b0: Draw Line
+ *                  0b1: Draw Triangle
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Antes de executar esta função precisa entrar com os valores em registradores de coordenadas
+ *       através das funções Point1_XY(), Point2_XY().
+ */ 
+void Panel_RA8889::LineMode_Start(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = SPI_DataRead();                       
+  temp &= cClrb1;                              //Reset bit 1, Select Draw Line
+  temp |= cSetb7;                              //Set bit 7, Start draw function
+  SPI_DataWrite(temp);                         
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de Triangulo
+ *        
+ * @verbatim
+ * Draw Triangle Start Signal Write Function Non-Fill
+ *
+ * REG[67h] Draw Line / Triangle Control Register 0 (DCR0)
+ *          bit [7] Draw Line / Triangle Start Signal 
+ *                  Write Function:
+ *                  0b0: Stop the drawing function.
+ *                  0b1: Start the drawing function.
+ *                  Read Function:
+ *                  0b0 : Drawing function complete.
+ *                  0b1 : Drawing function is processing.
+ *          bit [5] Fill function for Triangle Signal
+ *                  0b0: Non fill.
+ *                  0b1: Fill 
+ *          bit [1] Draw Triangle or Line Select Signal
+ *                  0b0: Draw Line
+ *                  0b1: Draw Triangle
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Antes de executar esta função precisa entrar com os valores em registradores de coordenadas
+ *       através das funções Point1_XY(), Point2_XY() e Point3_XY().
+*/ 
+void Panel_RA8889::TriangleMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = SPI_DataRead();                       
+  temp |= cSetb1;                              //Set bit 1, Select Draw Triangle
+  if (fill) temp |= cClrb5 else temp &= cClrb5; //Set bit 5, Com preenchimento do triangulo
+  temp |= cSetb7;                              //Set bit 7, Draw Triangle
+  SPI_DataWrite(temp);
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+//================================================================================
+//
+// [0x68] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+// [0x69] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+// [0x6a] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+// [0x6b] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+// [0x6c] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+// [0x6d] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+// [0x6e] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+// [0x6f] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+// [0x70] Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
+// [0x71] Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
+// [0x72] Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
+// [0x73] Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
+//
+//================================================================================
+
+
+/**
+ * @brief Line Start Point
+ *
+ * @verbatim
+ *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
+ *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
+ *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
+ *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ * @endverbatim
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */
+void Panel_RA8889::Point1_XY(uint16_t wx, uint16_t hy)
+{
+  SPI_CmdWrite(REG_DLHSR0);                    //0x68, Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+  SPI_DataWrite(wx);                           
+  SPI_CmdWrite(REG_DLHSR1);                    //0x69, Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+  SPI_DataWrite(wx >> 8);                      
+  SPI_CmdWrite(REG_DLVSR0);                    //0x6a, Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+  SPI_DataWrite(hy);                           
+  SPI_CmdWrite(REG_DLVSR1);                    //0x6b, Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+  SPI_DataWrite(hy >> 8);                      
+}
+void Panel_RA8889::Line_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
+
+
+/**
+ * @brief Line End Point
+ *
+ * @verbatim
+ *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
+ *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
+ *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
+ *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ * @endverbatim
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */
+void Panel_RA8889::Point2_XY(uint16_t wx, uint16_t hy)
+{
+  SPI_CmdWrite(REG_DLHER0);                    //0x6c, Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+  SPI_DataWrite(wx);                           //
+  SPI_CmdWrite(REG_DLHER1);                    //0x6d, Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+  SPI_DataWrite(wx >> 8);                      //
+  SPI_CmdWrite(REG_DLVER0);                    //0x6e, Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+  SPI_DataWrite(hy);                           //
+  SPI_CmdWrite(REG_DLVER1);                    //0x6f, Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+  SPI_DataWrite(hy >> 8);                      //
+}
+void Panel_RA8889::Line_Point2XY(uint16_t wx, uint16_t hy) {Point2_XY(wx, hy);}
+
+
+/**
+ * @brief Triangle Point 1
+ *
+ * @verbatim
+ *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
+ *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
+ *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
+ *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ * @endverbatim
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */ 
+void Panel_RA8889::Triangle_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
+
+/**
+ * @brief Triangle Point 2
+ *
+ * @verbatim
+ *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
+ *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
+ *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
+ *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ * @endverbatim
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */ 
+void Panel_RA8889::Triangle_Point2XY(uint16_t wx, uint16_t hy)  {Point2_XY(wx, hy);}
+
+
+/**
+ * @brief Triangle Point 3
+ *
+ * @verbatim
+ *        REG [70h] Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
+ *                  bit [7~0] Draw Triangle Point 3 X-coordination [7:0]
+ *        REG [71h] Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
+ *                  bit [7~0] Draw Triangle Point 3 X-coordination [12:8]
+ *        REG [72h] Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
+ *                  bit [7~0] Draw Triangle Point 3 Y-coordination [7:0]
+ *        REG [73h] Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
+ *                  bit [7~0] Draw Triangle Point 3 Y-coordination [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel
+ * @endverbatim
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */ 
+void Panel_RA8889::Point3_XY(uint16_t wx, uint16_t hy)
+{
+  SPI_CmdWrite(REG_DTPH0);                     //0x70, Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
+  SPI_DataWrite(wx);                           
+  SPI_CmdWrite(REG_DTPH1);                     //0x71, Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
+  SPI_DataWrite(wx >> 8);                      
+  SPI_CmdWrite(REG_DTPV0);                     //0x72, Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
+  SPI_DataWrite(hy);                           
+  SPI_CmdWrite(REG_DTPV1);                     //0x73, Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
+  SPI_DataWrite(hy >> 8);                      
+}
+void Panel_RA8889::Triangle_Point3XY(uint16_t wx, uint16_t hy) {Point3_XY(wx, hy)}
+
+
+/**
+ * @brief Square Start Point
+ *
+ * @verbatim
+ *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
+ *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
+ *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
+ *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+ *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ * @endverbatim
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */ 
+void Panel_RA8889::Square_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
+
+
+/**
+ * @brief Square End Point
+ *
+ * @verbatim
+ *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
+ *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
+ *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
+ *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+ *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel 
+ *        ***Note: When draw a square, start point & end point cannot be 
+ *           located at the same point or at the same X-axis or Y-axis.
+ * @endverbatim
+ *
+ * @param wx: ponto de coordenada x
+ *        hy: ponto de coordenada y
+ *
+ * @note None
+ */
+void Panel_RA8889::Square_Point2XY(uint16_t wx, uint16_t hy) {Point2_XY(wx, hy);}
+
+
+//================================================================================
+//
+// [0x76] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+//
+//================================================================================
+
+
+/**
+ * @brief Ativa o Modo de desenho de Circulo / Elipse
+ *        
+ * @verbatim
+ * REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *          bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                  Write Function:
+ *                  0b0: Stop the drawing function.
+ *                  0b1: Start the drawing function.
+ *                  Read Function:
+ *                  0b0: Drawing function complete.
+ *                  0b1: Drawing function is processing.
+ *          bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                  0b0: Non fill.
+ *                  0b1: fill.
+ *          bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                  0b00: Draw Circle / Ellipse
+ *                  0b01: Draw Circle / Ellipse Curve
+ *                  0b10: Draw Square.
+ *                  0b11: Draw Circle Square.
+ *          bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                  0b00: bottom-left Ellipse Curve
+ *                  0b01: upper-left Ellipse Curve
+ *                  0b10: upper-right Ellipse Curve
+ *                  0b11: bottom-right Ellipse Curve 
+ * @endverbatim
+ *
+ * @param fill: true preenche figura, false não preenche figura
+ *
+ * @note None
+ */
+void Panel_RA8889::CircleMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  temp &= cClrb5 & cClrb4;                     //Reset bit 5-4, Draw Circle / Ellipse
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp &= cClrb1 & cClrb0;                     //Reset bit 1-0, bottom-left Ellipse Curve
+  SPI_DataWrite(temp);                         //0b1n00 xx00, n=0/1
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+void Panel_RA8889::EllipseMode_Start(bool fill) { CircleMode_Start(fill);}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular / eliptica 
+ *        Quadrante Esquerda e Abaixo
+ *
+ * @verbatim
+ * REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *          bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                  Write Function:
+ *                  0b0: Stop the drawing function.
+ *                  0b1: Start the drawing function.
+ *                  Read Function:
+ *                  0b0: Drawing function complete.
+ *                  0b1: Drawing function is processing.
+ *          bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                  0b0: Non fill.
+ *                  0b1: fill.
+ *          bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                  0b00: Draw Circle / Ellipse
+ *                  0b01: Draw Circle / Ellipse Curve
+ *                  0b10: Draw Square.
+ *                  0b11: Draw Circle Square.
+ *          bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                  0b00: bottom-left Ellipse Curve
+ *                  0b01: upper-left Ellipse Curve
+ *                  0b10: upper-right Ellipse Curve
+ *                  0b11: bottom-right Ellipse Curve 
+ * @endverbatim
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CurveLeftDownMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
+  temp &= cClrb1 & cClrb0;                     //Reset bit 1-0, bottom-left Ellipse Curve  
+  SPI_DataWrite(temp);                         //0b1n01 xx00   n=1/0 
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular / eliptica 
+ *        Quadrante Esquerda e Acima
+ *
+ * @verbatim
+ * REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *          bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                  Write Function:
+ *                  0b0: Stop the drawing function.
+ *                  0b1: Start the drawing function.
+ *                  Read Function:
+ *                  0b0: Drawing function complete.
+ *                  0b1: Drawing function is processing.
+ *          bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                  0b0: Non fill.
+ *                  0b1: fill.
+ *          bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                  0b00: Draw Circle / Ellipse
+ *                  0b01: Draw Circle / Ellipse Curve
+ *                  0b10: Draw Square.
+ *                  0b11: Draw Circle Square.
+ *          bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                  0b00: bottom-left Ellipse Curve
+ *                  0b01: upper-left Ellipse Curve
+ *                  0b10: upper-right Ellipse Curve
+ *                  0b11: bottom-right Ellipse Curve 
+ * @endverbatim
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CurveLeftUpMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();                       
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
+  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
+  temp &= cClrb1                               //Reset bit 1, upper-left Ellipse Curve  
+  temp |= cSetb0;                              //Set bit 0, upper-left Ellipse Curve 
+  SPI_DataWrite(temp);                         //0b1n01 xx01   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular / eliptica 
+ *        Quadrante Direita e Acima
+ *
+ * @verbatim
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ * @endverbatim
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CurveRightUpMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead(); 
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
+  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
+  temp &= cSetb1                               //Set bit 1, upper-right Ellipse Curve
+  temp |= cClrb0;                              //Reset bit 0, upper-right Ellipse Curve
+  SPI_DataWrite(temp);                         //0b1n01 xx10   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular / eliptica 
+ *        Quadrante Esquerda e Abaixo
+ *
+ * @verbatim
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ * @endverbatim
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CurveRightDownMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();  
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
+  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
+  temp &= cSetb1                               //Set bit 1, bottom-right Ellipse Curve
+  temp |= cSetb0;                              //Set bit 0, bottom-right Ellipse Curve
+  SPI_DataWrite(temp);                         //0b1n01 xx11   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de quadrado
+ *
+ * @verbatim
+ *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                         Write Function:
+ *                         0b0: Stop the drawing function.
+ *                         0b1: Start the drawing function.
+ *                         Read Function:
+ *                         0b0: Drawing function complete.
+ *                         0b1: Drawing function is processing.
+ *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                         0b0: Non fill.
+ *                         0b1: fill.
+ *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                         0b00: Draw Circle / Ellipse
+ *                         0b01: Draw Circle / Ellipse Curve
+ *                         0b10: Draw Square.
+ *                         0b11: Draw Circle Square.
+ *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                         0b00: bottom-left Ellipse Curve
+ *                         0b01: upper-left Ellipse Curve
+ *                         0b10: upper-right Ellipse Curve
+ *                         0b11: bottom-right Ellipse Curve 
+ * @endverbatim
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::SquareMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();  
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp |= cSetb5;                              //Set bit 5, Draw Square.
+  temp &= cClrb4;                              //Reset bit 4, Draw Square.
+  SPI_DataWrite(temp);                         //0b1n10 xxxx   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+/**
+ * @brief Ativa o Modo de desenho de curva circular no canto quadrado
+ *        
+ * @verbatim  
+ * REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+ *          bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
+ *                  Write Function:
+ *                  0b0: Stop the drawing function.
+ *                  0b1: Start the drawing function.
+ *                  Read Function:
+ *                  0b0: Drawing function complete.
+ *                  0b1: Drawing function is processing.
+ *          bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
+ *                  0b0: Non fill.
+ *                  0b1: fill.
+ *          bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
+ *                  0b00: Draw Circle / Ellipse
+ *                  0b01: Draw Circle / Ellipse Curve
+ *                  0b10: Draw Square.
+ *                  0b11: Draw Circle Square.
+ *          bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
+ *                  0b00: bottom-left Ellipse Curve
+ *                  0b01: upper-left Ellipse Curve
+ *                  0b10: upper-right Ellipse Curve
+ *                  0b11: bottom-right Ellipse Curve 
+ * @endverbatim  
+ *
+ * @param fill: true preenche região da curva figura, false não preenche a região da curva
+ *
+ * @note None
+ */
+void Panel_RA8889::CircleSquareMode_Start(bool fill)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = SPI_DataRead();  
+  temp |= cSetb7;                              //Set bit 7, Start the drawing function
+  fill ? temp |= cSetrb6 : temp &= cClrb6;     //Set bit 6 = Fill, Reset bit 6 = Non-Fill
+  temp |= cSetb5;                              //Set bit 5, Draw Circle Square
+  temp |= cSetb4;                              //Set bit 4, Draw Circle Square
+  SPI_DataWrite(temp);                         //0b1n11 xxxx   n=1/0
+  CoreTask_WaitReady();                        //Espere ate ficar pronto
+}
+
+
+//================================================================================
+//
+// [0x77] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
+// [0x78] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
+// [0x79] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
+// [0x7a] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
+// [0x7b] Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
+// [0x7c] Draw Circle/Ellipse/Circle Square Center X-coordinates Register1 (DEHR1)
+// [0x7d] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
+// [0x7e] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register1 (DEVR1)
+//
+//================================================================================
+
+
+/**
+ * @brief Raio do círculo                           Rx = Ry
+ *        Raio da elipse                            Rx > Ry or Rx < Ry
+ *        Raio da curva circular no canto quadrado  Rx = Ry, Rx > Ry or Rx < Ry
+ *
+ * @verbatim
+ * REG[0x77] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
+ *           bit [7~0] Draw Circle/Ellipse/Circle Square Major radius [7:0]
+ * REG[0x78] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
+ *           bit [4~0] Draw Circle/Ellipse/Circle Square Major radius [12:8]
+ *
+ * Unit: Pixel
+ * To draw a circle needs to set major axis equal to minor radius.
+ * 
+ * REG[0x79] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
+ *           bit [7~0] Draw Circle/Ellipse/Circle Square Minor radius [7:0]
+ * REG[0x7a] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
+ *           bit [4~0] Draw Circle/Ellipse/Circle Square Minor radius [12:8]
+ *
+ * Unit: Pixel
+ * To draw a circle needs to set major axis equal to minor radius.
+ * @endverbatim
+ *
+ * @param radius: raio do circulo
+ *
+ * @note No criculo o R = Rx = Ry e na elipse Rx > Ry ou Rx < Ry
+ */
+void Panel_RA8889::Radius_RxRy(uint16_t Rx, uint16_t Ry)
+{
+  SPI_CmdWrite(REG_ELL_A0);                    //0x77, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
+  SPI_DataWrite(Rx);                           //
+  SPI_CmdWrite(REG_ELL_A1);                    //0x78, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
+  SPI_DataWrite(Rx >> 8);                      //
+  
+  SPI_CmdWrite(REG_ELL_B0);                    //0x79, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
+  SPI_DataWrite(Ry);                           //
+  SPI_CmdWrite(REG_ELL_B1);                    //0x7a, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
+  SPI_DataWrite(Ry >> 8);                      //
+}
+void Panel_RA8889::CircleRadius_R(uint16_t R) {Radius_RxRy(R, R);}
+void Panel_RA8889::EllipseRadius_RxRy(uint16_t Rx, uint16_t Ry) {Radius_RxRy(Rx, Ry);}
+void Panel_RA8889::CircleSquareRadius_RxRy(uint16_t Rx, uint16_t Ry) {Radius_RxRy(Rx, Ry);}
+
+
+/**
+ * @brief Posição do Centro do Círculo/Elipse/Circulo do quadrado
+ *
+ * @verbatim
+ *        REG[0x7b] Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
+ *                  bit [7~0] Draw Circle/Ellipse/Circle Square Center X-coordinates [7:0]
+ *        REG[0x7c] Draw Circle/Ellipse/Circle Square Center X-coordinates Register1 (DEHR1)
+ *                  bit [4~0] Draw Circle/Ellipse/Circle Square Center X-coordinates [12:8]
+ *        REG[0x7d] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
+ *                  bit [7~0] Draw Circle/Ellipse/Circle Square Center Y-coordinates [7:0]
+ *        REG[0x7e] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register1 (DEVR1)
+ *                  bit [4~0] Draw Circle/Ellipse/Circle Square Center Y-coordinates [12:8]
+ *
+ *        Please refer to the Canvas image coordinates.
+ *        Unit: Pixel
+ * @endverbatim
+ *
+ * @param Wx, Hy: coordenada central (x,y)
+ *
+ * @note 
+ */
+ void Panel_RA8889::Center_XY(uint16_t Wx, uint16_t Hy)
+ {
+  SPI_CmdWrite(REG_DEHR0);      //0x7b, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
+  SPI_DataWrite(Wx);            //
+  SPI_CmdWrite(REG_DEHR1);      //0x7c, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR1)
+  SPI_DataWrite(Wx >> 8);       //
+						   
+  SPI_CmdWrite(REG_DEVR0);      //0x7d, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
+  SPI_DataWrite(Hy);            //
+  SPI_CmdWrite(REG_DEVR1);      //0x7e, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR1)
+  SPI_DataWrite(Hy >> 8);       //
+ }
+void Panel_RA8889::CircleCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
+void Panel_RA8889::EllipseCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
+
+
+//================================================================================
+//
+// [0x84] PWM Prescaler Register (PSCLR)
+//
+//================================================================================
+
+
+/**
+ * @brief PWM Prescaler 1 to 256
+ *
+ * @verbatim
+ * REG[0x84] PWM Prescaler Register (PSCLR)
+ *           bit [7~0] PWM Prescaler Register
+ *           These 8 bits determine prescaler value for Timer 0 and 1.
+ *           Time base is “Core_Freq / (Prescaler + 1)”
+ *           Fcore: Core Frequency
+ * @endverbatim
+ *
+ * @param Wx, Hy: coordenada central (x,y)
+ *
+ * @note 
+ */
+ void Panel_RA8889::PWM_Prescaler(uint8_t prescaler)
+{
+  prescaler = prescaler - 1;
+  SPI_CmdWrite(REG_PSCLR);   //0x84, PWM Prescaler Register (PSCLR)
+  SPI_DataWrite(prescaler);
+}
+
+
+//================================================================================
+//
+// [0x85] PWM clock Mux Register (PMUXR)
+//
+//================================================================================
+
+
+/**
+ * @brief Select MUX input for PWM Timer 1.
+ *
+ * @verbatim
+ * REG [0x85] PWM clock Mux Register (PMUXR)
+ *           bit [7-6] Select 2nd clock divider’s MUX input for PWM Timer 1
+ *                     0b00 = 1
+ *                     0b01 = 1/2
+ *                     0b10 = 1/4
+ *                     0b11 = 1/8
+ * @endverbatim
+ *
+ * @param DividerClock::X1
+ *        DividerClock::X2
+ *        DividerClock::X4
+ *        DividerClock::X8
+ *
+ * @note Selecione a entrada MUX do 2º divisor de clock para o PWM Timer 1.
+ */
+void Panel_RA8889::PWM1_ClockDividedBy(DividerClock divider);
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = SPI_DataRead();                       
+  temp &= ~(cSetb7 | cSetb6);                  //Rest bit 7 and 6
+  temp |=  static_cast<uint8_t>(divider);
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select MUX input for PWM Timer 0.
+ *
+ * @verbatim
+ * REG [0x85] PWM clock Mux Register (PMUXR)
+ *           bit [5-4] Select 2nd clock divider’s MUX input for PWM Timer 0
+ *                     0b00 = 1/1
+ *                     0b01 = 1/2
+ *                     0b10 = 1/4
+ *                     0b11 = 1/8
+ * @endverbatim
+ *
+ * @param DividerClock::X1
+ *        DividerClock::X2
+ *        DividerClock::X4
+ *        DividerClock::X8
+ *
+ * @note Selecione a entrada MUX do 2º divisor de clock para o PWM Timer 0.
+ */
+void Panel_RA8889::PWM0_ClockDividedBy(DividerClock divider);
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = SPI_DataRead();                       
+  temp &= ~(cSetb5 | cSetb4);                  //Reset bit 5 and 4
+  temp |=  static_cast<uint8_t>(divider);
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Seleciona o pino XPWM[1] para atuar como saída do sinal de indicação de erro.
+ *
+ *        Esta função ajusta o registrador PMUXR (0x85), bits [3-2], de modo que o pino XPWM[1]
+ *        seja direcionado para indicar condições de erro detectadas pelo RA8889,
+ *        como insuficiência de dados no FIFO de largura de banda de varredura
+ *        ou acesso de memória fora do intervalo permitido (REG[00h] bit[1:0]).
+ *        
+ *        Ao selecionar esta opção, o XPWM[1] deixa de funcionar como saída de PWM/clock
+ *        e passa a refletir diretamente o estado do "System Error Flag".
+ *
+ * @verbatim
+ * REG [0x85] PWM clock Mux Register (PMUXR)
+ *            bit [3-2] XPWM[1] pin function control
+ *                      0b0x: XPWM[1] output system error flag (REG[00h] bit[1:0], Scan bandwidth FIFO insufficient pop error or Memory access out of range)
+ *                      0b10: XPWM[1] output PWM timer 1 event or invert of PWM timer 0
+ *                      0b11: XPWM[1] output oscillator clock
+ *            If XTEST[0] set high, then XPWM[1] will become panel scan clock input.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Se o bit XTEST[0] estiver configurado como alto, o pino XPWM[1] é forçado
+ *       a atuar como entrada de clock de varredura do painel, independentemente desta configuração.
+ */
+void Panel_RA8889::PWM1_Select_ErrorFlag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = SPI_DataRead();                       
+  temp &= cClrb3;                              //Reset bit 3
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Output Oscillator PWM Timer 1
+ *
+ * @verbatim
+ * REG [0x85] PWM clock Mux Register (PMUXR)
+ *            bit [3-2] XPWM[1] pin function control
+ *                      0b0x: XPWM[1] output system error flag (REG[00h] bit[1:0], Scan bandwidth FIFO insufficient pop error or Memory access out of range)
+ *                      0b10: XPWM[1] output PWM timer 1 event or invert of PWM timer 0
+ *                      0b11: XPWM[1] output oscillator clock
+ *            If XTEST[0] set high, then XPWM[1] will become panel scan clock input.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::PWM1_Select(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb3;
+  temp &= cClrb2;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Seleciona o pino XPWM[1] para atuar como uma saída do clock do oscilador interno.
+ *
+ * @verbatim
+ * REG [0x85] PWM clock Mux Register (PMUXR)
+ *            bit [3-2] XPWM[1] pin function control
+ *                      0b0x: XPWM[1] output system error flag (REG[00h] bit[1:0], Scan bandwidth FIFO insufficient pop error or Memory access out of range)
+ *                      0b10: XPWM[1] output PWM timer 1 event or invert of PWM timer 0
+ *                      0b11: XPWM[1] output oscillator clock
+ *            If XTEST[0] set high, then XPWM[1] will become panel scan clock input.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::PWM1_Select_OscillatorClock(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb3;
+  temp |= cSetb2;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Seleciona o pino XPWM[0] para atuar como um GPIO-C[7].
+ *        
+ *        Ajusta o registrador PMUXR (0x85), bits [1-0], para multiplexar o pino XPWM[0]
+ *        como um pino de propósito geral (GPIO) ao invés de saída PWM ou clock.
+ *
+ *        Esse modo é utilizado quando você precisa controlar XPWM[0] manualmente
+ *        como pino digital, por exemplo para sinais de controle ou I/O externo.
+ *
+ * @verbatim
+ * REG [0x85] PWM clock Mux Register (PMUXR)
+ *            bit [1-0] XPWM[0] pin function control
+ *                      0b0x: XPWM[0] becomes GPIO-C[7]
+ *                      0b10: XPWM[0] output PWM timer 0, enabled and controlled by PWM timer 0
+ *                      0b11: XPWM[0] output core clock
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::PWM0_Select_GPIOC7(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = SPI_DataRead();                       
+  temp &= cClrb1;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Select Output Oscillator PWM Timer 0
+ *
+ * @verbatim
+ * REG [0x85] PWM clock Mux Register (PMUXR)
+ *            bit [1-0] XPWM[0] pin function control
+ *                      0b0x: XPWM[0] becomes GPIO-C[7]
+ *                      0b10: XPWM[0] output PWM timer 0, enabled and controlled by PWM timer 0
+ *                      0b11: XPWM[0] output core clock
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::PWM0_Select(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb1;
+  temp &= cClrb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Seleciona o pino XPWM[0] para atuar como uma saída do clock interno do núcleo (core clock).
+ *
+ *        Ajusta o registrador PMUXR (0x85), bits [1-0], para que o pino XPWM[0] seja
+ *        multiplexado MUX como saída do sinal de clock principal do RA8889, em vez de
+ *        funcionar como GPIO-C[7] ou como saída do PWM Timer 0.
+ *
+ *        Esse modo é normalmente utilizado para depuração ou como referência de clock
+ *        para dispositivos externos. 
+ *
+ * @verbatim
+ * REG [0x85] PWM clock Mux Register (PMUXR)
+ *            bit [1-0] XPWM[0] pin function control
+ *                      0b0x: XPWM[0] becomes GPIO-C[7]
+ *                      0b10: XPWM[0] output PWM timer 0, enabled and controlled by PWM timer 0
+ *                      0b11: XPWM[0] output core clock
+  * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::PWM0_Select_CoreClock(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb1;
+  temp |= cSetb0;
+  SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+//
+// [0x86] PWM Configuration Register (PCFGR)
+//
+//================================================================================
+
+
+/**
+ * @brief Ativa ou desativa o inversor de saída do PWM Timer 1 (XPWM[1]).
+ *
+ * @verbatim
+ * Ajusta o registrador PCFGR (0x86), bit 6, para definir se a saída do PWM1
+ * será invertida ou não.  
+ *
+ *
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [6] PWM Timer 1 output inverter on/off
+ *            Determine the output inverter on/off for Timer 1.        
+ *                    0b0: Inverter off
+ *                    0b1: Inverter on for PWM1
+ * @endverbatim
+ *
+ * @param on
+ *        true  - Ativa o inversor (PWM1 invertido)
+ *        false - Desativa o inversor (PWM1 normal)
+ * @note O inversor afeta apenas a forma de onda do PWM Timer 1 na saída XPWM[1].
+ */
+void Panel_RA8889::PWM1_InverterOn(boolean on)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  on ? temp |= cSetb6 : temp &= cClrb6;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Seleciona o modo Auto Reload PWM Timer 1
+ *
+ * @verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [5] PWM Timer 1 auto reload on/off
+ *            Determine auto reload on/off for Timer 1.        
+ *                    0b0: One-shot
+ *                    0b1: Interval mode(auto reload) (default)
+ * @endverbatim
+ *
+ * @param None
+ * @note None
+ */
+void Panel_RA8889::PWM1_Select_AutoReload(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Seleciona o modo One Shot PWM Timer 1
+ *
+ * @verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [5] PWM Timer 1 auto reload on/off
+ *            Determine auto reload on/off for Timer 1.
+ *                    0b0: One-shot
+ *                    0b1: Interval mode(auto reload) (default)
+ * @endverbatim
+ *
+ * @param None
+ * @note None
+ */
+void Panel_RA8889::PWM1_Select_OneShot(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  temp &= cClrb5;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Inicia o PWM Timer 1 (XPWM[1]).
+ *
+ *        Ajusta o registrador PCFGR (0x86), bit 4, para iniciar o PWM Timer 1.
+ *        Em modo Interval (auto reload), o timer continuará rodando até que o bit seja zerado.
+ *        Em modo One-shot, o bit é limpo automaticamente ao final do ciclo.
+ *
+ *@verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [4] PWM Timer 1 start/stop
+ *            Determine start/stop for Timer 1.        
+ *                    0b0: Stop
+ *                    0b1: Start for timer 1
+ *            In Interval mode (auto reload), user needs to set this bit to 0 to stop PWM timer.
+ *            In One-shot, this bit will auto clear.
+ *            User may read this bit to know the current PWMx is running or stopped.
+ * @endverbatim
+ *
+ * @param None
+ * @note É possível ler o mesmo bit para verificar se o Timer 1 está ativo ou parado.
+ */
+void Panel_RA8889::PWM1_StartTimer(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Para o PWM Timer 1 (XPWM[1]).
+ *
+ *        Ajusta o registrador PCFGR (0x86), bit 4, para parar o PWM Timer 1.
+ *        Em modo Interval (auto reload), o timer será interrompido até que o bit seja novamente setado.  
+ *        Em modo One-shot, o bit se limpa automaticamente ao final do ciclo.  
+ *
+ *@verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [4] PWM Timer 1 start/stop
+ *            Determine start/stop for Timer 1.        
+ *                    0b0: Stop
+ *                    0b1: Start for timer 1
+ *            In Interval mode (auto reload), user needs to set this bit to 0 to stop PWM timer.
+ *            In One-shot, this bit will auto clear.
+ *            User may read this bit to know the current PWMx is running or stopped.
+ * @endverbatim
+ *
+ * @param None
+ * @note É possível ler o mesmo bit para verificar se o Timer 1 está ativo ou parado.
+ */
+void Panel_RA8889::PWM1_StopTimer(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  temp &= cClrb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Habilita ou desabilita a Dead Zone do PWM Timer 0.
+ *
+ *        Ajusta o registrador PCFGR (0x86), bit 3, para ativar ou desativar
+ *        o intervalo de Dead Zone no PWM Timer 0.
+ *
+ * @verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [3] PWM Timer 0 Dead zone enable
+ *            Determine the dead zone operation.       
+ *                    0b0: Disable
+ *                    0b1: Enable
+ * @endverbatim
+ *
+ * @param None
+ * @note Quando habilitado, há um curto período em que ambos os sinais complementares
+ *       do PWM ficam desligados, prevenindo condução simultânea em H-bridges ou MOSFETs.
+ */
+void Panel_RA8889::PWM0_DeadZoneEnable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  b ? temp |= cSetb3 : temp &= cClrb3;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Ativa ou desativa o inversor de saída do PWM Timer 0 (XPWM[0]).
+ *
+ *        Ajusta o registrador PCFGR (0x86), bit 2, para definir se a saída do PWM0
+ *        será invertida ou não.
+ *
+ * @verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [2] PWM Timer 0 output inverter on/off
+ *            Determine the output inverter on/off for Timer 0.        
+ *                    0b0: Inverter off
+ *                    0b1: Inverter on for PWM0
+ * @endverbatim
+ *
+ * @param on
+ *        true  - Ativa o inversor (PWM1 invertido)
+ *        false - Desativa o inversor (PWM1 normal)
+ * @note O inversor afeta apenas a forma de onda do PWM Timer 0 na saída XPWM[0].
+ */
+void Panel_RA8889::PWM0_InverterOn(bool on)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  b ? temp |= cSetb2 : temp &= cClrb2;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Seleciona o modo Auto Reload PWM Timer 0
+ *
+ * @verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [1] PWM Timer 0 auto reload on/off
+ *            Determine auto reload on/off for Timer 0.        
+ *                    0b0: One-shot
+ *                    0b1: Interval mode(auto reload) (default)
+ * @endverbatim
+ *
+ * @param None
+ * @note None
+ */
+void Panel_RA8889::PWM0_Select_AutoReload(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb1;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Seleciona o modo One Shot PWM Timer 0
+ *
+ * @verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [1] PWM Timer 0 auto reload on/off
+ *            Determine auto reload on/off for Timer 0.
+ *                    0b0: One-shot
+ *                    0b1: Interval mode(auto reload) (default)
+ * @endverbatim
+ *
+ * @param None
+ * @note None
+ */
+void Panel_RA8889::PWM0_Select_OneShot(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  temp &= cClrb1;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Inicia o PWM Timer 0 (XPWM[0]).
+ *
+ *        Configura o bit [0] do registrador PCFGR (0x86) para "1",
+ *        habilitando o funcionamento do PWM Timer 0.  
+ *        O Timer 0 pode ser roteado para o pino XPWM[0] (dependendo da configuração
+ *        do registrador PMUXR) e passa a gerar o sinal PWM de acordo com os
+ *        parâmetros previamente configurados (período, duty cycle, etc.).
+ *
+ *@verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [0] PWM Timer 0 start/stop
+ *            Determine start/stop for Timer 0.
+ *                    0b0: Stop
+ *                    0b1: Start for timer 1
+ *            In Interval mode (auto reload), user needs to set this bit to 0 to stop PWM timer.
+ *            In One-shot, this bit will auto clear.
+ *            User may read this bit to know the current PWMx is running or stopped.
+ * @endverbatim
+ *
+ * @param None
+ * @note Esta função apenas inicia o Timer; para realmente gerar sinal PWM,
+ *       é necessário que os registradores de configuração de frequência,
+ *       duty cycle e roteamento da saída já estejam ajustados.
+ */
+void Panel_RA8889::PWM0_StartTimer(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  temp |= cSetb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Para o PWM Timer 0 (XPWM[0]).
+ *
+ *        Configura o bit [0] do registrador PCFGR (0x86) para "0",
+ *        habilitando o funcionamento do PWM Timer 0.  
+ *        O Timer 0 pode ser roteado para o pino XPWM[0] (dependendo da configuração
+ *        do registrador PMUXR) e passa a gerar o sinal PWM de acordo com os
+ *        parâmetros previamente configurados (período, duty cycle, etc.).
+ *
+ *@verbatim
+ * REG [0x86] PWM Configuration Register (PCFGR)
+ *            bit [0] PWM Timer 0 start/stop
+ *            Determine start/stop for Timer 0.
+ *                    0b0: Stop
+ *                    0b1: Start for timer 1
+ *            In Interval mode (auto reload), user needs to set this bit to 0 to stop PWM timer.
+ *            In One-shot, this bit will auto clear.
+ *            User may read this bit to know the current PWMx is running or stopped.
+ * @endverbatim
+ *
+ * @param None
+ * @note Esta função apenas inicia o Timer; para realmente gerar sinal PWM,
+ *       é necessário que os registradores de configuração de frequência,
+ *       duty cycle e roteamento da saída já estejam ajustados.
+ */
+void Panel_RA8889::PWM0_StopTimer(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = SPI_DataRead();                       
+  temp &= cClrb0;
+  SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+//
+// [0x87] Timer 0 Dead zone length register [DZ_LENGTH]
+//
+//================================================================================
+
+
+/**
+ * @brief Configura o tempo morto (Dead Zone) do PWM Timer 0.
+ *
+ *@verbatim
+ * REG [0x87] Timer 0 Dead zone length register [DZ_LENGTH]
+ *            bit [7-0] Timer 0 Dead zone length register
+ *            This byte is used to determine the dead zone length. The 1 unit 
+ *            time of the dead zone length is equal to the whole cycle of 
+ *            timer 0.
+ * @endverbatim
+ *
+ * @param len: Número de ciclos de período do Timer 0 que definem a duração do 
+ *        tempo morto. Faixa: 0–255.
+ *
+ * @note Length expressa que se trata da “duração” do tempo morto, em ciclos. 
+ *       "Timer 0 Dead zone length" → isso é só um parâmetro adicional do PWM 
+ *       Timer 0, que define o tempo do “gap” morto na comutação.
+ */
+void Panel_RA8889::PWM0_DeadZoneLength(uint8_t len)
+{
+  SPI_CmdWrite(REG_DZ_LENGTH);                 //0x87, Timer 0 Dead zone length register [DZ_LENGTH]
+  SPI_DataWrite(len);
+}
+
+
+//================================================================================
+//
+// [0x88] Timer 0 compare buffer register [TCMPB0L]
+// [0x89] Timer 0 compare buffer register [TCMPB0H]
+//
+//================================================================================
+
+
+/**
+ * @brief Configura o valor do Compare Buffer do PWM Timer 0.
+ *
+ *@verbatim
+ * REG [0x88] Timer 0 compare buffer register [TCMPB0L]
+ *            bit [7-0] Timer 0 compare buffer register --- Low Byte
+ *            Compare buffer register is 16 bits in total. When timer counter 
+ *            is eqaual to or less than compare buffer register, PWM 0 will 
+ *            output high level if PWM Timer 0 output inverter on/off bit is 
+ *            off.
+ *
+ * REG [0x89] Timer 0 compare buffer register [TCMPB0H]
+ *            bit [7-0] Timer 0 compare buffer register --- High Byte
+ *            Compare buffer register is 16 bits in total. When timer counter 
+ *            is eqaual to or less than compare buffer register, PWM 0 will 
+ *            output high level if PWM Timer 0 output inverter on/off bit is 
+ *            off.
+ *
+ * Como o Timer funciona com ele:
+ *
+ *   O PWM Timer 0 conta de 0 até o valor máximo do período configurado. A 
+ *   cada ciclo:
+ *
+ *   - Se o contador ≤ valor do Compare Buffer, o pino XPWM[0] é colocado em 
+ *     nível alto (ou invertido se o bit de inversão estiver ativo).
+ *
+ *   - Quando o contador ultrapassa o valor do Compare Buffer, o pino vai para 
+ *     nível baixo.
+ *
+ *   Recebe Wx (0 a 65535) → quanto maior o valor, maior o tempo em que o PWM 
+ *   fica em nível alto durante o ciclo. 
+ *
+ *   Em outras palavras: o Compare Buffer define o duty cycle do PWM.
+ * @endverbatim
+ *
+ * @param Wx Valor de 16 bits para o compare buffer do Timer 0.
+ *
+ * @note When timer counter equal or less than compare buffer register will 
+ *       cause PWM out high level if inv_on bit is off. 
+ *       Este buffer determina o ponto em que o PWM muda de nível durante o ciclo.
+ *       É útil para ajustar o duty cycle do PWM com precisão.
+ */
+void Panel_RA8889::PWM0_SetCompareBuffer(uint16_t Wx)   
+{   
+  SPI_CmdWrite(REG_TCMPB0L);                   //0x88, Timer 0 compare buffer register [TCMPB0L]
+  SPI_DataWrite(Wx);                           
+  SPI_CmdWrite(REG_TCMPB0H);                   //0x89, Timer 0 compare buffer register [TCMPB0H]
+  SPI_DataWrite(Wx >> 8);                      
+}
+
+
+
+//================================================================================
+//
+// [0x8A] Timer 0 count buffer register [TCNTB0L]
+// [0x8B] Timer 0 count buffer register [TCNTB0H]
+//
+//================================================================================
+
+
+/**
+ * @brief Count Buffer PWM Timer 0
+ *
+ *@verbatim
+ * REG [0x8a] Timer 0 count buffer register [TCNTB0L]
+ *            bit [7-0] Timer 0 count buffer register --- Low Byte
+ *            Count buffer register is 16 bits in total. When timer counter is equal to 0 and reload_en bit is enabled, the PWM timer will reload the value of Count buffer register to the counter.
+ *            The current value of the timer counter (TCNT0) can be read back when the PWM timer starts.
+ *
+ * REG [0x8b] Timer 0 count buffer register [TCNTB0H]
+ *            bit [7-0] Timer 0 count buffer register --- High Byte
+ *            Count buffer register is 16 bits in total. When timer counter is equal to 0 and reload_en bit is enabled, the PWM timer will reload the value of Count buffer register to the counter.
+ *            The current value of the timer counter (TCNT0) can be read back when the PWM timer starts.
+ * @endverbatim
+ *
+ * @param Wx
+ *
+ * @note Count buffer register total has 16 bits.
+ *       When timer counter equal to 0 will cause PWM timer reload Count buffer register if reload_en bit set as enable.
+ *       It may read back timer counter��s real time value when PWM timer start.
+ */
+void Panel_RA8889::PWM0_SetCountBuffer(uint16_t Wx)
+{
+  SPI_CmdWrite(REG_TCNTB0L);                   //0x8a, Timer 0 count buffer register [TCNTB0L]
+  SPI_DataWrite(Wx);                           
+  SPI_CmdWrite(REG_TCNTB0H);                   //0x8b, Timer 0 count buffer register [TCNTB0H]
+  SPI_DataWrite(Wx >> 8);                      
+}
+
+
+//================================================================================
+//
+// [0x8C] Timer 1 compare buffer register [TCMPB1L]
+// [0x8D] Timer 1 compare buffer register [TCMPB1H]
+//
+//================================================================================
+
+
+/**
+ * @brief Configura o valor do Compare Buffer do PWM Timer 1.
+ *
+ *@verbatim
+ * REG [0x8c] Timer 1 compare buffer register [TCMPB1L]
+ *            bit [7-0] Compare buffer register is 16 bits in total. When timer counter is equal to or less than the value of compare buffer register and inv_on bit is off, PWM will output high level.
+ *
+ * REG [0x8d] Timer 1 compare buffer register [TCMPB1H]
+ *            bit [7-0] Timer 0 compare buffer register --- High Byte
+ *            Compare buffer register is 16 bits in total. When timer counter is equal to or less than the value of compare buffer register and inv_on bit is off, PWM will output high level.
+ *
+ * Como o Timer funciona com ele:
+ *
+ *   O PWM Timer 1 conta de 0 até o valor máximo do período configurado. A 
+ *   cada ciclo:
+ *
+ *   - Se o contador ≤ valor do Compare Buffer, o pino XPWM[1] é colocado em 
+ *     nível alto (ou invertido se o bit de inversão estiver ativo).
+ *
+ *   - Quando o contador ultrapassa o valor do Compare Buffer, o pino vai para 
+ *     nível baixo.
+ *
+ *   Recebe Wx (0 a 65535) → quanto maior o valor, maior o tempo em que o PWM 
+ *   fica em nível alto durante o ciclo. 
+ *
+ *   Em outras palavras: o Compare Buffer define o duty cycle do PWM.
+ * @endverbatim
+ *
+ * @param Wx Valor de 16 bits para o compare buffer do Timer 1.
+ *
+ * @note When timer counter equal or less than compare buffer register will 
+ *       cause PWM out high level if inv_on bit is off. 
+ *       Este buffer determina o ponto em que o PWM muda de nível durante o ciclo.
+ *       É útil para ajustar o duty cycle do PWM com precisão.
+ */
+void Panel_RA8889::PWM1_SetCompareBuffer(uint16_t Wx)
+{
+  SPI_CmdWrite(REG_TCMPB1L);                   //0x8c, Timer 1 compare buffer register [TCMPB1L]
+  SPI_DataWrite(Wx);                           
+  SPI_CmdWrite(REG_ TCMPB1H);                  //0x8d, Timer 1 compare buffer register [TCMPB1H]
+  SPI_DataWrite(Wx >> 8);                      
+}
+
+
+//================================================================================
+//
+// [0x8E] Timer 1 count buffer register [TCNTB1L]
+// [0x8F] Timer 1 count buffer register [TCNTB1H]
+//
+//================================================================================
+
+
+/**
+ * @brief Count Buffer PWM Timer 1
+ *
+ *@verbatim
+ * REG [0x8e] Timer 1 count buffer register [TCNTB1L]
+ *            bit [7-0] Timer 1 count buffer register --- Low Byte
+ *            Count buffer register is 16 bits in total. When timer counter is equal to 0 and reload_en bit is enabled, PWM timer will reload the value of Count buffer register.
+ *            The current value of the timer counter (TCNT1) can be read back when the PWM timer starts.
+ *
+ * REG [0x8f] Timer 1 count buffer register [TCNTB1H]
+ *            bit [7-0] Timer 1 count buffer register --- High Byte
+ *            Count buffer register is 16 bits in total. When timer counter is equal to 0 and reload_en bit is enabled, PWM timer will reload the value of Count buffer register.
+ *            The current value of the timer counter (TCNT1) can be read back when the PWM timer starts.
+ * @endverbatim
+ *
+ * @param Wx
+ *
+ * @note Count buffer register total has 16 bits.
+ *       When timer counter equal to 0 will cause PWM timer reload Count buffer register if reload_en bit set as enable.
+ *       It may read back timer counter��s real time value when PWM timer start.
+ */
+void PWM1_SetCountBuffer(uint16_t Wx)
+{
+  SPI_CmdWrite(REG_TCNTB1L);                   //0x8e, Timer 1 count buffer register [TCNTB1L]
+  SPI_DataWrite(Wx);                           
+  SPI_CmdWrite(REG_TCNTB1H);                   //0x8f, Timer 1 count buffer register [TCNTB1H]
+  SPI_DataWrite(Wx >> 8);                      
+}
+
+
+
+//================================================================================
+//
+// [0x90] BTE Function Control Register 0 (BTE_CTRL0)
+//
+//================================================================================
+
+
+void ER_TFTBasic::BTE_Enable(void)
+{ 
+/*
+BTE Function Enable
+0 : BTE Function disable.
+1 : BTE Function enable.
+*/
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x90);
+    temp = ER_TFT.LCD_DataRead();
+    temp |= cSetb4 ;
+  ER_TFT.LCD_DataWrite(temp);  
+}
+
+
+void ER_TFTBasic::BTE_Disable(void)
+{ 
+/*
+BTE Function Enable
+0 : BTE Function disable.
+1 : BTE Function enable.
+*/
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x90);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb4 ;
+  ER_TFT.LCD_DataWrite(temp);  
+}
+
+
+void ER_TFTBasic::Check_BTE_Busy(void)
+{ 
+/*
+BTE Function Status
+0 : BTE Function is idle.
+1 : BTE Function is busy.
+*/
+  unsigned char temp;   
+  do
+  {
+    temp=ER_TFT.LCD_StatusRead();
+  }while(temp&0x08);
+
+}
+
+
+void ER_TFTBasic::Pattern_Format_8X8(void)
+{ 
+/*
+Pattern Format
+0 : 8X8
+1 : 16X16
+*/
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x90);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb0 ;
+  ER_TFT.LCD_DataWrite(temp);
+} 
+
+
+void ER_TFTBasic::Pattern_Format_16X16(void)
+{ 
+/*
+Pattern Format
+0 : 8X8
+1 : 16X16
+*/
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x90);
+    temp = ER_TFT.LCD_DataRead();
+    temp |= cSetb0 ;
+    ER_TFT.LCD_DataWrite(temp);
+} 
+
+//================================================================================
+//
+// [0x91] BTE Function Control Register1 (BTE_CTRL1)
+//
+//================================================================================
+
+void ER_TFTBasic::BTE_ROP_Code(unsigned char setx)
+{ 
+/*
+BTE ROP Code[Bit7:4]
+  
+0000 : 0(Blackness)
+0001 : ~S0.~S1 or ~ ( S0+S1 )
+0010 : ~S0.S1
+0011 : ~S0
+0100 : S0.~S1
+0101 : ~S1
+0110 : S0^S1
+0111 : ~S0+~S1 or ~ ( S0.S1 )
+1000 : S0.S1
+1001 : ~ ( S0^S1 )
+1010 : S1
+1011 : ~S0+S1
+1100 : S0
+1101 : S0+~S1
+1110 : S0+S1
+1111 : 1 ( Whiteness )
+*/
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x91);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= 0x0f ;
+    temp |= (setx<<4);
+    ER_TFT.LCD_DataWrite(temp);
+}
+
+
+void ER_TFTBasic::BTE_Operation_Code(unsigned char setx)
+{ 
+/*
+BTE Operation Code[Bit3:0]
+  
+0000 : MPU Write BTE with ROP.
+0001 : MPU Read BTE w/o ROP.
+0010 : Memory copy (move) BTE in positive direction with ROP.
+0011 : Memory copy (move) BTE in negative direction with ROP.
+0100 : MPU Transparent Write BTE. (w/o ROP.)
+0101 : Transparent Memory copy (move) BTE in positive direction (w/o ROP.)
+0110 : Pattern Fill with ROP.
+0111 : Pattern Fill with key-chroma
+1000 : Color Expansion
+1001 : Color Expansion with transparency
+1010 : Move BTE in positive direction with Alpha blending
+1011 : MPU Write BTE with Alpha blending
+1100 : Solid Fill
+1101 : Reserved
+1110 : Reserved
+1111 : Reserved
+*/
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x91);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= 0xf0 ;
+    temp |= setx ;
+    ER_TFT.LCD_DataWrite(temp);
+
+}
+
+
+
+//================================================================================
+//
+// [0x92] Source 0/1 & Destination Color Depth (BTE_COLR)
+//
+//================================================================================
+
+
+void ER_TFTBasic::BTE_S0_Color_8bpp(void)
+{ 
+/*
+S0 Color Depth
+00 : 256 Color
+01 : 64k Color
+1x : 16M Color
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb6 ;
+    temp &= cClrb5 ;
+    ER_TFT.LCD_DataWrite(temp);
+} 
+
+
+void ER_TFTBasic::BTE_S0_Color_16bpp(void)
+{ 
+/*
+S0 Color Depth
+00 : 256 Color
+01 : 64k Color
+1x : 16M Color
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb6 ;
+    temp |= cSetb5 ;
+    ER_TFT.LCD_DataWrite(temp);
+
+} 
+
+
+void ER_TFTBasic::BTE_S0_Color_24bpp(void)
+{ 
+/*
+S0 Color Depth
+00 : 256 Color
+01 : 64k Color
+1x : 16M Color
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp |= cSetb6 ;
+    //temp |= cSetb5 ;
+    ER_TFT.LCD_DataWrite(temp);
+}
+
+
+void ER_TFTBasic::BTE_S1_Color_8bpp(void)
+{ 
+/*
+S1 Color Depth
+000 : 256 Color
+001 : 64k Color
+010 : 16M Color
+011 : Constant Color
+100 : 8 bit pixel alpha blending
+101 : 16 bit pixel alpha blending
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb4 ;
+    temp &= cClrb3 ;
+    temp &= cClrb2 ;
+    ER_TFT.LCD_DataWrite(temp);
+} 
+
+
+void ER_TFTBasic::BTE_S1_Color_16bpp(void)
+{ 
+/*
+S1 Color Depth
+000 : 256 Color
+001 : 64k Color
+010 : 16M Color
+011 : Constant Color
+100 : 8 bit pixel alpha blending
+101 : 16 bit pixel alpha blending
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb4 ;
+    temp &= cClrb3 ;
+    temp |= cSetb2 ;
+    ER_TFT.LCD_DataWrite(temp);
+
+}
+
+
+void ER_TFTBasic::BTE_S1_Color_24bpp(void)
+{ 
+/*
+S1 Color Depth
+000 : 256 Color
+001 : 64k Color
+010 : 16M Color
+011 : Constant Color
+100 : 8 bit pixel alpha blending
+101 : 16 bit pixel alpha blending
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb4 ;
+    temp |= cSetb3 ;
+    temp &= cClrb2 ;
+    ER_TFT.LCD_DataWrite(temp);
+}
+
+
+void ER_TFTBasic::BTE_S1_Color_Constant(void)
+{ 
+/*
+S1 Color Depth
+000 : 256 Color
+001 : 64k Color
+010 : 16M Color
+011 : Constant Color
+100 : 8 bit pixel alpha blending
+101 : 16 bit pixel alpha blending
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb4 ;
+    temp |= cSetb3 ;
+    temp |= cSetb2 ;
+    ER_TFT.LCD_DataWrite(temp);
+}
+
+
+void ER_TFTBasic::BTE_S1_Color_8bit_Alpha(void)
+{ 
+/*
+S1 Color Depth
+000 : 256 Color
+001 : 64k Color
+010 : 16M Color
+011 : Constant Color
+100 : 8 bit pixel alpha blending
+101 : 16 bit pixel alpha blending
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp |= cSetb4 ;
+    temp &= cClrb3 ;
+    temp &= cClrb2 ;
+    ER_TFT.LCD_DataWrite(temp);
+}
+
+
+void ER_TFTBasic::BTE_S1_Color_16bit_Alpha(void)
+{ 
+/*
+S1 Color Depth
+000 : 256 Color
+001 : 64k Color
+010 : 16M Color
+011 : Constant Color
+100 : 8 bit pixel alpha blending
+101 : 16 bit pixel alpha blending
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp |= cSetb4 ;
+    temp &= cClrb3 ;
+    temp |= cSetb2 ;
+    ER_TFT.LCD_DataWrite(temp);
+}
+
+
+void ER_TFTBasic::BTE_Destination_Color_8bpp(void)
+{ 
+/*
+Destination Color Depth
+00 : 256 Color
+01 : 64k Color
+1x : 16M Color
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb1 ;
+    temp &= cClrb0 ;
+    ER_TFT.LCD_DataWrite(temp);
+} 
+
+
+void ER_TFTBasic::BTE_Destination_Color_16bpp(void)
+{ 
+/*
+Destination Color Depth
+00 : 256 Color
+01 : 64k Color
+1x : 16M Color
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp &= cClrb1 ;
+    temp |= cSetb0 ;
+    ER_TFT.LCD_DataWrite(temp);
+
+} 
+
+
+void ER_TFTBasic::BTE_Destination_Color_24bpp(void)
+{ 
+/*
+Destination Color Depth
+00 : 256 Color
+10 : 64k Color
+1x : 16M Color
+*/  
+    unsigned char temp;
+    ER_TFT.LCD_CmdWrite(0x92);
+    temp = ER_TFT.LCD_DataRead();
+    temp |= cSetb1 ;
+    //temp |= cSetb0 ;
+    ER_TFT.LCD_DataWrite(temp);
+}
+
+
+
+//================================================================================
+//
+// [0x93] Source 0 memory start address 0 (S0_STR0)
+// [0x94] Source 0 memory start address 1 (S0_STR1)
+// [0x95] Source 0 memory start address 2 (S0_STR2)
+// [0x96] Source 0 memory start address 3 (S0_STR3)
+//
+//================================================================================
+
+
+
+void ER_TFTBasic::BTE_S0_Memory_Start_Address(unsigned long Addr)  
+{
+/*
+[93h] BTE S0 Memory Start Address [7:0]
+[94h] BTE S0 Memory Start Address [15:8]
+[95h] BTE S0 Memory Start Address [23:16]
+[96h] BTE S0 Memory Start Address [31:24]
+Bit [1:0] tie to ��0�� internally.
+*/
+  ER_TFT.LCD_RegisterWrite(0x93,Addr);
+  ER_TFT.LCD_RegisterWrite(0x94,Addr>>8);
+  ER_TFT.LCD_RegisterWrite(0x95,Addr>>16);
+  ER_TFT.LCD_RegisterWrite(0x96,Addr>>24);
+}
+
+
+
+//================================================================================
+//
+// [0x97] Source 0 image width 0 (S0_WTH0)
+// [0x98] Source 0 image width 1 (S0_WTH1)
+//
+//================================================================================
+
+void ER_TFTBasic::BTE_S0_Image_Width(unsigned short WX)  
+{
+/*
+[97h] BTE S0 Image Width [7:0]
+[98h] BTE S0 Image Width [12:8]
+Unit: Pixel.
+Bit [1:0] tie to ��0�� internally.
+*/
+  ER_TFT.LCD_RegisterWrite(0x97,WX);
+  ER_TFT.LCD_RegisterWrite(0x98,WX>>8);
+}
+
+
+
+//================================================================================
+//
+// [0x99] Source 0 Window Upper-Left corner X-coordinates 0 (S0_X0)
+// [0x9A] Source 0 Window Upper-Left corner X-coordinates 1 (S0_X1)
+// [0x9B] Source 0 Window Upper-Left corner Y-coordinates 0 (S0_Y0)
+// [0x9C] Source 0 Window Upper-Left corner Y-coordinates 1 (S0_Y1)
+//
+//================================================================================
+
+
+void ER_TFTBasic::BTE_S0_Window_Start_XY(unsigned short WX,unsigned short HY)  
+{
+/*
+[99h] BTE S0 Window Upper-Left corner X-coordination [7:0]
+[9Ah] BTE S0 Window Upper-Left corner X-coordination [12:8]
+[9Bh] BTE S0 Window Upper-Left corner Y-coordination [7:0]
+[9Ch] BTE S0 Window Upper-Left corner Y-coordination [12:8]
+*/
+  ER_TFT.LCD_RegisterWrite(0x99,WX);
+  ER_TFT.LCD_RegisterWrite(0x9A,WX>>8);
+
+  ER_TFT.LCD_RegisterWrite(0x9B,HY);
+  ER_TFT.LCD_RegisterWrite(0x9C,HY>>8);
+}
+
+
+
+
+//================================================================================
+//
+// [0x9D] Source 1 memory start address 0 (S1_STR0) / S1 constant color – Red element (S1_Red)
+// [0x9E] Source 1 memory start address 1 (S1_STR1) / S1 constant color – Green element (S1_GREEN)
+// [0x9F] Source 1 memory start address 2 (S1_STR2) / S1 constant color – Blue element (S1_BLUE)
+// [0xA0] Source 1 memory start address 3 (S1_STR3)
+//
+//================================================================================
+
+
+void ER_TFTBasic::BTE_S1_Memory_Start_Address(unsigned long Addr)  
+{
+/*
+[9Dh] BTE S1 Memory Start Address [7:0]
+[9Eh] BTE S1 Memory Start Address [15:8]
+[9Fh] BTE S1 Memory Start Address [23:16]
+[A0h] BTE S1 Memory Start Address [31:24]
+Bit [1:0] tie to ��0�� internally.
+*/
+  ER_TFT.LCD_RegisterWrite(0x9D,Addr);
+  ER_TFT.LCD_RegisterWrite(0x9E,Addr>>8);
+  ER_TFT.LCD_RegisterWrite(0x9F,Addr>>16);
+  ER_TFT.LCD_RegisterWrite(0xA0,Addr>>24);
+}
+
+
+//Input data format:R3G3B2
+void ER_TFTBasic::S1_Constant_color_256(unsigned char temp)
+{
+    ER_TFT.LCD_CmdWrite(0x9D);
+    ER_TFT.LCD_DataWrite(temp);
+
+    ER_TFT.LCD_CmdWrite(0x9E);
+    ER_TFT.LCD_DataWrite(temp<<3);
+
+    ER_TFT.LCD_CmdWrite(0x9F);
+    ER_TFT.LCD_DataWrite(temp<<6);
+}
+
+//Input data format:R5G6B6
+void ER_TFTBasic::S1_Constant_color_65k(unsigned short temp)
+{
+    ER_TFT.LCD_CmdWrite(0x9D);
+    ER_TFT.LCD_DataWrite(temp>>8);
+
+    ER_TFT.LCD_CmdWrite(0x9E);
+    ER_TFT.LCD_DataWrite(temp>>3);
+
+    ER_TFT.LCD_CmdWrite(0x9F);
+    ER_TFT.LCD_DataWrite(temp<<3);
+}
+
+//Input data format:R8G8B8
+void ER_TFTBasic::S1_Constant_color_16M(unsigned long temp)
+{
+    ER_TFT.LCD_CmdWrite(0x9D);
+    ER_TFT.LCD_DataWrite(temp>>16);
+
+    ER_TFT.LCD_CmdWrite(0x9E);
+    ER_TFT.LCD_DataWrite(temp>>8);
+
+    ER_TFT.LCD_CmdWrite(0x9F);
+    ER_TFT.LCD_DataWrite(temp);
+}
+
+
+
+//================================================================================
+//
+// [0xA1] Source 1 image width 0 (S1_WTH0)
+// [0xA2] Source 1 image width 1 (S1_WTH1)
+//
+//================================================================================
+
+
+void ER_TFTBasic::BTE_S1_Image_Width(unsigned short WX)  
+{
+/*
+[A1h] BTE S1 Image Width [7:0]
+[A2h] BTE S1 Image Width [12:8]
+Unit: Pixel.
+Bit [1:0] tie to ��0�� internally.
+*/
+  ER_TFT.LCD_RegisterWrite(0xA1,WX);
+  ER_TFT.LCD_RegisterWrite(0xA2,WX>>8);
+}
+
+
+//================================================================================
+//
+// [0xA3] Source 1 Window Upper-Left corner X-coordinates 0 (S1_X0)
+// [0xA4] Source 1 Window Upper-Left corner X-coordinates 1 (S1_X1)
+// [0xA5] Source 1 Window Upper-Left corner Y-coordinates 0 (S1_Y0)
+// [0xA6] Source 1 Window Upper-Left corner Y-coordinates 1 (S1_Y1)
+//
+//================================================================================
+
+
+
+void ER_TFTBasic::BTE_S1_Window_Start_XY(unsigned short WX,unsigned short HY)  
+{
+/*
+[A3h] BTE S1 Window Upper-Left corner X-coordination [7:0]
+[A4h] BTE S1 Window Upper-Left corner X-coordination [12:8]
+[A5h] BTE S1 Window Upper-Left corner Y-coordination [7:0]
+[A6h] BTE S1 Window Upper-Left corner Y-coordination [12:8]
+*/
+  ER_TFT.LCD_RegisterWrite(0xA3,WX);
+  ER_TFT.LCD_RegisterWrite(0xA4,WX>>8);
+
+  ER_TFT.LCD_RegisterWrite(0xA5,HY);
+  ER_TFT.LCD_RegisterWrite(0xA6,HY>>8);
+}
+
+
+
+
+//================================================================================
+//
+// [0xA7] Destination memory start address 0 (DT_STR0)
+// [0xA8] Destination memory start address 1 (DT_STR1)
+// [0xA9] Destination memory start address 2 (DT_STR2)
+// [0xAA] Destination memory start address 3 (DT_STR3)
+//
+//================================================================================
+
+
+
+void ER_TFTBasic::BTE_Destination_Memory_Start_Address(unsigned long Addr) 
+{
+/*
+[A7h] BTE Destination Memory Start Address [7:0]
+[A8h] BTE Destination Memory Start Address [15:8]
+[A9h] BTE Destination Memory Start Address [23:16]
+[AAh] BTE Destination Memory Start Address [31:24]
+Bit [1:0] tie to ��0�� internally.
+*/
+  ER_TFT.LCD_RegisterWrite(0xA7,Addr);
+  ER_TFT.LCD_RegisterWrite(0xA8,Addr>>8);
+  ER_TFT.LCD_RegisterWrite(0xA9,Addr>>16);
+  ER_TFT.LCD_RegisterWrite(0xAA,Addr>>24);
+}
+
+
+//================================================================================
+//
+// [0xAB] Destination image width 0 (DT_WTH0)
+// [0xAC] Destination image width 1 (DT_WTH1)
+//
+//================================================================================
+
+
+
+void ER_TFTBasic::BTE_Destination_Image_Width(unsigned short WX) 
+{
+/*
+[ABh] BTE Destination Image Width [7:0]
+[ACh] BTE Destination Image Width [12:8]
+Unit: Pixel.
+Bit [1:0] tie to ��0�� internally.
+*/
+  ER_TFT.LCD_RegisterWrite(0xAB,WX);
+  ER_TFT.LCD_RegisterWrite(0xAC,WX>>8);
+}
+
+
+
+//================================================================================
+//
+// [0xAD] Destination Window Upper-Left corner X-coordinates 0 (DT_X0)
+// [0xAE] Destination Window Upper-Left corner X-coordinates 1 (DT_X1)
+// [0xAF] Destination Window Upper-Left corner Y-coordinates 0 (DT_Y0)
+// [0xB0] Destination Window Upper-Left corner Y-coordinates 1 (DT_Y1)
+//
+//================================================================================
+
+
+void ER_TFTBasic::BTE_Destination_Window_Start_XY(unsigned short WX,unsigned short HY) 
+{
+/*
+[ADh] BTE Destination Window Upper-Left corner X-coordination [7:0]
+[AEh] BTE Destination Window Upper-Left corner X-coordination [12:8]
+[AFh] BTE Destination Window Upper-Left corner Y-coordination [7:0]
+[B0h] BTE Destination Window Upper-Left corner Y-coordination [12:8]
+*/
+  ER_TFT.LCD_RegisterWrite(0xAD,WX);
+  ER_TFT.LCD_RegisterWrite(0xAE,WX>>8);
+
+  ER_TFT.LCD_RegisterWrite(0xAF,HY);
+  ER_TFT.LCD_RegisterWrite(0xB0,HY>>8);
+}
+
+
+//================================================================================
+//
+// [0xB1] BTE Window Width 0 (BTE_WTH0)
+// [0xB2] BTE Window Width 1 (BTE_WTH1)
+// [0xB3] BTE Window Height 0 (BTE_HIG0)
+// [0xB4] BTE Window Height 1 (BTE_HIG1)
+//
+//================================================================================
+
+
+void ER_TFTBasic::BTE_Window_Size(unsigned short WX, unsigned short WY)
+
+{
+/*
+[B1h] BTE Window Width [7:0]
+[B2h] BTE Window Width [12:8]
+
+[B3h] BTE Window Height [7:0]
+[B4h] BTE Window Height [12:8]
+*/
+        ER_TFT.LCD_RegisterWrite(0xB1,WX);
+        ER_TFT.LCD_RegisterWrite(0xB2,WX>>8);
+  
+      ER_TFT.LCD_RegisterWrite(0xB3,WY);
+        ER_TFT.LCD_RegisterWrite(0xB4,WY>>8);
+}
+
+
+//================================================================================
+//
+// [0xB5] Alpha Blending (APB_CTRL)
+//
+//================================================================================
+
+
+void ER_TFTBasic::BTE_Alpha_Blending_Effect(unsigned char temp)
+{ 
+/*
+Window Alpha Blending effect for S0 & S1
+The value of alpha in the color code ranges from 0.0 to 1.0,
+where 0.0 represents a fully transparent color, and 1.0
+represents a fully opaque color.
+00h: 0
+01h: 1/32
+02h: 2/32
+:
+1Eh: 30/32
+1Fh: 31/32
+2Xh: 1
+Output Effect = (S0 image x (1 - alpha setting value)) + (S1 image x alpha setting value)
+*/
+    ER_TFT.LCD_CmdWrite(0xB5);
+  ER_TFT.LCD_DataWrite(temp);  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//================================================================================
+//
+// [0xB6] Serial flash DMA Controller REG (DMA_CTRL)
+// [0xB7] Serial Flash/ROM Controller Register (SFL_CTRL)
+//
 //================================================================================
 
 
@@ -3642,12 +6057,12 @@ void Panel_RA8889::GotoText_XY(uint16_t Wx, uint16_t Hy)
  * @brief Serial Flash DMA Start
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [0] Write: DMA Start Bit
- *                           Set to 1 by MPU and reset to 0 automatically
- *                           The bit cannot start when fontwr_busy is 1. On 
- *                           the contrary, if DMA is enabled, the text mode & 
- *                           sending character code are disabled.
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [0] Write: DMA Start Bit
+ *                    Set to 1 by MPU and reset to 0 automatically
+ *                    The bit cannot start when fontwr_busy is 1. On 
+ *                    the contrary, if DMA is enabled, the text mode & 
+ *                    sending character code are disabled.
  * @endverbatim
  *
  * @param None
@@ -3670,15 +6085,15 @@ void SFI_DMA_Start(void)
  * @brief Aguarde até que o Serial flash DMA Controller esteja pronto/ocioso
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [0] Read: DMA Busy Check Bit
- *                           0: Idle
- *                           1: Bsy
- *                           *** about DMA transfer of serial flash, its 
- *                           destination starting address, destination image 
- *                           width, color depth & address mode in SDRAM are 
- *                           followed by Canvas’ setting and only operate in 
- *                           graphic mode.
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [0] Read: DMA Busy Check Bit
+ *                    0: Idle
+ *                    1: Bsy
+ *                    *** about DMA transfer of serial flash, its 
+ *                    destination starting address, destination image 
+ *                    width, color depth & address mode in SDRAM are 
+ *                    followed by Canvas’ setting and only operate in 
+ *                    graphic mode.
  * @endverbatim
  *
  * @param None
@@ -3702,10 +6117,10 @@ void Panel_RA8889::SFI_DMA_WaitReady(void)
  * @brief Select Serial Flash/ROM Access Font Mode
  *        
  * @verbatim                  
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [6] Serial Flash / ROM Access Mode
- *                           0b0: Font mode – for external CGROM
- *                           0b1: DMA mode – for CGRAM , pattern , boot start image or OSD
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [6] Serial Flash / ROM Access Mode
+ *                    0b0: Font mode – for external CGROM
+ *                    0b1: DMA mode – for CGRAM , pattern , boot start image or OSD
  * @endverbatim
  *
  * @param None
@@ -3728,10 +6143,10 @@ void Panel_RA8889::Select_SFI_FontMode(void)
  * @brief Select Serial Flash/ROM Access DMA Mode
  *        
  * @verbatim                  
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [6] Serial Flash / ROM Access Mode
- *                           0b0: Font mode – for external CGROM
- *                           0b1: DMA mode – for CGRAM, pattern, boot start image or OSD
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [6] Serial Flash / ROM Access Mode
+ *                    0b0: Font mode – for external CGROM
+ *                    0b1: DMA mode – for CGRAM, pattern, boot start image or OSD
  * @endverbatim
  *
  * @param None
@@ -3754,14 +6169,14 @@ void Panel_RA8889::Select_SFI_DMAMode(void)
  * @brief Select Serial Flash/ROM Address 24-bit Mode
  *        
  * @verbatim                  
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [5] Serial Flash / ROM Access Mode
- *                           0b0: 24 bits address mode
- *                           0b1: 32 bits address mode
- *                           
- *                           If user wants to use 32 bits address mode, user 
- *                           must manual send EX4B command (B7h) to serial 
- *                           flash then set this bit to 1.
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [5] Serial Flash / ROM Access Mode
+ *                    0b0: 24 bits address mode
+ *                    0b1: 32 bits address mode
+ *                    
+ *                    If user wants to use 32 bits address mode, user 
+ *                    must manual send EX4B command (B7h) to serial 
+ *                    flash then set this bit to 1.
  * @endverbatim
  *
  * @param None
@@ -3784,14 +6199,14 @@ void Panel_RA8889::Select_SFI_24bitAddress(void)
  * @brief Select Serial Flash/ROM Address 32-bit Mode
  *        
  * @verbatim                  
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [5] Serial Flash / ROM Access Mode
- *                           0b0: 24 bits address mode
- *                           0b1: 32 bits address mode
- *                           
- *                           If user wants to use 32 bits address mode, user 
- *                           must manual send EX4B command (B7h) to serial 
- *                           flash then set this bit to 1.
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [5] Serial Flash / ROM Access Mode
+ *                    0b0: 24 bits address mode
+ *                    0b1: 32 bits address mode
+ *                    
+ *                    If user wants to use 32 bits address mode, user 
+ *                    must manual send EX4B command (B7h) to serial 
+ *                    flash then set this bit to 1.
  * @endverbatim
  *
  * @param None
@@ -3814,34 +6229,34 @@ void Panel_RA8889::Select_SFI_32bitAddress(void)
  * @brief Select Serial Flash/ROM for Single Data Without Dummy Cycles Normal Read Mode
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7-6] 0b00: use [B7h] B3-0
- *                             0b01: 4x read command code – 6Bh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3. 
- *                             0b10: 4x read command code – EBh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3   
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [3-0] Read Command code & behavior selection
- *                             0b000x: 1x read command code – 03h. Normal read 
- *                             speed. Single data input on xmiso. Without 
- *                             dummy cycle between address and data.
- *                             
- *                             0b010x: 1x read command code – 0Bh. To some 
- *                             serial flash provide faster read speed. Single 
- *                             data input on xmiso. 8 dummy cycles inserted 
- *                             between address and data.
- *                             
- *                             0b1x0x: 1x read command code – 1Bh. To some 
- *                             serial flash provide fastest read speed. Single 
- *                             data input on xmiso. 16 dummy cycles inserted 
- *                             between address and data.
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7-6] 0b00: use [B7h] B3-0
+ *                      0b01: 4x read command code – 6Bh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3. 
+ *                      0b10: 4x read command code – EBh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3   
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [3-0] Read Command code & behavior selection
+ *                      0b000x: 1x read command code – 03h. Normal read 
+ *                      speed. Single data input on xmiso. Without 
+ *                      dummy cycle between address and data.
+ *                      
+ *                      0b010x: 1x read command code – 0Bh. To some 
+ *                      serial flash provide faster read speed. Single 
+ *                      data input on xmiso. 8 dummy cycles inserted 
+ *                      between address and data.
+ *                      
+ *                      0b1x0x: 1x read command code – 1Bh. To some 
+ *                      serial flash provide fastest read speed. Single 
+ *                      data input on xmiso. 16 dummy cycles inserted 
+ *                      between address and data.
  *
- *                             0bxx10: 2x read command code – 3Bh. Interleaved 
- *                             data input on xmiso & xmosi. 8 dummy cycles 
- *                             inserted between address and data phase. (dual 
- *                             mode 0, reference Figure 16-7).
+ *                      0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                      data input on xmiso & xmosi. 8 dummy cycles 
+ *                      inserted between address and data phase. (dual 
+ *                      mode 0, reference Figure 16-7).
  *
  * Summary:
  *   000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
@@ -3877,34 +6292,34 @@ void Panel_RA8889::Select_SFI_SingleData_03h(void);
  * @brief Select Serial Flash/ROM for Single Data 8 Dummy Cycles Mode
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7-6] 0b00: use [B7h] B3-0
- *                             0b01: 4x read command code – 6Bh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3. 
- *                             0b10: 4x read command code – EBh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3   
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [3-0] Read Command code & behavior selection
- *                             0b000x: 1x read command code – 03h. Normal read 
- *                             speed. Single data input on xmiso. Without 
- *                             dummy cycle between address and data.
- *                             
- *                             0b010x: 1x read command code – 0Bh. To some 
- *                             serial flash provide faster read speed. Single 
- *                             data input on xmiso. 8 dummy cycles inserted 
- *                             between address and data.
- *                             
- *                             0b1x0x: 1x read command code – 1Bh. To some 
- *                             serial flash provide fastest read speed. Single 
- *                             data input on xmiso. 16 dummy cycles inserted 
- *                             between address and data.
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7-6] 0b00: use [B7h] B3-0
+ *                      0b01: 4x read command code – 6Bh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3. 
+ *                      0b10: 4x read command code – EBh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3   
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [3-0] Read Command code & behavior selection
+ *                      0b000x: 1x read command code – 03h. Normal read 
+ *                      speed. Single data input on xmiso. Without 
+ *                      dummy cycle between address and data.
+ *                      
+ *                      0b010x: 1x read command code – 0Bh. To some 
+ *                      serial flash provide faster read speed. Single 
+ *                      data input on xmiso. 8 dummy cycles inserted 
+ *                      between address and data.
+ *                      
+ *                      0b1x0x: 1x read command code – 1Bh. To some 
+ *                      serial flash provide fastest read speed. Single 
+ *                      data input on xmiso. 16 dummy cycles inserted 
+ *                      between address and data.
  *
- *                             0bxx10: 2x read command code – 3Bh. Interleaved 
- *                             data input on xmiso & xmosi. 8 dummy cycles 
- *                             inserted between address and data phase. (dual 
- *                             mode 0, reference Figure 16-7).
+ *                      0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                      data input on xmiso & xmosi. 8 dummy cycles 
+ *                      inserted between address and data phase. (dual 
+ *                      mode 0, reference Figure 16-7).
  *
  * Summary: 
  * 000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
@@ -3941,38 +6356,38 @@ void Panel_RA8889::Select_SFI_SingleData_03h(void);
  * @brief Select Serial Flash/ROM Single Data 16 Dummy Cycles Fast Read Mode
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7-6] 0b00: use [B7h] B3-0
- *                             0b01: 4x read command code – 6Bh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3. 
- *                             0b10: 4x read command code – EBh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3   
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [3-0] Read Command code & behavior selection
- *                             0b000x: 1x read command code – 03h. Normal read 
- *                             speed. Single data input on xmiso. Without 
- *                             dummy cycle between address and data.
- *                             
- *                             0b010x: 1x read command code – 0Bh. To some 
- *                             serial flash provide faster read speed. Single 
- *                             data input on xmiso. 8 dummy cycles inserted 
- *                             between address and data.
- *                             
- *                             0b1x0x: 1x read command code – 1Bh. To some 
- *                             serial flash provide fastest read speed. Single 
- *                             data input on xmiso. 16 dummy cycles inserted 
- *                             between address and data.
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7-6] 0b00: use [B7h] B3-0
+ *                      0b01: 4x read command code – 6Bh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3. 
+ *                      0b10: 4x read command code – EBh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3   
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [3-0] Read Command code & behavior selection
+ *                      0b000x: 1x read command code – 03h. Normal read 
+ *                      speed. Single data input on xmiso. Without 
+ *                      dummy cycle between address and data.
+ *                      
+ *                      0b010x: 1x read command code – 0Bh. To some 
+ *                      serial flash provide faster read speed. Single 
+ *                      data input on xmiso. 8 dummy cycles inserted 
+ *                      between address and data.
+ *                      
+ *                      0b1x0x: 1x read command code – 1Bh. To some 
+ *                      serial flash provide fastest read speed. Single 
+ *                      data input on xmiso. 16 dummy cycles inserted 
+ *                      between address and data.
  *
- *                             0bxx10: 2x read command code – 3Bh. Interleaved 
- *                             data input on xmiso & xmosi. 8 dummy cycles 
- *                             inserted between address and data phase. (dual 
- *                             mode 0, reference Figure 16-7).
+ *                      0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                      data input on xmiso & xmosi. 8 dummy cycles 
+ *                      inserted between address and data phase. (dual 
+ *                      mode 0, reference Figure 16-7).
  *
- *                   Note: Not serial flash support above read command, please 
- *                   according to serial flash’s datasheet to select proper read 
- *                   command.
+ *            Note: Not serial flash support above read command, please 
+ *            according to serial flash’s datasheet to select proper read 
+ *            command.
  *
  * Summary:
  * 000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
@@ -4009,34 +6424,34 @@ void Panel_RA8889::Select_SFI_SingleData_03h(void);
  * @brief Select Serial Flash/ROM for Dual Data 8 Dummy Cycles Mode
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7-6] 0b00: use [B7h] B3-0
- *                             0b01: 4x read command code – 6Bh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3. 
- *                             0b10: 4x read command code – EBh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3   
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [3-0] Read Command code & behavior selection
- *                             0b000x: 1x read command code – 03h. Normal read 
- *                             speed. Single data input on xmiso. Without 
- *                             dummy cycle between address and data.
- *                             
- *                             0b010x: 1x read command code – 0Bh. To some 
- *                             serial flash provide faster read speed. Single 
- *                             data input on xmiso. 8 dummy cycles inserted 
- *                             between address and data.
- *                             
- *                             0b1x0x: 1x read command code – 1Bh. To some 
- *                             serial flash provide fastest read speed. Single 
- *                             data input on xmiso. 16 dummy cycles inserted 
- *                             between address and data.
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7-6] 0b00: use [B7h] B3-0
+ *                      0b01: 4x read command code – 6Bh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3. 
+ *                      0b10: 4x read command code – EBh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3   
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [3-0] Read Command code & behavior selection
+ *                      0b000x: 1x read command code – 03h. Normal read 
+ *                      speed. Single data input on xmiso. Without 
+ *                      dummy cycle between address and data.
+ *                      
+ *                      0b010x: 1x read command code – 0Bh. To some 
+ *                      serial flash provide faster read speed. Single 
+ *                      data input on xmiso. 8 dummy cycles inserted 
+ *                      between address and data.
+ *                      
+ *                      0b1x0x: 1x read command code – 1Bh. To some 
+ *                      serial flash provide fastest read speed. Single 
+ *                      data input on xmiso. 16 dummy cycles inserted 
+ *                      between address and data.
  *
- *                             0bxx10: 2x read command code – 3Bh. Interleaved 
- *                             data input on xmiso & xmosi. 8 dummy cycles 
- *                             inserted between address and data phase. (dual 
- *                             mode 0, reference Figure 16-7).
+ *                      0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                      data input on xmiso & xmosi. 8 dummy cycles 
+ *                      inserted between address and data phase. (dual 
+ *                      mode 0, reference Figure 16-7).
  *
  * Summary:
  * 000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
@@ -4073,34 +6488,34 @@ void Panel_RA8889::Select_SFI_DualData_3Bh(void)
  * @brief Select Serial Flash/ROM for Dual Data 4 Dummy Cycles Mode
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7-6] 0b00: use [B7h] B3-0
- *                             0b01: 4x read command code – 6Bh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3. 
- *                             0b10: 4x read command code – EBh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3   
- *        REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *                   bit [3-0] Read Command code & behavior selection
- *                             0b000x: 1x read command code – 03h. Normal read 
- *                             speed. Single data input on xmiso. Without 
- *                             dummy cycle between address and data.
- *                             
- *                             0b010x: 1x read command code – 0Bh. To some 
- *                             serial flash provide faster read speed. Single 
- *                             data input on xmiso. 8 dummy cycles inserted 
- *                             between address and data.
- *                             
- *                             0b1x0x: 1x read command code – 1Bh. To some 
- *                             serial flash provide fastest read speed. Single 
- *                             data input on xmiso. 16 dummy cycles inserted 
- *                             between address and data.
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7-6] 0b00: use [B7h] B3-0
+ *                      0b01: 4x read command code – 6Bh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3. 
+ *                      0b10: 4x read command code – EBh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3   
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [3-0] Read Command code & behavior selection
+ *                      0b000x: 1x read command code – 03h. Normal read 
+ *                      speed. Single data input on xmiso. Without 
+ *                      dummy cycle between address and data.
+ *                      
+ *                      0b010x: 1x read command code – 0Bh. To some 
+ *                      serial flash provide faster read speed. Single 
+ *                      data input on xmiso. 8 dummy cycles inserted 
+ *                      between address and data.
+ *                      
+ *                      0b1x0x: 1x read command code – 1Bh. To some 
+ *                      serial flash provide fastest read speed. Single 
+ *                      data input on xmiso. 16 dummy cycles inserted 
+ *                      between address and data.
  *
- *                             0bxx10: 2x read command code – 3Bh. Interleaved 
- *                             data input on xmiso & xmosi. 8 dummy cycles 
- *                             inserted between address and data phase. (dual 
- *                             mode 0, reference Figure 16-7).
+ *                      0bxx10: 2x read command code – 3Bh. Interleaved 
+ *                      data input on xmiso & xmosi. 8 dummy cycles 
+ *                      inserted between address and data phase. (dual 
+ *                      mode 0, reference Figure 16-7).
  *
  * Summary:
  * 000xb: 1x read command code = 03h. Without (0T) dummy cycle between address and data.
@@ -4137,18 +6552,18 @@ void Panel_RA8889::Select_SFI_DualData_BBh(void)
  * @brief Select Serial Flash/ROM for Quad Data 8 Dummy Cycles Mode
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7-6] 0b00: use [B7h] B3-0
- *                             0b01: 4x read command code – 6Bh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3. 
- *                             0b10: 4x read command code – EBh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3   
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7-6] 0b00: use [B7h] B3-0
+ *                      0b01: 4x read command code – 6Bh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3. 
+ *                      0b10: 4x read command code – EBh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3   
  *
  * Summary:
- * 01b: 4x read command code – 6Bh.
- * 10b: 4x read command code – EBh.
+ *   01b: 4x read command code – 6Bh.
+ *   10b: 4x read command code – EBh.
  * @endverbatim
  *
  * @param None
@@ -4172,18 +6587,18 @@ void Panel_RA8889::Select_SFI_QuadData_6Bh(void)
  * @brief Select Serial Flash/ROM for Quad Data 4 Dummy Cycles Mode
  *        
  * @verbatim                  
- *        REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7-6] 0b00: use [B7h] B3-0
- *                             0b01: 4x read command code – 6Bh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3. 
- *                             0b10: 4x read command code – EBh.
- *                                   Address output & data input interleaved 
- *                                   on xmiso & xmosi & xsio2 & xsio3   
- *
+ * REG [0xb6] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7-6] 0b00: use [B7h] B3-0
+ *                      0b01: 4x read command code – 6Bh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3. 
+ *                      0b10: 4x read command code – EBh.
+ *                            Address output & data input interleaved 
+ *                            on xmiso & xmosi & xsio2 & xsio3   
+ * 
  * Summary:
- * 01b: 4x read command code – 6Bh.
- * 10b: 4x read command code – EBh.
+ *   01b: 4x read command code – 6Bh.
+ *   10b: 4x read command code – EBh.
  * @endverbatim
  *
  * @param None
@@ -4207,12 +6622,12 @@ void Panel_RA8889::Select_SFI_QuadData_EBh(void)
  * @brief Serial Flash/ROM 0 I/F is Selected
  *        
  * @verbatim                  
- *        REG [0xb7] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7] Page 0 FONT/DMA Serial Flash/ROM I/F # Select
- *                           0b0: Serial Flash/ROM 0 I/F is selected.
- *                           0b1: Serial Flash/ROM 1 I/F is selected.
- *                           Note: when page1 B7h bit 7 = 1, then serial flash 
- *                           chip select 2,3
+ * REG [0xb7] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7] Page 0 FONT/DMA Serial Flash/ROM I/F # Select
+ *                    0b0: Serial Flash/ROM 0 I/F is selected.
+ *                    0b1: Serial Flash/ROM 1 I/F is selected.
+ *                    Note: when page1 B7h bit 7 = 1, then serial flash 
+ *                    chip select 2,3
  * @endverbatim
  *
  * @param None
@@ -4234,12 +6649,12 @@ void Panel_RA8889::SFI_Select_ROM0(void);
  * @brief Serial Flash/ROM 1 I/F is Selected
  *        
  * @verbatim                  
- *        REG [0xb7] Serial flash DMA Controller REG (DMA_CTRL)
- *                   bit [7] Page 0 FONT/DMA Serial Flash/ROM I/F # Select
- *                           0b0: Serial Flash/ROM 0 I/F is selected.
- *                           0b1: Serial Flash/ROM 1 I/F is selected.
- *                           Note: when page1 B7h bit 7 = 1, then serial flash 
- *                           chip select 2,3
+ * REG [0xb7] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7] Page 0 FONT/DMA Serial Flash/ROM I/F # Select
+ *                    0b0: Serial Flash/ROM 0 I/F is selected.
+ *                    0b1: Serial Flash/ROM 1 I/F is selected.
+ *                    Note: when page1 B7h bit 7 = 1, then serial flash 
+ *                    chip select 2,3
  * @endverbatim
  *
  * @param None
@@ -4257,1363 +6672,1251 @@ void Panel_RA8889::SFI_Select_ROM1(void)
 }
 
 
-
-void ER_TFTBasic::Select_SFI_Waveform_Mode_0(void)
+/**
+ * @brief IDEC Serial Interface Standard Mode 0 or 3
+ *        
+ * @verbatim                  
+ * [0xb7] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7] IDEC Serial Interface
+ *                    0: standard SPI mode 0 or mode 3 timing
+ *                    1: Follow RA8875 mode 0 & mode 3 timing
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Only for RA8876/RA8887. No RA8889, este bit [5-1] é não atribuido (NA).
+ *       Mantem o modo intercompartibildaide sem gerar excecao.
+ *       Se em RA8887/RA8876 a traca de pagina não existe pelo REG[46h], logo não fará efeito, passando para a execução
+ *       dos registradores seguitnes [B7h] bit 4.
+ *       Se em RA8889 [REG PAGE 1],[B7h] [bit4] não tem atribuição este bit é sempre 1.
+ *       Se em RA8876/RA8877 Não existe troca de páginas 0 e 1 de registradores, acessados pelos registradores [46-4E].
+ *
+ * @result None
+ */
+void Panel_RA8889::IDEC_SPI_Select_StandardMode0orMode3(void)
 {
-/*[bit4]
-Serial Flash/ROM Waveform Mode
-Mode 0.
-Mode 3.
-*/
+  uint8_t temp;
+
+  //Apenas para compatibilidade. Este bit nao existe no RA8889, 
+  //será ignorado. No RA8876/RA8877 esta função de troca de pagina 
+  //REG [46h-4eh] é reservado (sem funcao), mas o codigo abaixo para a 
+  //escolha do bit 4 sim
+  PageSwitch(PageReg::Page1);                  //Troca para a Pagina 1 de registradores do RA8889, mas não existe no RA8876/RA8877
+                                       
+  //Acessar o registrador SFL_CTRL do RA8876/RA8877
+  LCD_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL) do RA8876/RA8877
+  temp = SPI_DataRead();                       
+  temp &= cClrb4;                              
+  SPI_DataWrite(temp);                         
+									           
+  PageSwitch(PageReg::Page0);                  //Retorna para a Pagina 0 de registradores
+}
+
+
+/**
+ * @brief IDEC Serial Interface Mode 0 and 3
+ *        
+ * @verbatim                  
+ * [0xb7] Serial flash DMA Controller REG (DMA_CTRL)
+ *            bit [7] IDEC Serial Interface
+ *                    0: standard SPI mode 0 or mode 3 timing
+ *                    1: Follow RA8875 mode 0 & mode 3 timing
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Only for RA8876/RA8887. No RA8889, PAGE 1, REG 0xB7 bit [5-1] é não atribuido (NA).
+ *       Mantem o modo intercompartibildaide sem gerar excecao.
+ *       Se em RA8887/RA8876 a troca de pagina não existe pelo REG[46h], logo não fará efeito, passando para a execução
+ *       dos registradores seguitnes [B7h] bit 4.
+ *       Se em RA8889 [REG PAGE 1],[B7h] [bit4] não tem atribuição este bit é sempre 1.
+ *       Se em RA8876/RA8877 Não existe troca de páginas 0 e 1 de registradores, acessados pelos registradores [46-4E].
+ *
+ * @result None
+ */
+void Panel_RA8889::IDEC_RA8875_SPI_Select_Mode0andMode3(void)
+{
+  uint8_t temp;
+
+  //Apenas para compatibilidade. Este bit nao existe no RA8889, 
+  //será ignorado. No RA8876/RA8877 esta função de troca de pagina 
+  //REG [46h-4eh] é reservado (sem funcao), mas o codigo abaixo para a 
+  //escolha do bit 4 sim
+  PageSwitch(PageReg::Page1);                  //Troca para a Pagina 1 de registradores do RA8889, mas não existe no RA8876/RA8877
+                                       
+  //Acessar o registrador SFL_CTRL do RA8876/RA8877
+  LCD_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL) do RA8876/RA8877
+  temp = SPI_DataRead();                       
+  temp |= cClrb4;                              
+  SPI_DataWrite(temp);                         
+									           
+  PageSwitch(PageReg::Page0);                  //Retorna para a Pagina 0 de registradores
+}
+
+
+/**
+ * @brief Serial Flash/ROM Waveform Mode 0
+ *        
+ * @verbatim                  
+ * [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [4] RA8875 compatible mode
+ *                    0: standard SPI mode 0 or mode 3 timing
+ *                    1: Follow RA8875 mode 0 & mode 3 timing
+ *                    
+ *                    Serial Flash/ROM Waveform Mode
+ *                    In the RA8875 compatible mode,
+ *                    
+ *                    Data are read on the clock's falling edge (high->low transition) and data are changed on a falling edge (high->low transition).
+ *                    0: For Mode 0, SPI clock park on low when idle.
+ *                    1: For Mode 3, SPI clock park on high when idle.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Only for RA8876/RA8887. No RA8889, PAGE 0, REG 0xB7 bit [4] é sempre 1.
+ *       Apartir do RA8886/RA8887 modo compatibildiade com o RA8875.
+ *
+ * @result None
+ */
+void Panel_RA8889::SFI_Select_WaveformMode0(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SFL_CTRL);                          //0xb7, RA8876/RA8877, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = SPI_DataRead();
+  temp &= cClrb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Serial Flash/ROM Waveform Mode 3
+ *        
+ * @verbatim                  
+ * [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ *            bit [4] RA8875 compatible mode
+ *                    0: standard SPI mode 0 or mode 3 timing
+ *                    1: Follow RA8875 mode 0 & mode 3 timing
+ *                    
+ *                    Serial Flash/ROM Waveform Mode
+ *                    In the RA8875 compatible mode,
+ *                    
+ *                    Data are read on the clock's falling edge (high->low transition) and data are changed on a falling edge (high->low transition).
+ *                    0: For Mode 0, SPI clock park on low when idle.
+ *                    1: For Mode 3, SPI clock park on high when idle.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Only for RA8876/RA8887. No RA8889, PAGE 0, REG 0xB7 bit [4] é sempre 1.
+ *       Apartir do RA8886/RA8887 modo compatibildiade com o RA8875.
+ *
+ * @result None
+ */
+void Panel_RA8889::SFI_Select_WaveformMode3(void)
+{
   unsigned char temp;
-  ER_TFT.LCD_CmdWrite(0xB7);
+  SPI_CmdWrite(REG_SFL_CTRL);                          //0xb7, RA8876/RA8877, Serial Flash/ROM Controller Register (SFL_CTRL)
   temp = ER_TFT.LCD_DataRead();
-    temp &= cClrb4;
-  ER_TFT.LCD_DataWrite(temp);
-}
-
-
-void ER_TFTBasic::Select_SFI_Waveform_Mode_3(void)
-{
-/*[bit4]
-Serial Flash/ROM Waveform Mode
-Mode 0.
-Mode 3.
-*/
-  unsigned char temp;
-  ER_TFT.LCD_CmdWrite(0xB7);
-  temp = ER_TFT.LCD_DataRead();
-    temp |= cSetb4;
-  ER_TFT.LCD_DataWrite(temp);
+  temp |= cSetb4;
+  SPI_DataWrite(temp);
 }
 
 
 //================================================================================
-// [0xb8] SPI master Tx /Rx FIFO Data Register (SPIDR)
-//================================================================================
-
-
-unsigned char SPI_Master_FIFO_Data_Put(unsigned char Data)
-{
-    unsigned char temp;
-    LCD_CmdWrite(0xB8);
-    LCD_DataWrite(Data);
-    do {
-        temp = Tx_FIFO_Empty_Flag();
-    } while (temp == 0);
-    //	while(Tx_FIFO_Empty_Flag()==0);	//空了再執行下一筆
-    temp = SPI_Master_FIFO_Data_Get();
-
-    return temp;
-}
-
-unsigned char SPI_Master_FIFO_Data_Get(void)
-{
-    unsigned char temp;
-
-    while (Rx_FIFO_Empty_Flag() == 1)
-        ; // 不是空的往下執行
-    LCD_CmdWrite(0xB8);
-    temp = LCD_DataRead();
-    // while(Rx_FIFO_full_flag()); //連續寫入16筆資料才需要
-    return temp;
-}
-
-
-//================================================================================
-// [0xb9] SPI master Control Register (SPIMCR2)
-//================================================================================
-
-
-void Enable_SPI_Master_Interrupt(void)
-{
-    /*
-    SPI Master Interrupt enable
-    0: Disable interrupt.
-    1: Enable interrupt.
-    */
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp |= cSetb6;
-    LCD_DataWrite(temp);
-}
-
-void Disable_SPI_Master_Interrupt(void)
-{
-    /*
-    SPI Master Interrupt enable
-    0: Disable interrupt.
-    1: Enable interrupt.
-    */
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp &= cClrb6;
-    LCD_DataWrite(temp);
-}
-
-// 0: inactive (nSS port will goes high)
-void nSS_Inactive(void)
-{
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp &= cClrb4;
-    LCD_DataWrite(temp);
-}
-
-// 1: active (nSS port will goes low)
-void nSS_Active(void)
-{
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp |= cSetb4;
-    LCD_DataWrite(temp);
-}
-
-void Mask_FIFO_overflow_error_Interrupt(void)
-{
-    /*
-    Mask interrupt for FIFO overflow error [OVFIRQEN]
-    0: unmask
-    1: mask
-    */
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp |= cSetb3;
-    LCD_DataWrite(temp);
-}
-
-void Unmask_FIFO_overflow_error_Interrupt(void)
-{
-    /*
-    Mask interrupt for FIFO overflow error [OVFIRQEN]
-    0: unmask
-    1: mask
-    */
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp &= cClrb3;
-    LCD_DataWrite(temp);
-}
-
-void Mask_EMTIRQEN_Interrupt(void)
-{
-    /*
-    Mask interrupt for while Tx FIFO empty & SPI engine/FSM idle [EMTIRQEN]
-    0: unmask
-    1: mask
-    */
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp |= cSetb2;
-    LCD_DataWrite(temp);
-}
-
-void Unmask_EMTIRQEN_Interrupt(void)
-{
-    /*
-    Mask interrupt for while Tx FIFO empty & SPI engine/FSM idle [EMTIRQEN]
-    0: unmask
-    1: mask
-    */
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp &= cClrb2;
-    LCD_DataWrite(temp);
-}
-
-/*
-SPI operation mode
-Only support mode 0 & mode 3, when enable serial flash’s DMA
-or access Getop’s character serial ROM device.
-mode / CPOL:Clock Polarity bit / CPHA:Clock Phase bit
-    0	0	0
-    1	0	1
-    2	1	0
-    3	1	1
-*/
-
-void Reset_CPOL(void)
-{
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp &= cClrb1;
-    LCD_DataWrite(temp);
-}
-
-void Set_CPOL(void)
-{
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp |= cSetb1;
-    LCD_DataWrite(temp);
-}
-
-void Reset_CPHA(void)
-{
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp &= cClrb0;
-    LCD_DataWrite(temp);
-}
-
-void Set_CPHA(void)
-{
-    unsigned char temp;
-    LCD_CmdWrite(0xB9);
-    temp = LCD_DataRead();
-    temp |= cSetb0;
-    LCD_DataWrite(temp);
-}
-
-
-//================================================================================
-// [0xD2] Foreground Color Register - Red (FGCR)
-// [0xD3] Foreground Color Register - Green (FGCG)
-// [0xD4] Foreground Color Register - Blue (FGCB)
+//
+// [0xB8] SPI master Tx /Rx FIFO Data Register (SPIDR)
+//
 //================================================================================
 
 
 /**
- * @brief Cor de frente nas componentes Vermelho, Verde e Azul (R,G,B)
+ * @brief SPI master Tx /Rx FIFO Get Data
  *        
- *        REG [0xd2] Foreground Color Register - Red (FGCR)
- *                   bit [7~0] Foreground Color - Red; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd3] Foreground Color Register - Green (FGCG)
- *                   bit [7~0] Foreground Color - Green; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:2].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd4] Foreground Color Register - Blue (FGCB)
- *                   bit [7~0] Foreground Color - Blue; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:6].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
+ * @verbatim                  
+ * REG [0xb8] SPI master Tx /Rx FIFO Data Register (SPIDR)
+ *            bit [7-0] SPI master Tx /Rx FIFO Data Register
+ *            
+ *            After programming the core’s control register SPI 
+ *            transfers can be initiated. A transfer is initiated by 
+ *            writing to the Serial Peripheral Data Register [SPIDR]. 
+ *            Writing to the Serial Peripheral Data Register is 
+ *            actually writing to a 16 entries deep FIFO called the 
+ *            Write FIFO. Each write access adds a data byte to the 
+ *            Write FIFO. When the core is enabled – SS_ACTIVE is set 
+ *            to 1 and the Write FIFO is not full, the core 
+ *            automatically transfers the oldest data byte.
+ *            
+ *            Receiving data is done simultaneously with transmitting 
+ *            data; whenever a data byte is transmitted a data byte is 
+ *            received. For each byte that needs to be read from a 
+ *            device, a dummy byte needs to be written to the Write 
+ *            FIFO. This instructs the core to initiate an SPI 
+ *            transfer, simultaneously transmitting the dummy byte and 
+ *            receiving the desired data. Whenever a transfer is 
+ *            finished, the received data byte is added to the Read 
+ *            FIFO. The Read FIFO is the counterpart of the Write FIFO. 
+ *            It is an independent 16 entries deep FIFO. The FIFO 
+ *            contents can be read by reading from the Serial 
+ *            Peripheral Data Register [SPIDR].                          
+ * @endverbatim
  *
- * @param red:   componente cor vermelha
- *        green: componente cor verde
- *        blue:  componente cor azul
+ * @param None
  *
- * @note use o determinado numero de bits para compor o n umero de cores 256, 
- *       65K e 16.7M cores.
+ * @note None
+ *
+ * @result None
  */
-void Panel_RA8889::ForegroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
+uint8_t Panel_RA8889::SPIM_TxRxFIFOData_Get(void)
 {
-  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
-  SPI_DataWrite(red);                          //Escreve o formato da cor vermelha 
-  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
-  SPI_DataWrite(green);                        //Escreve o formato da cor verde
-  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
-  SPI_DataWrite(blue);                         //Escreve o formato da cor azul
+  uint8_t temp;
+  while (Rx_FIFO_Empty_Flag() == 1)          //If it is not empty, execute it.
+  SPI_CmdWrite(REG_SPIDR);                   //0xb8, SPI master Tx /Rx FIFO Data Register (SPIDR)
+  temp = SPI_DataRead();
+  // while(Rx_FIFO_full_flag());             //Required only when writing 16 records continuously
+  return temp;
 }
 
 
 /**
- * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB3:3:2) de 256 cores
+ * @brief SPI master Tx /Rx FIFO Put Data
  *        
- *        Color depht de 8bpp
+ * @verbatim                  
+ * REG [0xb8] SPI master Tx /Rx FIFO Data Register (SPIDR)
+ *            bit [7-0] SPI master Tx /Rx FIFO Data Register
+ *            
+ *            After programming the core’s control register SPI 
+ *            transfers can be initiated. A transfer is initiated by 
+ *            writing to the Serial Peripheral Data Register [SPIDR]. 
+ *            Writing to the Serial Peripheral Data Register is 
+ *            actually writing to a 16 entries deep FIFO called the 
+ *            Write FIFO. Each write access adds a data byte to the 
+ *            Write FIFO. When the core is enabled – SS_ACTIVE is set 
+ *            to 1 and the Write FIFO is not full, the core 
+ *            automatically transfers the oldest data byte.
+ *            
+ *            Receiving data is done simultaneously with transmitting 
+ *            data; whenever a data byte is transmitted a data byte is 
+ *            received. For each byte that needs to be read from a 
+ *            device, a dummy byte needs to be written to the Write 
+ *            FIFO. This instructs the core to initiate an SPI 
+ *            transfer, simultaneously transmitting the dummy byte and 
+ *            receiving the desired data. Whenever a transfer is 
+ *            finished, the received data byte is added to the Read 
+ *            FIFO. The Read FIFO is the counterpart of the Write FIFO. 
+ *            It is an independent 16 entries deep FIFO. The FIFO 
+ *            contents can be read by reading from the Serial 
+ *            Peripheral Data Register [SPIDR].                          
+ * @endverbatim
  *
- *        REG [0xd2] Foreground Color Register - Red (FGCR)
- *                   bit [7~0] Foreground Color - Red; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd3] Foreground Color Register - Green (FGCG)
- *                   bit [7~0] Foreground Color - Green; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:2].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd4] Foreground Color Register - Blue (FGCB)
- *                   bit [7~0] Foreground Color - Blue; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:6].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
+ * @param None
  *
- * @param color: entrada de dados no formato R3G3B2 (3 bits para o vermelho, 
- *        3 bits para o verde e 2 bits para o azul.
+ * @note None
  *
- *        Dúvida????
- *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
- *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
- *        para definir o modelo de formato do pixel de cores.
- *        ...ou o formato tera que ser sempre RGB?  
- *
- * @note Use o determinado numero de bits para compor o numero de cores 256, 
- *       65K e 16.7M cores.
- *       
+ * @result None
  */
-void Panel_RA8889::ForegroundColor_256(uint8_t color)
+uint8_t Panel_RA8889::SPIM_TxRxFIFOData_Put(uint8_t data)
 {
-  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
-  SPI_DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
-  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
-  SPI_DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
-  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
-  SPI_DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
-}
-
-
-/**
- * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB5:6:5) de 65k cores
- *        
- *        Color depht de 16bpp
- *
- *        REG [0xd2] Foreground Color Register - Red (FGCR)
- *                   bit [7~0] Foreground Color - Red; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd3] Foreground Color Register - Green (FGCG)
- *                   bit [7~0] Foreground Color - Green; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:2].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd4] Foreground Color Register - Blue (FGCB)
- *                   bit [7~0] Foreground Color - Blue; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:6].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *
- * @param color: entrada de dados no formato R5G6B5 (5 bits para o vermelho, 
- *        6 bits para o verde e 5 bits para o azul.
- *
- *        Dúvida????
- *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
- *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
- *        para definir o modelo de formato do pixel de cores.
- *        ...ou o formato tera que ser sempre RGB?  
- *
- * @note Use o determinado numero de bits para compor o numero de cores 256, 
- *       65K e 16.7M cores.
- */
-void Panel_RA8889::ForegroundColor_65k(uint16_t color)
-{
-  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
-  SPI_DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
-  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
-  SPI_DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado
-  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
-  SPI_DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
-}
-
-
-/**
- * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB8:8:8) de 16.7M cores
- *        
- *        Color depht de 24bpp
- *
- *        REG [0xd2] Foreground Color Register - Red (FGCR)
- *                   bit [7~0] Foreground Color - Red; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd3] Foreground Color Register - Green (FGCG)
- *                   bit [7~0] Foreground Color - Green; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:2].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd4] Foreground Color Register - Blue (FGCB)
- *                   bit [7~0] Foreground Color - Blue; for draw, text or color expansion
- *                             256 colors, the register only uses Bit[7:6].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *
- * @param color: entrada de dados no formato R8G8B8 (8 bits para o vermelho, 
- *        8 bits para o verde e 8 bits para o azul.
- *
- *        Dúvida????
- *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
- *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
- *        para definir o modelo de formato do pixel de cores.
- *        ...ou o formato tera que ser sempre RGB?  
- *
- * @note Use o determinado numero de bits para compor o numero de cores 256, 
- *       65K e 16.7M cores.
- *       
- */ 
-void Panel_RA8889::ForegroundColor_16M(uint32_t color)
-{
-  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
-  SPI_DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
-  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
-  SPI_DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
-  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
-  SPI_DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIDR);                   //0xb8, SPI master Tx /Rx FIFO Data Register (SPIDR)
+  SPI_DataWrite(data);
+  while (Tx_FIFO_Empty_Flag() == 0);
+     temp = Tx_FIFO_Empty_Flag();
+  } while (temp == 0);
+  //while(Tx_FIFO_Empty_Flag()==0);	         //If it is empty, execute the next one
+  temp = SPIM_TxRxFIFOData_Get();
+  return temp;
 }
 
 
 //================================================================================
-// [0xD5] Background Color Register - Red (BGCR)
-// [0xD6] Background Color Register - Green (BGCG)
-// [0xD7] Background Color Register - Blue (BGCB)
+//
+// [0xB9] SPI master Control Register (SPIMCR2)
+//
 //================================================================================
 
 
 /**
- * @brief Cor de frente nas componentes Vermelho, Verde e Azul (R,G,B)
+ * @brief Control Slave Select drive on which xnsfcs0..xnsfcs3 Channel
  *        
- *        REG [0xd5] Background Color Register - Red (BGCR)
- *                   bit [7~0] Background Color - Red, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd6] Background Color Register - Green (BGCG)
- *                   bit [7~0] Background Color - Green, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:2].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd7] Background Color Register - Blue (BGCB)
- *                   bit [7~0] Background Color - Blue, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:6].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
+ * @verbatim                  
+ * Controle de acionamento do sinal de seleção do escravo (xnsfcs0..xnsfcs3)
  *
- *        ***Note: No matter background transparency is enabled or not, don’t 
- *           set same value with Foreground Color otherwise image or text will 
- *           become a square with Foreground Color even BTE function.   
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [5, 7] Control Slave Select drive on which xnsfcs
+ *                       B7 and B5 = 00b: nSS drive on xnsfcs[0]
+ *                       B7 and B5 = 01b: nSS drive on xnsfcs[1]
+ *                       B7 and B5 = 10b: nSS drive on xnsfcs[2]
+ *                       B7 and B5 = 11b: nSS drive on xnsfcs[3]
+ * @endverbatim
  *
- *        *** Note: If user wants to change rotate attribute, character line gap, 
- *            character-to-character space, foreground color, background color 
- *            and Text/graphic mode setting, please make sure core_busy (fontwr_
- *            busy) status bit is low.
+ * @param eNSS_Channel::XNSFCS0
+ *        eNSS_Channel::XNSFCS1
+ *        eNSS_Channel::XNSFCS2
+ *        eNSS_Channel::XNSFCS3
  *
- * @param red:   componente cor vermelha
- *        green: componente cor verde
- *        blue:  componente cor azul
+ * @note None
  *
- * @note Use o determinado numero de bits para compor o numero de cores 256, 
- *       65K e 16.7M cores.
+ * @result None
  */
-void Panel_RA8889::BackgroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
+void Panel_RA8889::nSS_Select_Channel(eNSS_Channel channel);
 {
-  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
-  SPI_DataWrite(red);                          //Escreve o formato da cor vermelha 
-  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
-  SPI_DataWrite(green);                        //Escreve o formato da cor verde
-  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
-  SPI_DataWrite(blue);                         //Escreve o formato da cor azul
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  temp &= ~( cSetb7 | cSetb5 );            //Reset bits 7 and 5
+  // aplica valor do canal (2 bits: b7:b5)
+  if (static_cast<uint8_t>(channel) & 0x02) temp |= (cSetb7);  // bit1 → b7
+  if (static_cast<uint8_t>(channel) & 0x01) temp |= (cSetb5);  // bit0 → b5
+  SPI_DataWrite(temp);
 }
 
 
 /**
- * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB3:3:2) de 256 cores
+ * @brief Interrupt SPI Master Enable/Disable
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [6] SPI Master Interrupt enable
+ *                    0b0: Disable interrupt.
+ *                    0b1: Enable interrupt.
+ *            *** If you disable SPIM interrupt flag, then RA8889 won’t 
+ *            assert interrupt event to inform MPU but you still may 
+ *            check interrupt event on SPIMSR.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Interrupt_SPIM_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb6 : temp &= cClrb6;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Slave Select Singal Inactive (nSS Port)
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [4] Slave Select signal active [SS_ACTIVE]
+ *                    0b0: inactive (nSS port will goes high)
+ *                    0b1: active (nSS port will goes low)
+ *            While Slave Select signal be in inactive, FIFO will be 
+ *            cleared and this function will stay in Idle state. Note: 
+ *            Do not change CPOL/CPHA when Slave Select signal is 
+ *            active.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::nSS_Inactive(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  temp &= cClrb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Slave Select Singal Inactive (nSS Port)
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [4] Slave Select signal active [SS_ACTIVE]
+ *                    0b0: inactive (nSS port will goes high)
+ *                    0b1: active (nSS port will goes low)
+ *            While Slave Select signal be in inactive, FIFO will be 
+ *            cleared and this function will stay in Idle state. Note: 
+ *            Do not change CPOL/CPHA when Slave Select signal is 
+ *            active.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::nSS_Active(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  temp |= cSetb4;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief interrupt Enable/Disable for FIFO overflow error
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [3] Mask interrupt for FIFO overflow error [OVFIRQEN]
+ *                    0b0: unmask
+ *                    0b1: mask
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Interrupt_FIFOOverflow_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb3 : temp &= cClrb3;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Mask interrupt for while Tx FIFO empty & SPI engine/FSM idle
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [2] Mask interrupt for while Tx FIFO empty & SPI engine/FSM idle [EMTIRQEN]
+ *                    0b0: unmask
+ *                    0b1: mask
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Interrupt_EMTIRQEN_Enable(bool b)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb2 : temp &= cClrb2;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Reset Clock Polarity (CPOL)
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [1-0] SPI operation mode
+ *            Only support mode 0 & mode 3, when enable DMA function or 
+ *            access Getop’s CI character serial ROM device.
+ *            
+ *            mode   CPOL:Clock Polarity bit    CPHA:Clock Phase bit
+ *            ------------------------------------------------------
+ *            0               0                          0
+ *            1               0                          1
+ *            2               1                          0
+ *            3               1                          1
+ *
+ * At CPOL=0 the base value of the clock is zero   
+ *   o  For CPHA=0, data are read on the clock's rising edge (low->high 
+ *      transition) and data are changed on a falling edge (high->low 
+ *      clock transition). 
+ *   o  For CPHA=1, data are read on the clock's falling edge and data 
+ *      are changed on a rising edge. 
+ * 
+ * At CPOL=1 the base value of the clock is one (inversion of CPOL=0)   
+ *   o  For CPHA=0, data are read on clock's falling edge and data are 
+ *      changed on a rising edge. 
+ *   o  For CPHA=1, data are read on clock's rising edge and data are 
+ *      changed on a falling edge.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Reset_CPOL(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  temp &= cClrb1;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Set Clock Polarity (CPOL)
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [1-0] SPI operation mode
+ *            Only support mode 0 & mode 3, when enable DMA function or 
+ *            access Getop’s CI character serial ROM device.
+ *            
+ *            mode   CPOL:Clock Polarity bit    CPHA:Clock Phase bit
+ *            ------------------------------------------------------
+ *            0               0                          0
+ *            1               0                          1
+ *            2               1                          0
+ *            3               1                          1
+ *
+ * At CPOL=0 the base value of the clock is zero   
+ *   o  For CPHA=0, data are read on the clock's rising edge (low->high 
+ *      transition) and data are changed on a falling edge (high->low 
+ *      clock transition). 
+ *   o  For CPHA=1, data are read on the clock's falling edge and data 
+ *      are changed on a rising edge. 
+ * 
+ * At CPOL=1 the base value of the clock is one (inversion of CPOL=0)   
+ *   o  For CPHA=0, data are read on clock's falling edge and data are 
+ *      changed on a rising edge. 
+ *   o  For CPHA=1, data are read on clock's rising edge and data are 
+ *      changed on a falling edge.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Set_CPOL(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  temp |= cSetb1;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Reset Clock Phase (CPHA)
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [1-0] SPI operation mode
+ *            Only support mode 0 & mode 3, when enable DMA function or 
+ *            access Getop’s CI character serial ROM device.
+ *            
+ *            mode   CPOL:Clock Polarity bit    CPHA:Clock Phase bit
+ *            ------------------------------------------------------
+ *            0               0                          0
+ *            1               0                          1
+ *            2               1                          0
+ *            3               1                          1
+ *
+ * At CPOL=0 the base value of the clock is zero   
+ *   o  For CPHA=0, data are read on the clock's rising edge (low->high 
+ *      transition) and data are changed on a falling edge (high->low 
+ *      clock transition). 
+ *   o  For CPHA=1, data are read on the clock's falling edge and data 
+ *      are changed on a rising edge. 
+ * 
+ * At CPOL=1 the base value of the clock is one (inversion of CPOL=0)   
+ *   o  For CPHA=0, data are read on clock's falling edge and data are 
+ *      changed on a rising edge. 
+ *   o  For CPHA=1, data are read on clock's rising edge and data are 
+ *      changed on a falling edge.
+ *
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Reset_CPHA(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  temp &= cClrb0;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Set Clock Phase (CPHA)
+ *        
+ * @verbatim                  
+ * REG [0xb9] SPI master Control Register (SPIMCR2)
+ *            bit [1-0] SPI operation mode
+ *            Only support mode 0 & mode 3, when enable DMA function or 
+ *            access Getop’s CI character serial ROM device.
+ *            
+ *            mode   CPOL:Clock Polarity bit    CPHA:Clock Phase bit
+ *            ------------------------------------------------------
+ *            0               0                          0
+ *            1               0                          1
+ *            2               1                          0
+ *            3               1                          1
+ *
+ * At CPOL=0 the base value of the clock is zero   
+ *   o  For CPHA=0, data are read on the clock's rising edge (low->high 
+ *      transition) and data are changed on a falling edge (high->low 
+ *      clock transition). 
+ *   o  For CPHA=1, data are read on the clock's falling edge and data 
+ *      are changed on a rising edge. 
+ * 
+ * At CPOL=1 the base value of the clock is one (inversion of CPOL=0)   
+ *   o  For CPHA=0, data are read on clock's falling edge and data are 
+ *      changed on a rising edge. 
+ *   o  For CPHA=1, data are read on clock's rising edge and data are 
+ *      changed on a falling edge.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Set_CPHA(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = SPI_DataRead();
+  temp |= cSetb0;
+  SPI_DataWrite(temp);
+}
+
+
+//================================================================================
+//
+// [0xBA] SPI master Status Register (SPIMSR)
+//
+//================================================================================
+
+
+/**
+ * @brief Tx FIFO empty flag from SPI master
+ *        
+ * @verbatim                  
+ * REG [0xba] SPI master Status Register (SPIMSR)
+ *            bit [7] Tx FIFO empty flag
+ *                    0: not empty
+ *                    1: empty
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result true: is empty 
+ */
+bool Panel_RA8889::SPIM_TxFIFO_Empty(void)
+{
+  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (SPI_DataRead() & 0x80);              //Check bit 7
+}
+
+
+/**
+ * @brief Tx FIFO full flag from SPI master
+ *        
+ * @verbatim                  
+ * REG [0xba] SPI master Status Register (SPIMSR)
+ *            bit [6] Tx FIFO full flag
+ *                    0: not full
+ *                    1: full
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result true: is full 
+ */
+bool Panel_RA8889::SPIM_TxFIFO_Full(void)
+{
+  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (SPI_DataRead() & 0x40);              //Check bit 6
+} 
+
+
+/**
+ * @brief Rx FIFO empty flag from SPI master
+ *        
+ * @verbatim                  
+ * REG [0xba] SPI master Status Register (SPIMSR)
+ *            bit [5] Rx FIFO empty flag
+ *                    0: not empty
+ *                    1: empty
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result true: is empty 
+ */
+bool Panel_RA8889::SPIM_RxFIFO_Empty(void)
+{
+  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (SPI_DataRead() & 0x20);              //Check bit 5
+} 
+
+
+/**
+ * @brief Rx FIFO full flag from SPI master
+ *        
+ * @verbatim                  
+ * REG [0xba] SPI master Status Register (SPIMSR)
+ *            bit [4] Rx FIFO full flag
+ *                    0: not full
+ *                    1: full
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result true: is full 
+ */
+bool Panel_RA8889::SPIM_RxFIFO_full(void)
+{
+  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (SPI_DataRead() & 0x10);              //Check bit 4
+} 
+
+
+/**
+ * @brief Occur Overflow interrupt flag
+ *        
+ * @verbatim                  
+ * REG [0xba] SPI master Status Register (SPIMSR)
+ *            bit [3] Overflow interrupt flag
+ *            Read: 
+ *            0: No Overflow
+ *            1: Overflow interrupt flag
+ *            Write
+ *            1: will clear this flag
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result true: occur overflow
+ */
+bool Panel_RA8889::Interrupt_Overflow_Flag(void)
+{
+  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (SPI_DataRead() & 0x08);              //Occur Overflow Interrupt
+}
+
+
+/**
+ * @brief Clear Overflow interrupt flag
+ *        
+ * @verbatim                  
+ * REG [0xba] SPI master Status Register (SPIMSR)
+ *            bit [3] Overflow interrupt flag
+ *            Read: 
+ *            0: No Overflow
+ *            1: Overflow interrupt flag
+ *            Write
+ *            1: will clear this flag
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::Interrupt_ClearOverflow_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  temp = SPI_DataRead();
+  temp |= cSetb3;
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief Occur Tx FIFO empty /FSM idle interrupt flag
+ *        
+ * @verbatim                  
+ * REG [0xba] SPI master Status Register (SPIMSR)
+ *            bit [2] Tx FIFO empty /FSM idle interrupt flag
+ *            Read: 
+ *            0: No interrupt flag
+ *            1: interrupt flag
+ *            Write
+ *            1: will clear this flag
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result true: occur Tx FIFO empty /FSM idle
+ */
+bool Panel_RA8889::EMTI_Flag(void)
+{
+  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (SPI_DataRead() & 0x04);              //occur Tx FIFO empty /FSM idle interrupt flag
+}
+
+
+/**
+ * @brief Clear Tx FIFO empty /FSM idle interrupt flag
+ *        
+ * @verbatim                  
+ * REG [0xba] SPI master Status Register (SPIMSR)
+ *            bit [2] Tx FIFO empty /FSM idle interrupt flag
+ *            Read: 
+ *            0: No interrupt flag
+ *            1: interrupt flag
+ *            Write
+ *            1: will clear this flag
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::EMTI_Clear_Flag(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  temp = SPI_DataRead();
+  temp |= cSetb2;
+  SPI_DataWrite(temp);
+}
+
+
+
+//================================================================================
+//
+// [0xBB] SPI Clock period (SPI_DIVSOR)
+//
+//================================================================================
+
+
+/**
+ * @brief SPI Clock period
+ *        
+ * @verbatim                  
+ * REG [0xbb] SPI Clock period (SPI_DIVSOR)
+ *            bit [7-0] SPI Clock period (default Fsck=3)
+ *            According to system clock to set low & high period for SPI clock. 
+ *             
+ *            SPI Master:
+ *              Fsck = Fcore / (divisor * 2)
+ *            Serial Flash:
+ *              Fsck = Fcore / (divisor * 2)
+ *            When SPI_DIVSOR = 0,
+ *              Fsck = Fcore
+ * @endverbatim
+ *
+ * @param divisor: valor do divisor para o ajuste de frequencia do periodo de clock do SPI
+ *
+ * @note None
+ *
+ * @result None
+ */
+void Panel_RA8889::SPI_Clock_Period(uint8_t divisor)
+{
+  SPI_CmdWrite(REG_SPI_DIVSOR);                //0xbb, SPI Clock period (SPI_DIVSOR)
+  SPI_DataWrite(value);
+} 
+
+
+//================================================================================
+//
+// [0xBC] Serial flash DMA Source Starting Address 0 (DMA_SSTR0)
+// [0xBD] Serial flash DMA Source Starting Address 1 (DMA_SSTR1)
+// [0xBE] Serial flash DMA Source Starting Address 2 (DMA_SSTR2)
+// [0xBF] Serial flash DMA Source Starting Address 3 (DMA_SSTR3)
+//
+//================================================================================
+
+
+/**
+ * @brief     Configura o endereço inicial de origem de leitura da Flash Serial DMA
+ *            Serial Flash I/F DMA Source Starting Address
  *        
  * @verbatim
- *        Color depht de 8bpp
- *        
- *        REG [0xd5] Background Color Register - Red (BGCR)
- *                   bit [7~0] Background Color - Red, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd6] Background Color Register - Green (BGCG)
- *                   bit [7~0] Background Color - Green, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:2].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd7] Background Color Register - Blue (BGCB)
- *                   bit [7~0] Background Color - Blue, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:6].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
  *
- *        ***Note: No matter background transparency is enabled or not, don’t 
- *           set same value with Foreground Color otherwise image or text will 
- *           become a square with Foreground Color even BTE function.   
+ * Esta função define o endereço inicial de onde o RA8889 irá ler os dados
+ * da memória serial flash quando um DMA for iniciado. O endereço é de 32 bits,
+ * dividido em quatro registradores consecutivos (DMA_SSTR0 ~ DMA_SSTR3).
  *
- *        *** Note: If user wants to change rotate attribute, character line gap, 
- *            character-to-character space, foreground color, background color 
- *            and Text/graphic mode setting, please make sure core_busy (fontwr_
- *            busy) status bit is low.
- * @endverbatim
- *
- * @param color: entrada de dados no formato R3G3B2 (3 bits para o vermelho, 
- *        3 bits para o verde e 2 bits para o azul.
- *
- *        Dúvida????
- *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
- *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
- *        para definir o modelo de formato do pixel de cores.
- *        ...ou o formato tera que ser sempre RGB?  
- *
- * @note Use o determinado numero de bits para compor o numero de cores 256, 
- *       65K e 16.7M cores.
- */
-void Panel_RA8889::BackgroundColor_256(uint8_t color)
-{
-  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
-  SPI_DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
-  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
-  SPI_DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
-  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
-  SPI_DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
-}
-
-
-// Input data format:R5G6B6
-/**
- * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB5:6:5) de 65k cores
- *        
- * @verbatim 
- *        Color depht de 16bpp
- *
- *        REG [0xd5] Background Color Register - Red (BGCR)
- *                   bit [7~0] Background Color - Red, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd6] Background Color Register - Green (BGCG)
- *                   bit [7~0] Background Color - Green, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:2].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd7] Background Color Register - Blue (BGCB)
- *                   bit [7~0] Background Color - Blue, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:6].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *
- *        ***Note: No matter background transparency is enabled or not, don’t 
- *           set same value with Foreground Color otherwise image or text will 
- *           become a square with Foreground Color even BTE function.   
- *
- *        *** Note: If user wants to change rotate attribute, character line gap, 
- *            character-to-character space, foreground color, background color 
- *            and Text/graphic mode setting, please make sure core_busy (fontwr_
- *            busy) status bit is low.
- * @endverbatim
- *
- * @param color: entrada de dados no formato R5G6B5 (5 bits para o vermelho, 
- *        6 bits para o verde e 5 bits para o azul.
- *
- *        Dúvida????
- *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
- *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
- *        para definir o modelo de formato do pixel de cores.
- *        ...ou o formato tera que ser sempre RGB?  
- *
- * @note Use o determinado numero de bits para compor o numero de cores 256, 
- *       65K e 16.7M cores.
- */
-void Panel_RA8889::BackgroundColor_65k(uint16_t color)
-{
-  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
-  SPI_DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
-  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
-  SPI_DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado 
-  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
-  SPI_DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
-}
-
-
-/**
- * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB8:8:8) de 16.7M cores
- *        
- *        Color depht de 24bpp
- *
- *        REG [0xd5] Background Color Register - Red (BGCR)
- *                   bit [7~0] Background Color - Red, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd6] Background Color Register - Green (BGCG)
- *                   bit [7~0] Background Color - Green, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:5].
- *                             65K colors, the register uses Bit[7:2].
- *                             16.7M colors, the register uses Bit[7:0].
- *        REG [0xd7] Background Color Register - Blue (BGCB)
- *                   bit [7~0] Background Color - Blue, for Text or color expansion
- *                             256 colors, the register only uses Bit[7:6].
- *                             65K colors, the register uses Bit[7:3].
- *                             16.7M colors, the register uses Bit[7:0].
- *
- *        ***Note: No matter background transparency is enabled or not, don’t 
- *           set same value with Foreground Color otherwise image or text will 
- *           become a square with Foreground Color even BTE function.   
- *
- *        *** Note: If user wants to change rotate attribute, character line gap, 
- *            character-to-character space, foreground color, background color 
- *            and Text/graphic mode setting, please make sure core_busy (fontwr_
- *            busy) status bit is low.
- *
- * @param color: entrada de dados no formato R8G8B8 (8 bits para o vermelho, 
- *        8 bits para o verde e 8 bits para o azul.
- *
- *        Dúvida????
- *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
- *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
- *        para definir o modelo de formato do pixel de cores.
- *        ...ou o formato tera que ser sempre RGB?  
- *
- * @note Use o determinado numero de bits para compor o numero de cores 256, 
- *       65K e 16.7M cores.
- */ 
-void Panel_RA8889::BackgroundColor_16M(uint32_t color)
-{
-  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
-  SPI_DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
-  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
-  SPI_DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
-  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
-  SPI_DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
-}
-
-
-//================================================================================
-// [0x67] Draw Line / Triangle Control Register 0 (DCR0)
-//================================================================================
-
-
-/**
- * Talvez seja uma funcao do RA8876 (verificar no manual)
- * @brief Enable/Disable Drawing
- *        
- * @param b: true habilita, false: desabilita a linha de desenhos
- *
- * @note Não está descrito no maual. indica apenas que o bit[0] precisa 
- *       ser zero.
- */ 
-void Panel_RA8889::DrawEnable_AA(bool b)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR0);           //0x67, Draw Line / Triangle Control Register 0 (DCR0)
-  temp = SPI_DataRead();
-  temp &= cClrb0;                   //Reset bit 0
-  if (b) temp |= cSetb0 else temp &= cClrb0;
-  SPI_DataWrite(temp);
-}
-
-
-/**
- * @brief Ativa o Modo de desenho de Linha
- *
- *        Draw Line Start Signal Write Function
- *
- *        REG[67h] Draw Line / Triangle Control Register 0 (DCR0)
- *                 bit [7] Draw Line / Triangle Start Signal 
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0 : Drawing function complete.
- *                         0b1 : Drawing function is processing.
- *                 bit [1] Draw Triangle or Line Select Signal
- *                         0b0: Draw Line
- *                         0b1: Draw Triangle
- *
- * @param None
- *
- * @note Antes de executar esta função precisa entrar com os valores em registradores de coordenadas
- *       através das funções Point1_XY(), Point2_XY().
- */ 
-void Panel_RA8889::LineMode_Start(void)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
-  temp = SPI_DataRead();                       
-  temp &= cClrb1;                              //Reset bit 1, Select Draw Line
-  temp |= cSetb7;                              //Set bit 7, Start draw function
-  SPI_DataWrite(temp);                         
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-
-
-/**
- * @brief Ativa o Modo de desenho de Triangulo
- *        
- *        Draw Triangle Start Signal Write Function Non-Fill
- *
- *        REG[67h] Draw Line / Triangle Control Register 0 (DCR0)
- *                 bit [7] Draw Line / Triangle Start Signal 
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0 : Drawing function complete.
- *                         0b1 : Drawing function is processing.
- *                 bit [5] Fill function for Triangle Signal
- *                         0b0: Non fill.
- *                         0b1: Fill 
- *                 bit [1] Draw Triangle or Line Select Signal
- *                         0b0: Draw Line
- *                         0b1: Draw Triangle
- *
- * @param None
- *
- * @note Antes de executar esta função precisa entrar com os valores em registradores de coordenadas
- *       através das funções Point1_XY(), Point2_XY() e Point3_XY().
-*/ 
-void Panel_RA8889::TriangleMode_Start(bool fill)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
-  temp = SPI_DataRead();                       
-  temp |= cSetb1;                              //Set bit 1, Select Draw Triangle
-  if (fill) temp |= cClrb5 else temp &= cClrb5; //Set bit 5, Com preenchimento do triangulo
-  temp |= cSetb7;                              //Set bit 7, Draw Triangle
-  SPI_DataWrite(temp);
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-
-
-//================================================================================
-// [0x76] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-//================================================================================
-
-
-/**
- * @brief Ativa o Modo de desenho de Circulo / Elipse
- *        
- *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
- *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0: Drawing function complete.
- *                         0b1: Drawing function is processing.
- *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
- *                         0b0: Non fill.
- *                         0b1: fill.
- *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
- *                         0b00: Draw Circle / Ellipse
- *                         0b01: Draw Circle / Ellipse Curve
- *                         0b10: Draw Square.
- *                         0b11: Draw Circle Square.
- *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
- *                         0b00: bottom-left Ellipse Curve
- *                         0b01: upper-left Ellipse Curve
- *                         0b10: upper-right Ellipse Curve
- *                         0b11: bottom-right Ellipse Curve 
- *
- * @param fill: true preenche figura, false não preenche figura
- *
- * @note None
- */
-void Panel_RA8889::CircleMode_Start(bool fill)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();                       
-  temp |= cSetb7;                              //Set bit 7, Start the drawing function
-  temp &= cClrb5 & cClrb4;                     //Reset bit 5-4, Draw Circle / Ellipse
-  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
-  temp &= cClrb1 & cClrb0;                     //Reset bit 1-0, bottom-left Ellipse Curve
-  SPI_DataWrite(temp);                         //0b1n00 xx00, n=0/1
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-void Panel_RA8889::EllipseMode_Start(bool fill) { CircleMode_Start(fill);}
-
-
-/**
- * @brief Ativa o Modo de desenho de curva circular / eliptica 
- *        Quadrante Esquerda e Abaixo
- *
- *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
- *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0: Drawing function complete.
- *                         0b1: Drawing function is processing.
- *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
- *                         0b0: Non fill.
- *                         0b1: fill.
- *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
- *                         0b00: Draw Circle / Ellipse
- *                         0b01: Draw Circle / Ellipse Curve
- *                         0b10: Draw Square.
- *                         0b11: Draw Circle Square.
- *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
- *                         0b00: bottom-left Ellipse Curve
- *                         0b01: upper-left Ellipse Curve
- *                         0b10: upper-right Ellipse Curve
- *                         0b11: bottom-right Ellipse Curve 
- *
- * @param fill: true preenche região da curva figura, false não preenche a região da curva
- *
- * @note None
- */
-void Panel_RA8889::CurveLeftDownMode_Start(bool fill)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();                       
-  temp |= cSetb7;                              //Set bit 7, Start the drawing function
-  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
-  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
-  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
-  temp &= cClrb1 & cClrb0;                     //Reset bit 1-0, bottom-left Ellipse Curve  
-  SPI_DataWrite(temp);                         //0b1n01 xx00   n=1/0 
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-
-
-/**
- * @brief Ativa o Modo de desenho de curva circular / eliptica 
- *        Quadrante Esquerda e Acima
- *
- *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
- *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0: Drawing function complete.
- *                         0b1: Drawing function is processing.
- *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
- *                         0b0: Non fill.
- *                         0b1: fill.
- *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
- *                         0b00: Draw Circle / Ellipse
- *                         0b01: Draw Circle / Ellipse Curve
- *                         0b10: Draw Square.
- *                         0b11: Draw Circle Square.
- *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
- *                         0b00: bottom-left Ellipse Curve
- *                         0b01: upper-left Ellipse Curve
- *                         0b10: upper-right Ellipse Curve
- *                         0b11: bottom-right Ellipse Curve 
- *
- * @param fill: true preenche região da curva figura, false não preenche a região da curva
- *
- * @note None
- */
-void Panel_RA8889::CurveLeftUpMode_Start(bool fill)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();                       
-  temp |= cSetb7;                              //Set bit 7, Start the drawing function
-  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
-  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
-  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
-  temp &= cClrb1                               //Reset bit 1, upper-left Ellipse Curve  
-  temp |= cSetb0;                              //Set bit 0, upper-left Ellipse Curve 
-  SPI_DataWrite(temp);                         //0b1n01 xx01   n=1/0
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-
-
-/**
- * @brief Ativa o Modo de desenho de curva circular / eliptica 
- *        Quadrante Direita e Acima
- *
- *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
- *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0: Drawing function complete.
- *                         0b1: Drawing function is processing.
- *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
- *                         0b0: Non fill.
- *                         0b1: fill.
- *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
- *                         0b00: Draw Circle / Ellipse
- *                         0b01: Draw Circle / Ellipse Curve
- *                         0b10: Draw Square.
- *                         0b11: Draw Circle Square.
- *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
- *                         0b00: bottom-left Ellipse Curve
- *                         0b01: upper-left Ellipse Curve
- *                         0b10: upper-right Ellipse Curve
- *                         0b11: bottom-right Ellipse Curve 
- *
- * @param fill: true preenche região da curva figura, false não preenche a região da curva
- *
- * @note None
- */
-void Panel_RA8889::CurveRightUpMode_Start(bool fill)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead(); 
-  temp |= cSetb7;                              //Set bit 7, Start the drawing function
-  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
-  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
-  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
-  temp &= cSetb1                               //Set bit 1, upper-right Ellipse Curve
-  temp |= cClrb0;                              //Reset bit 0, upper-right Ellipse Curve
-  SPI_DataWrite(temp);                         //0b1n01 xx10   n=1/0
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-
-
-/**
- * @brief Ativa o Modo de desenho de curva circular / eliptica 
- *        Quadrante Esquerda e Abaixo
- *
- *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
- *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0: Drawing function complete.
- *                         0b1: Drawing function is processing.
- *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
- *                         0b0: Non fill.
- *                         0b1: fill.
- *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
- *                         0b00: Draw Circle / Ellipse
- *                         0b01: Draw Circle / Ellipse Curve
- *                         0b10: Draw Square.
- *                         0b11: Draw Circle Square.
- *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
- *                         0b00: bottom-left Ellipse Curve
- *                         0b01: upper-left Ellipse Curve
- *                         0b10: upper-right Ellipse Curve
- *                         0b11: bottom-right Ellipse Curve 
- *
- * @param fill: true preenche região da curva figura, false não preenche a região da curva
- *
- * @note None
- */
-void Panel_RA8889::CurveRightDownMode_Start(bool fill)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();  
-  temp |= cSetb7;                              //Set bit 7, Start the drawing function
-  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
-  temp &= cClrb5;                              //Reset bit 5, Draw Circle / Ellipse Curve   
-  temp |= cSetb4;                              //Set bit 4, Draw Circle / Ellipse Curve
-  temp &= cSetb1                               //Set bit 1, bottom-right Ellipse Curve
-  temp |= cSetb0;                              //Set bit 0, bottom-right Ellipse Curve
-  SPI_DataWrite(temp);                         //0b1n01 xx11   n=1/0
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-
-
-/**
- * @brief Ativa o Modo de desenho de quadrado
- *
- *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
- *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0: Drawing function complete.
- *                         0b1: Drawing function is processing.
- *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
- *                         0b0: Non fill.
- *                         0b1: fill.
- *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
- *                         0b00: Draw Circle / Ellipse
- *                         0b01: Draw Circle / Ellipse Curve
- *                         0b10: Draw Square.
- *                         0b11: Draw Circle Square.
- *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
- *                         0b00: bottom-left Ellipse Curve
- *                         0b01: upper-left Ellipse Curve
- *                         0b10: upper-right Ellipse Curve
- *                         0b11: bottom-right Ellipse Curve 
- *
- * @param fill: true preenche região da curva figura, false não preenche a região da curva
- *
- * @note None
- */
-void Panel_RA8889::SquareMode_Start(bool fill)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();  
-  temp |= cSetb7;                              //Set bit 7, Start the drawing function
-  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
-  temp |= cSetb5;                              //Set bit 5, Draw Square.
-  temp &= cClrb4;                              //Reset bit 4, Draw Square.
-  SPI_DataWrite(temp);                         //0b1n10 xxxx   n=1/0
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-
-
-/**
- * @brief Ativa o Modo de desenho de curva circular no canto quadrado
- *        
- * @verbatim  
- *        REG[76h] Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
- *                 bit [7] Draw Circle / Ellipse / Square /Circle Square Start Signal
- *                         Write Function:
- *                         0b0: Stop the drawing function.
- *                         0b1: Start the drawing function.
- *                         Read Function:
- *                         0b0: Drawing function complete.
- *                         0b1: Drawing function is processing.
- *                 bit [6] Fill the Circle / Ellipse / Square / Circle Square Signal
- *                         0b0: Non fill.
- *                         0b1: fill.
- *                 bit [5-4] Draw Circle / Ellipse / Square / Ellipse Curve / Circle Square Select
- *                         0b00: Draw Circle / Ellipse
- *                         0b01: Draw Circle / Ellipse Curve
- *                         0b10: Draw Square.
- *                         0b11: Draw Circle Square.
- *                 bit [1-0] Draw Circle / Ellipse Curve Part Select(DECP)
- *                         0b00: bottom-left Ellipse Curve
- *                         0b01: upper-left Ellipse Curve
- *                         0b10: upper-right Ellipse Curve
- *                         0b11: bottom-right Ellipse Curve 
- * @endverbatim  
- *
- * @param fill: true preenche região da curva figura, false não preenche a região da curva
- *
- * @note None
- */
-void Panel_RA8889::CircleSquareMode_Start(bool fill)
-{
-  uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();  
-  temp |= cSetb7;                              //Set bit 7, Start the drawing function
-  if (fill) temp |= cSetrb6 else temp &= cClrb6 //Set bit 6 = Fill, Reset bit 6 = Non-Fill
-  temp |= cSetb5;                              //Set bit 5, Draw Circle Square
-  temp |= cSetb4;                              //Set bit 4, Draw Circle Square
-  SPI_DataWrite(temp);                         //0b1n11 xxxx   n=1/0
-  CoreTask_WaitReady();                        //Espere ate ficar pronto
-}
-
-
-//================================================================================
-// [0x77] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
-// [0x78] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
-// [0x79] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
-// [0x7a] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
-// [0x7b] Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
-// [0x7c] Draw Circle/Ellipse/Circle Square Center X-coordinates Register1 (DEHR1)
-// [0x7d] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
-// [0x7e] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register1 (DEVR1)
-//================================================================================
-
-
-/**
- * @brief Raio do círculo                           Rx = Ry
- *        Raio da elipse                            Rx > Ry or Rx < Ry
- *        Raio da curva circular no canto quadrado  Rx = Ry, Rx > Ry or Rx < Ry
- *
- *        REG[0x77] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
- *                  bit [7~0] Draw Circle/Ellipse/Circle Square Major radius [7:0]
- *        REG[0x78] Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
- *                  bit [4~0] Draw Circle/Ellipse/Circle Square Major radius [12:8]
- *
- *        Unit: Pixel
- *        To draw a circle needs to set major axis equal to minor radius.
+ * REG [0xbc] Serial flash DMA Source Starting Address 0 (DMA_SSTR0)
+ *            bit [7-0] Serial flash DMA Source START ADDRESS [7:0]
+ *            This register sets the start address [7:0] of serial flash memory.
+ *            Directly specify the start address of source image.
+ *             
+ * REG [0xbd] Serial flash DMA Source Starting Address 1 (DMA_SSTR1)
+ *            bit [7-0] Serial flash DMA Source START ADDRESS [15:8]
+ *            This register sets the start address [15:8] of serial flash memory.
+ *            Directly specify the start address of source image.
+ *            
+ * REG [0xbe] Serial flash DMA Source Starting Address 2 (DMA_SSTR2)
+ *            bit [7-0] Serial flash DMA Source START ADDRESS [23:16]
+ *            This register sets the start address [23:16] of serial flash memory.
+ *            Directly specify the start address of source image.
  * 
- *        REG[0x79] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
- *                  bit [7~0] Draw Circle/Ellipse/Circle Square Minor radius [7:0]
- *        REG[0x7a] Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
- *                  bit [4~0] Draw Circle/Ellipse/Circle Square Minor radius [12:8]
+ * REG [0xbf] Serial flash DMA Source Starting Address 3 (DMA_SSTR3)
+ *            bit [7-0] Serial flash DMA Source START ADDRESS [31:24]
+ *            This register sets the start address [31:24] of serial flash memory.
+ *            Directly specify the start address of source image.
+ * @endverbatim
  *
- *        Unit: Pixel
- *        To draw a circle needs to set major axis equal to minor radius.
+ * @param addr: 
  *
- * @param radius: raio do circulo
+ * @note This bits index serial flash address [7:0][15:8][23:16][31:24]
  *
- * @note No criculo o R = Rx = Ry e na elipse Rx > Ry ou Rx < Ry
+ * @result None
  */
-void Panel_RA8889::Radius_RxRy(uint16_t Rx, uint16_t Ry)
+void SFI_SetDMASourceAddress(uint32_t addr)
 {
-  SPI_CmdWrite(REG_ELL_A0);                    //0x77, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
-  SPI_DataWrite(Rx);                           //
-  SPI_CmdWrite(REG_ELL_A1);                    //0x78, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
-  SPI_DataWrite(Rx >> 8);                      //
+//  SPI_CmdWrite(REG_DMA_SSTR0);      //0xbc, Serial flash DMA Source Starting Address 0 (DMA_SSTR0)
+//  SPI_DataWrite(addr);              //address [7:0]
+//  SPI_CmdWrite(REG_DMA_SSTR1);      //0xbd, Serial flash DMA Source Starting Address 1 (DMA_SSTR1)
+//  SPI_DataWrite(addr >> 8);         //address [15:8]
+//  SPI_CmdWrite(REG_DMA_SSTR2);      //0xbe, Serial flash DMA Source Starting Address 2 (DMA_SSTR2)
+//  SPI_DataWrite(addr >> 16);        //address [23:16]
+//  SPI_CmdWrite(REG_DMA_SSTR3);      //0xbf, Serial flash DMA Source Starting Address 3 (DMA_SSTR3)
+//  SPI_DataWrite(addr >> 24);        //address [31:24]
   
-  SPI_CmdWrite(REG_ELL_B0);                    //0x79, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
-  SPI_DataWrite(Ry);                           //
-  SPI_CmdWrite(REG_ELL_B1);                    //0x7a, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
-  SPI_DataWrite(Ry >> 8);                      //
+    // Array com os registradores consecutivos
+    const uint8_t regs[4] = {REG_DMA_SSTR0, REG_DMA_SSTR1, REG_DMA_SSTR2, REG_DMA_SSTR3};
+    for (int i = 0; i < 4; i++) {
+        SPI_CmdWrite(regs[i]);                   //envia cada 8 bits para os registradores de endereço
+        SPI_DataWrite((addr >> (8 * i)) & 0xFF); // envia cada byte do endereço
+    }
 }
-void Panel_RA8889::CircleRadius_R(uint16_t R) {Radius_RxRy(R, R);}
-void Panel_RA8889::EllipseRadius_RxRy(uint16_t Rx, uint16_t Ry) {Radius_RxRy(Rx, Ry);}
-void Panel_RA8889::CircleSquareRadius_RxRy(uint16_t Rx, uint16_t Ry) {Radius_RxRy(Rx, Ry);}
+
+
+//================================================================================
+//
+// [0xC0] DMA Destination Window Upper-Left corner X-coordinates 0 (DMA_DX0)
+// [0xC1] DMA Destination Window Upper-Left corner X-coordinates 1 (DMA_DX1)
+// [0xC2] DMA Destination Window Upper-Left corner Y-coordinates 0 (DMA_DY0)
+// [0xC3] DMA Destination Window Upper-Left corner Y-coordinates 1 (DMA_DY1)
+//
+//================================================================================
 
 
 /**
- * @brief Posição do Centro do Círculo/Elipse/Circulo do quadrado
+ * @brief     Configura o endereço inicial de destino da Flash Serial DMA
+ *            Serial Flash I/F DMA Destination Starting Address
+ *        
+ * @verbatim
+ * REG [0xc0] DMA Destination Window Upper-Left corner X-coordinates 0 (DMA_DX0)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            This register defines Upper-Left corner X-coordinates [7:0] of DMA Destination Window on Canvas area.
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            This register defines Destination address [7:2] in SDRAM.
  *
- *        REG[0x7b] Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
- *                  bit [7~0] Draw Circle/Ellipse/Circle Square Center X-coordinates [7:0]
- *        REG[0x7c] Draw Circle/Ellipse/Circle Square Center X-coordinates Register1 (DEHR1)
- *                  bit [4~0] Draw Circle/Ellipse/Circle Square Center X-coordinates [12:8]
- *        REG[0x7d] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
- *                  bit [7~0] Draw Circle/Ellipse/Circle Square Center Y-coordinates [7:0]
- *        REG[0x7e] Draw Circle/Ellipse/Circle Square Center Y-coordinates Register1 (DEVR1)
- *                  bit [4~0] Draw Circle/Ellipse/Circle Square Center Y-coordinates [12:8]
+ * REG [0xc1] DMA Destination Window Upper-Left corner X-coordinates 1 (DMA_DX1)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            This register defines Upper-Left corner X-coordinates [12:8] of DMA Destination Window on Canvas area.
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            This register defines Destination address [15:8] in SDRAM.
  *
- *        Please refer to the Canvas image coordinates.
- *        Unit: Pixel
+ * REG [0xc2] DMA Destination Window Upper-Left corner Y-coordinates 0 (DMA_DY0)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            This register defines Upper-Left corner Y-coordinates [7:0] of DMA Destination Window on Canvas area.
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            This register defines Destination address [23:16] in SDRAM.
  *
- * @param Wx, Hy: coordenada central (x,y)
+ * REG [0xc3] DMA Destination Window Upper-Left corner Y-coordinates 1 (DMA_DY1)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            This register defines Upper-Left corner Y-coordinates [12:8] of DMA Destination Window on Canvas area.
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            This register defines Destination address [31:24] in SDRAM.
+ * @endverbatim
+ *
+ * @param addr: 
+ *
+ * @note This bits index SDRAM address [7:0][15:8][23:16][31:24], bits [1:0] fix at 0.
+ *
+ * @result None
+ */
+void SFI_SetDMADestinationAddress(uint32_t addr);
+{
+    //Array com os registradores consecutivos
+    const uint8_t regs[4] = {REG_DMA_DX0, REG_DMA_DX1, REG_DMA_DY0, REG_DMA_DY1};
+    for (int i = 0; i < 4; i++) {
+        SPI_CmdWrite(regs[i]);                   //envia cada 8 bits para os registradores de endereço
+        SPI_DataWrite((addr >> (8 * i)) & 0xFF); //envia cada byte do endereço
+    }
+}
+
+
+/**
+ * @brief  Configura o ponto superior esquerdo da janela de destino do DMA
+ *
+ * @verbatim
+ * Define as coordenadas (X, Y) do canto superior esquerdo da área de destino
+ * para onde os dados transferidos por DMA serão gravados no canvas do RA8889.
+ * 
+ * Em modo Block (REG 5Eh bit2 = 0), os registradores definem diretamente
+ * as coordenadas X e Y do ponto inicial no canvas.
+ * 
+ * Em modo Linear (REG 5Eh bit2 = 1), os mesmos registradores são usados
+ * como endereço base de destino na SDRAM.
+ *
+ * REG [0xc0] DMA Destination Window Upper-Left corner X-coordinates 0 (DMA_DX0)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            This register defines Upper-Left corner X-coordinates [7:0] of DMA Destination Window on Canvas area.
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            This register defines Destination address [7:2] in SDRAM.
+ *
+ * REG [0xc1] DMA Destination Window Upper-Left corner X-coordinates 1 (DMA_DX1)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            This register defines Upper-Left corner X-coordinates [12:8] of DMA Destination Window on Canvas area.
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            This register defines Destination address [15:8] in SDRAM.
+ *
+ * REG [0xc2] DMA Destination Window Upper-Left corner Y-coordinates 0 (DMA_DY0)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            This register defines Upper-Left corner Y-coordinates [7:0] of DMA Destination Window on Canvas area.
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            This register defines Destination address [23:16] in SDRAM.
+ *
+ * REG [0xc3] DMA Destination Window Upper-Left corner Y-coordinates 1 (DMA_DY1)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            This register defines Upper-Left corner Y-coordinates [12:8] of DMA Destination Window on Canvas area.
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            This register defines Destination address [31:24] in SDRAM.
+ * @endverbatim
+ *
+ * @param Wx Coordenada X inicial (0 ~ 4095) da janela de destino
+ * @param Hy Coordenada Y inicial (0 ~ 4095) da janela de destino
+ *
+ * @note Para uso no modo de Canvas (Block Mode), REG 5Eh (AW_COLOR) bit 1 = 0, Block Mode
+ *
+ * @result None
+ */
+void SFI_DMA_DestinationUpperLeftCorner(uint16_t Wx, uint16_t Hy)
+{
+  SPI_CmdWrite(REG_DMA_DX0);                   //0xc0, DMA Destination Window Upper-Left corner X-coordinates 0 (DMA_DX0)
+  SPI_DataWrite(Wx);                           //byte baixo de Wx [7:0]  
+  SPI_CmdWrite(REG_DMA_DX1);                   //0xc1, DMA Destination Window Upper-Left corner X-coordinates 1 (DMA_DX1)
+  SPI_DataWrite(Wx >> 8);                      //byte alto de Wx [12:8] 
+									           
+  SPI_CmdWrite(REG_DMA_DY0);                   //0xc2, DMA Destination Window Upper-Left corner Y-coordinates 0 (DMA_DY0)
+  SPI_DataWrite(Hy);                           //byte baixo de Hy [7:0]
+  SPI_CmdWrite(REG_DMA_DY1);                   //0xc3, DMA Destination Window Upper-Left corner Y-coordinates 1 (DMA_DY1)
+  SPI_DataWrite(Hy >> 8);                      //byte alto de Hy [12:8]
+}
+
+
+//================================================================================
+//
+// [0xC6] DMA Block Width 0 (DMAW_WTH0)
+// [0xC7] DMA Block Width 1 (DMAW_WTH1)
+// [0xC8] DMA Block Height 0 (DMAW_HIGH0)
+// [0xC9] DMA Block Height 1 (DMAW_HIGH1)
+//
+//================================================================================
+
+
+/**
+ * @brief  
+ *
+ * @verbatim
+ *
+ * REG [0xc6] DMA Block Width 0 (DMAW_WTH0)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            DMA Block Width [7:0]
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            DMA Transfer Number [7:0]
+ *
+ * REG [0xc7] DMA Block Width 1 (DMAW_WTH1)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            DMA Block Width [15:8]
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            DMA Transfer Number [15:8]
+ *
+ * REG [0xc8] DMA Block Height 0 (DMAW_HIGH0)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            DMA Block Height [7:0]
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            DMA Transfer Number [23:16]
+ *
+ * REG [0xc9] DMA Block Height 1 (DMAW_HIGH1)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            DMA Block Height [15:8]
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            DMA Transfer Number [31:24]
+ * @endverbatim
+ *
+ * @param addr
  *
  * @note 
+ *
+ * @result Unit : Pixel
+ *         When REG DMACR bit 1 = 0 (Linear Mode)
+ *         DMA Transfer Number [7:0][15:8][23:16][31:24]
+ *         
+ *         When REG DMACR bit 1 = 1 (Block Mode)
+ *         DMA Block Width [7:0][15:8]
+ *         DMA Block HIGH[7:0][15:8]
  */
- void Panel_RA8889::Center_XY(uint16_t Wx, uint16_t Hy)
- {
-  SPI_CmdWrite(REG_DEHR0);      //0x7b, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
-  SPI_DataWrite(Wx);            //
-  SPI_CmdWrite(REG_DEHR1);      //0x7c, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR1)
-  SPI_DataWrite(Wx >> 8);       //
-						   
-  SPI_CmdWrite(REG_DEVR0);      //0x7d, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
-  SPI_DataWrite(Hy);            //
-  SPI_CmdWrite(REG_DEVR1);      //0x7e, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR1)
-  SPI_DataWrite(Hy >> 8);       //
- }
-void Panel_RA8889::CircleCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
-void Panel_RA8889::EllipseCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
+void SFI_DMA_TransferNumber(uint32_t addr)
+{
+  SPI_CmdWrite(REG_DMAW_WTH0);                   //0xc6, DMA Block Width 0 (DMAW_WTH0)
+  SPI_DataWrite(addr);                           
+  SPI_CmdWrite(REG_DMAW_WTH1);                   //0xc7, DMA Block Width 1 (DMAW_WTH1)
+  SPI_DataWrite(addr >> 8);                      
+  SPI_CmdWrite(REG_DMAW_HIGH0);                  //0xc8, DMA Block Height 0 (DMAW_HIGH0)
+  SPI_DataWrite(addr >> 16);                     
+  SPI_CmdWrite(REG_DMAW_HIGH1);                  //0xc9, DMA Block Height 1 (DMAW_HIGH1)
+  SPI_DataWrite(addr >> 24);                     
+}
+
+
+/**
+ * @brief  
+ *
+ * @verbatim
+ *
+ * REG [0xc6] DMA Block Width 0 (DMAW_WTH0)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            DMA Block Width [7:0]
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            DMA Transfer Number [7:0]
+ *
+ * REG [0xc7] DMA Block Width 1 (DMAW_WTH1)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            DMA Block Width [15:8]
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            DMA Transfer Number [15:8]
+ *
+ * REG [0xc8] DMA Block Height 0 (DMAW_HIGH0)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            DMA Block Height [7:0]
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            DMA Transfer Number [23:16]
+ *
+ * REG [0xc9] DMA Block Height 1 (DMAW_HIGH1)
+ *            bit [7-0] 
+ *            When REG 5Eh (AW_COLOR) bit 2 = 0 (Block Mode)
+ *            DMA Block Height [15:8]
+ *            When REG 5Eh (AW_COLOR) bit 2 = 1 (Linear Mode)
+ *            DMA Transfer Number [31:24]
+ * @endverbatim
+ *
+ * @param addr
+ *
+ * @note 
+ *
+ * @result Unit : Pixel
+ *         When REG DMACR bit 1 = 0 (Linear Mode)
+ *         DMA Transfer Number [7:0][15:8][23:16][31:24]
+ *         
+ *         When REG DMACR bit 1 = 1 (Block Mode)
+ *         DMA Block Width [7:0][15:8]
+ *         DMA Block HIGH[7:0][15:8]
+ */
+void SFI_DMA_TransferWidthHeight(uint16_t Wx, uint16_t Hy)
+{
+  SPI_CmdWrite(REG_DMAW_WTH0);                 //0xc6, DMA Block Width 0 (DMAW_WTH0)
+  SPI_DataWrite(Wx);                           //byte baixo de Wx [7:0]
+  SPI_CmdWrite(REG_DMAW_WTH1);                 //0xc7, DMA Block Width 1 (DMAW_WTH1)
+  SPI_DataWrite(Wx >> 8);                      //byte alto de Wx [12:8]
+  
+  SPI_CmdWrite(REG_DMAW_HIGH0);                //0xc8, DMA Block Height 0 (DMAW_HIGH0)
+  SPI_DataWrite(Hy);                           //byte baixo de Hy [7:0]
+  SPI_CmdWrite(REG_DMAW_HIGH1);                //0xc9, DMA Block Height 1 (DMAW_HIGH1)
+  SPI_DataWrite(Hy >> 8);                      //byte alto de Hy [12:8]
+}
 
 
 //================================================================================
-// [0x68] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
-// [0x69] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
-// [0x6a] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
-// [0x6b] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
-// [0x6c] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
-// [0x6d] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
-// [0x6e] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
-// [0x6f] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
-// [0x70] Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
-// [0x71] Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
-// [0x72] Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
-// [0x73] Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
+//
+// [0xCA] DMA Source Picture Width 0 (DMA_SWTH0)
+// [0xCB] DMA Source Picture Width 0 (DMA_SWTH1)
+//
 //================================================================================
 
 
 /**
- * @brief Line Start Point
- *        
- *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
- *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
- *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
- *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
- *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
- *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
- *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
- *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
+ * @brief  DMA Source Picture Width
  *
- *        Please refer to the Canvas image coordinates.
- *        Unit: Pixel 
- *        ***Note: When draw a square, start point & end point cannot be 
- *           located at the same point or at the same X-axis or Y-axis.
+ * @verbatim
+ * REG [0xca] DMA Source Picture Width 0 (DMA_SWTH0)
+ *            bit [7-0] DMA Source Picture Width [7:0]
+ *            Unit: pixel
  *
- * @param wx: ponto de coordenada x
- *        hy: ponto de coordenada y
+ * REG [0xcb] DMA Source Picture Width 0 (DMA_SWTH1)
+ *            bit [4-0] DMA Source Picture Width [12:8]
+ * @endverbatim
  *
- * @note None
+ * @param Wx
+ *
+ * @note DMA Source Picture Width [7:0][12:8]
+ *
+ * @result None
  */
-void Panel_RA8889::Point1_XY(uint16_t wx, uint16_t hy)
+void SFI_DMA_SourceWidth(uint16_t Wx)
 {
-  SPI_CmdWrite(REG_DLHSR0);                    //0x68, Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
-  SPI_DataWrite(wx);                           
-  SPI_CmdWrite(REG_DLHSR1);                    //0x69, Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
-  SPI_DataWrite(wx >> 8);                      
-  SPI_CmdWrite(REG_DLVSR0);                    //0x6a, Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
-  SPI_DataWrite(hy);                           
-  SPI_CmdWrite(REG_DLVSR1);                    //0x6b, Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
-  SPI_DataWrite(hy >> 8);                      
+  SPI_CmdWrite(REG_DMA_SWTH0);       //0xca, DMA Source Picture Width 0 (DMA_SWTH0)
+  SPI_DataWrite(Wx);
+  SPI_CmdWrite(REG_DMA_SWTH1);       //0xcb, DMA Source Picture Width 0 (DMA_SWTH1)
+  SPI_DataWrite(Wx >> 8);
 }
-void Panel_RA8889::Line_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
-
-
-/**
- * @brief Line End Point
- *        
- *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
- *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
- *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
- *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
- *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
- *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
- *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
- *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
- *
- *        Please refer to the Canvas image coordinates.
- *        Unit: Pixel 
- *        ***Note: When draw a square, start point & end point cannot be 
- *           located at the same point or at the same X-axis or Y-axis.
- *
- * @param wx: ponto de coordenada x
- *        hy: ponto de coordenada y
- *
- * @note None
- */
-void Panel_RA8889::Point2_XY(uint16_t wx, uint16_t hy)
-{
-  SPI_CmdWrite(REG_DLHER0);                    //0x6c, Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
-  SPI_DataWrite(wx);                           //
-  SPI_CmdWrite(REG_DLHER1);                    //0x6d, Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
-  SPI_DataWrite(wx >> 8);                      //
-  SPI_CmdWrite(REG_DLVER0);                    //0x6e, Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
-  SPI_DataWrite(hy);                           //
-  SPI_CmdWrite(REG_DLVER1);                    //0x6f, Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
-  SPI_DataWrite(hy >> 8);                      //
-}
-void Panel_RA8889::Line_Point2XY(uint16_t wx, uint16_t hy) {Point2_XY(wx, hy);}
-
-
-/**
- * @brief Triangle Point 1
- *        
- *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
- *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
- *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
- *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
- *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
- *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
- *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
- *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
- *
- *        Please refer to the Canvas image coordinates.
- *        Unit: Pixel 
- *        ***Note: When draw a square, start point & end point cannot be 
- *           located at the same point or at the same X-axis or Y-axis.
- *
- * @param wx: ponto de coordenada x
- *        hy: ponto de coordenada y
- *
- * @note None
- */ 
-void Panel_RA8889::Triangle_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
-
-/**
- * @brief Triangle Point 2
- *        
- *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
- *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
- *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
- *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
- *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
- *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
- *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
- *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
- *
- *        Please refer to the Canvas image coordinates.
- *        Unit: Pixel 
- *        ***Note: When draw a square, start point & end point cannot be 
- *           located at the same point or at the same X-axis or Y-axis.
- *
- * @param wx: ponto de coordenada x
- *        hy: ponto de coordenada y
- *
- * @note None
- */ 
-void Panel_RA8889::Triangle_Point2XY(uint16_t wx, uint16_t hy)  {Point2_XY(wx, hy);}
-
-
-/**
- * @brief Triangle Point 3
- *        
- *        REG [70h] Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
- *                  bit [7~0] Draw Triangle Point 3 X-coordination [7:0]
- *        REG [71h] Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
- *                  bit [7~0] Draw Triangle Point 3 X-coordination [12:8]
- *        REG [72h] Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
- *                  bit [7~0] Draw Triangle Point 3 Y-coordination [7:0]
- *        REG [73h] Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
- *                  bit [7~0] Draw Triangle Point 3 Y-coordination [12:8]
- *
- *        Please refer to the Canvas image coordinates.
- *        Unit: Pixel
- *
- * @param wx: ponto de coordenada x
- *        hy: ponto de coordenada y
- *
- * @note None
- */ 
-void Panel_RA8889::Point3_XY(uint16_t wx, uint16_t hy)
-{
-  SPI_CmdWrite(REG_DTPH0);                     //0x70, Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
-  SPI_DataWrite(wx);                           
-  SPI_CmdWrite(REG_DTPH1);                     //0x71, Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
-  SPI_DataWrite(wx >> 8);                      
-  SPI_CmdWrite(REG_DTPV0);                     //0x72, Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
-  SPI_DataWrite(hy);                           
-  SPI_CmdWrite(REG_DTPV1);                     //0x73, Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
-  SPI_DataWrite(hy >> 8);                      
-}
-void Panel_RA8889::Triangle_Point3XY(uint16_t wx, uint16_t hy) {Point3_XY(wx, hy)}
-
-
-/**
- * @brief Square Start Point
- *        
- *        REG [68h] Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
- *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinates [7:0]
- *        REG [69h] Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
- *                  bit [7~0] Draw Line/Square/Triangle Start X-coordinate [12:8]
- *        REG [6Ah] Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
- *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [7:0]
- *        REG [6Bh] Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
- *                  bit [7~0] Draw Line/Square/Triangle Start Y-coordinate [12:8]
- *
- *        Please refer to the Canvas image coordinates.
- *        Unit: Pixel 
- *        ***Note: When draw a square, start point & end point cannot be 
- *           located at the same point or at the same X-axis or Y-axis.
- *
- * @param wx: ponto de coordenada x
- *        hy: ponto de coordenada y
- *
- * @note None
- */ 
-void Panel_RA8889::Square_Point1XY(uint16_t wx, uint16_t hy) {Point1_XY(wx, hy);}
-
-
-/**
- * @brief Square End Point
- *        
- *        REG [6Ch] Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
- *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [7:0]
- *        REG [6Dh] Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
- *                  bit [7~0] Draw Line/Square/Triangle End X-coordinate [12:8]
- *        REG [6Eh] Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
- *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [7:0]
- *        REG [6Fh] Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
- *                  bit [7~0] Draw Line/Square/Triangle End Y-coordinate [12:8]
- *
- *        Please refer to the Canvas image coordinates.
- *        Unit: Pixel 
- *        ***Note: When draw a square, start point & end point cannot be 
- *           located at the same point or at the same X-axis or Y-axis.
- *
- * @param wx: ponto de coordenada x
- *        hy: ponto de coordenada y
- *
- * @note None
- */
-void Panel_RA8889::Square_Point2XY(uint16_t wx, uint16_t hy) {Point2_XY(wx, hy);}
 
 
 //================================================================================
-// [0xcc] Character Control Register 0 (CCR0)
+//
+// [0xCC] Character Control Register 0 (CCR0)
+//
 //================================================================================
 
 
 /**
  * @brief Select User-defined Font in Text Mode
- *        
- *        REG [CCh] Character Control Register 0 (CCR0)
- *                  bit [7-6] Character source selection
- *                            User-defined Font /CGROM Font Selection Bit in Text Mode
- *                            0b00: Select internal CGROM Character.
- *                            0b01: Select external CGROM Character. (Genitop serial flash)
- *                            0b10: Select user-defined Character.
- *                            0b11: NA
+ *
+ * @verbatim
+ *        REG [0xcc] Character Control Register 0 (CCR0)
+ *                   bit [7-6] Character source selection
+ *                             User-defined Font /CGROM Font Selection Bit in Text Mode
+ *                             0b00: Select internal CGROM Character.
+ *                             0b01: Select external CGROM Character. (Genitop serial flash)
+ *                             0b10: Select user-defined Character.
+ *                             0b11: NA
+ * @endverbatim
  *
  * @param None
  *
@@ -5634,14 +7937,15 @@ void Panel_RA8889::Font_UseUserDefined(void)
  * @brief Select Internal CGROM Font in Text Mode
  *        
  * @verbatim
- *        REG [CCh] Character Control Register 0 (CCR0)
- *                  bit [7-6] Character source selection
- *                            User-defined Font /CGROM Font Selection Bit in Text Mode
- *                            0b00: Select internal CGROM Character.
- *                            0b01: Select external CGROM Character. (Genitop serial flash)
- *                            0b10: Select user-defined Character.
- *                            0b11: NA
+ *        REG [0xcc] Character Control Register 0 (CCR0)
+ *                   bit [7-6] Character source selection
+ *                             User-defined Font /CGROM Font Selection Bit in Text Mode
+ *                             0b00: Select internal CGROM Character.
+ *                             0b01: Select external CGROM Character. (Genitop serial flash)
+ *                             0b10: Select user-defined Character.
+ *                             0b11: NA
  * @endverbatim
+ *
  * @param None
  *
  * @note None
@@ -5659,14 +7963,16 @@ void Panel_RA8889::Font_UseInternalCGROM(void)
 
 /**
  * @brief Select External CGROM Font (enitop serial flash) in Text Mode
- *        
- *        REG [CCh] Character Control Register 0 (CCR0)
- *                  bit [7-6] Character source selection
- *                            User-defined Font /CGROM Font Selection Bit in Text Mode
- *                            0b00: Select internal CGROM Character.
- *                            0b01: Select external CGROM Character. (Genitop serial flash)
- *                            0b10: Select user-defined Character.
- *                            0b11: NA
+ *
+ * @verbatim
+ *        REG [0xcc] Character Control Register 0 (CCR0)
+ *                   bit [7-6] Character source selection
+ *                             User-defined Font /CGROM Font Selection Bit in Text Mode
+ *                             0b00: Select internal CGROM Character.
+ *                             0b01: Select external CGROM Character. (Genitop serial flash)
+ *                             0b10: Select user-defined Character.
+ *                             0b11: NA
+ * @endverbatim
  *
  * @param None
  *
@@ -5685,7 +7991,8 @@ void Panel_RA8889::Font_UseExternalCGROM(void)
 
 /**
  * @brief Character source selection
- *        
+ *
+ * @verbatim
  *        REG [CCh] Character Control Register 0 (CCR0)
  *                  bit [7-6] Character source selection
  *                            User-defined Font /CGROM Font Selection Bit in Text Mode
@@ -5693,6 +8000,7 @@ void Panel_RA8889::Font_UseExternalCGROM(void)
  *                            0b01: Select external CGROM Character. (Genitop serial flash)
  *                            0b10: Select user-defined Character.
  *                            0b11: NA
+ * @endverbatim
  *
  * @param FontSource::Internal : Select internal CGROM Character.
  *        FontSource::External : Select external CGROM Character. (Genitop serial flash)
@@ -5713,7 +8021,8 @@ void Panel_RA8889::Font_SetSource(FontSource source);
 
 /**
  * @brief Select Fonte Height 8x16 / 16x16
- *        
+ *
+ * @verbatim
  *        REG [CCh] Character Control Register 0 (CCR0)
  *                  bit [5-4] Character source selection
  *                            0b00 : 16; ex.  8x16 / 16x16 / variable character width x 16
@@ -5735,7 +8044,7 @@ void Panel_RA8889::Font_SetSource(FontSource source);
  *                     decided by chosen character sets and need to configure 
  *                     GT Font ROM registers (CEh, CFh).
  *                  3. Internal CGROM supports size 12x24.
- *
+ * @endverbatim
  *
  * @param None
  *
@@ -5756,7 +8065,8 @@ void Font_SetHeight_16(void)
 
 /**
  * @brief Select Fonte Height 12x24 / 24x24
- *        
+ *
+ * @verbatim
  *        REG [CCh] Character Control Register 0 (CCR0)
  *                  bit [5-4] Character source selection
  *                            0b00 : 16; ex.  8x16 / 16x16 / variable character width x 16
@@ -5778,6 +8088,7 @@ void Font_SetHeight_16(void)
  *                     CGROM) is decided by chosen character sets and need to 
  *                     configure GT Font ROM registers (CEh, CFh).
  *                  3. Internal CGROM supports size 12x24.
+ * @endverbatim
  *
  * @param None
  *
@@ -5798,7 +8109,8 @@ void Font_SetHeight_24(void)
 
 /**
  * @brief Select Fonte Height 16x32 / 32x32
- *        
+ *
+ * @verbatim
  *        REG [CCh] Character Control Register 0 (CCR0)
  *                  bit [5-4] Character source selection
  *                            0b00 : 16; ex.  8x16 / 16x16 / variable character width x 16
@@ -5820,6 +8132,7 @@ void Font_SetHeight_24(void)
  *                     decided by chosen character sets and need to configure 
  *                     GT Font ROM registers (CEh, CFh).
  *                  3. Internal CGROM supports size 12x24.
+ * @endverbatim
  *
  * @param None
  *
@@ -5840,7 +8153,8 @@ void Font_SetHeight_32(void)
 
 /**
  * @brief Select Fonte Height (8x16 / 16x16 / 12x24 / 24x24 / 16x32 / 32x32)
- *        
+ *
+ * @verbatim
  *        REG [CCh] Character Control Register 0 (CCR0)
  *                  bit [5-4] Character source selection
  *                            0b00 : 16; ex.  8x16 / 16x16 / variable character width x 16
@@ -5862,6 +8176,7 @@ void Font_SetHeight_32(void)
  *                     decided by chosen character sets and need to configure 
  *                     GT Font ROM registers (CEh, CFh).
  *                  3. Internal CGROM supports size 12x24.
+ * @endverbatim
  *
  * @param enum FontHeight height: Altura desejada da fonte
  *             FontHeight::H16  :  8x16 / 16x16
@@ -5897,7 +8212,8 @@ void Font_SetHeight(FontHeight height)
 
 /**
  * @brief Font Selection for internal CGROM ISO/IEC 8859-1
- *        
+ *
+ * @verbatim
  *        REG [CCh] Character Control Register 0 (CCR0)
  *                  bit [1-0] Character Selection for internal CGROM
  *                            When FNCR0 [7-6] 0b00, Internal CGROM 
@@ -5908,6 +8224,7 @@ void Font_SetHeight(FontHeight height)
  *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
  *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
  *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ * @endverbatim
  *
  * @param None
  *
@@ -5926,17 +8243,19 @@ void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_1(void)
 
 /**
  * @brief Font Selection for internal CGROM ISO/IEC 8859-2
- *        
- *        REG [CCh] Character Control Register 0 (CCR0)
- *                  bit [1-0] Character Selection for internal CGROM
- *                            When FNCR0 [7-6] 0b00, Internal CGROM 
- *                            supports character sets with the standard coding 
- *                            of ISO/IEC 8859-1,2,4,5, which supports English 
- *                            and most of European country languages
- *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
- *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
- *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
- *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @verbatim
+ * REG [0xcc] Character Control Register 0 (CCR0)
+ *            bit [1-0] Character Selection for internal CGROM
+ *                      When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                      supports character sets with the standard coding 
+ *                      of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                      and most of European country languages
+ *                      0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                      0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                      0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                      0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ * @endverbatim
  *
  * @param None
  *
@@ -5955,17 +8274,19 @@ void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_2(void)
 
 /**
  * @brief Font Selection for internal CGROM ISO/IEC 8859-4
- *        
- *        REG [CCh] Character Control Register 0 (CCR0)
- *                  bit [1-0] Character Selection for internal CGROM
- *                            When FNCR0 [7-6] 0b00, Internal CGROM 
- *                            supports character sets with the standard coding 
- *                            of ISO/IEC 8859-1,2,4,5, which supports English 
- *                            and most of European country languages
- *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
- *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
- *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
- *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @verbatim
+ * REG [0xcc] Character Control Register 0 (CCR0)
+ *            bit [1-0] Character Selection for internal CGROM
+ *                      When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                      supports character sets with the standard coding 
+ *                      of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                      and most of European country languages
+ *                      0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                      0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                      0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                      0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ * @endverbatim
  *
  * @param None
  *
@@ -5984,17 +8305,19 @@ void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_4(void)
 
 /**
  * @brief Font Selection for internal CGROM ISO/IEC 8859-5
- *        
- *        REG [CCh] Character Control Register 0 (CCR0)
- *                  bit [1-0] Character Selection for internal CGROM
- *                            When FNCR0 [7-6] 0b00, Internal CGROM 
- *                            supports character sets with the standard coding 
- *                            of ISO/IEC 8859-1,2,4,5, which supports English 
- *                            and most of European country languages
- *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
- *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
- *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
- *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @verbatim
+ * REG [0xcc] Character Control Register 0 (CCR0)
+ *            bit [1-0] Character Selection for internal CGROM
+ *                      When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                      supports character sets with the standard coding 
+ *                      of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                      and most of European country languages
+ *                      0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                      0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                      0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                      0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ * @endverbatim
  *
  * @param None
  *
@@ -6013,17 +8336,19 @@ void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_5(void)
 
 /**
  * @brief Font Selection for internal CGROM ISO/IEC 8859
- *        
- *        REG [CCh] Character Control Register 0 (CCR0)
- *                  bit [1-0] Character Selection for internal CGROM
- *                            When FNCR0 [7-6] 0b00, Internal CGROM 
- *                            supports character sets with the standard coding 
- *                            of ISO/IEC 8859-1,2,4,5, which supports English 
- *                            and most of European country languages
- *                            0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
- *                            0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
- *                            0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
- *                            0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ *
+ * @verbatim
+ * REG [0xcc] Character Control Register 0 (CCR0)
+ *            bit [1-0] Character Selection for internal CGROM
+ *                      When FNCR0 [7-6] 0b00, Internal CGROM 
+ *                      supports character sets with the standard coding 
+ *                      of ISO/IEC 8859-1,2,4,5, which supports English 
+ *                      and most of European country languages
+ *                      0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *                      0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *                      0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *                      0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ * @endverbatim
  *
  * @param iso ISO/IEC 8859 code to select (InternalCGROM_ISO8859)
  *
@@ -6041,24 +8366,28 @@ void Panel_RA8889::Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso)
 
 
 //================================================================================
-// [0xcd] Character Control Register 1 (CCR1)
+//
+// [0xCD] Character Control Register 1 (CCR1)
+//
 //================================================================================
 
 
 /**
  * @brief Characer Full Alignment Set
- *        
- *        REG [CDh] Character Control Register 1 (CCR1)
- *                  bit [7] Full Alignment Selection Bit
- *                          0b0 : Full alignment disable.
- *                          0b1 : Full alignment enable.
- *                          
- *                          When Full alignment is enabled, the character 
- *                          width is equal to half of the character height, 
- *                          width = height / 2, (the condition is character 
- *                          width is equal to or small than half of the 
- *                          character height), otherwise the character width 
- *                          is equal to character height.
+ *
+ * @verbatim
+ * REG [0xcd] Character Control Register 1 (CCR1)
+ *            bit [7] Full Alignment Selection Bit
+ *                    0b0 : Full alignment disable.
+ *                    0b1 : Full alignment enable.
+ *                    
+ *                    When Full alignment is enabled, the character 
+ *                    width is equal to half of the character height, 
+ *                    width = height / 2, (the condition is character 
+ *                    width is equal to or small than half of the 
+ *                    character height), otherwise the character width 
+ *                    is equal to character height.
+ * @endverbatim
  *
  * @param None
  *
@@ -6078,17 +8407,17 @@ void Panel_RA8889::Font_FullAlignmentEnable(void)
  * @brief Characer Full Alignment Set
  *        
  * @verbatim  
- *        REG [CDh] Character Control Register 1 (CCR1)
- *                  bit [7] Full Alignment Selection Bit
- *                          0b0 : Full alignment disable.
- *                          0b1 : Full alignment enable.
- *                          
- *                          When Full alignment is enabled, the character 
- *                          width is equal to half of the character height, 
- *                          width = height / 2, (the condition is character 
- *                          width is equal to or small than half of the 
- *                          character height), otherwise the character width 
- *                          is equal to character height.
+ * REG [0xcd] Character Control Register 1 (CCR1)
+ *            bit [7] Full Alignment Selection Bit
+ *                    0b0 : Full alignment disable.
+ *                    0b1 : Full alignment enable.
+ *                   
+ *                    When Full alignment is enabled, the character 
+ *                    width is equal to half of the character height, 
+ *                    width = height / 2, (the condition is character 
+ *                    width is equal to or small than half of the 
+ *                    character height), otherwise the character width 
+ *                    is equal to character height.
  * @endverbatim  
  *
  * @param None
@@ -6107,11 +8436,13 @@ void Panel_RA8889::Font_FullAlignmentDisable(void)
 
 /**
  * @brief Font Background Transparency
- *        
- *        REG [CDh] Character Control Register 1 (CCR1)
- *                  bit [6] Chroma keying enable on Text input
- *                          0b0 : Character’s background displayed with specified color.
- *                          0b1 : Character’s background displayed with original canvas’ background (transparency).
+ *
+ * @verbatim
+ * REG [0xcd] Character Control Register 1 (CCR1)
+ *            bit [6] Chroma keying enable on Text input
+ *                    0b0 : Character’s background displayed with specified color.
+ *                    0b1 : Character’s background displayed with original canvas' background (transparency).
+ * @endverbatim
  *
  * @param None
  *
@@ -6129,11 +8460,13 @@ void Panel_RA8889::Font_UseBackgroundTransparency(void)
 
 /**
  * @brief Font Background Color
- *        
- *        REG [CDh] Character Control Register 1 (CCR1)
- *                  bit [6] Chroma keying enable on Text input
- *                          0b0 : Character’s background displayed with specified color.
- *                          0b1 : Character’s background displayed with original canvas’ background (transparency).
+ *
+ * @verbatim
+ * REG [0xcd] Character Control Register 1 (CCR1)
+ *            bit [6] Chroma keying enable on Text input
+ *                    0b0 : Character’s background displayed with specified color.
+ *                    0b1 : Character’s background displayed with original canvas’ background (transparency).
+ * @endverbatim
  *
  * @param None
  *
@@ -6151,16 +8484,18 @@ void Panel_RA8889::Font_UseBackgroundColor(void)
 
 /**
  * @brief Font Rotete 0 degree
- *        
- *        REG [CDh] Character Control Register 1 (CCR1)
- *                  bit [4] Character Rotation
- *                          0b0 : Normal
- *                                Text direction from left to right then from top to bottom
- *                          0b1 : Counterclockwise 90 degree & horizontal flip
- *                                Text direction from top to bottom then from left to right
- *                                (it should accommodate with set VDIR as 1)
- *                          This attribute can be changed only when previous font write
- *                          finished (core_busy = 0)
+ *
+ * @verbatim
+ * REG [0xcd] Character Control Register 1 (CCR1)
+ *            bit [4] Character Rotation
+ *                    0b0 : Normal
+ *                          Text direction from left to right then from top to bottom
+ *                    0b1 : Counterclockwise 90 degree & horizontal flip
+ *                          Text direction from top to bottom then from left to right
+ *                          (it should accommodate with set VDIR as 1)
+ *                    This attribute can be changed only when previous font write
+ *                    finished (core_busy = 0)
+ * @endverbatim
  *
  * @param None
  *
@@ -6178,16 +8513,18 @@ void Panel_RA8889::Font_0degree(void)
 
 /**
  * @brief Font Rotete 90 degree
- *        
- *        REG [CDh] Character Control Register 1 (CCR1)
- *                  bit [4] Character Rotation
- *                          0b0 : Normal
- *                                Text direction from left to right then from top to bottom
- *                          0b1 : Counterclockwise 90 degree & horizontal flip
- *                                Text direction from top to bottom then from left to right
- *                                (it should accommodate with set VDIR as 1)
- *                          This attribute can be changed only when previous font write
- *                          finished (core_busy = 0)
+ *
+ * @verbatim 
+ * REG [0xcd] Character Control Register 1 (CCR1)
+ *            bit [4] Character Rotation
+ *                    0b0 : Normal
+ *                          Text direction from left to right then from top to bottom
+ *                    0b1 : Counterclockwise 90 degree & horizontal flip
+ *                          Text direction from top to bottom then from left to right
+ *                          (it should accommodate with set VDIR as 1)
+ *                    This attribute can be changed only when previous font write
+ *                    finished (core_busy = 0)
+ * @endverbatim
  *
  * @param None
  *
@@ -6258,7 +8595,9 @@ void Panel_RA8889::Font_HeightEnlargFactor(FontEnlargFactor factor)
 
 
 //================================================================================
-// [0xce] GT Character ROM Select (GTFNT_SEL)
+//
+// [0xCE] GT Character ROM Select (GTFNT_SEL)
+//
 //================================================================================
 
 
@@ -6295,6 +8634,7 @@ void Panel_RA8889::GTFont_Select_GT21L16T1W(void)
 
 /**
  * @brief Font Selection for External CGROM Genitop's GT30L16U2W IC
+ *
  * @verbatim       
  *        REG [CEh] GT Character ROM Select (GTFNT_SEL)
  *                  bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
@@ -6305,7 +8645,8 @@ void Panel_RA8889::GTFont_Select_GT21L16T1W(void)
  *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
  *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
  *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
- * @endverbatim                           
+ * @endverbatim
+ * 
  * @param None
  *
  * @note None
@@ -6335,7 +8676,8 @@ void Panel_RA8889::GTFont_Select_GT30L16U2W(void)
  *                            0b100 : Circuito Integrado External CGROM GT30L32S4W
  *                            0b101 : Circuito Integrado External CGROM GT20L24F6Y
  *                            0b110 : Circuito Integrado External CGROM GT21L24S1W
- * @endverbatim  
+ * @endverbatim
+ *
  * @param None
  *
  * @note None
@@ -6467,13 +8809,17 @@ void Panel_RA8889::GTFont_Select_GT21L24S1W(void)
   SPI_DataWrite(temp);
 }
 
+
 //================================================================================
-// [0xcf] GT Character ROM Control register (GTFNT_CR)
+//
+// [0xCF] GT Character ROM Control register (GTFNT_CR)
+//
 //================================================================================
 
 
 /**
  * @brief Genitop's Character Set and Decoder
+ *
  * @verbatim  
  *        REG [CFh] GT Character ROM Control register (GTFNT_CR)
  *                  bit [7-3] Character sets
@@ -6535,7 +8881,9 @@ void Panel_RA8889::GTFont_SetDecoder(uint8_t temp)
 
 
 //================================================================================
-// [0xd0] Character Line gap Setting Register (FLDR)
+//
+// [0xD0] Character Line gap Setting Register (FLDR)
+//
 //================================================================================
 
 
@@ -6562,7 +8910,9 @@ void Panel_RA8889::Font_LineDistance(uint8_t gap)
 
 
 //================================================================================
-// [0xd1] Character to Character Space Setting Register (F2FSSR)
+//
+// [0xD1] Character to Character Space Setting Register (F2FSSR)
+//
 //================================================================================
 
 
@@ -6588,6 +8938,561 @@ void Panel_RA8889::Font_toFontWidthSetting(uint8_t pixels)
   SPI_CmdWrite(REG_F2FSSR);          //0xd1,  Character to Character Space Setting Register (F2FSSR)
   SPI_DataWrite(temp);
 }
+
+
+//================================================================================
+//
+// [0xD2] Foreground Color Register - Red (FGCR)
+// [0xD3] Foreground Color Register - Green (FGCG)
+// [0xD4] Foreground Color Register - Blue (FGCB)
+//
+//================================================================================
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (R,G,B)
+ *        
+ * @verbatim
+ * REG [0xd2] Foreground Color Register - Red (FGCR)
+ *            bit [7~0] Foreground Color - Red; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd3] Foreground Color Register - Green (FGCG)
+ *            bit [7~0] Foreground Color - Green; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:2].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd4] Foreground Color Register - Blue (FGCB)
+ *            bit [7~0] Foreground Color - Blue; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:6].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * @endverbatim
+ *
+ * @param red:   componente cor vermelha
+ *        green: componente cor verde
+ *        blue:  componente cor azul
+ *
+ * @note use o determinado numero de bits para compor o n umero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::ForegroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
+{
+  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  SPI_DataWrite(red);                          //Escreve o formato da cor vermelha 
+  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  SPI_DataWrite(green);                        //Escreve o formato da cor verde
+  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  SPI_DataWrite(blue);                         //Escreve o formato da cor azul
+}
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB3:3:2) de 256 cores
+ *        
+ * @verbatim
+ * Color depht de 8bpp
+ *
+ * REG [0xd2] Foreground Color Register - Red (FGCR)
+ *            bit [7~0] Foreground Color - Red; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd3] Foreground Color Register - Green (FGCG)
+ *            bit [7~0] Foreground Color - Green; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:2].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd4] Foreground Color Register - Blue (FGCB)
+ *            bit [7~0] Foreground Color - Blue; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:6].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * @endverbatim
+ *
+ * @param color: entrada de dados no formato R3G3B2 (3 bits para o vermelho, 
+ *        3 bits para o verde e 2 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ *       
+ */
+void Panel_RA8889::ForegroundColor_256(uint8_t color)
+{
+  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  SPI_DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
+  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  SPI_DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
+  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  SPI_DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
+}
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB5:6:5) de 65k cores
+ *
+ * @verbatim        
+ * Color depht de 16bpp
+ *
+ * REG [0xd2] Foreground Color Register - Red (FGCR)
+ *            bit [7~0] Foreground Color - Red; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd3] Foreground Color Register - Green (FGCG)
+ *            bit [7~0] Foreground Color - Green; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:2].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd4] Foreground Color Register - Blue (FGCB)
+ *            bit [7~0] Foreground Color - Blue; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:6].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * @endverbatim
+ *
+ * @param color: entrada de dados no formato R5G6B5 (5 bits para o vermelho, 
+ *        6 bits para o verde e 5 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::ForegroundColor_65k(uint16_t color)
+{
+  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  SPI_DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
+  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  SPI_DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado
+  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  SPI_DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
+}
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (RGB8:8:8) de 16.7M cores
+ *        
+ * @verbatim
+ * Color depht de 24bpp
+ *
+ * REG [0xd2] Foreground Color Register - Red (FGCR)
+ *            bit [7~0] Foreground Color - Red; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd3] Foreground Color Register - Green (FGCG)
+ *            bit [7~0] Foreground Color - Green; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:2].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd4] Foreground Color Register - Blue (FGCB)
+ *            bit [7~0] Foreground Color - Blue; for draw, text or color expansion
+ *                      256 colors, the register only uses Bit[7:6].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * @endverbatim
+ *
+ * @param color: entrada de dados no formato R8G8B8 (8 bits para o vermelho, 
+ *        8 bits para o verde e 8 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ *       
+ */ 
+void Panel_RA8889::ForegroundColor_16M(uint32_t color)
+{
+  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  SPI_DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
+  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  SPI_DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
+  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  SPI_DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
+}
+
+
+//================================================================================
+//
+// [0xD5] Background Color Register - Red (BGCR)
+// [0xD6] Background Color Register - Green (BGCG)
+// [0xD7] Background Color Register - Blue (BGCB)
+//
+//================================================================================
+
+
+/**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul (R,G,B)
+ *        
+ * @verbatim
+ * REG [0xd5] Background Color Register - Red (BGCR)
+ *            bit [7~0] Background Color - Red, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd6] Background Color Register - Green (BGCG)
+ *            bit [7~0] Background Color - Green, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:2].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd7] Background Color Register - Blue (BGCB)
+ *            bit [7~0] Background Color - Blue, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:6].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ *
+ * ***Note: No matter background transparency is enabled or not, don’t 
+ *    set same value with Foreground Color otherwise image or text will 
+ *    become a square with Foreground Color even BTE function.   
+ *
+ * *** Note: If user wants to change rotate attribute, character line gap, 
+ *     character-to-character space, foreground color, background color 
+ *     and Text/graphic mode setting, please make sure core_busy (fontwr_
+ *     busy) status bit is low.
+ * @endverbatim
+ *
+ * @param red:   componente cor vermelha
+ *        green: componente cor verde
+ *        blue:  componente cor azul
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::BackgroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue)
+{
+  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  SPI_DataWrite(red);                          //Escreve o formato da cor vermelha 
+  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  SPI_DataWrite(green);                        //Escreve o formato da cor verde
+  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  SPI_DataWrite(blue);                         //Escreve o formato da cor azul
+}
+
+
+/**
+ * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB3:3:2) de 256 cores
+ *        
+ * @verbatim
+ * Color depht de 8bpp
+ * 
+ * REG [0xd5] Background Color Register - Red (BGCR)
+ *            bit [7~0] Background Color - Red, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd6] Background Color Register - Green (BGCG)
+ *            bit [7~0] Background Color - Green, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:2].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd7] Background Color Register - Blue (BGCB)
+ *            bit [7~0] Background Color - Blue, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:6].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ *
+ * ***Note: No matter background transparency is enabled or not, don’t 
+ *    set same value with Foreground Color otherwise image or text will 
+ *    become a square with Foreground Color even BTE function.   
+ *
+ * *** Note: If user wants to change rotate attribute, character line gap, 
+ *     character-to-character space, foreground color, background color 
+ *     and Text/graphic mode setting, please make sure core_busy (fontwr_
+ *     busy) status bit is low.
+ * @endverbatim
+ *
+ * @param color: entrada de dados no formato R3G3B2 (3 bits para o vermelho, 
+ *        3 bits para o verde e 2 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::BackgroundColor_256(uint8_t color)
+{
+  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  SPI_DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
+  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  SPI_DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
+  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  SPI_DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
+}
+
+
+/**
+ * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB5:6:5) de 65k cores
+ *        
+ * @verbatim 
+ * Color depht de 16bpp
+ *
+ * REG [0xd5] Background Color Register - Red (BGCR)
+ *            bit [7~0] Background Color - Red, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd6] Background Color Register - Green (BGCG)
+ *            bit [7~0] Background Color - Green, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:2].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd7] Background Color Register - Blue (BGCB)
+ *            bit [7~0] Background Color - Blue, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:6].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ *
+ * ***Note: No matter background transparency is enabled or not, don’t 
+ *    set same value with Foreground Color otherwise image or text will 
+ *    become a square with Foreground Color even BTE function.   
+ *
+ * *** Note: If user wants to change rotate attribute, character line gap, 
+ *     character-to-character space, foreground color, background color 
+ *     and Text/graphic mode setting, please make sure core_busy (fontwr_
+ *     busy) status bit is low.
+ * @endverbatim
+ *
+ * @param color: entrada de dados no formato R5G6B5 (5 bits para o vermelho, 
+ *        6 bits para o verde e 5 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */
+void Panel_RA8889::BackgroundColor_65k(uint16_t color)
+{
+  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  SPI_DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
+  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  SPI_DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado 
+  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  SPI_DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
+}
+
+
+/**
+ * @brief Cor de fundo nas componentes Vermelho, Verde e Azul (RGB8:8:8) de 16.7M cores
+ *        
+ * @verbatim
+ * Color depht de 24bpp
+ *
+ * REG [0xd5] Background Color Register - Red (BGCR)
+ *            bit [7~0] Background Color - Red, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd6] Background Color Register - Green (BGCG)
+ *            bit [7~0] Background Color - Green, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:5].
+ *                      65K colors, the register uses Bit[7:2].
+ *                      16.7M colors, the register uses Bit[7:0].
+ * REG [0xd7] Background Color Register - Blue (BGCB)
+ *            bit [7~0] Background Color - Blue, for Text or color expansion
+ *                      256 colors, the register only uses Bit[7:6].
+ *                      65K colors, the register uses Bit[7:3].
+ *                      16.7M colors, the register uses Bit[7:0].
+ *
+ * ***Note: No matter background transparency is enabled or not, don’t 
+ *    set same value with Foreground Color otherwise image or text will 
+ *    become a square with Foreground Color even BTE function.   
+ *
+ * *** Note: If user wants to change rotate attribute, character line gap, 
+ *     character-to-character space, foreground color, background color 
+ *     and Text/graphic mode setting, please make sure core_busy (fontwr_
+ *     busy) status bit is low.
+ * @endverbatim
+ *
+ * @param color: entrada de dados no formato R8G8B8 (8 bits para o vermelho, 
+ *        8 bits para o verde e 8 bits para o azul.
+ *
+ *        Dúvida????
+ *        A interpretação do formato de cor utilizado na variavel deve acompanhar o formato 
+ *        con figurado no registraod REG [0x12]. Use a função "PDATA_ColorFmt(PDATAColorFmt: fmt)"
+ *        para definir o modelo de formato do pixel de cores.
+ *        ...ou o formato tera que ser sempre RGB?  
+ *
+ * @note Use o determinado numero de bits para compor o numero de cores 256, 
+ *       65K e 16.7M cores.
+ */ 
+void Panel_RA8889::BackgroundColor_16M(uint32_t color)
+{
+  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  SPI_DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
+  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  SPI_DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
+  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  SPI_DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
+}
+
+
+//================================================================================
+//
+// [0xDB] CGRAM Start Address 0 (CGRAM_STR0)
+// [0xDC] CGRAM Start Address 1 (CGRAM_STR1)
+// [0xDD] CGRAM Start Address 2 (CGRAM_STR2)
+// [0xDE] CGRAM Start Address 3 (CGRAM_STR3)
+//
+//================================================================================
+
+
+/**
+ * @brief CGRAM Start Address [31:0]
+ *        
+ * @verbatim
+ * REG [0xdb] CGRAM Start Address 0 (CGRAM_STR0)
+ *            bit [7~0] CGRAM START ADDRESS [7:0]
+ *            User-defined Characters space
+ *            User must use canvas image setting to organize CGRAM data and 
+ *            set CGRAM address to tell engine where to fetch CGRAM data.
+ *
+ * REG [0xdc] CGRAM Start Address 1 (CGRAM_STR1)
+ *            bit [7~0] CGRAM START ADDRESS [15:8]
+ *            User-defined Characters space
+ *            User must use canvas image setting to organize CGRAM data and 
+ *            set CGRAM address to tell engine where to fetch CGRAM data.
+ *
+ * REG [0xdd] CGRAM Start Address 2 (CGRAM_STR2)
+ *            bit [7~0] CGRAM START ADDRESS [23:16]
+ *            User-defined Characters space
+ *            User must use canvas image setting to organize CGRAM data and 
+ *            set CGRAM address to tell engine where to fetch CGRAM data.
+ *
+ * REG [0xde] CGRAM Start Address 3 (CGRAM_STR3)
+ *            bit [7-0] CGRAM START ADDRESS [31:24]
+ *            User-defined Characters space
+ *            User must use canvas image setting to organize CGRAM data and 
+ *            set CGRAM address to tell engine where to fetch CGRAM data.
+ *
+ * *** Note: If user wants to change rotate attribute, character line gap, 
+ *     character-to-character space, foreground color, background color and 
+ *     Text/graphic mode setting, please make sure core_busy (fontwr_busy) 
+ *     status bit is low.
+ * @endverbatim
+ *
+ * @param addr
+ *
+ * @note None
+ */ 
+void CGRAM_StartAddress(uint32_t addr)
+{
+  SPI_CmdWrite(REG_CGRAM_STR0);                //0xdb, CGRAM Start Address 0 (CGRAM_STR0)
+  SPI_DataWrite(addr);                         
+  SPI_CmdWrite(REG_CGRAM_STR1);                //0xdc, CGRAM Start Address 1 (CGRAM_STR1)
+  SPI_DataWrite(addr >> 8);                    
+  SPI_CmdWrite(REG_CGRAM_STR2);                //0xdd,  CGRAM Start Address 2 (CGRAM_STR2)
+  SPI_DataWrite(addr >> 16);                   
+  SPI_CmdWrite(REG_CGRAM_STR3);                //0xde, CGRAM Start Address 3 (CGRAM_STR3)
+  SPI_DataWrite(addr >> 24);                   
+}
+
+
+
+
+
+
+
+
+
+//[DFh]=========================================================================
+/*
+[bit7] Enter Power saving state
+0: Normal state.
+1: Enter power saving state.
+[bit1][bit0] Power saving Mode definition
+00: NA
+01: Standby Mode
+10: Suspend Mode
+11: Sleep Mode
+*/
+void Power_Normal_Mode(void)
+{
+    LCD_CmdWrite(0xDF);
+    LCD_DataWrite(0x00);
+    Check_IC_ready();
+}
+void Power_Saving_Standby_Mode(void)
+{
+    LCD_CmdWrite(0xDF);
+    //	LCD_DataWrite(0x01);
+    //	LCD_CmdWrite(0xDF);
+    LCD_DataWrite(0x81);
+}
+void Power_Saving_Suspend_Mode(void)
+{
+    LCD_CmdWrite(0xDF);
+    //	LCD_DataWrite(0x02);
+    //	LCD_CmdWrite(0xDF);
+    LCD_DataWrite(0x82);
+}
+void Power_Saving_Sleep_Mode(void)
+{
+    LCD_CmdWrite(0xDF);
+    LCD_DataWrite(0x03);
+    LCD_CmdWrite(0xDF);
+    LCD_DataWrite(0x83);
+}
+
+//[E5h]~[E6h]=========================================================================
+void RA8889_I2CM_Clock_Prescale(unsigned short WX)
+{
+    /*
+    I2C Master Clock Pre-scale [7:0]
+    I2C Master Clock Pre-scale [15:8]
+    XSCL = CCLK / (5*(prescale + 2))
+    */
+    LCD_CmdWrite(0xE5);
+    LCD_DataWrite(WX);
+    LCD_CmdWrite(0xE6);
+    LCD_DataWrite(WX >> 8);
+}
+//[E7h]=========================================================================
+void RA8889_I2CM_Transmit_Data(unsigned char temp)
+{
+    /*
+    I2C Master Transmit[7:0]
+    */
+    LCD_CmdWrite(0xE7);
+    LCD_DataWrite(temp);
+}
+//[E8h]=========================================================================
+unsigned char RA8889_I2CM_Receiver_Data(void)
+{
+    /*
+    I2C Master Receiver [7:0]
+    */
+    unsigned char temp;
+    LCD_CmdWrite(0xE8);
+    temp = LCD_DataRead();
+    return temp;
+}
+
+
+
 
 
 
