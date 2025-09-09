@@ -5676,6 +5676,8 @@ void Select_SFI_Dual_Mode_Dummy_4T_BBh(void)
 
 //[B8h]=========================================================================
 // REG[B8h] SPI master Tx /Rx FIFO Data Register (SPIDR)
+
+//uint8_t SPIM_TxRxFIFOData_Put(uint8_t data);
 unsigned char SPI_Master_FIFO_Data_Put(unsigned char Data)
 {
     unsigned char temp;
@@ -5690,6 +5692,7 @@ unsigned char SPI_Master_FIFO_Data_Put(unsigned char Data)
     return temp;
 }
 
+////uint8_t SPIM_TxRxFIFOData_Get(void);
 unsigned char SPI_Master_FIFO_Data_Get(void)
 {
     unsigned char temp;
@@ -5705,6 +5708,7 @@ unsigned char SPI_Master_FIFO_Data_Get(void)
 //[B9h]=========================================================================
 // REG[B9h] SPI master Control Register (SPIMCR2)
 
+//void Interrupt_SPIM_Enable(bool b);
 void Enable_SPI_Master_Interrupt(void)
 {
     /*
@@ -5718,6 +5722,8 @@ void Enable_SPI_Master_Interrupt(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_SPIM_Enable(bool b);
 void Disable_SPI_Master_Interrupt(void)
 {
     /*
@@ -5732,6 +5738,7 @@ void Disable_SPI_Master_Interrupt(void)
     LCD_DataWrite(temp);
 }
 
+//void nSS_Inactive(void);
 // 0: inactive (nSS port will goes high)
 void nSS_Inactive(void)
 {
@@ -5741,6 +5748,8 @@ void nSS_Inactive(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void nSS_Active(void);
 // 1: active (nSS port will goes low)
 void nSS_Active(void)
 {
@@ -5751,6 +5760,7 @@ void nSS_Active(void)
     LCD_DataWrite(temp);
 }
 
+//void Interrupt_FIFOOverflow_Enable(bool b);
 void Mask_FIFO_overflow_error_Interrupt(void)
 {
     /*
@@ -5764,6 +5774,8 @@ void Mask_FIFO_overflow_error_Interrupt(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_FIFOOverflow_Enable(bool b);
 void Unmask_FIFO_overflow_error_Interrupt(void)
 {
     /*
@@ -5778,6 +5790,7 @@ void Unmask_FIFO_overflow_error_Interrupt(void)
     LCD_DataWrite(temp);
 }
 
+//void Interrupt_EMTIRQEN_Enable(bool b);
 void Mask_EMTIRQEN_Interrupt(void)
 {
     /*
@@ -5791,6 +5804,8 @@ void Mask_EMTIRQEN_Interrupt(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void Interrupt_EMTIRQEN_Enable(bool b);
 void Unmask_EMTIRQEN_Interrupt(void)
 {
     /*
@@ -5815,6 +5830,8 @@ mode / CPOL:Clock Polarity bit / CPHA:Clock Phase bit
     2	1	0
     3	1	1
 */
+
+//void Reset_CPOL(void);
 void Reset_CPOL(void)
 {
     unsigned char temp;
@@ -5824,6 +5841,7 @@ void Reset_CPOL(void)
     LCD_DataWrite(temp);
 }
 
+//void Set_CPOL(void);
 void Set_CPOL(void)
 {
     unsigned char temp;
@@ -5833,6 +5851,7 @@ void Set_CPOL(void)
     LCD_DataWrite(temp);
 }
 
+//void Reset_CPHA(void)
 void Reset_CPHA(void)
 {
     unsigned char temp;
@@ -5842,6 +5861,7 @@ void Reset_CPHA(void)
     LCD_DataWrite(temp);
 }
 
+//void Set_CPHA(void)/
 void Set_CPHA(void)
 {
     unsigned char temp;
@@ -5852,6 +5872,7 @@ void Set_CPHA(void)
 }
 
 // REG[BAh] SPI master Status Register (SPIMSR)
+//bool SPIM_TxFIFO_Empty(void);
 unsigned char Tx_FIFO_Empty_Flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5861,6 +5882,7 @@ unsigned char Tx_FIFO_Empty_Flag(void)
         return 0;
 }
 
+//bool SPIM_TxFIFO_Full(void);
 unsigned char Tx_FIFO_Full_Flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5870,6 +5892,7 @@ unsigned char Tx_FIFO_Full_Flag(void)
         return 0;
 }
 
+//bool SPIM_RxFIFO_Empty(void);
 unsigned char Rx_FIFO_Empty_Flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5879,6 +5902,7 @@ unsigned char Rx_FIFO_Empty_Flag(void)
         return 0;
 }
 
+//bool SPIM_RxFIFO_full(void);
 unsigned char Rx_FIFO_full_flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5888,6 +5912,7 @@ unsigned char Rx_FIFO_full_flag(void)
         return 0;
 }
 
+//bool Interrupt_Overflow_Flag(void);
 unsigned char OVFI_Flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5897,6 +5922,7 @@ unsigned char OVFI_Flag(void)
         return 0;
 }
 
+//void Interrupt_ClearOverflow_Flag(void);
 void Clear_OVFI_Flag(void)
 {
     unsigned char temp;
@@ -5906,6 +5932,7 @@ void Clear_OVFI_Flag(void)
     LCD_DataWrite(temp);
 }
 
+//bool EMTI_Flag(void);
 unsigned char EMTI_Flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5915,6 +5942,7 @@ unsigned char EMTI_Flag(void)
         return 0;
 }
 
+//void EMTI_Clear_Flag(void);
 void Clear_EMTI_Flag(void)
 {
     unsigned char temp;
@@ -5935,6 +5963,8 @@ void SPI_Clock_Period(unsigned char temp)
 }
 
 //[BCh][BDh][BEh][BFh]=========================================================================
+
+//void SFI_SetDMASourceAddress(uint32_t addr);
 void SFI_DMA_Source_Start_Address(unsigned long Addr)
 {
     /*
@@ -5951,6 +5981,8 @@ void SFI_DMA_Source_Start_Address(unsigned long Addr)
     LCD_DataWrite(Addr >> 24);
 }
 //[C0h][C1h][C2h][C3h]=========================================================================
+
+//void SFI_SetDMADestinationAddress(uint32_t addr);
 void SFI_DMA_Destination_Start_Address(unsigned long Addr)
 {
     /*
@@ -5968,6 +6000,8 @@ void SFI_DMA_Destination_Start_Address(unsigned long Addr)
     LCD_DataWrite(Addr >> 24);
 }
 //[C0h][C1h][C2h][C3h]=========================================================================
+
+//void SFI_DMA_DestinationUpperLeftCorner(uint16_t Wx, uint16_t Hy);
 void SFI_DMA_Destination_Upper_Left_Corner(unsigned short WX, unsigned short HY)
 {
     /*
@@ -6008,6 +6042,8 @@ void SFI_DMA_Destination_Upper_Left_Corner(unsigned short WX, unsigned short HY)
 }
 
 //[C6h][C7h][C8h][C9h]=========================================================================
+
+//void SFI_DMA_TransferNumber(uint32_t addr);
 void SFI_DMA_Transfer_Number(unsigned long Num)
 {
     /*
@@ -6027,6 +6063,8 @@ void SFI_DMA_Transfer_Number(unsigned long Num)
     LCD_CmdWrite(0xC9);
     LCD_DataWrite(Num >> 24);
 }
+
+//void SFI_DMA_TransferWidthHeight(uint16_t Wx, uint16_t Hy);
 void SFI_DMA_Transfer_Width_Height(unsigned short WX, unsigned short HY)
 {
     /*
@@ -6047,7 +6085,10 @@ void SFI_DMA_Transfer_Width_Height(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0xC9);
     LCD_DataWrite(HY >> 8);
 }
+
 //[CAh][CBh]=========================================================================
+
+//void SFI_DMA_SourceWidth(uint16_t Wx);
 void SFI_DMA_Source_Width(unsigned short WX)
 {
     /*
@@ -6062,6 +6103,8 @@ void SFI_DMA_Source_Width(unsigned short WX)
 
 //[CCh]=========================================================================
 
+//void Font_SetSource(FontSource source);
+//void Font_UseUserDefined(void);
 void Font_Select_UserDefine_Mode(void)
 {
     /*[bit7-6]
@@ -6077,6 +6120,9 @@ void Font_Select_UserDefine_Mode(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void Font_SetSource(FontSource source);
+//void Font_UseInternalCGROM(void);
 void CGROM_Select_Internal_CGROM(void)
 {
     /*[bit7-6]
@@ -6092,6 +6138,9 @@ void CGROM_Select_Internal_CGROM(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void Font_SetSource(FontSource source);
+//void Font_UseExternalCGROM(void);
 void CGROM_Select_Genitop_FontROM(void)
 {
     /*[bit7-6]
@@ -6108,6 +6157,8 @@ void CGROM_Select_Genitop_FontROM(void)
     LCD_DataWrite(temp);
 }
 
+//void Font_SetHeight(FontHeight height)
+//void Font_SetHeight_16(void);
 void Font_Select_8x16_16x16(void)
 {
     //[bit5-4]
@@ -6125,6 +6176,9 @@ void Font_Select_8x16_16x16(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 } //*/
+
+//void Font_SetHeight(FontHeight height)
+//void Font_SetHeight_24(void);
 void Font_Select_12x24_24x24(void)
 {
     /*[bit5-4]
@@ -6143,6 +6197,9 @@ void Font_Select_12x24_24x24(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void Font_SetHeight(FontHeight height)
+//void Font_SetHeight_32(void);
 void Font_Select_16x32_32x32(void)
 {
     //[bit5-4]
@@ -6161,6 +6218,8 @@ void Font_Select_16x32_32x32(void)
     LCD_DataWrite(temp);
 } //*/
 
+//void Select_Internal_CGROM_ISO8859_1(void);
+//void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso);
 void Internal_CGROM_Select_ISOIEC8859_1(void)
 {
     /*
@@ -6180,6 +6239,9 @@ void Internal_CGROM_Select_ISOIEC8859_1(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void Select_Internal_CGROM_ISO8859_2(void);
+//void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso);
 void Internal_CGROM_Select_ISOIEC8859_2(void)
 {
     /*
@@ -6199,6 +6261,9 @@ void Internal_CGROM_Select_ISOIEC8859_2(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void Select_Internal_CGROM_ISO8859_4(void);
+//void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso);
 void Internal_CGROM_Select_ISOIEC8859_4(void)
 {
     /*
@@ -6218,6 +6283,9 @@ void Internal_CGROM_Select_ISOIEC8859_4(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void Select_Internal_CGROM_ISO8859_5(void);
+//void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso);
 void Internal_CGROM_Select_ISOIEC8859_5(void)
 {
     /*
@@ -6237,7 +6305,10 @@ void Internal_CGROM_Select_ISOIEC8859_5(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
 //[CDh]=========================================================================
+
+
 //void Font_FullAlignmentEnable(void);
 void Enable_Font_Alignment(void)
 {
@@ -6268,6 +6339,7 @@ void Disable_Font_Alignment(void)
     LCD_DataWrite(temp);
 }
 
+//void Panel_RA8889::Font_UseBackgroundTransparency(void);
 void Font_Background_select_Original_Canvas(void)
 {
     /*
@@ -6281,6 +6353,8 @@ void Font_Background_select_Original_Canvas(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void Panel_RA8889::Font_UseBackgroundColor(void);
 void Font_Background_select_Color(void)
 {
     /*
@@ -6294,6 +6368,8 @@ void Font_Background_select_Color(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void Font_0degree(void)
 void Font_0_degree(void)
 {
     /*
@@ -6312,6 +6388,8 @@ void Font_0_degree(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void Font_90degree(void)
 void Font_90_degree(void)
 {
     /*
@@ -6330,6 +6408,8 @@ void Font_90_degree(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void Font_WidthEnlargFactor(FontEnlargFactor factor)
 void Font_Width_X1(void)
 {
     /*
@@ -6346,6 +6426,8 @@ void Font_Width_X1(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void Font_WidthEnlargFactor(FontEnlargFactor factor)
 void Font_Width_X2(void)
 {
     /*
@@ -6362,6 +6444,8 @@ void Font_Width_X2(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void Font_WidthEnlargFactor(FontEnlargFactor factor)
 void Font_Width_X3(void)
 {
     /*
@@ -6378,6 +6462,8 @@ void Font_Width_X3(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void Font_WidthEnlargFactor(FontEnlargFactor factor)
 void Font_Width_X4(void)
 {
     /*
@@ -6394,6 +6480,8 @@ void Font_Width_X4(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void Font_HeightEnlargFactor(FontEnlargFactor factor);
 void Font_Height_X1(void)
 {
     /*
@@ -6410,6 +6498,8 @@ void Font_Height_X1(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void Font_HeightEnlargFactor(FontEnlargFactor factor);
 void Font_Height_X2(void)
 {
     /*
@@ -6426,6 +6516,8 @@ void Font_Height_X2(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void Font_HeightEnlargFactor(FontEnlargFactor factor);
 void Font_Height_X3(void)
 {
     /*
@@ -6442,6 +6534,8 @@ void Font_Height_X3(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void Font_HeightEnlargFactor(FontEnlargFactor factor);
 void Font_Height_X4(void)
 {
     /*
@@ -6460,6 +6554,8 @@ void Font_Height_X4(void)
 }
 
 //[CEh]=========================================================================
+
+//void GTFont_Select_GT21L16T1W(void);
 void GTFont_Select_GT21L16T1W(void)
 {
     /*
@@ -6480,6 +6576,8 @@ void GTFont_Select_GT21L16T1W(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void GTFont_Select_GT30L16U2W(void);
 void GTFont_Select_GT30L16U2W(void)
 {
     /*
@@ -6500,6 +6598,8 @@ void GTFont_Select_GT30L16U2W(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void GTFont_Select_GT30L24T3Y(void);
 void GTFont_Select_GT30L24T3Y(void)
 {
     /*
@@ -6520,6 +6620,8 @@ void GTFont_Select_GT30L24T3Y(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void GTFont_Select_GT30L24M1Z(void);
 void GTFont_Select_GT30L24M1Z(void)
 {
     /*
@@ -6540,6 +6642,8 @@ void GTFont_Select_GT30L24M1Z(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void GTFont_Select_GT30L32S4W(void);
 void GTFont_Select_GT30L32S4W(void)
 {
     /*
@@ -6560,6 +6664,8 @@ void GTFont_Select_GT30L32S4W(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void GTFont_Select_GT20L24F6Y(void);
 void GTFont_Select_GT20L24F6Y(void)
 {
     /*
@@ -6580,6 +6686,8 @@ void GTFont_Select_GT20L24F6Y(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void GTFont_Select_GT21L24S1W(void);
 void GTFont_Select_GT21L24S1W(void)
 {
     /*
@@ -6602,6 +6710,8 @@ void GTFont_Select_GT21L24S1W(void)
 }
 
 //[CFh]=========================================================================
+
+//void GTFont_SetDecoder(uint8_t temp);
 void Set_GTFont_Decoder(unsigned char temp)
 {
     /*
@@ -6644,7 +6754,10 @@ void Set_GTFont_Decoder(unsigned char temp)
     LCD_CmdWrite(0xCF);
     LCD_DataWrite(temp);
 }
+
 //[D0h]=========================================================================
+
+//void Font_LineDistance(uint8_t gap);
 void Font_Line_Distance(unsigned char temp)
 {
     /*[bit4-0]
@@ -6655,7 +6768,10 @@ void Font_Line_Distance(unsigned char temp)
     LCD_CmdWrite(0xD0);
     LCD_DataWrite(temp);
 }
+
 //[D1h]=========================================================================
+
+//void Font_toFontWidthSetting(uint8_t pixels);
 void Set_Font_to_Font_Width(unsigned char temp)
 {
     /*[bit5-0]
@@ -6725,11 +6841,13 @@ void Foreground_color_16M(unsigned long temp)
 }
 
 //[D5h]~[D7h]=========================================================================
+
 /*
 [D5h] Background Color - Red, for Text or color expansion
 [D6h] Background Color - Green, for Text or color expansion
 [D7h] Background Color - Blue, for Text or color expansion
 */
+//void BackgroundColor_RGB(uint8_t red, uint8_t green, uint8_t blue);
 void Background_RGB(unsigned char RED, unsigned char GREEN, unsigned char BLUE)
 {
 
@@ -6744,6 +6862,7 @@ void Background_RGB(unsigned char RED, unsigned char GREEN, unsigned char BLUE)
 }
 
 // Input data format:R3G3B2
+//void BackgroundColor_256(uint8_t color);
 void Background_color_256(unsigned char temp)
 {
     LCD_CmdWrite(0xD5);
@@ -6757,6 +6876,7 @@ void Background_color_256(unsigned char temp)
 }
 
 // Input data format:R5G6B6
+//void BackgroundColor_65k(uint16_t color);
 void Background_color_65k(unsigned short temp)
 {
     LCD_CmdWrite(0xD5);
@@ -6770,6 +6890,7 @@ void Background_color_65k(unsigned short temp)
 }
 
 // Input data format:R8G8B8
+//void BackgroundColor_16M(uint32_t color);
 void Background_color_16M(unsigned long temp)
 {
     LCD_CmdWrite(0xD5);
@@ -6783,6 +6904,8 @@ void Background_color_16M(unsigned long temp)
 }
 
 //[DBh]~[DEh]=========================================================================
+
+//void CGRAM_StartAddress(uint32_t addr);
 void CGRAM_Start_address(unsigned long Addr)
 {
     /*
@@ -9068,7 +9191,7 @@ void SPIM_Fixed_Bus_mode(void) //
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
-//void PageRegister(PageReg pr);
+//void PageSwitch(PageReg pr);
 void REG_Switch_to_REG0(void) //(default)
 {
     /*
@@ -9084,7 +9207,7 @@ void REG_Switch_to_REG0(void) //(default)
 
     delay_ms(1); // for test
 }
-//void PageRegister(PageReg pr);
+//void PageSwitch(PageReg pr);
 void REG_Switch_to_REG1(void) //
 {
     /*
@@ -9198,6 +9321,7 @@ void Select_SFI_3(void)
 //[B9h]=========================================================================
 // REG[B9h] SPI master Control Register (SPIMCR2)
 
+//void nSS_Select_Channel(NSS_Channel channel);
 void Select_nSS_drive_on_xnsfcs0(void)
 {
     unsigned char temp;
@@ -9208,6 +9332,7 @@ void Select_nSS_drive_on_xnsfcs0(void)
     LCD_DataWrite(temp);
 }
 
+//void nSS_Select_Channel(NSS_Channel channel);
 void Select_nSS_drive_on_xnsfcs1(void)
 {
     unsigned char temp;
@@ -9217,6 +9342,8 @@ void Select_nSS_drive_on_xnsfcs1(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void nSS_Select_Channel(NSS_Channel channel);
 void Select_nSS_drive_on_xnsfcs2(void)
 {
     unsigned char temp;
@@ -9227,6 +9354,7 @@ void Select_nSS_drive_on_xnsfcs2(void)
     LCD_DataWrite(temp);
 }
 
+//void nSS_Select_Channel(NSS_Channel channel);
 void Select_nSS_drive_on_xnsfcs3(void)
 {
     unsigned char temp;
@@ -9881,7 +10009,7 @@ void IDEC_Select_SFI_32bit_Address(void)
     REG_Switch_to_REG0();
 }
 
-
+//void IDEC_SPI_Select_StandardMode0orMode3(void);
 void IDEC_Select_standard_SPI_Mode0_or_Mode3(void)
 {
     /*[REG PAGE 1],[B7h] [bit4]
@@ -9900,6 +10028,8 @@ void IDEC_Select_standard_SPI_Mode0_or_Mode3(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_SPI_Select_Mode0andMode3(void);
 void IDEC_Select_RA8875_SPI_Mode0_and_Mode3(void)
 {
     /*[REG PAGE 1],[B7h] [bit4]
