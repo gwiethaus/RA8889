@@ -19,52 +19,69 @@
 	  e detnrod esta funcao seleciona entao o nivel de cores pela variavel. O sistema fica dinamico podendo fazer troca de profundicade no momento desejao, 
 	  evitando que isso seja fixo em um display mna hora da compilacao. Principalmente em sistema que requerem otimizacao de cores pelo usuario.
 	  
+	  marcar na RA8889_51.c a funcao Check_IC_ready equivale a IC_WaitReady
+	  
 	Tarefas:
     Fazendo as funções: void DrawPixel(unsigned short x,unsigned short y,unsigned short color)
                         void Show_picture(unsigned long numbers,const unsigned char *datap)
                         void Show_String(char *str)
 						void putPixel(
 						
-				unsigned char RA8889_I2CM_Receiver_Data(void)
-                void RA8889_I2CM_Transmit_Data(unsigned char temp)
-                void RA8889_I2CM_Clock_Prescale(unsigned short WX)
-                void Power_Saving_Sleep_Mode(void)
-                void Power_Saving_Suspend_Mode(void)
-                void Power_Saving_Standby_Mode(void)
-                void Power_Normal_Mode(void)
-                void ER_TFTBasic::BTE_Alpha_Blending_Effect(unsigned char temp)
-                void ER_TFTBasic::BTE_Window_Size(unsigned short WX, unsigned short WY)
-                void ER_TFTBasic::BTE_Destination_Window_Start_XY(unsigned short WX,unsigned short HY) 
-                void ER_TFTBasic::BTE_Destination_Image_Width(unsigned short WX) 
-                void ER_TFTBasic::BTE_Destination_Memory_Start_Address(unsigned long Addr) 
-                void ER_TFTBasic::BTE_S1_Window_Start_XY(unsigned short WX,unsigned short HY)  
-                void ER_TFTBasic::BTE_S1_Image_Width(unsigned short WX)  
-                void ER_TFTBasic::S1_Constant_color_16M(unsigned long temp)
-                void ER_TFTBasic::S1_Constant_color_65k(unsigned short temp)
-                void ER_TFTBasic::S1_Constant_color_256(unsigned char temp)
-                void ER_TFTBasic::BTE_S1_Memory_Start_Address(unsigned long Addr)  
-                void ER_TFTBasic::BTE_S0_Window_Start_XY(unsigned short WX,unsigned short HY)  
-                void ER_TFTBasic::BTE_S0_Image_Width(unsigned short WX)  
-                void ER_TFTBasic::BTE_S0_Memory_Start_Address(unsigned long Addr)  
-                void ER_TFTBasic::BTE_Destination_Color_24bpp(void)
-                void ER_TFTBasic::BTE_Destination_Color_16bpp(void)
-                void ER_TFTBasic::BTE_Destination_Color_8bpp(void)
-                void ER_TFTBasic::BTE_S1_Color_16bit_Alpha(void)
-                void ER_TFTBasic::BTE_S1_Color_8bit_Alpha(void)
-                void ER_TFTBasic::BTE_S1_Color_Constant(void)
-                void ER_TFTBasic::BTE_S1_Color_24bpp(void)
-                void ER_TFTBasic::BTE_S1_Color_16bpp(void)
-                void ER_TFTBasic::BTE_S1_Color_8bpp(void)
-                void ER_TFTBasic::BTE_S0_Color_24bpp(void)
-                void ER_TFTBasic::BTE_S0_Color_16bpp(void)
-                void ER_TFTBasic::BTE_S0_Color_8bpp(void)
-                void ER_TFTBasic::BTE_Operation_Code(unsigned char setx)
-                void ER_TFTBasic::BTE_ROP_Code(unsigned char setx)
-                void ER_TFTBasic::BTE_Enable(void)
-                void ER_TFTBasic::BTE_Disable(void)
-                void ER_TFTBasic::Check_BTE_Busy(void)
-                void ER_TFTBasic::Pattern_Format_8X8(void)
-                void ER_TFTBasic::Pattern_Format_16X16(void)
+                        AI RA8889_51.c
+                        void Power_Saving_Sleep_Mode(void)                  -->	Power_SavingSleepMode
+                        void Power_Saving_Suspend_Mode(void)                -->	Power_SavingSuspendMode
+                        void Power_Saving_Standby_Mode(void)                -->	Power_SavingStandbyMode
+                        void Power_Normal_Mode(void)                        -->	Power_NormalMode
+				        unsigned char RA8889_I2CM_Receiver_Data(void)       --> I2CM_Receiver_Data
+                        void RA8889_I2CM_Transmit_Data(unsigned char temp)  --> I2CM_TransmitData
+                        void RA8889_I2CM_Clock_Prescale(unsigned short WX)  -->	I2CM_ClockPrescale
+						void Check_BTE_Busy(void)                           --> void BTE_DualWaitReady(void)
+						void BTE_ROP_Code(unsigned char setx)               --> void BTE_ROPCode(eBTEROPCode code);
+						void BTE_Operation_Code(unsigned char setx)         --> void BTE_OperationCode(eBTEOpCode opcode)
+                        void BTE_S0_Color_24bpp(void)                       --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+                        void BTE_S0_Color_16bpp(void)                       --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+                        void BTE_S0_Color_8bpp(void)                        --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+						
+						BuyDisplay RA8889.cpp
+						void ER_TFTBasic::Check_BTE_Busy(void)                    --> void BTE_WaitReady(void)
+                        void ER_TFTBasic::Pattern_Format_8X8(void)                --> void BTE_PatternFormat8X8
+                        void ER_TFTBasic::Pattern_Format_16X16(void)              --> void BTE_PatternFormat16X16
+                        void Check_BTE_Busy(void)                                 --> void BTE_WaitReady(void)
+                        void ER_TFTBasic::BTE_Enable(void)                        --> void BTE_Enable(bool b);
+                        void ER_TFTBasic::BTE_Disable(void)                       --> void BTE_Enable(bool b);
+						void ER_TFTBasic::BTE_Operation_Code(unsigned char setx)  --> void BTE_OperationCode(eBTEOpCode opcode)
+						void ER_TFTBasic::BTE_ROP_Code(unsigned char setx)        --> void BTE_ROPCode(eBTEROPCode code);
+                        void ER_TFTBasic::BTE_S0_Color_24bpp(void)                --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+                        void ER_TFTBasic::BTE_S0_Color_16bpp(void)                --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+                        void ER_TFTBasic::BTE_S0_Color_8bpp(void)                 --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+
+                        void ER_TFTBasic::BTE_Alpha_Blending_Effect(unsigned char temp)
+                        void ER_TFTBasic::BTE_Window_Size(unsigned short WX, unsigned short WY)
+                        void ER_TFTBasic::BTE_Destination_Window_Start_XY(unsigned short WX,unsigned short HY) 
+                        void ER_TFTBasic::BTE_Destination_Image_Width(unsigned short WX) 
+                        void ER_TFTBasic::BTE_Destination_Memory_Start_Address(unsigned long Addr) 
+                        void ER_TFTBasic::BTE_S1_Window_Start_XY(unsigned short WX,unsigned short HY)  
+                        void ER_TFTBasic::BTE_S1_Image_Width(unsigned short WX)  
+                        void ER_TFTBasic::S1_Constant_color_16M(unsigned long temp)
+                        void ER_TFTBasic::S1_Constant_color_65k(unsigned short temp)
+                        void ER_TFTBasic::S1_Constant_color_256(unsigned char temp)
+                        void ER_TFTBasic::BTE_S1_Memory_Start_Address(unsigned long Addr)  
+                        void ER_TFTBasic::BTE_S0_Window_Start_XY(unsigned short WX,unsigned short HY)  
+                        void ER_TFTBasic::BTE_S0_Image_Width(unsigned short WX)  
+                        void ER_TFTBasic::BTE_S0_Memory_Start_Address(unsigned long Addr)  
+                        void ER_TFTBasic::BTE_Destination_Color_24bpp(void)
+                        void ER_TFTBasic::BTE_Destination_Color_16bpp(void)
+                        void ER_TFTBasic::BTE_Destination_Color_8bpp(void)
+                        void ER_TFTBasic::BTE_S1_Color_16bit_Alpha(void)
+                        void ER_TFTBasic::BTE_S1_Color_8bit_Alpha(void)
+                        void ER_TFTBasic::BTE_S1_Color_Constant(void)
+                        void ER_TFTBasic::BTE_S1_Color_24bpp(void)
+                        void ER_TFTBasic::BTE_S1_Color_16bpp(void)
+                        void ER_TFTBasic::BTE_S1_Color_8bpp(void)
+                        
+                        
+
+                        
                 		
 						
 */
@@ -173,7 +190,7 @@ uint8_t Panel_RA8889::init(void) {
   Memory_BlockMode();                          //Set Block mode (X-Y coordination addressing)
   Memory_16bpp_BlockMode(void);                //Set 16bpp Block mode
   
-  _bpp =  ColorDepthBPP::bpp16                 //Indica que selecionou Color depth 16bpp
+  _bpp =  eColorDepthBPP::bpp16                 //Indica que selecionou Color depth 16bpp
   
 }
 
@@ -424,7 +441,7 @@ void Panel_RA8889::HardwareReset(void)
 bool Panel_RA8889::IC_WaitReady(void)
 {
   unint8_t temp;
-  for(unsigned long i = 0; i < 1000000; i++) { //de acordo com o uso, altere o valor de i.
+  for(uint32_t i = 0; i < 1000000; i++) { //de acordo com o uso, altere o valor de i.
     temp = StatusRead();
     if( (temp & 0x02) == 0x00 ) {return true;}
 	delayMicroseconds(1);
@@ -799,10 +816,13 @@ void Panel_RA8889::PLL_ConfigClocks(void)
  *
  * Uso típico: deve ser chamada após a inicialização da SDRAM ou 
  * antes de qualquer operação que dependa do acesso estável à memória.
+ * 
+ * Status Register (STSR) 
+ * Bit [2] SDRAM ready for access
+ *         0: SDRAM não está pronta para acesso.
+ *         1: SDRAM pronta para acesso.
+ * Before user check this bit staus , user must be set ”sdr_initdone” bit as 1
  *
- * - Bit 2 do STSR:
- *   0: SDRAM não está pronta para acesso.
- *   1: SDRAM pronta para acesso.
  */
 bool Panel_RA8889::SDRAM_WaitReady(void)
 {
@@ -1219,11 +1239,11 @@ void Panel_RA8889::HostWriteMemoryDirection(MemoryDirection direction)
  *                         0b0 : active low.
  *                         0b1 : active high.
  *
- * @param InterruptLevel::Low
- *        InterruptLevel::High
+ * @param eInterruptLevel::Low
+ *        eInterruptLevel::High
  *
  */
-void Panel_RA8889::Interrupt_ActiveLevel(InterruptLevel level)
+void Panel_RA8889::Interrupt_ActiveLevel(eInterruptLevel level)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
@@ -1293,7 +1313,7 @@ void Panel_RA8889::ExtInterrupt_NoDebounce(void)
  *
  * @note None
  */
-void Panel_RA8889::ExtInterrupt_InputLevelTrigger(InterrupLevelTrigger leveltrg)
+void Panel_RA8889::ExtInterrupt_InputLevelTrigger(eInterrupLevelTrigger leveltrg)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
@@ -5183,7 +5203,6 @@ void Panel_RA8889::PWM0_SetCompareBuffer(uint16_t Wx)
 }
 
 
-
 //================================================================================
 //
 // [0x8A] Timer 0 count buffer register [TCNTB0L]
@@ -5303,14 +5322,13 @@ void Panel_RA8889::PWM1_SetCompareBuffer(uint16_t Wx)
  *       When timer counter equal to 0 will cause PWM timer reload Count buffer register if reload_en bit set as enable.
  *       It may read back timer counter��s real time value when PWM timer start.
  */
-void PWM1_SetCountBuffer(uint16_t Wx)
+void Panel_RA8889::PWM1_SetCountBuffer(uint16_t Wx)
 {
   SPI_CmdWrite(REG_TCNTB1L);                   //0x8e, Timer 1 count buffer register [TCNTB1L]
   SPI_DataWrite(Wx);                           
   SPI_CmdWrite(REG_TCNTB1H);                   //0x8f, Timer 1 count buffer register [TCNTB1H]
   SPI_DataWrite(Wx >> 8);                      
 }
-
 
 
 //================================================================================
@@ -5320,80 +5338,175 @@ void PWM1_SetCountBuffer(uint16_t Wx)
 //================================================================================
 
 
-void ER_TFTBasic::BTE_Enable(void)
+/**
+ * @brief BTE function Enable/Disable
+ *
+ * @verbatim
+ * REG [0x90] BTE Function Control Register 0 (BTE_CTRL0)
+ *            bit [4] BTE Function Enable / Status
+ *            Write:
+ *            0: BTE function is disabled.
+ *            1: BTE function is enabled.
+ *            Read:
+ *            0: BTE function is idle.
+ *            1: BTE function is busy.
+ *
+ *            Note: When BTE function is enabled, it’s not allowed to access 
+ *            the memory space of the active window in canvas.
+ *
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::BTE_Enable(bool b)
 { 
-/*
-BTE Function Enable
-0 : BTE Function disable.
-1 : BTE Function enable.
-*/
-    unsigned char temp;
-    ER_TFT.LCD_CmdWrite(0x90);
-    temp = ER_TFT.LCD_DataRead();
-    temp |= cSetb4 ;
-  ER_TFT.LCD_DataWrite(temp);  
+  uint8_t temp;
+  SPI_CmdWrite(REG_BTE_CTRL0);                 //0x90, BTE Function Control Register 0 (BTE_CTRL0)
+  temp = SPI_DataRead();
+  b ? temp |= cSetb4 : temp &= cClrb4;
+  SPI_DataWrite(temp);
 }
 
 
-void ER_TFTBasic::BTE_Disable(void)
-{ 
-/*
-BTE Function Enable
-0 : BTE Function disable.
-1 : BTE Function enable.
-*/
-    unsigned char temp;
-    ER_TFT.LCD_CmdWrite(0x90);
-    temp = ER_TFT.LCD_DataRead();
-    temp &= cClrb4 ;
-  ER_TFT.LCD_DataWrite(temp);  
+/**
+ * @brief Wait until Core Task (BTE) is Ready
+ *
+ *@verbatim
+ * Status Register (STSR)
+ * 
+ * bit [3] Core task is busy (fontwr_busy)
+ *        Following task is running:
+ *        BTE, Geometry engine, Serial flash DMA, Text write or Graphic write
+ *        0: task is done or idle.
+ *        1: task is busy.
+ *        While User change canvas relative setting & switch text 
+ *        mode or graphic mode must make sure core task is done. 
+ *        Note: BTE, Geometry drawing & Serial flash DMA also may 
+ *        check each start bit. Under text mode, if user wants to 
+ *        change rotate attribute, character line gap, 
+ *        character-to-character space, foreground color, 
+ *        background color and Text/graphic mode setting, he must 
+ *        make sure core_busy (fontwr_busy) status bit is low.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Only RA8876/RA8877/RA8889
+ */
+void Panel_RA8889::BTE_WaitReady(void) 
+{
+    while (SPI_StatusRead() & 0x08) delayMicroseconds(1);
 }
 
 
-void ER_TFTBasic::Check_BTE_Busy(void)
-{ 
-/*
-BTE Function Status
-0 : BTE Function is idle.
-1 : BTE Function is busy.
-*/
-  unsigned char temp;   
-  do
-  {
-    temp=ER_TFT.LCD_StatusRead();
-  }while(temp&0x08);
-
+/**
+ * @brief Wait until Core Task (BTE) is Ready
+ *
+ * @verbatim
+ * Status Register (STSR)
+ * 
+ * bit [3] Core task is busy (fontwr_busy)
+ *        Following task is running:
+ *        BTE, Geometry engine, Serial flash DMA, Text write or Graphic write
+ *        0: task is done or idle.
+ *        1: task is busy.
+ *        While User change canvas relative setting & switch text 
+ *        mode or graphic mode must make sure core task is done. 
+ *        Note: BTE, Geometry drawing & Serial flash DMA also may 
+ *        check each start bit. Under text mode, if user wants to 
+ *        change rotate attribute, character line gap, 
+ *        character-to-character space, foreground color, 
+ *        background color and Text/graphic mode setting, he must 
+ *        make sure core_busy (fontwr_busy) status bit is low.
+ *
+ * REG [0x90] BTE Function Control Register 0 (BTE_CTRL0)
+ *            bit [4] BTE Function Enable / Status
+ *            Write:
+ *            0: BTE function is disabled.
+ *            1: BTE function is enabled.
+ *            Read:
+ *            0: BTE function is idle.
+ *            1: BTE function is busy.
+ *
+ *            Note: When BTE function is enabled, it’s not allowed to access 
+ *            the memory space of the active window in canvas.
+ *
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Only RA8876/RA8877/RA8889. Block Transfer Engine (BTE)
+ */
+void Panel_RA8889::BTE_DualWaitReady(void) 
+{
+  uint8_t temp;
+  
+  //Case1: using BTE Function Control Register
+  
+  do {
+    SPI_CmdWrite(REG_BTE_CTRL0);               //0x090, Seleciona o registro BTE Function Control
+    temp = SPI_DataRead();                     //
+  	delayMicroseconds(1);                      //Libera CPU parcialmente
+  } while (temp & 0x10);                       //Continua enquanto BTE estiver ocupado
+  
+  //Case2: using STSR Status Register
+  
+  do {
+    temp = SPI_StatusRead();                   //Ler STSR (status geral do core) 
+  	delayMicroseconds(1);                      //Libera CPU parcialmente
+  } while (temp & 0x08);                       //Continua enquanto o core estiver ocupado
 }
 
 
-void ER_TFTBasic::Pattern_Format_8X8(void)
+/**
+ * @brief Pattern Format 8x8
+ *
+ * @verbatim
+ * REG [0x90] BTE Function Control Register 0 (BTE_CTRL0)
+ *            bit [0] PATTERN Format
+ *            0b0: 8x8
+ *            0b1: 16x16
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::BTE_PatternFormat8X8(void)
 { 
-/*
-Pattern Format
-0 : 8X8
-1 : 16X16
-*/
-    unsigned char temp;
-    ER_TFT.LCD_CmdWrite(0x90);
-    temp = ER_TFT.LCD_DataRead();
-    temp &= cClrb0 ;
-  ER_TFT.LCD_DataWrite(temp);
+  uint8_t temp;
+  SPI_CmdWrite(REG_BTE_CTRL0);          //0x90, BTE Function Control Register 0 (BTE_CTRL0)
+  temp = SPI_DataRead();
+  temp &= cClrb0;
+  SPI_DataWrite(temp);
 } 
 
 
-void ER_TFTBasic::Pattern_Format_16X16(void)
+/**
+ * @brief Pattern Format 16x16
+ *
+ * @verbatim
+ * REG [0x90] BTE Function Control Register 0 (BTE_CTRL0)
+ *            bit [0] PATTERN Format
+ *            0b0: 8x8
+ *            0b1: 16x16
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::BTE_PatternFormat16X16(void)
 { 
-/*
-Pattern Format
-0 : 8X8
-1 : 16X16
-*/
-    unsigned char temp;
-    ER_TFT.LCD_CmdWrite(0x90);
-    temp = ER_TFT.LCD_DataRead();
-    temp |= cSetb0 ;
-    ER_TFT.LCD_DataWrite(temp);
+  uint8_t temp;
+  SPI_CmdWrite(REG_BTE_CTRL0);          //0x90, BTE Function Control Register 0 (BTE_CTRL0)
+  temp = SPI_DataRead();
+  temp |= cSetb0 ;
+  SPI_DataWrite(temp);
 } 
+
 
 //================================================================================
 //
@@ -5401,68 +5514,122 @@ Pattern Format
 //
 //================================================================================
 
-void ER_TFTBasic::BTE_ROP_Code(unsigned char setx)
+
+/**
+ * @brief BTE ROP Code
+ *
+ * @verbatim
+ * REG [0x91] BTE Function Control Register1 (BTE_CTRL1)
+ *            bit [7-4] BTE ROP Code Bit[3:0] or color expansion starting bit
+ *            
+ *            a. ROP is the acronym for Raster Operation. Some BTE operations 
+ *               can be combined with ROP operations. (Please refer to Section 
+ *               2.7)
+ *
+ *            Code    Description
+ *            ---------------------------------
+ *            0b0000  0 ( Blackness )
+ *            0b0001  ~S0・~S1 or ~ ( S0+S1 )
+ *            0b0010  ~S0・S1
+ *            0b0011  ~S0
+ *            0b0100  S0・~S1
+ *            0b0101  ~S1
+ *            0b0110  S0^S1
+ *            0b0111  ~S0+~S1 or ~ ( S0・S1 )
+ *            0b1000  S0・S1
+ *            0b1001  ~ ( S0^S1 )
+ *            0b1010  S1
+ *            0b1011  ~S0+S1
+ *            0b1100  S0
+ *            0b1101  S0+~S1
+ *            0b1110  S0+S1
+ *            0b1111  1 ( Whiteness )
+ *
+ *            b. If BTE operation code function are color expansion with or 
+ *               without chroma key (08h / 09h / Eh / Fh), then these bits 
+ *               stand for starting bit on BTE window left boundary. MSB 
+ *               stands for left most pixel. For 8-bits MPU, value should 
+ *               within 0 to 7. For 16-bits MPU, value should within 0 to 15.
+ * @endverbatim
+ *
+ * @param code
+ *
+ * @note ROP is the acronym for Raster Operation.
+ */
+void BTE_ROPCode(BTEROPCode code)
 { 
-/*
-BTE ROP Code[Bit7:4]
-  
-0000 : 0(Blackness)
-0001 : ~S0.~S1 or ~ ( S0+S1 )
-0010 : ~S0.S1
-0011 : ~S0
-0100 : S0.~S1
-0101 : ~S1
-0110 : S0^S1
-0111 : ~S0+~S1 or ~ ( S0.S1 )
-1000 : S0.S1
-1001 : ~ ( S0^S1 )
-1010 : S1
-1011 : ~S0+S1
-1100 : S0
-1101 : S0+~S1
-1110 : S0+S1
-1111 : 1 ( Whiteness )
-*/
-    unsigned char temp;
-    ER_TFT.LCD_CmdWrite(0x91);
-    temp = ER_TFT.LCD_DataRead();
-    temp &= 0x0f ;
-    temp |= (setx<<4);
-    ER_TFT.LCD_DataWrite(temp);
+  uint8_t temp;
+  SPI_CmdWrite(REG_BTE_CTRL1);                 //BTE Function Control Register1 (BTE_CTRL1)
+  temp = SPI_DataRead();                       
+  temp &= 0x0f;                                //Limpar os bits [7-4]
+  temp |= (static_cast<uint8_t>(code) << 4);   
+  SPI_DataWrite(temp);
 }
 
 
-void ER_TFTBasic::BTE_Operation_Code(unsigned char setx)
+/**
+ * @brief BTE Operation Code
+ *
+ * @verbatim
+ * REG [0x91] BTE Function Control Register1 (BTE_CTRL1)
+ *            bit [3-0] BTE Operation Code Bit[3:0]
+ *            RA8889 builds in 2D BTE Engine which provides 13 BTE functions. Some of BTE Operations can be combined with the
+ *            0b0000 MPU Write with ROP.
+ *              S0: comes from MPU data
+ *              S1: comes from memory
+ *              D:  According to ROP write to memory
+ *            0b0001 Reserved
+ *            0b0010 Memory Copy with ROP
+ *              S0: comes from memory.
+ *              S1: comes from memory
+ *              D:  According to ROP Write to memory
+ *            0b0011 Reserved
+ *            0b0100 MPU Write w/ chroma keying (w/o ROP)
+ *              S0: comes from MPU data
+ *              If MPU data doesn’t match with chroma key color (specified by background color) then writes to destination.
+ *            0b0101 Memory Copy (move) w/ chroma keying (w/o ROP)
+ *              S0 comes from memory, and S1 is useless.
+ *              If S0 data doesn’t match with chroma key color (specified by background color) then S0 data will write to destination.
+ *            0b0110 Pattern Fill with ROP
+ *              Pattern is specified by S0.
+ *            0b0111 Pattern Fill with chroma keying
+ *              Pattern is specified by S0.
+ *              If S0 data doesn’t match with chroma key color (specified by background color) then writes to destination.
+ *            0b1000 MPU Write w/ Color Expansion
+ *              S0 comes from MPU data and convert to specified color & color depth then write to destination.
+ *            0b1001 MPU Write w/ Color Expansion and chroma keying
+ *              S0 comes from MPU data and If the data bit is “1” then convert to specified foreground color & color depth then write to destination.
+ *            0b1010b Memory Copy with opacity
+ *              S0, S1 & D: locate in memory
+ *            0b1011 MPU Write with opacity
+ *              S0: comes from MPU data
+ *              S1: comes from memory
+ *              D: According to Alpha blending operation write to memory
+ *            0b1100 Solid Fill
+ *              Destination data comes from register.
+ *            0b1101 Reserved
+ *            0b1110 Memory Copy w/ Color Expansion
+ *              S0 & D locate in memory and S1 is useless
+ *              S0 must be pre-loaded into memory with 8bpp or 16bpp color depth via MPU write or DMA, thus S0 color depth should follow that color depth.
+ *            0b1111 Memory Copy w/ Color Expansion and chroma keying
+ *              S0 & D locate in memory and S1 is useless.
+ *              S0 must be pre-loaded into memory with 8bpp or 16bpp color depth via MPU write or DMA, thus S0 color depth should follow that color depth.
+ *              If S0 data bit=0 then no data will be written into D. If S0 data bit=1 then foreground color data will be written to D.
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void BTE_OperationCode(eBTEOpCode opcode)
 { 
-/*
-BTE Operation Code[Bit3:0]
-  
-0000 : MPU Write BTE with ROP.
-0001 : MPU Read BTE w/o ROP.
-0010 : Memory copy (move) BTE in positive direction with ROP.
-0011 : Memory copy (move) BTE in negative direction with ROP.
-0100 : MPU Transparent Write BTE. (w/o ROP.)
-0101 : Transparent Memory copy (move) BTE in positive direction (w/o ROP.)
-0110 : Pattern Fill with ROP.
-0111 : Pattern Fill with key-chroma
-1000 : Color Expansion
-1001 : Color Expansion with transparency
-1010 : Move BTE in positive direction with Alpha blending
-1011 : MPU Write BTE with Alpha blending
-1100 : Solid Fill
-1101 : Reserved
-1110 : Reserved
-1111 : Reserved
-*/
-    unsigned char temp;
-    ER_TFT.LCD_CmdWrite(0x91);
-    temp = ER_TFT.LCD_DataRead();
-    temp &= 0xf0 ;
-    temp |= setx ;
-    ER_TFT.LCD_DataWrite(temp);
-
+  uint8_t temp;
+  SPI_CmdWrite(REG_BTE_CTRL1);                 //BTE Function Control Register1 (BTE_CTRL1)
+  temp = SPI_DataRead();                       
+  temp &= 0xf0;                                //Limpa os bits de 3-0
+  temp |= static_cast<uint8_t>(opcode);        //Coloca opcode
+  SPI_DataWrite(temp);                         
 }
-
 
 
 //================================================================================
@@ -5472,20 +5639,38 @@ BTE Operation Code[Bit3:0]
 //================================================================================
 
 
-void ER_TFTBasic::BTE_S0_Color_8bpp(void)
+
+
+/**
+ * @brief BTE Source 0 (S0) Color Depth
+ *
+ * @verbatim
+ * REG [0x92] Source 0/1 & Destination Color Depth (BTE_COLR)
+ *            bit [6-5] S0 Color Depth
+ *            00 : 256 Color
+ *            01 : 64k Color
+ *            1x : 16M Color
+ * @endverbatim
+ *
+ * @param bpp:
+ *        eColorDepthBPP::bpp8
+ *        eColorDepthBPP::bpp16
+ *        eColorDepthBPP::bpp24
+ *
+ * @note None
+ */
+void BTE_S0_ColorDeph(eColorDepthBPP bpp)
 { 
-/*
-S0 Color Depth
-00 : 256 Color
-01 : 64k Color
-1x : 16M Color
-*/  
-    unsigned char temp;
-    ER_TFT.LCD_CmdWrite(0x92);
-    temp = ER_TFT.LCD_DataRead();
-    temp &= cClrb6 ;
-    temp &= cClrb5 ;
-    ER_TFT.LCD_DataWrite(temp);
+  uint8_t temp;
+  uint8_t bit;
+  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = SPI_DataRead();
+  temp &= ~(cSetb6 | cSetb5);                     //Reseta bits 6 e 5
+  bit = static_cast<uint8_t>(bpp);
+  bit = (bit >> 3)-1;                             //transforma 8,16,24 em 0, 1, 2
+  bit = bit<<5;                                   //posiciona no bit 6 e 5
+  temp |= bit;
+  SPI_DataWrite(temp);
 } 
 
 
@@ -9398,7 +9583,7 @@ void Panel_RA8889::BackgroundColor_16M(uint32_t color)
  *
  * @note None
  */ 
-void CGRAM_StartAddress(uint32_t addr)
+void Panel_RA8889::CGRAM_StartAddress(uint32_t addr)
 {
   SPI_CmdWrite(REG_CGRAM_STR0);                //0xdb, CGRAM Start Address 0 (CGRAM_STR0)
   SPI_DataWrite(addr);                         
@@ -9411,88 +9596,257 @@ void CGRAM_StartAddress(uint32_t addr)
 }
 
 
+//================================================================================
+//
+// [0xDF] Power Management register (PMU)
+//
+//================================================================================
 
 
-
-
-
-
-
-//[DFh]=========================================================================
-/*
-[bit7] Enter Power saving state
-0: Normal state.
-1: Enter power saving state.
-[bit1][bit0] Power saving Mode definition
-00: NA
-01: Standby Mode
-10: Suspend Mode
-11: Sleep Mode
-*/
-void Power_Normal_Mode(void)
+/**
+ * @brief Entrar em modo normal de operação de energia
+ *        
+ * @verbatim
+ * REG [0xdf] Power Management register (PMU)
+ *            bit [7] Enter Power saving state
+ *                    0: Normal state or wakeup from power saving state
+ *                    1: Enter power saving state. 
+ *                    Note:
+ *                    There are 3 ways to wakeup from power saving state:
+ *                    External interrupt event, Key Scan wakeup, Software wakeup.
+ *                    Writing 0 to this bit will cause a software wakeup. It will be cleared until chip resume. MPU must wait until system quit from power saving state to allow writing other registers. User may check this bit or check status bit [1] (power saving status bit) to check whether chip back to normal operation.
+ *            bit [6-2] NA
+ *            bit [1-0] Power saving Mode definition
+ *                      0b00: NA
+ *                      0b01: Standby Mode
+ *                            CCLK & PCLK will stop, MCLK keep MPLL clock
+ *                      0b10: Suspend Mode
+ *                            CCLK & PCLK will stop, MCLK switch to OSC clock
+ *                      0b11: Sleep Mode
+ *                            All clock & PLL will stop
+ * @endverbatim
+ *
+ * @param addr
+ *
+ * @note None
+ */
+void Panel_RA8889::Power_NormalMode(void)
 {
-    LCD_CmdWrite(0xDF);
-    LCD_DataWrite(0x00);
-    Check_IC_ready();
-}
-void Power_Saving_Standby_Mode(void)
-{
-    LCD_CmdWrite(0xDF);
-    //	LCD_DataWrite(0x01);
-    //	LCD_CmdWrite(0xDF);
-    LCD_DataWrite(0x81);
-}
-void Power_Saving_Suspend_Mode(void)
-{
-    LCD_CmdWrite(0xDF);
-    //	LCD_DataWrite(0x02);
-    //	LCD_CmdWrite(0xDF);
-    LCD_DataWrite(0x82);
-}
-void Power_Saving_Sleep_Mode(void)
-{
-    LCD_CmdWrite(0xDF);
-    LCD_DataWrite(0x03);
-    LCD_CmdWrite(0xDF);
-    LCD_DataWrite(0x83);
-}
-
-//[E5h]~[E6h]=========================================================================
-void RA8889_I2CM_Clock_Prescale(unsigned short WX)
-{
-    /*
-    I2C Master Clock Pre-scale [7:0]
-    I2C Master Clock Pre-scale [15:8]
-    XSCL = CCLK / (5*(prescale + 2))
-    */
-    LCD_CmdWrite(0xE5);
-    LCD_DataWrite(WX);
-    LCD_CmdWrite(0xE6);
-    LCD_DataWrite(WX >> 8);
-}
-//[E7h]=========================================================================
-void RA8889_I2CM_Transmit_Data(unsigned char temp)
-{
-    /*
-    I2C Master Transmit[7:0]
-    */
-    LCD_CmdWrite(0xE7);
-    LCD_DataWrite(temp);
-}
-//[E8h]=========================================================================
-unsigned char RA8889_I2CM_Receiver_Data(void)
-{
-    /*
-    I2C Master Receiver [7:0]
-    */
-    unsigned char temp;
-    LCD_CmdWrite(0xE8);
-    temp = LCD_DataRead();
-    return temp;
+  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  SPI_DataWrite(0x00);                         //Limpa bits [7,1,0]
+  IC_WaitReady();                              //Aguarda até está pronto
 }
 
 
+/**
+ * @brief Entrar em modo standby de operação de economia de energia
+ *        
+ * @verbatim
+* REG [0xdf] Power Management register (PMU)
+ *            bit [7] Enter Power saving state
+ *                    0: Normal state or wakeup from power saving state
+ *                    1: Enter power saving state. 
+ *                    Note:
+ *                    There are 3 ways to wakeup from power saving state:
+ *                    External interrupt event, Key Scan wakeup, Software wakeup.
+ *                    Writing 0 to this bit will cause a software wakeup. It will be cleared until chip resume. MPU must wait until system quit from power saving state to allow writing other registers. User may check this bit or check status bit [1] (power saving status bit) to check whether chip back to normal operation.
+ *            bit [6-2] NA
+ *            bit [1-0] Power saving Mode definition
+ *                      0b00: NA
+ *                      0b01: Standby Mode
+ *                            CCLK & PCLK will stop, MCLK keep MPLL clock
+ *                      0b10: Suspend Mode
+ *                            CCLK & PCLK will stop, MCLK switch to OSC clock
+ *                      0b11: Sleep Mode
+ *                            All clock & PLL will stop
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Power_SavingStandbyMode(void)
+{
+  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  LCD_DataWrite(cSetb7 | cSetb0 0x81);         //bit 7 = 1 (power saving), bit [1-0] = 01 (standby)
+}
 
+
+/**
+ * @brief Entrar em modo suspensão de operação de economia de energia
+ *        
+ * @verbatim
+* REG [0xdf] Power Management register (PMU)
+ *            bit [7] Enter Power saving state
+ *                    0: Normal state or wakeup from power saving state
+ *                    1: Enter power saving state. 
+ *                    Note:
+ *                    There are 3 ways to wakeup from power saving state:
+ *                    External interrupt event, Key Scan wakeup, Software wakeup.
+ *                    Writing 0 to this bit will cause a software wakeup. It will be cleared until chip resume. MPU must wait until system quit from power saving state to allow writing other registers. User may check this bit or check status bit [1] (power saving status bit) to check whether chip back to normal operation.
+ *            bit [6-2] NA
+ *            bit [1-0] Power saving Mode definition
+ *                      0b00: NA
+ *                      0b01: Standby Mode
+ *                            CCLK & PCLK will stop, MCLK keep MPLL clock
+ *                      0b10: Suspend Mode
+ *                            CCLK & PCLK will stop, MCLK switch to OSC clock
+ *                      0b11: Sleep Mode
+ *                            All clock & PLL will stop
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Power_SavingSuspendMode(void)
+{
+  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  LCD_DataWrite(0x82);                         //bit 7 = 1 (power saving), bit [1-0] = 10 (suspend)
+}
+
+
+/**
+ * @brief Entrar em modo de dormência de operação economia de economia de energia
+ *        
+ * @verbatim
+* REG [0xdf] Power Management register (PMU)
+ *            bit [7] Enter Power saving state
+ *                    0: Normal state or wakeup from power saving state
+ *                    1: Enter power saving state. 
+ *                    Note:
+ *                    There are 3 ways to wakeup from power saving state:
+ *                    External interrupt event, Key Scan wakeup, Software wakeup.
+ *                    Writing 0 to this bit will cause a software wakeup. It will be cleared until chip resume. MPU must wait until system quit from power saving state to allow writing other registers. User may check this bit or check status bit [1] (power saving status bit) to check whether chip back to normal operation.
+ *            bit [6-2] NA
+ *            bit [1-0] Power saving Mode definition
+ *                      0b00: NA
+ *                      0b01: Standby Mode
+ *                            CCLK & PCLK will stop, MCLK keep MPLL clock
+ *                      0b10: Suspend Mode
+ *                            CCLK & PCLK will stop, MCLK switch to OSC clock
+ *                      0b11: Sleep Mode
+ *                            All clock & PLL will stop
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void Panel_RA8889::Power_SavingSleepMode(void)
+{
+  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  LCD_DataWrite(0x03);                         //bit [1-0] = 11 (sleep)
+  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  LCD_DataWrite(0x83);                         //bit 7 = 1 (power saving), bit [1-0] = 11 (sleep)
+}
+
+
+//================================================================================
+//
+// [0xE5] IIC Master Clock Pre-scale Register 0 (IICMCPR0)
+// [0xE6] IIC Master Clock Pre-scale Register 1 (IICMCPR1)
+// [0xE7] IIC Master Transmit Register (IICMTXR)
+// [0xE8] IIC Master Receiver Register (IICMRXR)
+//
+//================================================================================
+
+
+/**
+ * @brief I2C Master Clock Pre-Scale
+ *        
+ * @verbatim
+ * REG [0xe5] IIC Master Clock Pre-scale Register 0 (IICMCPR0)
+ *            bit [7-0] IIC Master Clock Pre-scale [7:0]
+ *                      XSCL = CCLK / (5*(Pre-scale + 2))
+ * 
+ * REG [0xe6] IIC Master Clock Pre-scale Register 1 (IICMCPR1)
+ *            bit [7-0] IIC Master Clock Pre-scale [15:8]
+ *                      XSCL = CCLK / (5*(Pre-scale + 2))
+ * @endverbatim
+ *
+ * @param prescale: valor do pre-scale
+ *
+ * @note Only RA8889
+ *       bits [15:8][7:0] XSCL = CCLK / (5*(Pre-scale + 2))
+ */
+void Panel_RA8889::I2CM_ClockPrescale(uint16_t prescale)
+{
+  SPI_CmdWrite(REG_IICMCPR0);                  //0xe5, IIC Master Clock Pre-scale Register 0 (IICMCPR0)
+  SPI_DataWrite(prescale);                     //byte baixo de pre-scale
+  SPI_CmdWrite(REG_IICMCPR1);                  //0xe6, IIC Master Clock Pre-scale Register 1 (IICMCPR1)
+  SPI_DataWrite(prescale >> 8);                //byte alto de pre-scale
+}
+
+
+/**
+ * @brief I2C Master Transmit Data
+ *        
+ * @verbatim
+ * REG [0xe7] IIC Master Transmit Register (IICMTXR)
+ *            bit [7-0] IIC Master Transmit [7:0]
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Only RA8889
+ *       
+ */
+void Panel_RA8889::I2CM_TransmitData(uint8_t data)
+{
+  SPI_CmdWrite(REG_IICMTXR);       //0xe7, IIC Master Transmit Register (IICMTXR)
+  SPI_DataWrite(temp);
+}
+
+
+/**
+ * @brief I2C Master Receive Data
+ *        
+ * @verbatim
+ * REG [0xe8] IIC Master Receiver Register (IICMRXR)
+ *            bit [7-0] IIC Master Receiver [7:0]
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note Only RA8889
+ *       
+ */
+uint8_t Panel_RA8889::I2CM_Receiver_Data(void)
+{
+  SPI_CmdWrite(REG_IICMRXR);                   //0xe8, IIC Master Receiver Register (IICMRXR)
+  return SPI_DataRead();
+}
+
+
+/**
+ * @brief Configura a frequência do clock I²C Mestre do RA8889.
+ *
+ * @param xscl_hz Frequência desejada do I²C (em Hz), ex: 100000 (100 kHz), 400000 (400 kHz).
+ *
+ * @note A fórmula usada é:
+ *       PreScale = (CCLK / (5 * XSCL)) - 2
+ *       XSCL = CCLK / (5 * (PreScale + 2))
+ *
+ *       Onde CCLK é o clock principal do RA8889.
+ */
+void Panel_RA8889::I2CM_SetFrequency(uint32_t xscl_hz)
+{
+  // Defina aqui o clock principal do RA8889 (em Hz).
+  // Verifique no seu hardware/datasheet qual é o valor exato.
+  const uint32_t CCLK = CORE_FREQ * 1000000UL;  //Converte MHz para Hz
+  
+  if (xscl_hz == 0) return; // Evita divisão por zero
+  
+  // Calcula PreScale conforme a fórmula
+  uint32_t prescale = (CCLK / (5 * xscl_hz)) - 2;
+  
+  // Garante que cabe em 16 bits
+  if (prescale > 0xFFFF) prescale = 0xFFFF;
+  
+  // Chama a função que grava nos registradores do RA8889
+  I2CM_ClockPrescale((uint16_t)prescale);
+}
 
 
 

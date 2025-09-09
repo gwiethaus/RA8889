@@ -572,12 +572,15 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 #define LAYER9_START_ADDR  800*480*2*8
 #define LAYER10_START_ADDR 800*480*2*9
 
+#define COLOR_DEPH_8BPP   8
+#define COLOR_DEPH_16BPP  16
+#define COLOR_DEPH_24BPP  24
 
 //minha nova impelemtnacao, colocar isso de forma ajustada no sistema apra selecao do COLOR DEPTH 8/16/24 bpp
-enum class ColorDepthBPP : uint8_t {
-  bpp8  = 8,       //Color Depth 8bpp
-  bpp16 = 16,      //Color Depth 16bpp
-  bpp24 = 24       //Color Depth 24bpp
+enum class eColorDepthBPP : uint8_t {
+  bpp8  = COLOR_DEPH_8BPP,       //Color Depth 8bpp
+  bpp16 = COLOR_DEPH_16BPP,      //Color Depth 16bpp
+  bpp24 = COLOR_DEPH_24BPP       //Color Depth 24bpp
 }
 
 
@@ -634,29 +637,72 @@ enum class InterruptLevel : uint8_t {
 }
 
 
-enum class InterrupLevelTrigger : uint8_t {
-  Low      = 0b00                  //low level trigger    
-  Falling  = 0b01                  //falling edge trigger
-  High     = 0b10                  //high level trigger
-  rising   = 0b11                  //rising edge trigger
+enum class eInterrupLevelTrigger : uint8_t {
+  Low      = 0b00                              //low level trigger    
+  Falling  = 0b01                              //falling edge trigger
+  High     = 0b10                              //high level trigger
+  rising   = 0b11                              //rising edge trigger
 }
 
 
 enum class eNSS_Channel : uint8_t {
-    XNSFCS0 = 0,                   
-    XNSFCS1 = 1,                 
-    XNSFCS2 = 2,               
-    XNSFCS3 = 3                
+  XNSFCS0 = 0,                   
+  XNSFCS1 = 1,                 
+  XNSFCS2 = 2,               
+  XNSFCS3 = 3                
 };
 
 
 enum class eDividerClock : uint8_t {
-    X1 = 0b00,                      //divided by 1, 1/1 
-    X2 = 0b01,                      //divided by 2, 1/2  
-    X4 = 0b10,                      //divided by 4, 1/4
-    X8 = 0b11                       //divided by 8, 1/8
+  X1 = 0b00,                                   //divided by 1, 1/1 
+  X2 = 0b01,                                   //divided by 2, 1/2  
+  X4 = 0b10,                                   //divided by 4, 1/4
+  X8 = 0b11                                    //divided by 8, 1/8
 };
 
+
+//Uso com BTE Operation Code
+enum class eBTEOpCode : uint8_t {
+  MPU_WROP            = 0b0000,      //MPU Write BTE with ROP.
+  MPU_RNOP            = 0b0001,      //MPU Read BTE without ROP.
+  MEM_COPY_POS_ROP    = 0b0010,      //Memory copy (move) BTE in positive direction with ROP.
+  MEM_COPY_NEG_ROP    = 0b0011,      //Memory copy (move) BTE in negative direction with ROP.
+  MPU_TWRITE          = 0b0100,      //MPU Transparent Write BTE. (w/o ROP.)
+  MPU_T_COPY_POS      = 0b0101,      //Transparent Memory copy (move) BTE in positive direction (w/o ROP.)
+  PAT_ROP             = 0b0110,      //Pattern Fill with ROP.
+  PAT_CHROMA          = 0b0111,      //Pattern Fill with key-chroma
+  COLOR_EXP           = 0b1000,      //Color Expansion
+  COLOR_EXP_T         = 0b1001,      //Color Expansion with transparency
+  MOVE_POS_ALPHA      = 0b1010,      //Move BTE in positive direction with Alpha blending
+  MPU_WALPHA          = 0b1011,      //MPU Write BTE with Alpha blending
+  SOLID_FILL          = 0b1100       //Solid Fill
+}
+
+
+/**
+ * @brief BTE ROP (Raster Operation) Codes for RA8889
+ *
+ * These codes define how the source(s) (S0, S1) are combined to produce
+ * the destination (D). They are used with BTE operations that support ROP.
+ */
+enum class eBTEROPCode : uint8_t {
+    Blackness       = 0b0000,  // 0
+    NotS0_And_NotS1 = 0b0001,  // ~S0・~S1  or  ~(S0 + S1)
+    NotS0_And_S1    = 0b0010,  // ~S0・S1
+    NotS0           = 0b0011,  // ~S0
+    S0_And_NotS1    = 0b0100,  // S0・~S1
+    NotS1           = 0b0101,  // ~S1
+    S0_Xor_S1       = 0b0110,  // S0 ^ S1
+    NotS0_Or_NotS1  = 0b0111,  // ~S0 + ~S1  or  ~(S0・S1)
+    S0_And_S1       = 0b1000,  // S0・S1
+    Not_S0_Xor_S1   = 0b1001,  // ~(S0 ^ S1)
+    S1              = 0b1010,  // S1
+    NotS0_Or_S1     = 0b1011,  // ~S0 + S1
+    S0              = 0b1100,  // S0
+    S0_Or_NotS1     = 0b1101,  // S0 + ~S1
+    S0_Or_S1        = 0b1110,  // S0 + S1
+    Whiteness       = 0b1111   // 1
+};
 
 
 class Panel_RA8889 {
@@ -984,7 +1030,23 @@ class Panel_RA8889 {
 		void SFI_DMA_TransferNumber(uint32_t addr);
 		void SFI_DMA_TransferWidthHeight(uint16_t Wx, uint16_t Hy);
 		void SFI_DMA_SourceWidth(uint16_t Wx);
+				
+		void Power_NormalMode(void);
+		void Power_SavingStandbyMode(void);
+		void Power_SavingSuspendMode(void);
+		void Power_SavingSleepMode(void);
+		void I2CM_ClockPrescale(uint16_t prescale);
+		void I2CM_TransmitData(uint8_t data);
+		uint8_t I2CM_Receiver_Data(void);
+		void I2CM_SetFrequency(uint32_t xscl_hz);
 		
+		void BTE_WaitReady(void);
+		void BTE_DualWaitReady(void);
+		void BTE_PatternFormat8X8(void);
+		void BTE_PatternFormat16X16(void);
+		void BTE_Enable(bool b);
+		void BTE_OperationCode(eBTEOpCode opcode);
+		void BTE_S0_ColorDeph(eColorDepthBPP bpp)
 }
 		
 

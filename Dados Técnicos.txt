@@ -51,14 +51,15 @@ Display ER-TFT070-2-6105
   Operating Temperature       -20oC~70oC
   Storage Temperature         -30oC~80oC
 
-Legandas
+Legendas
 --------
 
+BTE                                 Block Transfer Engine
+CGROM                               Character Generator ROM
 I/F                                 Interface
 MCU                                 Microcontroller Unit
 MPU                                 Microprocessor Unit
 PIP                                 Picture-in-Picture
-CGROM                               Character Generator ROM
 
 Serial Flash Interface e SPI Interface
 --------------------------------------
@@ -665,7 +666,9 @@ PWM0 Compare Buffer
   
   🔹 Conceito de Compare Buffer no PWM
 
-  Imagine o PWM Timer 0 como um contador que sobe de 0 até o valor do período configurado. O Compare Buffer define até que ponto do ciclo a saída PWM fica em nível alto.
+  Imagine o PWM Timer 0 como um contador que sobe de 0 até o valor do período 
+  configurado. O Compare Buffer define até que ponto do ciclo a saída PWM fica 
+  em nível alto.
 
   Timer 0 Counts: 0 → PERIOD
   Compare Buffer: Wx
@@ -700,11 +703,11 @@ PWM0 Compare Buffer
     SPI_CmdWrite(REG_TCMPB0H);    // High byte
     SPI_DataWrite(Wx >> 8);       
   }
-  
-  
-  1.Escreve o byte baixo do valor do Compare Buffer no registrador 0x88.
+    
+  1. Escreve o byte baixo do valor do Compare Buffer no registrador 0x88.
   2. Escreve o byte alto no registrador 0x89.
-  3. Agora o Timer 0 sabe em que ponto do ciclo ele deve mudar XPWM[0] de HIGH para LOW.
+  3. Agora o Timer 0 sabe em que ponto do ciclo ele deve mudar XPWM[0] de 
+     HIGH para LOW.
 
   🔹 Resumo visual do PWM 0
   
@@ -716,13 +719,15 @@ PWM0 Compare Buffer
               ↑
               Compare Buffer Wx
   
-  - O ponto de transição HIGH → LOW depende do valor que você configurou com PWM0_SetCompareBuffer().
+  - O ponto de transição HIGH → LOW depende do valor que você configurou com 
+    PWM0_SetCompareBuffer().
   - Quanto maior Wx, mais tempo a saída fica HIGH, maior o duty cycle.
 
   Mapa visual completo do PWM Timer 0 do RA8889
   ---------------------------------------------
   
-  Integrando Compare Buffer, Dead Zone, Start/Stop e Inverter, pra você ver tudo de forma intuitiva.
+  Integrando Compare Buffer, Dead Zone, Start/Stop e Inverter, pra você ver 
+  tudo de forma intuitiva.
   
   🔹 Diagrama do PWM Timer 0
   
@@ -751,6 +756,7 @@ PWM0 Compare Buffer
 
   🔹 Explicando cada bloco
   
+  -------------------------------------------------------------------------------------------------------------------
   Bloco / Registrador             Função
   -------------------------------------------------------------------------------------------------------------------
   Timer 0 Counter                 Conta de 0 até o período configurado, determina a base do PWM.
@@ -759,6 +765,7 @@ PWM0 Compare Buffer
   Output Inverter (PCFGR bit 6)   Se ativado, inverte os níveis HIGH/LOW do XPWM[0].
   Start/Stop Timer (PCFGR bit 0)  Liga ou desliga o Timer 0.
   XPWM[0] Output                  Pino físico que gera o sinal PWM com duty cycle ajustado pelo Compare Buffer.
+  -------------------------------------------------------------------------------------------------------------------
   
   🔹 Resumo do fluxo
   
@@ -769,4 +776,367 @@ PWM0 Compare Buffer
   5. Inverter → opcional, troca HIGH ↔ LOW.
   
   💡 Observação:
-  Se você combinar Dead Zone + Compare Buffer + Inverter, consegue controlar duty cycle, proteção contra overlap e polaridade do PWM de forma independente — totalmente configurável pelo software.
+  Se você combinar Dead Zone + Compare Buffer + Inverter, consegue controlar 
+  duty cycle, proteção contra overlap e polaridade do PWM de forma 
+  independente — totalmente configurável pelo software.
+
+
+I2C Clock Pre-scale
+-------------------
+
+  I2CM_ClockPrescale(uint16_t prescale) serve para configurar a frequência do 
+  clock do barramento I²C mestre interno do RA8889.
+  
+  - O RA8889 tem registradores de pre-scale (divisores de clock) que controlam 
+    a frequência de saída do sinal XSCL (o clock do I²C).
+
+  - Os registradores usados são:
+  
+    REG_IICMCPR0 → byte baixo (bits [7:0])
+  
+    REG_IICMCPR1 → byte alto (bits [15:8])
+  
+  - A fórmula da frequência resultante é:
+
+    XSCL = CCLK / (5*(PreScale+2))
+	
+	onde CCLK é o clock do sistema do RA8889.
+
+    O parâmetro prescale (16 bits) é dividido em dois bytes:
+
+    - prescale & 0xFF → escrito em IICMCPR0
+    - prescale >> 8 → escrito em IICMCPR1
+
+    O valor do CCLK é o Core Clock do sistema e ele é definido pelo fabricante 
+	do circuito do display. No Caso do display da BuyDisplay ER-TFT070-2-6105
+	este valor está definico como #define CORE_FREQ  120 * 1000000 que deve 
+	ser em Hertz.
+	
+	O Core Clock (CORE_FREQ) é o clock principal do RA8889 que alimenta todos 
+	os blocos internos do chip, incluindo o bloco I²C mestre. Ele é constante 
+	para o seu modelo de display e não muda dinamicamente (a não ser que você 
+	mexa na configuração de PLL, o que normalmente não se faz).
+
+    Então, para calcular o Pre-scale do I²C, você sempre usa essa constante 
+	que você me passou: #define CORE_FREQ 120  // MHz
+
+    💡 Resumindo: 
+	CORE_FREQ = 120 MHz é a constante que você sempre usa no cálculo, não 
+	importa a frequência do dispositivo I²C externo — a diferença será 
+	ajustada no Pre-scale para gerar XSCL apropriado.
+	
+	Uma tabela rápida usando CORE_FREQ = 120 MHz, mostrando XSCL desejado 
+	versus Pre-scale calculado, e também o XSCL real aproximado que o RA8889 
+	vai gerar (porque ele só aceita valores inteiros de Pre-scale).
+
+    ----------------------------------------------------
+	XSCL desejado  Pre-scale calculado  XSCL real gerado
+	----------------------------------------------------
+    100 kHz        238                  100.840 Hz
+    200 kHz        118                  101.695 Hz
+    250 kHz        94                   101.061 Hz
+    300 kHz        78                   102.564 Hz
+    400 kHz        58                   103.448 Hz
+    500 kHz        46                   104.348 Hz
+    1 MHz          22                   108.696 Hz
+	----------------------------------------------------
+	
+	⚡ Observações
+
+    O XSCL real é calculado como:
+	
+    XSCL_real= CCLK / (5*(PreScale+2))
+    
+	Sempre haverá pequena diferença entre o XSCL desejado e o real, porque o 
+	Pre-scale é inteiro.
+
+    Para I²C padrão, isso não é problema: 100 kHz e 400 kHz estão dentro das 
+	tolerâncias do protocolo.
+
+    O valor de XSCL desejado depende do dispositivo I²C que vai estar 
+	conectado ao RA8889. Alguns pontos importantes:
+    
+  Valor do XSCL desejado
+  ----------------------
+  
+  1. Especificação do dispositivo
+  Cada chip I²C tem uma faixa máxima de clock que aceita.
+  
+  Ex.: uma EEPROM comum 24Cxx suporta até 400 kHz (Fast Mode), enquanto alguns 
+  sensores antigos só aceitam 100 kHz (Standard Mode).
+
+  2. Comprimento e qualidade do cabo
+  
+  Quanto mais longa a linha SDA/SCL ou mais “barulho” no circuito, menor a 
+  frequência que você consegue usar sem erros.
+  
+  3. Pull-ups
+  
+  O I²C precisa de resistores de pull-up nos sinais SDA e SCL.
+  
+  Se você aumentar XSCL demais, linhas longas ou resistores grandes podem 
+  impedir que o sinal suba rápido o suficiente, causando falha na comunicação.
+  
+  4. Compatibilidade com outros dispositivos no mesmo barramento
+  
+  Se houver múltiplos dispositivos, todos precisam suportar a mesma frequência.
+  
+  Caso um dispositivo seja “lento”, você precisa ajustar XSCL para o mais 
+  lento.
+  
+  Uso de SPI para Programar o I2C
+  -------------------------------
+   
+  Está usando SPI (SPI_CmdWrite / SPI_DataWrite) para escrever nos 
+  registradores do RA8889 que controlam o bloco I²C mestre interno.
+  
+  Ou seja: você está configurando o clock do controlador I²C embutido no 
+  RA8889 via SPI. Isso funciona, sim ✅, porque o RA8889 expõe todos os 
+  registradores internos (inclusive os do bloco I²C) através da interface 
+  que você escolheu para se comunicar com o chip (SPI, 8080, 6800, etc).
+  
+  🧩 Para que serve isso, então?
+  
+  O RA8889 pode ser o mestre I²C para acessar outros periféricos externos 
+  (memória EEPROM, sensores, etc).
+   
+  Mas, para habilitar esse I²C interno, você precisa configurar os 
+  registradores dele via sua interface de controle (no seu caso, SPI).
+   
+  Portanto:
+  
+  Você não precisa falar com o RA8889 via I²C para configurar o prescale.
+  
+  Você usa SPI para configurar os registradores do bloco I²C.
+   
+  Depois, o próprio RA8889 gera sinais de I²C nos pinos dele (SCL/SDA) para 
+  falar com outros dispositivos externos.
+   
+  ✅ Conclusão
+  
+  Você usa o SPI para configurar o prescaler do I²C interno do RA8889.
+
+  Só vai precisar usar comunicação I²C diretamente se o seu MCU quiser falar 
+  com outros chips via I²C, sem usar o RA8889 como intermediário.
+
+  Nesse caso, ou você usa o I²C do próprio MCU, ou usa o I²C interno do 
+  RA8889, mas sempre configurando ele por SPI.
+
+BTE - Block Transfer Engine
+---------------------------
+
+  É basicamente um motor interno que faz transferência de blocos de pixels e 
+  manipulação gráfica 2D direto na VRAM.
+
+  Então, resumindo:
+
+  - Block Transfer Engine → manipula blocos de memória gráfica (blocos de 
+    pixels) rapidamente.
+  - Opera com S0, S1 e D, aplica opcode e ROP, e entrega o resultado pronto.
+  - Permite copy, move, fill, pattern, color expansion, alpha blending, etc.
+  - Tudo feito internamente, sem precisar que o MCU desenhe cada pixel.
+
+  Ou seja, é literalmente uma GPU 2D interna para operações gráficas de alto 
+  nível dentro do RA8889, e super eficiente.
+
+  O BTE do RA8876, RA8877 e RA8889 é justamente o recurso que faz ele se 
+  destacar — você não precisa mais ficar gastando ciclos do ESP32 só pra mover 
+  bloquinho de pixels, pintar fundo ou aplicar transparência.
+
+  É literalmente mandar o comando e ficar olhando a mágica acontecer 💡✨
+
+  👉 Recomendo começar com uns testes simples, tipo:
+
+  - Preencher um retângulo com BTE Fill e comparar a velocidade com um for em 
+    software.
+  - Mover uma área da tela (tipo scroll de texto ou de imagem).
+  - Aplicar transparência entre dois blocos, só pra ver como ele mistura as 
+    cores sem você calcular nada.
+
+  Alpha blending
+  --------------
+  
+  No caso da transparência (alpha blending), composição de camadas, ou até 
+  janelas sobrepostas:
+  
+  Se fosse fazer isso "na unha" pelo MCU, você teria que ler pixel por pixel, 
+  calcular as misturas de cores, e reescrever na tela. Isso consome tempo de 
+  CPU, largura de banda do barramento e memória.
+  
+  O RA8889 simplesmente recebe o comando, pega as áreas de origem (S0, S1, 
+  etc.), aplica o ROP (Raster Operation, que pode ser copy, AND, OR, XOR, 
+  alpha blending...) e escreve o resultado direto na área de destino.
+
+  Tudo isso em hardware paralelo, muito mais rápido do que qualquer operação 
+  de pixel feita em software ou até por DMA convencional.
+
+  Por isso ele dá esse "efeito GPU":
+  ✅ Move/scroll de áreas da tela sem redesenhar tudo.
+  ✅ Transparência entre camadas instantânea.
+  ✅ Preenchimento de áreas grandes em uma cor ou padrão sem precisar de loop 
+     no código.
+  ✅ Copy & paste de bitmaps já processados.
+
+  Ou seja, você manda um comando, e ele faz o "serviço sujo" sozinho. É 
+  literalmente como você falou: uma GPUzinha 2D embutida no display 🎯.
+
+  Manipulação Grafica
+  -------------------
+  
+  Os registradores de BTE, são exatamente para manipulação de gráficos na tela 
+  sem precisar que o MPU (seu ESP32/MCU) fique “pintando pixel por pixel na 
+  unha”.
+
+  👉 O RA8889 tem dentro dele um motor 2D que entende de áreas de memória 
+  gráfica (framebuffer) e pode:
+
+  1. Copiar blocos de pixels de uma área para outra.
+  2. Mover imagens para cima/baixo/esquerda/direita (com ou sem ROP, alpha, 
+     transparência, etc.)
+  3. Fazer preenchimentos (solid fill, pattern fill, color expansion)
+  4. Aplicar combinações lógicas entre duas fontes (S0 e S1) antes de gravar 
+     no destino (D), através do ROP
+  5. Aplicar transparência / chroma key / alpha blending direto em HW
+
+  Ou seja, é como um mini motor gráfico 2D embutido no chip que economiza 
+  muito processamento do MCU.
+
+  Estrutura básica
+  ----------------
+
+  O BTE sempre trabalha com 3 referências:
+
+  - S0 = Fonte principal (pode vir do MPU ou da memória do display)
+  - S1 = Fonte secundária (geralmente memória do display)
+  - D = Destino (endereço na memória gráfica do display)
+  
+  A operação que sai em D depende:
+  
+  - Do Operation Code (ex.: copiar, preencher, mover, expandir cor)
+  - Do ROP Code (ex.: AND, OR, XOR, NOT, White, Black etc.)
+
+  Exemplos práticos
+  -----------------
+  
+  Pattern Fill (com ROP):
+  Você define um padrão pequeno (8×8 pixels por exemplo) em S0, e o BTE repete 
+  esse padrão para preencher uma área maior da tela.
+  → Bom pra fundos, grids, etc.
+  
+  Memory Copy (positive direction):
+  Copia uma área da tela (como uma imagem ou sprite) de um ponto a outro.
+  → Útil pra mover objetos sem redesenhar tudo.
+  
+  Color Expansion:
+  Pega dados comprimidos (1 bit/pixel ou 8bpp) e expande para a cor definida 
+  (ex.: transformar bitmap monocromático em colorido).
+  → Ideal pra fontes ou ícones.
+  
+  Alpha Blending (move com alpha):
+  Combina uma imagem com outra aplicando transparência.
+  → Pra sobrepor objetos ou efeitos semi-transparentes.
+  
+  ROP = Blackness/Whiteness:
+  Você pode forçar a área de destino ficar preta ou branca, sem importar fontes.
+  → Um jeito rápido de “apagar” ou “branquear” regiões.
+
+  Exemplos de uso do BTE no RA8889
+  --------------------------------
+  
+  Uma tabelinha visual resumida com alguns dos opcodes/ROPs mais típicos, 
+  mostrando S0, S1, D e o efeito prático na tela.
+
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Operação           S0 (fonte 0)                   S1 (fonte 1)              D (destino)            Efeito na tela
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Solid Fill         — (valor fixo do registrador)  —                         Área selecionada       Preenche um retângulo inteiro com uma cor sólida.
+  Pattern Fill       Padrão (ex: 8×8 pixels)        —                         Área selecionada       Repete o padrão definido em S0 para preencher uma área.
+  Memory Copy (pos)  Bloco da VRAM                  —                         Outra posição da VRAM  Copia uma imagem de uma área para outra (move sem redesenhar).
+  Color Expansion    Bitmap (1 bit/pixel)           —                         Área selecionada       Expande cada bit em cor definida (útil para fontes e ícones monocromáticos).
+  Move w/ Alpha      Imagem (com alpha)             Fundo (VRAM)              Mesma área de fundo    Sobrepõe uma imagem aplicando transparência.
+  ROP: S0 ^ S1       Imagem A                       Imagem B                  Área selecionada       Aplica XOR pixel a pixel (efeito de mesclagem).
+  ROP: Blackness     —                              —                         Área selecionada       Preenche tudo de preto (0).
+  ROP: Whiteness     —                              —                         Área selecionada       Preenche tudo de branco (1).
+  --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  
+  👉 O legal é que nenhum desses exige que o ESP32 desenhe pixel por pixel — 
+     basta configurar o BTE (origem, destino, tamanho, opcode, rop code) e 
+	 ele executa sozinho.
+
+ROP - Raster Operation ou Raster Operation Code
+-----------------------------------------------
+
+  No RA8889 (e outros controladores gráficos com BTE), ROP significa Raster 
+  Operation ou Raster Operation Code. É uma lógica que define como os dados de 
+  origem (S0, S1) e destino (D) são combinados durante operações gráficas como 
+  cópia de memória, preenchimento de padrão ou escrita do MPU.
+  
+  Em outras palavras:
+  
+  - ROP determina a “regra de combinação”: você não escreve simplesmente os 
+    bits de S0 em D; você aplica uma operação lógica entre S0, S1 e D.
+  
+  - Exemplos de operações típicas de ROP:
+  
+    - D = S0 → simples cópia
+    - D = S0 OR D → combina o valor novo com o antigo
+    - D = S0 AND NOT D → lógica mais complexa
+  
+  - No RA8889, o BTE (BitBLT Engine) suporta várias funções com ROP, 
+    permitindo efeitos gráficos avançados sem precisar processar cada pixel no 
+	MPU.
+  
+  💡 Resumo prático:
+  
+  Sempre que você vê “ROP” no RA8889, significa que a operação aplica uma 
+  função lógica entre origem(s) e destino.
+  
+  Se o opcode diz “with ROP”, o BTE vai combinar os dados conforme a operação 
+  ROP configurada.
+  
+  Se diz “without ROP”, o BTE apenas escreve os dados diretamente (ou aplica 
+  outras regras como transparência ou Alpha).
+
+  No RA8889, o BTE (BitBLT Engine) trabalha com 3 “buffers” lógicos:
+
+  -------------------------------------------------------------------------------------------------
+  Nome  Origem / Função
+  -------------------------------------------------------------------------------------------------
+  S0    Source 0 → normalmente MPU ou padrão; é a fonte principal de dados.
+  S1    Source 1 → normalmente memória; usada como segunda fonte quando o ROP combina duas fontes.
+  D     Destination → memória de destino; recebe o resultado da operação.
+  -------------------------------------------------------------------------------------------------
+  
+  O ROP (Raster Operation) define como S0, S1 e D são combinados. Algumas 
+  regras comuns:
+
+  --------------------------------------------------------
+  Exemplo ROP       Operação
+  --------------------------------------------------------
+  D = S0            Copia S0 para D (simples)
+  D = S0 OR S1      Combina S0 e S1 com OR e escreve em D
+  D = S0 AND NOT D  Combina S0 com D usando AND e NOT
+  D = S0 XOR S1     Combina S0 e S1 com XOR e escreve em D
+  --------------------------------------------------------
+
+  💡 Resumo prático visual:
+  
+         +--------+
+  S0 --->|        |
+  S1 --->|  BTE   |--> D
+         | Engine |
+         +--------+
+         ^
+         | ROP define a lógica de combinação de S0, S1 e D
+  
+  Quando o opcode é “with ROP”, o BTE aplica a operação lógica que você 
+  configurou (ex.: AND, OR, XOR) entre S0, S1 e D.
+
+  Quando é “without ROP”, o BTE simplesmente escreve S0 em D (ou aplica 
+  transparência/Alpha se for o caso).
+
+  Isso explica por que nos seus enums você tem:
+
+  - MPU_WROP         → MPU escreve com lógica ROP
+  - MEM_COPY_POS_ROP → Memória copia com ROP
+  - MPU_TWRITE       → MPU escreve sem ROP, transparente
