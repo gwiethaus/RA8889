@@ -1859,7 +1859,8 @@ It may read back timer counter��s real time value when PWM timer start.
 
 //[90h]~[B5h]=========================================================================
 
-//[90h]=========================================================================
+
+//void BTE_Enable(bool b)
 void ER_TFTBasic::BTE_Enable(void)
 { 
 /*
@@ -1874,7 +1875,7 @@ BTE Function Enable
   ER_TFT.LCD_DataWrite(temp);  
 }
 
-//[90h]=========================================================================
+//void BTE_Enable(bool b)
 void ER_TFTBasic::BTE_Disable(void)
 { 
 /*
@@ -1890,6 +1891,9 @@ BTE Function Enable
 }
 
 //[90h]=========================================================================
+
+//BTE_WaitReady();
+//void CoreTask_WaitReady(void);
 void ER_TFTBasic::Check_BTE_Busy(void)
 { 
 /*
@@ -1904,7 +1908,10 @@ BTE Function Status
   }while(temp&0x08);
 
 }
+
 //[90h]=========================================================================
+
+//void BTE_PatternFormat8X8(void)
 void ER_TFTBasic::Pattern_Format_8X8(void)
 { 
 /*
@@ -1918,7 +1925,8 @@ Pattern Format
     temp &= cClrb0 ;
   ER_TFT.LCD_DataWrite(temp);
 } 
-//[90h]=========================================================================
+
+//void BTE_PatternFormat16X16(void)
 void ER_TFTBasic::Pattern_Format_16X16(void)
 { 
 /*
@@ -1934,6 +1942,8 @@ Pattern Format
 } 
 
 //[91h]=========================================================================
+
+//void BTE_ROPCode(eBTEROPCode code);
 void ER_TFTBasic::BTE_ROP_Code(unsigned char setx)
 { 
 /*
@@ -1963,8 +1973,10 @@ BTE ROP Code[Bit7:4]
     temp |= (setx<<4);
     ER_TFT.LCD_DataWrite(temp);
 }
-  
+
 //[91h]=========================================================================
+
+//void BTE_OperationCode(eBTEOpCode opcode);
 void ER_TFTBasic::BTE_Operation_Code(unsigned char setx)
 { 
 /*
@@ -1995,7 +2007,9 @@ BTE Operation Code[Bit3:0]
     ER_TFT.LCD_DataWrite(temp);
 
 }
-//[92h]=========================================================================
+
+
+//void BTE_S0_ColorDeph(eColorDepthBPP bpp);
 void ER_TFTBasic::BTE_S0_Color_8bpp(void)
 { 
 /*
@@ -2011,7 +2025,9 @@ S0 Color Depth
     temp &= cClrb5 ;
     ER_TFT.LCD_DataWrite(temp);
 } 
-//[92h]=========================================================================
+
+
+//void BTE_S0_ColorDeph(eColorDepthBPP bpp);
 void ER_TFTBasic::BTE_S0_Color_16bpp(void)
 { 
 /*
@@ -2028,7 +2044,8 @@ S0 Color Depth
     ER_TFT.LCD_DataWrite(temp);
 
 } 
-//[92h]=========================================================================
+
+//void BTE_S0_ColorDeph(eColorDepthBPP bpp);
 void ER_TFTBasic::BTE_S0_Color_24bpp(void)
 { 
 /*
