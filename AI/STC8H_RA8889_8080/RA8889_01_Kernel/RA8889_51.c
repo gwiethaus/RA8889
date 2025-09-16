@@ -4326,6 +4326,8 @@ void Ellipse_Center_XY(unsigned short WX, unsigned short HY)
 }
 
 //[84h]=========================================================================
+
+//void PWM_Prescaler(uint8_t prescaler)
 void Set_PWM_Prescaler_1_to_256(unsigned short WX)
 {
     /*
@@ -10098,7 +10100,7 @@ void IDEC_Select_SFI_Single_Mode_Dummy_8T_0Bh(void) //
     LCD_CmdWrite(0xB7);
     temp = LCD_DataRead();
     temp &= 0xF0;
-    temp |= 0x02;
+    temp |= cSetb1;
     LCD_DataWrite(temp);
 
     REG_Switch_to_REG0();
