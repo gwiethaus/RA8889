@@ -39,7 +39,7 @@
 #define LCD_VSYNC_Active_Polarity   0      // 1:HighLevel    0:LowLevel
 #define LCD_DE_Active_Polarity      1      // 1:HighLevel    0:LowLevel
 
-#define  cSetb0    0x01
+#define cSetb0    0x01
 #define cSetb1    0x02
 #define cSetb2    0x04
 #define cSetb3    0x08

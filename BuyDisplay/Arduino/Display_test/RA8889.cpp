@@ -181,7 +181,7 @@ void ER5517Basic::TFT_16bit(void)
   ER5517.LCD_CmdWrite(0x01);
   temp = ER5517.LCD_DataRead();
   temp |= cSetb4;
-    temp &= cClrb3;
+  temp &= cClrb3;
   ER5517.LCD_DataWrite(temp);  
 }
 void ER5517Basic::Host_Bus_16bit(void)
@@ -3279,6 +3279,7 @@ void ER5517Basic::MemWrite_Left_Right_Top_Down(void)
   ER5517.LCD_DataWrite(temp);
 }
 
+//void PLL_WaitReady(void)
 void ER5517Basic::System_Check_Temp(void)
 {
   unsigned char i=0,j=0;
@@ -3359,7 +3360,6 @@ void ER5517Basic::PLL_Initial(void)
 	ER5517.LCD_CmdWrite(0x06);
 	ER5517.LCD_DataWrite((SCAN_FREQ*64/OSC_FREQ)-1);
   }            
- 
   
   // Set SDRAM clock
   if(DRAM_FREQ>=125)        //&&(DRAM_FREQ<=166))
@@ -3429,8 +3429,6 @@ void ER5517Basic::PLL_Initial(void)
 	//Enable_PLL();
 
 	delay(1);	//
-  
-
 }
 
 
@@ -3466,7 +3464,7 @@ void ER5517Basic::initial(void)
     ER5517.SDRAM_initail();
 
 //**[01h]**//
-    ER5517.TFT_16bit();
+  ER5517.TFT_16bit();
   ER5517.Host_Bus_16bit(); //Host bus 16bit
       
 //**[02h]**//
@@ -3492,12 +3490,12 @@ void ER5517Basic::initial(void)
   ER5517.LCD_HSYNC_Pulse_Width(LCD_HSPW);                              
   ER5517.LCD_Vertical_Non_Display(LCD_VBPD);                               
   ER5517.LCD_VSYNC_Start_Position(LCD_VFPD);                               
-  ER5517.LCD_VSYNC_Pulse_Width(LCD_VSPW);                              
+  ER5517.LCD_VSYNC_Pulse_Width(LCD_VSPW);                        
       
   ER5517.Select_Main_Window_16bpp();
 
   ER5517.Memory_XY_Mode(); //Block mode (X-Y coordination addressing)
-  ER5517.Memory_16bpp_Mode();
+  ER5517.Memory_16bpp_Mode();      
   ER5517.Select_Main_Window_16bpp();
 }
 void ER5517Basic::Display_ON(void)

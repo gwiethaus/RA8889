@@ -22,13 +22,27 @@ void setup() {
   ER5517.Parallel_Init();
   ER5517.HW_Reset();
   ER5517.System_Check_Temp();
+  
   delay(100);
   while(ER5517.LCD_StatusRead()&0x02);
   ER5517.initial();
   ER5517.Display_ON();
 
 }
+
+#define ACTIVE0
+#define ACTIVE1
+//#define ACTIVE2
+//#define ACTIVE3
+//#define ACTIVE4
+//#define ACTIVE5
+//#define ACTIVE6
+//#define ACTIVE7
+//#define ACTIVE8
+
 void loop() {
+
+#ifdef ACTIVE0
   ER5517.Select_Main_Window_16bpp();
   ER5517.Main_Image_Start_Address(layer1_start_addr);        
   ER5517.Main_Image_Width(LCD_XSIZE_TFT);
@@ -36,8 +50,8 @@ void loop() {
   ER5517.Canvas_Image_Start_address(0);
   ER5517.Canvas_image_width(LCD_XSIZE_TFT);
   ER5517.Active_Window_XY(0,0);
-  ER5517.Active_Window_WH(LCD_XSIZE_TFT,LCD_YSIZE_TFT); 
-  
+  ER5517.Active_Window_WH(LCD_XSIZE_TFT,LCD_YSIZE_TFT);   
+  //<<wiethaus, parei de verificar aqui
   ER5517.DrawSquare_Fill(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT,Red);
   delay(1000);
   ER5517.DrawSquare_Fill(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT,Green);
@@ -56,7 +70,37 @@ void loop() {
   delay(1000); 
   ER5517.DrawSquare_Fill(0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT,White);
   delay(1000);
+#endif
 
+  ER5517.Foreground_color_65k(Red);
+  ER5517.Line_Start_XY(100,100);
+  ER5517.Line_End_XY(200,200);
+  ER5517.Start_Square();
+  ER5517.Check_2D_Busy();
+  delay(100);
+
+  ER5517.Foreground_color_65k(Blue);
+  ER5517.Line_Start_XY(120,120);
+  ER5517.Line_End_XY(240,240);
+  ER5517.Start_Square();
+  ER5517.Check_2D_Busy();
+  delay(100);
+
+  ER5517.Foreground_color_65k(Green);
+  ER5517.Line_Start_XY(10,10);
+  ER5517.Line_End_XY(600,400);
+  ER5517.Start_Square();
+  ER5517.Check_2D_Busy();
+  delay(100);
+
+  ER5517.Foreground_color_65k(Cyan);
+  ER5517.Line_Start_XY(50,100);
+  ER5517.Line_End_XY(400,200);
+  ER5517.Start_Square();
+  ER5517.Check_2D_Busy();
+  delay(1000);
+
+#ifdef ACTIVE1
   ////////BackLight Brightness control test  whit ER's PWM0
   unsigned char  brightness=10;
   ER5517.Foreground_color_65k(White);
@@ -77,7 +121,9 @@ void loop() {
   brightness+=10;
   } 
    delay(1000); 
-   
+#endif
+
+#ifdef ACTIVE2
   ////////Drawing
   unsigned int i;
   ER5517.Select_Main_Window_16bpp();
@@ -244,7 +290,6 @@ void loop() {
   delay(10);
   }
 
-
   delay(100);  
 
 /////////////Text  
@@ -270,7 +315,7 @@ void loop() {
   ER5517.Goto_Text_XY(0,26);
   ER5517.Show_String("buydisplay.com");
 
- ER5517.Background_color_65k(Black); 
+  ER5517.Background_color_65k(Black); 
   ER5517.Foreground_color_65k(Red);
   ER5517.Font_Width_X4(); 
   ER5517.Font_Height_X4();
@@ -279,8 +324,7 @@ void loop() {
   delay(2000); 
   ER5517.Font_Width_X1(); 
   ER5517.Font_Height_X1();
-  
-  
+    
   unsigned int temp;
   unsigned long im=1;
   ER5517.Select_Main_Window_16bpp();
@@ -460,5 +504,5 @@ void loop() {
   ER5517.DMA_24bit_Block(1,1,0,0,LCD_XSIZE_TFT,LCD_YSIZE_TFT,LCD_XSIZE_TFT,1536000);
   delay(2000); 
   
-    
+#endif    
 }
