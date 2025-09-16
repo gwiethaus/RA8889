@@ -1,0 +1,351 @@
+Mapa de substituicao
+--------------------
+
+(RA8889_arduino_reference_Ver_1.0) Ra8889_Lite.cpp
+--------------------------------------------------
+
+void Ra8889_Lite::displayImageStartAddress(ru32 addr)	             --> void MainImage_StartAddress(uint32_t addr)
+void Ra8889_Lite::displayImageWidth(ru16 width)	                     --> void MainImage_Width(uint16_t Wx) 
+void Ra8889_Lite::displayWindowStartXY(ru16 x0,ru16 y0)	             --> void MainWindow_StartXY(uint16_t wx, uint16_t hy)  
+void Ra8889_Lite::canvasImageStartAddress(ru32 addr)                 --> void CanvasImage_StartAddr(uint32_t addr)
+void Ra8889_Lite::canvasImageWidth(ru16 width)                       --> void CanvasImage_Width(uint16_t Wx)
+void Ra8889_Lite::activeWindowXY(ru16 x0,ru16 y0)                    --> void ActiveWindow_XY(uint16_t Wx, uint16_t Hy) 
+void Ra8889_Lite::activeWindowWH(ru16 width,ru16 height)             --> void ActiveWindow_WidhtHeight(uint16_t Wx, uint16_t Hy)  
+void Ra8889_Lite::check2dBusy(void)                                  --> void CoreTask_WaitReady(void)
+void Ra8889_Lite:: putPixel_16bpp(ru16 x,ru16 y,ru16 color)          --> void putPixel(uint16_t x, uint16_t y, uint32_t color)
+void Ra8889_Lite:: putPixel_24bpp(ru16 x,ru16 y,ru16 color)          --> void putPixel(uint16_t x, uint16_t y, uint32_t color)
+void Ra8889_Lite::lcdRegDataWrite(ru8 reg,ru8 data)                  --> void RegisterWrite(uint8_t Cmd, uint8_t Data)
+void Ra8889_Lite::registerPageSwitch(ru8 page)                       --> void PageSwitch(ePageReg pr)
+ru8 Ra8889_Lite::lcdRegDataRead(ru8 reg)                             --> uint8_t RegisterRead(uint8_t Cmd)
+
+(AI) RA8889_51.c
+----------------
+
+(Não Tem equivalente)                                                --> void I2CM_SetFrequency(uint32_t xscl_hz, uint16_t coreclk_mhz)
+void Set_PWM_Prescaler_1_to_256(unsigned short WX)                   --> void PWM_Prescaler(uint8_t prescaler)
+void Power_Saving_Sleep_Mode(void)                                   --> Power_SavingSleepMode
+void Power_Saving_Suspend_Mode(void)                                 --> Power_SavingSuspendMode
+void Power_Saving_Standby_Mode(void)                                 --> Power_SavingStandbyMode
+void Power_Normal_Mode(void)                                         --> Power_NormalMode
+unsigned char RA8889_I2CM_Receiver_Data(void)                        --> I2CM_Receiver_Data
+void RA8889_I2CM_Transmit_Data(unsigned char temp)                   --> I2CM_TransmitData
+void RA8889_I2CM_Clock_Prescale(unsigned short WX)                   --> I2CM_ClockPrescale
+void Check_BTE_Busy(void)                                            --> void BTE_DualWaitReady(void)
+void BTE_ROP_Code(unsigned char setx)                                --> void BTE_ROPCode(eBTEROPCode code);
+void BTE_Operation_Code(unsigned char setx)                          --> void BTE_OperationCode(eBTEOpCode opcode)
+void BTE_S0_Color_24bpp(void)                                        --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+void BTE_S0_Color_16bpp(void)                                        --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+void BTE_S0_Color_8bpp(void)                                         --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+
+
+(BuyDisplay) RA8889.cpp
+-----------------------
+(tanto faz a classe ER5517Basic e ER_TFTBasic)
+
+void ER_TFTBasic::SPIInit()                                          --> void SPISetCS(int8_t level_cs)
+unsigned int ER_TFTBasic::LCD_DataRead(void)                         --> uint8_t SPI_DataRead(void)
+int ER_TFTBasic::SPI_StatusRead(void)                                --> uint8_t StatusRead(void)
+void ER_TFTBasic::LCD_DataWrite(unsigned char data)                  --> void SPI_DataWrite(int data);
+void ER_TFTBasic::LCD_DataWrite_Pixel(unsigned int data)             --> void SPI_DataWrite_Pixel(int data)
+unsigned char ER_TFTBasic::LCD_StatusRead(void)                      --> (removido por hora do projeto)
+void ER_TFTBasic::Check_SDRAM_Ready(void)                            --> void SDRAM_WaitReady(void)
+void ER_TFTBasic::TFT_16bit(void)                                    --> void TFT_SetInterface(TFTInterface mode)
+void ER_TFTBasic::TFT_16bit(void)                                    --> void TFT_16bit(void)
+void ER_TFTBasic::Host_Bus_16bit(void)                               --> void HostDataBus_Select_16bit(void)
+void ER_TFTBasic::RGB_16b_16bpp(void)                                --> void HostColorDepthFormat(uint_t type)
+void ER_TFTBasic::MemRead_Left_Right_Top_Down(void)                  --> void HostReadMemoryDirection(MemoryDirection direction)
+void ER_TFTBasic::Graphic_Mode(void)                                 --> void GraphicMode(void)
+void ER_TFTBasic::Memory_Select_SDRAM(void)                          --> void Memory_Select_SDRAM(void)
+void ER_TFTBasic::HSCAN_L_to_R(void)                                 --> void HScanDirection_LeftToRight (void)
+void ER_TFTBasic::VSCAN_T_to_B(void)                                 --> void VScanDirection_TopToBottom(void)
+void ER_TFTBasic::PDATA_Set_RGB(void)                                --> void PDATA_ColorFmt(PDATAColorFmt: fmt)
+void ER_TFTBasic::PCLK_Rising(void)   -->  void PCLK_Rising(void)
+void ER_TFTBasic::PCLK_Falling(void)  --> void PCLK_Falling(void)
+void ER_TFTBasic::HSYNC_Low_Active(void)  --> void HSYNC_PolarityLow(void)
+void ER_TFTBasic::HSYNC_High_Active(void)  --> void HSYNC_PolarityHigh(void)
+void ER_TFTBasic::VSYNC_Low_Active(void) --> void VSYNC_PolarityLow(void)
+void ER_TFTBasic::VSYNC_High_Active(void)  --> void VSYNC_PolarityHigh(void)
+void ER_TFTBasic::DE_Low_Active(void)  --> void DE_PolarityLow(void)
+void ER_TFTBasic::DE_High_Active(void)  --> void DE_PolarityHigh(void)
+void ER_TFTBasic::Set_PCLK(unsigned char val)                                 --> void PCLK_EdgeType(PCLKEdge edge)
+void ER_TFTBasic::Set_HSYNC_Active(unsigned char val)                         --> void HSYNC_Polarity(HSYNCPolarity val)
+void ER_TFTBasic::Set_VSYNC_Active(unsigned char val)                         --> void VSYNC_Polarity(VSYNCPolarity val)
+void ER_TFTBasic::Set_DE_Active(unsigned char val)                            -->   void DE_Polarity(DEPolarity val)
+void ER_TFTBasic::LCD_HorizontalWidth_VerticalHeight(unsigned short WX,unsigned short HY) --> void HorizontalWidth_VerticalHeight(uint16_t WX, uint16_t HY)
+void ER_TFTBasic::LCD_Horizontal_Non_Display(unsigned short WX)               --> void Horizontal_NonDisplay(uint16_t hbpd)
+void ER_TFTBasic::LCD_HSYNC_Start_Position(unsigned short WX)                 --> void HSYNC_StartPosition(uint16_t hfpd)
+void ER_TFTBasic::LCD_HSYNC_Pulse_Width(unsigned short WX)                    --> void HSYNC_PulseWidth(uint16_t hspw)
+void ER_TFTBasic::LCD_Vertical_Non_Display(unsigned short HY)                 --> void Vertical_NonDisplay(uint16_t vbpd)
+void ER_TFTBasic::LCD_VSYNC_Start_Position(unsigned short HY)                 --> void VSYNC_StartPosition(uint16_t vfpd)
+void ER_TFTBasic::LCD_VSYNC_Pulse_Width(unsigned short HY)                    --> void VSYNC_PulseWidth(uint8_t vspw)
+void ER_TFTBasic::Memory_XY_Mode(void)                                        --> void Memory_XYMode(void)
+void ER_TFTBasic::Memory_XY_Mode(void)                                        --> void Memory_BlockMode(void)
+void ER_TFTBasic::Memory_16bpp_Mode(void)                                     --> void Memory_16bpp_BlockMode(void)
+void ER_TFTBasic::Select_Main_Window_16bpp(void)                              --> void Select_MainWindow_16bpp(void)
+void ER_TFTBasic::Main_Image_Start_Address(unsigned long Addr)                --> void MainImage_StartAddress(uint32_t addr)
+void ER_TFTBasic::Main_Image_Width(unsigned short WX)                         --> void MainImage_Width(uint16_t Wx)
+void ER_TFTBasic::Main_Window_Start_XY(unsigned short WX,unsigned short HY)   --> void Panel_RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)  
+void ER_TFTBasic::Canvas_Image_Start_address(unsigned long Addr)              --> void CanvasImage_StartAddr(uint32_t addr)
+void ER_TFTBasic::Canvas_image_width(unsigned short WX)                       --> void CanvasImage_Width(uint16_t wx)
+void ER_TFTBasic::Active_Window_XY(unsigned short WX,unsigned short HY)       --> void ActiveWindow_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Active_Window_WH(unsigned short WX,unsigned short HY)       --> void ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Foreground_color_65k(unsigned short temp)                   --> void ForegroundColor16bpp(uint16_t color)
+void ER_TFTBasic::Background_color_65k(unsigned short temp)                   --> void BackgroundColor16bpp(uint16_t color)
+void ER_TFTBasic::Check_Busy_Draw(void)--> void Draw_WaitReady(void)
+void ER_TFTBasic::Check_Busy_Draw(void)--> void CoreTask_WaitReady(void)
+void ER_TFTBasic::Check_2D_Busy(void) --> void CoreTask_WaitReady(void)
+void ER_TFTBasic::Check_Mem_WR_FIFO_not_Full(void)  -->  void Wait_WriteFIFO_NotFull(void)
+void ER_TFTBasic::Check_Mem_WR_FIFO_Empty(void)  --> void Wait_WriteFIFO_Empty(void)
+void ER_TFTBasic::Check_Mem_RD_FIFO_not_Full(void)  --> void Wait_ReadFIFO_NotFull(void)
+void ER_TFTBasic::Check_Mem_RD_FIFO_not_Empty(void)                     -->  void Wait_ReadFIFO_NotEmpty(void)
+void ER_TFTBasic::DrawSquare_Fill(
+ unsigned short X1                
+,unsigned short Y1              
+,unsigned short X2                
+,unsigned short Y2              
+,unsigned long ForegroundColor)                                         --> void DrawSquare (uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t forecolor, bfill = false);
+void ER_TFTBasic::DrawCircle_Fill(
+ unsigned short X1                
+,unsigned short Y1              
+,unsigned short R                            
+,unsigned long ForegroundColor)                                         --> void DrawCircle (uint16_t x1, uint16_t y1, uint16_t R, uint32_t forecolor, bfill = false);
+void ER_TFTBasic::Enable_SFlash_SPI(void)                               --> void SFlashSPI_Enable(bool b)
+void ER_TFTBasic::Goto_Pixel_XY(unsigned short WX,unsigned short HY)    --> void GotoPixel_XY(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::Goto_Text_XY(unsigned short WX,unsigned short HY)     --> void GotoText_XY(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::Start_Line(void) --> void DrawLineMode_Start(void)
+void ER_TFTBasic::Start_Triangle(void) --> void DrawTriangleMode_Start(bool fill)
+void ER_TFTBasic::Start_Triangle_Fill(void) --> void DrawTriangleMode_Start(bool fill)
+void ER_TFTBasic::Line_Start_XY(unsigned short WX,unsigned short HY)--> void Point1_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Line_Start_XY(unsigned short WX,unsigned short HY)--> void Line_Point1XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Line_End_XY(unsigned short WX,unsigned short HY)  --> void Point1_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Line_End_XY(unsigned short WX,unsigned short HY)  --> void Line_Point1XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Line_End_XY(unsigned short WX,unsigned short HY)  --> void Point2_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Line_End_XY(unsigned short WX,unsigned short HY)  --> void Line_Point2XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Triangle_Point1_XY(unsigned short WX,unsigned short HY) --> void Point1_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Triangle_Point1_XY(unsigned short WX,unsigned short HY) --> void Triangle_Point1XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Triangle_Point2_XY(unsigned short WX,unsigned short HY) --> void Point2_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Triangle_Point2_XY(unsigned short WX,unsigned short HY) --> void Triangle_Point2XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Triangle_Point3_XY (unsigned short WX,unsigned short HY) --> void Point3_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Triangle_Point3_XY (unsigned short WX,unsigned short HY) --> void Triangle_Point3XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Square_Start_XY(unsigned short WX,unsigned short HY) --> void Point1_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Square_Start_XY(unsigned short WX,unsigned short HY) --> void Square_Point1XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Square_End_XY(unsigned short WX,unsigned short HY) --> void Point2_XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Square_End_XY(unsigned short WX,unsigned short HY) --> void Square_Point2XY(uint16_t wx, uint16_t hy)
+void ER_TFTBasic::Start_Circle_or_Ellipse(void) --> void CircleMode_Start(bool fill)
+void ER_TFTBasic::Start_Circle_or_Ellipse(void) --> void EllipseMode_Start(bool fill)
+void ER_TFTBasic::Start_Circle_or_Ellipse_Fill(void) --> void CircleMode_Start(bool fill)
+void ER_TFTBasic::Start_Circle_or_Ellipse_Fill(void) --> void EllipseMode_Start(bool fill)
+void ER_TFTBasic::Start_Left_Down_Curve(void) --> void CurveLeftDownMode_Start(bool fill)
+void ER_TFTBasic::Start_Left_Up_Curve(void) --> void CurveLeftUpMode_Start(bool fill)
+void ER_TFTBasic::Start_Right_Up_Curve(void)  --> void CurveRightUpMode_Start(bool fill)
+void ER_TFTBasic::Start_Right_Down_Curve(void)  --> void CurveRightDownMode_Start(bool fill)
+void ER_TFTBasic::Start_Left_Down_Curve_Fill(void) --> void CurveLeftDownMode_Start(bool fill)
+void ER_TFTBasic::Start_Left_Up_Curve_Fill(void)  -->  void CurveLeftUpMode_Start(bool fill);
+void ER_TFTBasic::Start_Right_Up_Curve_Fill(void)  --> void CurveRightUpMode_Start(bool fill)
+void ER_TFTBasic::Start_Right_Down_Curve_Fill(void)  -->  void CurveRightDownMode_Start(bool fill)
+void ER_TFTBasic::Start_Square(void)  --> void SquareMode_Start(bool fill)
+void ER_TFTBasic::Start_Square_Fill(void)  --> void SquareMode_Start(bool fill)
+void ER_TFTBasic::Start_Circle_Square(void)  --> void CircleSquareMode_Start(bool fill)
+void ER_TFTBasic::Start_Circle_Square_Fill(void)  --> void CircleSquareMode_Start(bool fill)
+void ER_TFTBasic::Circle_Center_XY(unsigned short WX,unsigned short HY) --> void Center_XY(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::Circle_Center_XY(unsigned short WX,unsigned short HY) --> //void CircleCenter_XY(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::Ellipse_Center_XY(unsigned short WX,unsigned short HY) --> void Center_XY(uint16_t Wx, uint16_t Hy);
+void ER_TFTBasic::Ellipse_Center_XY(unsigned short WX,unsigned short HY) --> void EllipseCenter_XY(uint16_t Wx, uint16_t Hy);
+void ER_TFTBasic::Circle_Radius_R(unsigned short WX) --> void Radius_RxRy(uint16_t Rx, uint16_t Ry)
+void ER_TFTBasic::Ellipse_Radius_RxRy(unsigned short WX,unsigned short HY) --> void EllipseRadius_RxRy(uint16_t Rx, uint16_t Ry)
+void ER_TFTBasic::Ellipse_Radius_RxRy(unsigned short WX,unsigned short HY) --> void Radius_RxRy(uint16_t Rx, uint16_t Ry)
+void ER_TFTBasic::Circle_Square_Radius_RxRy(unsigned short WX,unsigned short HY) --> void CircleSquareRadius_RxRy(uint16_t Rx, uint16_t Ry)
+void ER_TFTBasic::Circle_Square_Radius_RxRy(unsigned short WX,unsigned short HY) --> void Radius_RxRy(uint16_t Rx, uint16_t Ry)
+void ER_TFTBasic::Set_PWM_Prescaler_1_to_256(unsigned short WX)  --> void PWM_Prescaler(uint8_t prescaler)
+void ER_TFTBasic::Select_PWM1_Clock_Divided_By_1(void) --> void PWM1_ClockDividedBy(DividerClock divider)
+void ER_TFTBasic::Select_PWM1_Clock_Divided_By_2(void) --> void PWM1_ClockDividedBy(DividerClock divider)
+void ER_TFTBasic::Select_PWM1_Clock_Divided_By_4(void) --> void PWM1_ClockDividedBy(DividerClock divider)
+void ER_TFTBasic::Select_PWM1_Clock_Divided_By_8(void)--> void PWM1_ClockDividedBy(DividerClock divider)
+void ER_TFTBasic::Select_PWM0_Clock_Divided_By_1(void) --> void PWM0_ClockDividedBy(DividerClock divider)
+void ER_TFTBasic::Select_PWM0_Clock_Divided_By_2(void) --> void PWM0_ClockDividedBy(DividerClock divider)
+void ER_TFTBasic::Select_PWM0_Clock_Divided_By_4(void) --> void PWM0_ClockDividedBy(DividerClock divider)
+void ER_TFTBasic::Select_PWM0_Clock_Divided_By_8(void) --> void PWM0_ClockDividedBy(DividerClock divider)
+void ER_TFTBasic::Select_PWM1_is_ErrorFlag(void) -->void PWM1_Select_ErrorFlag(void)
+void ER_TFTBasic::Select_PWM1(void) -->void PWM1_Select(void)
+void ER_TFTBasic::Select_PWM1_is_Osc_Clock(void) --> void PWM1_Select_OscillatorClock(void)
+void ER_TFTBasic::Select_PWM0_is_GPIO_C7(void) --> void PWM0_Select_GPIOC7(void)
+void ER_TFTBasic::Select_PWM0(void) --> void PWM0_Select(void)
+void ER_TFTBasic::Select_PWM0_is_Core_Clock(void) --> void PWM0_Select_CoreClock(void)
+void ER_TFTBasic::Enable_PWM1_Inverter(void) --> void PWM1_InverterOn(boolean on)
+void ER_TFTBasic::Disable_PWM1_Inverter(void) --> void PWM1_InverterOn(boolean on)
+void ER_TFTBasic::Auto_Reload_PWM1(void) --> void PWM1_Select_AutoReload(void)
+void ER_TFTBasic::One_Shot_PWM1(void)  --> void PWM1_Select_OneShot(void)
+void ER_TFTBasic::Start_PWM1(void) --> void PWM1_StartTimer(void)
+void ER_TFTBasic::Stop_PWM1(void) --> void PWM1_StopTimer(void)
+void ER_TFTBasic::Enable_PWM0_Dead_Zone(void) --> void PWM0_DeadZoneEnable(bool b)
+void ER_TFTBasic::Disable_PWM0_Dead_Zone(void) --> void PWM0_DeadZoneEnable(bool b)
+void ER_TFTBasic::Enable_PWM0_Inverter(void)                          --> void PWM0_InverterOn(bool on)
+void ER_TFTBasic::Disable_PWM0_Inverter(void)                         --> void PWM0_InverterOn(bool on)
+void ER_TFTBasic::Auto_Reload_PWM0(void)                              --> void PWM0_Select_AutoReload(void)
+void ER_TFTBasic::One_Shot_PWM0(void)                                 --> void PWM0_Select_OneShot(void)
+void ER_TFTBasic::Start_PWM0(void)                                    --> void PWM0_StartTimer(void)
+void ER_TFTBasic::Stop_PWM0(void)                                     --> void PWM0_StopTimer(void)
+void ER_TFTBasic::Set_Timer0_Dead_Zone_Length(unsigned char temp)     --> void PWM0_DeadZoneLength(uint8_t len)
+void ER_TFTBasic::Set_Timer0_Compare_Buffer(unsigned short WX)        --> void PWM0_SetCompareBuffer(uint16_t Wx)
+void ER_TFTBasic::Set_Timer0_Count_Buffer(unsigned short WX)          --> void PWM0_SetCountBuffer(uint16_t Wx)
+void ER_TFTBasic::Set_Timer1_Compare_Buffer(unsigned short WX)        --> void PWM1_SetCompareBuffer(uint16_t Wx)
+void ER_TFTBasic::Set_Timer1_Count_Buffer(unsigned short WX)          --> void PWM1_SetCountBuffer(uint16_t Wx)
+void ER_TFTBasic::Check_BTE_Busy(void)                                --> void BTE_WaitReady(void)
+void ER_TFTBasic::Pattern_Format_8X8(void)                            --> void BTE_PatternFormat8X8
+void ER_TFTBasic::Pattern_Format_16X16(void)                          --> void BTE_PatternFormat16X16
+void ER_TFTBasic::BTE_Enable(void)                                    --> void BTE_Enable(bool b)
+void ER_TFTBasic::BTE_Disable(void)                                   --> void BTE_Enable(bool b)
+void ER_TFTBasic::BTE_Operation_Code(unsigned char setx)              --> void BTE_OperationCode(eBTEOpCode opcode)
+void ER_TFTBasic::BTE_ROP_Code(unsigned char setx)                    --> void BTE_ROPCode(eBTEROPCode code);
+void ER_TFTBasic::BTE_S0_Color_24bpp(void)                            --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+void ER_TFTBasic::BTE_S0_Color_16bpp(void)                            --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+void ER_TFTBasic::BTE_S0_Color_8bpp(void)                             --> void BTE_S0_ColorDeph(eColorDepthBPP bpp)
+void ER_TFTBasic::BTE_S1_Color_8bpp(void)                             --> void BTE_S1_ColorDeph_8bpp(void)                          
+void ER_TFTBasic::BTE_S1_Color_16bpp(void)                            --> void BTE_S1_ColorDeph_16bpp(void)
+void ER_TFTBasic::BTE_S1_Color_24bpp(void)                            --> void BTE_S1_ColorDeph_24bpp(void)
+void ER_TFTBasic::BTE_S1_Color_Constant(void)                         --> void BTE_S1_ColorDeph_Constant(void)
+void ER_TFTBasic::BTE_S1_Color_8bit_Alpha(void)                       --> void BTE_S1_ColorDeph_8bitAlpha(void)
+void ER_TFTBasic::BTE_S1_Color_16bit_Alpha(void)                      --> void BTE_S1_ColorDeph_16bitAlpha(void)
+void ER_TFTBasic::BTE_Destination_Color_8bpp(void)                    --> void BTE_Destination_ColorDeph(eColorDepthBPP bpp)
+void ER_TFTBasic::BTE_Destination_Color_16bpp(void)                   --> void BTE_Destination_ColorDeph(eColorDepthBPP bpp)
+void ER_TFTBasic::BTE_S0_Memory_Start_Address(unsigned long Addr)     --> void BTE_S0_MemoryStartAddress(uint32_t addr)
+void ER_TFTBasic::BTE_S0_Image_Width(uint16_t WX)                     --> void BTE_S0_ImageWidth(uint16_t Wx)
+void ER_TFTBasic::BTE_S0_Window_Start_XY(unsigned short WX,unsigned short HY)          --> void BTE_S0_WindowStart_XY(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::BTE_S1_Memory_Start_Address(unsigned long Addr)                      --> void BTE_S1_MemoryStartAddress(uint32_t addr)
+void ER_TFTBasic::S1_Constant_color_256(unsigned char temp)                            --> void S1_ConstantColor_256(uint8_t color)
+void ER_TFTBasic::S1_Constant_color_65k(unsigned short temp)                           --> void S1_ConstantColor_65k(uint16 color)
+void ER_TFTBasic::S1_Constant_color_16M(unsigned long temp)                            --> void S1_ConstantColor_16M(uint32_t color)
+void ER_TFTBasic::BTE_S1_Image_Width(unsigned short WX)                                --> void BTE_S1_ImageWidth(uint16_t Wx)
+void ER_TFTBasic::BTE_S1_Window_Start_XY(unsigned short WX,unsigned short HY)          --> void BTE_S1_WindowStart_XY(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::BTE_Destination_Memory_Start_Address(unsigned long Addr)             --> void BTE_Destination_MemoryStartAddress(uint32_t addr)
+void ER_TFTBasic::BTE_Destination_Image_Width(unsigned short WX)                       --> void BTE_Destination_ImageWidth(uint16_t Wx)
+void ER_TFTBasic::BTE_Destination_Window_Start_XY(unsigned short WX,unsigned short HY) --> void BTE_Destination_WindowStart_XY(uint16_t Wx, uint16_t Hy) 
+void ER_TFTBasic::BTE_Window_Size(unsigned short WX, unsigned short WY)                --> void BTE_WindowSize(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::BTE_Alpha_Blending_Effect(unsigned char temp)                        --> void BTE_AlphaBlendingEffect(uint8_t value)
+void ER_TFTBasic::Start_SFI_DMA(void)                                                  --> void SFI_DMA_Start(void)
+void ER_TFTBasic::Check_Busy_SFI_DMA(void)                                             --> void SFI_DMA_WaitReady(void)
+void ER_TFTBasic::Select_SFI_0(void)                                                   --> void SFI_Select_ROM0(void)
+void ER_TFTBasic::Select_SFI_1(void)                                                   --> void SFI_Select_ROM1(void)
+void ER_TFTBasic::Select_SFI_Font_Mode(void) --> void SFI_Select_FontMode(void)
+void ER_TFTBasic::Select_SFI_DMA_Mode(void)                                            --> void Select_SFI_DMAMode(void)
+void ER_TFTBasic::Select_SFI_24bit_Address(void) --> void Select_SFI_Address24bit(void)
+void ER_TFTBasic::Select_SFI_32bit_Address(void) --> void Select_SFI_Address32bit(void)
+void ER_TFTBasic::Select_SFI_Waveform_Mode_0(void) --> void SFI_Select_WaveformMode0(void)
+void ER_TFTBasic::Select_SFI_Waveform_Mode_3(void) --> void SFI_Select_WaveformMode3(void)
+void ER_TFTBasic::Select_SFI_0_DummyRead(void) --> (Ver cabeçalho do bloco das funcoes)
+void ER_TFTBasic::Select_SFI_8_DummyRead(void) --> (Ver cabeçalho do bloco das funcoes)
+void ER_TFTBasic::Select_SFI_16_DummyRead(void) --> (Ver cabeçalho do bloco das funcoes)
+void ER_TFTBasic::Select_SFI_24_DummyRead(void) --> (Ver cabeçalho do bloco das funcoes)
+void ER_TFTBasic::Select_SFI_Single_Mode(void) --> (Ver cabeçalho do bloco das funcoes)
+void ER_TFTBasic::Select_SFI_Dual_Mode0(void) --> Select_SFI_DualData_3Bh(void)
+void ER_TFTBasic::Select_SFI_Dual_Mode1(void) --> (Ver cabeçalho do bloco das funcoes)
+unsigned char ER_TFTBasic::SPI_Master_FIFO_Data_Put(unsigned char Data) --> uint8_t SPIM_TxRxFIFOData_Put(uint8_t data)
+unsigned char ER_TFTBasic::SPI_Master_FIFO_Data_Get(void) --> uint8_t SPIM_TxRxFIFOData_Get(void)
+void ER_TFTBasic::Mask_SPI_Master_Interrupt_Flag(void) --> void Interrupt_SPIM_Enable(bool b)
+void ER_TFTBasic::Select_nSS_drive_on_xnsfcs0(void) --> void nSS_Select_Channel(NSS_Channel channel)
+void ER_TFTBasic::Select_nSS_drive_on_xnsfcs1(void) --> void nSS_Select_Channel(NSS_Channel channel)
+void ER_TFTBasic::nSS_Inactive(void) --> void nSS_Inactive(void)
+void ER_TFTBasic::nSS_Active(void) --> void nSS_Active(void)
+void ER_TFTBasic::OVFIRQEN_Enable(void) --> void Interrupt_FIFOOverflow_Enable(bool b)
+void ER_TFTBasic::EMTIRQEN_Enable(void) --> void Interrupt_EMTIRQEN_Enable(bool b)
+void ER_TFTBasic::Reset_CPOL(void)                                        --> void Reset_CPOL(void)
+void ER_TFTBasic::Set_CPOL(void)                                          --> void Set_CPOL(void)
+void ER_TFTBasic::Reset_CPHA(void)                                        -->  void Reset_CPHA(void)
+void ER_TFTBasic::Set_CPHA(void)                                          -->  void Set_CPHA(void)
+unsigned char ER_TFTBasic::Tx_FIFO_Empty_Flag(void)                       --> bool SPIM_TxFIFO_Empty(void)
+unsigned char ER_TFTBasic::Tx_FIFO_Full_Flag(void)                        --> bool SPIM_TxFIFO_Full(void)
+unsigned char ER_TFTBasic::Rx_FIFO_Empty_Flag(void)                       --> bool SPIM_RxFIFO_Empty(void)
+unsigned char ER_TFTBasic::Rx_FIFO_full_flag(void)                        --> bool SPIM_RxFIFO_Full(void)
+unsigned char ER_TFTBasic::OVFI_Flag(void)                                                   --> bool Interrupt_Overflow_Flag(void)
+void ER_TFTBasic::Clear_OVFI_Flag(void)                                                      --> void Interrupt_ClearOverflow_Flag(void)
+unsigned char ER_TFTBasic::EMTI_Flag(void)                                                   --> bool EMTI_Flag(void)
+void ER_TFTBasic::Clear_EMTI_Flag(void)                                                      --> void EMTI_Clear_Flag(void)
+void ER_TFTBasic::SPI_Clock_Period(unsigned char temp)                                       --> void SPI_Clock_Period(uint8_t divisor)
+void ER_TFTBasic::SFI_DMA_Source_Start_Address(unsigned long Addr)                           --> void SFI_DMA_SourceAddress(uint32_t addr)
+void ER_TFTBasic::SFI_DMA_Destination_Start_Address(unsigned long Addr)                      --> void SFI_DMA_DestinationAddress(uint32_t addr)
+void ER_TFTBasic::SFI_DMA_Destination_Upper_Left_Corner(unsigned short WX,unsigned short HY) --> void SFI_DMA_DestinationUpperLeftCorner(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::SFI_DMA_Transfer_Number(unsigned long Addr)                                --> void SFI_DMA_TransferNumber(uint32_t addr)
+void ER_TFTBasic::SFI_DMA_Transfer_Width_Height(unsigned short WX,unsigned short HY)         --> void SFI_DMA_TransferWidthHeight(uint16_t Wx, uint16_t Hy)
+void ER_TFTBasic::SFI_DMA_Source_Width(unsigned short WX)                                    --> void SFI_DMA_SourceWidth(uint16_t Wx)
+void ER_TFTBasic::Font_Select_UserDefine_Mode(void)                       --> void Font_SetSource(FontSource source)
+void ER_TFTBasic::Font_Select_UserDefine_Mode(void)                       --> void Font_UseUserDefined(void)
+void ER_TFTBasic::CGROM_Select_Internal_CGROM(void)                       --> void Font_SetSource(FontSource source)
+void ER_TFTBasic::CGROM_Select_Internal_CGROM(void)                       --> void Font_UseInternalCGROM(void)
+void ER_TFTBasic::CGROM_Select_Genitop_FontROM(void)                      --> void Font_SetSource(FontSource source)
+void ER_TFTBasic::CGROM_Select_Genitop_FontROM(void)                      --> void Font_UseExternalCGROM(void)
+void ER_TFTBasic::Font_Select_8x16_16x16(void)                            --> void Font_SetHeight(FontHeight height)
+void ER_TFTBasic::Font_Select_8x16_16x16(void)                            --> void Font_SetHeight_16(void)
+void ER_TFTBasic::Font_Select_12x24_24x24(void)                           --> void Font_SetHeight(FontHeight height)
+void ER_TFTBasic::Font_Select_12x24_24x24(void)                           --> void Font_SetHeight_24(void)
+void ER_TFTBasic::Font_Select_16x32_32x32(void)                           --> void Font_SetHeight(FontHeight height)
+void ER_TFTBasic::Font_Select_16x32_32x32(void)                           --> void Font_SetHeight_32(void)
+void ER_TFTBasic::Internal_CGROM_Select_ISOIEC8859_1(void)                --> void Select_Internal_CGROM_ISO8859_1(void)
+void ER_TFTBasic::Internal_CGROM_Select_ISOIEC8859_1(void)                --> void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso)
+void ER_TFTBasic::Internal_CGROM_Select_ISOIEC8859_2(void)                --> void Select_Internal_CGROM_ISOIEC8859_2(void)
+void ER_TFTBasic::Internal_CGROM_Select_ISOIEC8859_2(void)                --> void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso)
+void ER_TFTBasic::Internal_CGROM_Select_ISOIEC8859_3(void)                --> void Select_Internal_CGROM_ISOIEC8859_4(void)
+void ER_TFTBasic::Internal_CGROM_Select_ISOIEC8859_3(void)                --> void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso)
+void ER_TFTBasic::Internal_CGROM_Select_ISOIEC8859_4(void)                --> void Select_Internal_CGROM_ISOIEC8859_5(void)
+void ER_TFTBasic::Internal_CGROM_Select_ISOIEC8859_4(void)                --> void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso)
+void ER_TFTBasic::Enable_Font_Alignment(void)                             --> void Font_FullAlignmentEnable(void)
+void ER_TFTBasic::Disable_Font_Alignment(void)                            --> void Font_FullAlignmentDisable(void)
+void ER_TFTBasic::Font_Background_select_Transparency(void)               --> void Font_UseBackgroundTransparency(void)
+void ER_TFTBasic::Font_Background_select_Color(void)                      --> void Font_UseBackgroundColor(void)
+void ER_TFTBasic::Font_0_degree(void)                                     --> void Font_0degree(void)
+void ER_TFTBasic::Font_90_degree(void)                                    --> void Font_90degree(void)
+void ER_TFTBasic::Font_Width_X1(void)                                     --> void Font_WidthEnlargFactor(FontEnlargFactor factor)
+void ER_TFTBasic::Font_Width_X2(void)                                     --> void Font_WidthEnlargFactor(FontEnlargFactor factor)
+void ER_TFTBasic::Font_Width_X3(void)                                     --> void Font_WidthEnlargFactor(FontEnlargFactor factor)
+void ER_TFTBasic::Font_Width_X4(void)                                     --> void Font_WidthEnlargFactor(FontEnlargFactor factor)
+void ER_TFTBasic::Font_Height_X1(void)                                    --> void Font_HeightEnlargFactor(FontEnlargFactor factor)
+void ER_TFTBasic::Font_Height_X2(void)                                    --> void Font_HeightEnlargFactor(FontEnlargFactor factor)
+void ER_TFTBasic::Font_Height_X3(void)                                    --> void Font_HeightEnlargFactor(FontEnlargFactor factor)
+void ER_TFTBasic::Font_Height_X4(void)                                    --> void Font_HeightEnlargFactor(FontEnlargFactor factor)
+void ER_TFTBasic::Font_Line_Distance(unsigned char temp)                  --> void Font_LineDistance(uint8_t gap)
+void ER_TFTBasic::Set_Font_to_Font_Width(unsigned char temp)              --> void Font_toFontWidthSetting(uint8_t temp)
+void ER_TFTBasic::MemWrite_Left_Right_Top_Down(void)                      --> void HostWriteMemoryDirection(MemoryDirection direction)
+void ER_TFTBasic::System_Check_Temp(void)                                 --> void PLL_WaitReady(void)
+void ER_TFTBasic::PLL_Initial(void)                                       --> void PLL_ConfigClocks(void)
+void ER_TFTBasic::SDRAM_initail(void)                                     --> //Incorporado ao void Panel_RA8889::SDRAM_Init(void)
+void ER_TFTBasic::HW_Reset(void)                                          --> void HardwareReset(void)
+void ER_TFTBasic::initial(void)                                           --> Incorporado a funcao uint8_t init()
+void ER_TFTBasic::Display_ON(void)                                        --> void DisplayOn(bool on)
+void ER_TFTBasic::DMA_24bit_Block (
+ unsigned char SCS 
+,unsigned char Clk 
+,unsigned short X1 
+,unsigned short Y1 
+,unsigned short X_W
+,unsigned short Y_H
+,unsigned short P_W
+,unsigned long Addr)                                                      --> void DMA_24bit_Block (uint8_t SCS, uint8_t Clk, uint16_t X1, uint16_t Y1, uint16_t X_W, uint16_t Y_H, uint16_t P_W, uint32_t Addr)
+void ER_TFTBasic::Text_Mode(void)                                         --> void TextMode(void)
+void ER_TFTBasic::Show_String(char *str)                                  --> void ShowText(char *str)
+
+void ER_TFTBasic::DrawPixel(unsigned short x,unsigned short y,unsigned short color) -->  FALTA XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+void ER_TFTBasic::Show_Picture(unsigned long numbers,const unsigned char *datap) -->   FALTA XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 
+--> 

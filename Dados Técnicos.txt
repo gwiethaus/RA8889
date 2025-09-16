@@ -61,6 +61,20 @@ MCU                                 Microcontroller Unit
 MPU                                 Microprocessor Unit
 PIP                                 Picture-in-Picture
 
+Condicional Ternário em C++
+---------------------------
+
+  Exemplo de retorno
+  
+  int imposto = salario > 2000 ? salario * 0.20 : salario * 0.1;
+  
+  int velocidade = (estado == 1) ? 50 : 100;
+  
+  Exemplo de Comparacao
+  
+  a == 2 ? b = true : b = false
+
+
 Serial Flash Interface e SPI Interface
 --------------------------------------
 
@@ -1140,3 +1154,136 @@ ROP - Raster Operation ou Raster Operation Code
   - MPU_WROP         → MPU escreve com lógica ROP
   - MEM_COPY_POS_ROP → Memória copia com ROP
   - MPU_TWRITE       → MPU escreve sem ROP, transparente
+
+
+Padrão de Cores RGB
+-------------------
+
+  Cores de 8bpp     256 cores    R3G3B2      RRR GGG BB
+  Cores de 16bpp    65k cores    R5G6B5      RRRRR GGGGGG BBBBB
+  Cores de 24bpp  16.7M cores    R8G8B8      RRRRRRRR GGGGGGGG BBBBBBBB
+  
+  Nos bits de registradores internos do RA8875/RA8877RA8889 não são dos mesmos formatos de padrão de formato de cores
+  Estes precisam ser deslocados o formato de cores para se enquandrar no formato de bits dos registrados. Para cada color deph (profundidade de cor) selecionado
+  existe um formato de posicao de bits para serem preenchidos. Os bits acima e abaixo deste limite são ignorados pelo processadro itnerno do microcontroladorm de display.
+  
+  Por exmeplo a os registradore do foreground color 0xd2, 0xd3 e 0xd4. Cada um destes registradores armazema respectivamente as cores R, G e BB
+  De acordo mcom o formato de deph color empregado, deverá preeencher a posicao destes bits de acordo com este formato, desta forma,s egue abaixo:
+  
+  256 color   Registradores 0xd2 bit [7:5] para R, 0xd3 bit [7:5] para G e 0xd4 bit [7:5] para B 
+  65k cores   Registradores 0xd2 bit [7:3] para R, 0xd3 bit [7:2] para G e 0xd4 bit [7:3] para B
+  16.7M cores Registradores 0xd2 bit [7:0] para R, 0xd3 bit [7:0] para G e 0xd4 bit [7:0] para B 
+  
+  Há outros registradores de cores que funcionam da mesma forma, a exemplo do BTE S1, 0x9d, 0x9e e 0x9f.
+  
+  Abaixo desmostra um exemplo como fazer a conversão de formato de padrão RGB 
+  nas profundidades de cores selecionado (8bpp, 16bpp, 24bpp) para os formatos 
+  de bits de cores de um determinado registrador de cor.
+  
+  Legendas:
+    - caixa baixa bit ignorados
+    - caixa alta bit efetivos
+    - << deslocamento de bits a esquerda
+    - >> deslocamento de bits a direita
+    
+  Para 256 cores (R3G3B2):
+  ------------------------
+  
+  Padrao de bits      
+  R3G3B2
+  07 06 05 04 03 02 01 00
+  R  R  R  G  G  G  B  B 
+  Variavel                  
+  
+  RED - Registrador 0xd2 [7:5]
+  07 06 05 04 03 02 01 00
+  R  R  R  g  g  g  b  b     
+  << 0
+  
+  
+  GREEN - Registrador 0xd3 [7:5]
+  07 06 05 04 03 02 01 00
+  G  G  G  b  b  0  0  0 
+  << 3
+  
+  BLUE - Registrador 0xd4 [7:5]
+  07 06 05 04 03 02 01 00
+  B  B  0  0  0  0  0  0
+  << 6
+  
+  
+  Para 65k cores (R5G6B5):
+  ------------------------
+  
+  Padrao de bits                                      
+  R5G6B5
+  15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00     
+  R  R  R  R  R  G  G  G  G  G  G  B  B  B  B  B      
+  Variavel                                            
+  
+  RED - Registrador 0xd2 [7:3]
+  15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+  0  0  0  0  0  0  0  0  R  R  R  R  R  g  g  g 
+  >> 8                                                      
+  
+  GREEN - Registrador 0xd3 [7:2]
+  15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+  0  0  0  r  r  r  r  r  G  G  G  G  G  G  b  b 
+  >> 3
+  
+  BLUE - Registrador 0xd4 [7:3]
+  15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+  r  r  g  g  g  g  g  g  B  B  B  B  B  0  0  0 
+  << 3
+  
+  
+  Para 16.7M cores (R8G8B8):
+  --------------------------
+  
+  Padrao de bits                                      
+  R8G8B8
+  23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+  R  R  R  R  R  R  R  R  G  G  G  G  G  G  G  G  B  B  B  B  B  B  B  B
+  Variavel                                            
+  
+  RED - Registrador 0xd2 [7:0]
+  23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  R  R  R  R  R  R  R  R 
+  >> 16
+  
+  GREEN - Registrador 0xd3 [7:0]
+  23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+  0  0  0  0  0  0  0  0  R  R  R  R  R  R  R  R  G  G  G  G  G  G  G  G 
+  >> 8
+  
+  BLUE - Registrador 0xd4 [7:0]
+  23 22 21 20 19 18 17 16 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+  r  r  r  r  r  r  r  r  g  g  g  g  g  g  g  g  B  B  B  B  B  B  B  B  
+  >> 0
+
+Usando Notepad++ para subtituir letras usando Expressao Regular
+---------------------------------------------------------------
+
+  Na Aba Raplace
+  1. Coloque expressao regular no campo Find whats:
+  2. Repalace width: deixe em branco
+  3. Marque opcao Match Case
+  4. MArque opção Regular expression
+  5. Desmarque , matches newline
+
+
+  Remover virgula no final do texto
+  ---------------------------------
+  
+  ,(?=\s*$)
+  
+  Explicação:
+  , → corresponde a uma vírgula
+  (?=\s*$) → lookahead que garante que a vírgula está seguida apenas de espaços e o fim da linha
+  ,+ → uma ou mais vírgulas
+  \s* → remove espaços ou tabs depois da vírgula
+  $ → fim da linha  
+  
+  Não remove vírgulas que estão no meio do texto.
+  
+  
