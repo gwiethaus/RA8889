@@ -6,3 +6,5 @@ Desenvolvimento e Adaptação de Driver para uso de display com controladora RA8
 Não usar este projeto. Está em fase de desenvolvimento. Não está funcional. 
 
 As bibliotecas serão feitas em orientação a objeto. Após conclusão e feito os testes e então iniciado a protabilidade para as biblioteca LovyanGFX.
+
+Inicialziação do display feito com sucesso. Recursos de configuração da DRAM, PLL, Panel foram feitos corretamente. Display agora está apresentando imagens sem distoção com alta velocidade de exibição.
