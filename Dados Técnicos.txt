@@ -12,8 +12,7 @@ Display ER-TFT070-2-6105
   ER-TFT070-2-6105 is loaded with powerful features such as multiple display buffers, Picture-in-Picture capability, transparency control, display rotation and mirroring, as well as built-in JPEG and AVI decoders. It offers flexibility in touch panel options, being compatible with both resistive and capacitive touch panels.
   
   For Arduino enthusiasts, we provide an Arduino shield accessory that facilitates a quick and seamless connection between the ER-TFT070-2-6105 and the Arduino board. Recognizing the diverse connection requirements of our users, we offer two connection methods: FFC and pin header. To save you the hassle, we will prepare the connection for you, eliminating the need for manual assembly.
-  
-  
+    
   For users of 8051, we have also prepared corresponding sample programs that can be downloaded and used.
   
   Lastly, the ER-TFT070-2-6105 offers an optional choice between 3.3V and 5V operation, further enhancing its versatility and compatibility with various systems and applications.
@@ -498,8 +497,8 @@ PIP (Picture-in-Picture)
   👉 O PIP é basicamente uma lógica de multiplexação de memória de vídeo durante o refresh da tela, controlada por registradores que definem onde fica a janelinha e de onde vêm os dados.
 
 
-DOxygen
--------
+Mini-guia Doxygen
+-----------------
 
   - @brief: descrição curta, aparece em sumários
   - @details: descrição longa, útil para explicar registradores, bits, contexto
@@ -507,7 +506,10 @@ DOxygen
   - @note: destaca observações importantes
   - @code / @endcode: bloco de código formatado
   - @b, @c, @a: destaque de palavras (negrito, código, argumento)
-
+  - @verbatim / @endverbatim: trechos de datasheet e tabelas que não serão formatados pelo doxygen
+  - @warning → condições importantes.
+  - @ingroup → organizar funções relacionadas.
+  
   Como o Doxygen trata a indentação
   ---------------------------------
   
@@ -527,6 +529,158 @@ DOxygen
   @li                       Cria itens de lista com indentação automática.
   ----------------------------------------------------------------------------------------------------
   
+  Estruturas do Doxygen
+  ---------------------
+
+  1. Estrutura básica
+  
+  Sempre use esta ordem nos blocos de documentação:
+  
+  /**
+   * @brief [Resumo curto em inglês, 1 linha]
+   * 
+   * [Descrição longa em inglês: explica a finalidade da função,
+   * contexto de uso e observações. Pode ser múltiplas linhas.]
+   *
+   * @verbatim
+   * [Trecho fiel do datasheet: registradores, bits, descrições]
+   * @endverbatim
+   *
+   * @param [nome] [descrição]
+   * @param [nome] [descrição]
+   *
+   * @note
+   * - Observações adicionais (página, registradores acessados, etc).
+   *
+   * @return [tipo de retorno ou None]
+   */
+
+   Abaixo do @brief, o texto é gerado de forma como se apresenta. Pode-se usar 
+   ainda a tag @details
+   
+   2. Uso das seções
+
+   - @brief
+     Sempre em inglês, frase curta.
+   
+     Exemplo:
+
+     @brief Set the IDEC source start address.
+
+   - Descrição longa (abaixo do @brief ou usando @details)
+     Dá mais contexto: explica o “porquê” e “como”.
+     Não precisa de tag se vier logo abaixo.
+
+     Exemplo:
+
+     This function writes a 32-bit start address into the RA8889
+     IDEC registers. It defines the memory position in serial flash
+     where the image or video data begins.
+
+   - @verbatim ... @endverbatim
+     Para colar datasheet cru (tabelas de bits, nomes de registradores).
+     Garante alinhamento e mantém o texto monoespaçado.
+     
+	 Exemplo:
+
+     @verbatim
+     PAGE 1 REG [0xBC] IDEC_SADR0 - Source Start Address [7:0]
+     PAGE 1 REG [0xBD] IDEC_SADR1 - Source Start Address [15:8]
+     PAGE 1 REG [0xBE] IDEC_SADR2 - Source Start Address [23:16]
+     PAGE 1 REG [0xBF] IDEC_SADR3 - Source Start Address [31:24]
+     @endverbatim
+
+  - @param
+    Sempre descreva tipo e função do parâmetro.
+    Boa prática usar para cada parâmetro um tag @param
+
+    Exemplo:
+
+    @param addr 32-bit start address of the image/video source in flash.
+
+  - @note
+    Dicas extras: páginas usadas, registradores afetados, limitações.
+
+    Exemplo:
+
+    @note
+    - Register page used: Page 1.
+    - Registers written: 0xBC–0xBF.
+    - Active page restored to Page 0 after execution.
+
+  - @return
+    Use "None" para funções void.
+
+    Exemplo:
+    
+	@return None
+  
+  - @details
+    Serve para separar explicitamente a descrição longa da função.
+    Útil se você quer manter o @brief curto e a explicação longa organizada.
+
+    Exemplo
+	
+    @brief Set IDEC start address.
+    @details This function configures the 32-bit source address...
+   
+  - @warning / @attention
+    Para avisos importantes sobre o uso da função.
+    Por exemplo: “A página deve ser Page 1 antes de escrever” ou “Função não é thread-safe”.
+
+    Exemplo
+	
+    @warning Must select Page 1 before calling this function.
+
+  - @pre / @post
+
+    @pre → condição necessária antes de chamar a função.
+    @post → o que será verdadeiro após a execução.
+    
+	Exemplo
+	
+    @pre Page 1 must be active.
+    @post Active page restored to Page 0.
+  
+  - @sa (see also)
+    Para linkar funções relacionadas ou referências no datasheet.
+
+    Exemplo
+	
+    @sa IDEC_Destination_UpperLeftCorner()
+
+  - @todo
+    Para marcar tarefas pendentes.
+
+    Exemplo
+	
+    @todo Implement overflow check for address.
+
+  - @retval ou @return
+    @retval → descreve valores retornados específicos (bom para funções que retornam códigos de erro).
+	
+	Exemplo
+	
+	@retval 0 Success
+    @retval 1 Invalid address
+
+  - @code ... @endcode
+    Para inserir exemplos de código formatados.
+
+    Exemplo
+	
+    @code
+    IDEC_Source_StartAddress(0x12345678);
+    IDEC_Destination_UpperLeftCorner(0,0);
+    @endcode
+
+  - @ingroup / @addtogroup
+    Para organizar funções em grupos, como “IDEC Functions” ou “SPI Functions”.
+
+    Exemplo
+	
+    @ingroup IDEC
+    @brief Set IDEC source start address.
 
 IDEC
 ----
@@ -1286,4 +1440,125 @@ Usando Notepad++ para subtituir letras usando Expressao Regular
   
   Não remove vírgulas que estão no meio do texto.
   
+Visual Studio Code
+------------------
+
+  Teclas de atalho
+  ----------------
   
+  Para editar várias linhas no Visual Studio Code (VS Code), você pode usar os seguintes atalhos:
+
+  - Para linhas consecutivas: 
+    Pressione Ctrl+Alt (Windows/Linux) ou ⌥+⌘ (Mac) e use as teclas de seta para cima/baixo (↑/↓) para adicionar cursores e editar múltiplas linhas simultaneamente. 
+  
+  - Para linhas separadas: 
+    Segure Alt e clique (com mouse) em cada linha onde deseja adicionar um cursor.
+  
+  - Para mudar deslocar a posição do conteudo para outra linha:
+    Pressione Alt sobre a linha que qeur mover e use as setas para cima/baixo (↑/↓)
+	
+  - Para editar todas as ocorrências de uma palavra: 
+    Selecione uma palavra e pressione Ctrl+Shift+L (Windows/Linux/Mac) para selecionar todas as ocorrências do texto e poder editá-las de uma vez. 
+	
+  - Para adicionar um cursor no final de cada linha selecionada: Pressione Shift+Alt+I.   
+  
+  Passos detalhados para cada método:
+  1. Cursores em Linhas Consecutivas (Windows/Linux):
+     - Posicione o cursor onde deseja começar.
+     - Pressione Ctrl+Alt e, em seguida, ↑ ou ↓ para adicionar um cursor a cada linha.
+     - Comece a digitar. A digitação será aplicada a todos os cursores simultaneamente. 
+  2. Cursores em Linhas Separadas (Todas as Plataformas):
+     - Clique em uma linha para posicionar o cursor.
+     - Mantenha pressionada a tecla Alt e clique em qualquer outra linha onde você deseja adicionar um cursor. 
+     - Todos os cursores adicionados permitirão a edição simultânea. 
+  3. Edição de Todas as Ocorrências de uma Palavra:
+     - Selecione a palavra ou texto que deseja editar. 
+     - Pressione Ctrl+Shift+L (em Windows, Linux ou Mac) para selecionar todas as ocorrências da palavra no arquivo. 
+     - Edite o texto, e todas as ocorrências serão alteradas. 
+  4. Adicionar um Cursor em Cada Extremo de Linhas Selecionadas:
+     - Selecione um bloco de linhas usando o mouse ou Shift + setas.
+     - Pressione Shift+Alt+I. Isso adicionará um cursor no final de cada linha selecionada, permitindo que você insira texto ou execute comandos em todos os finais de linha ao mesmo tempo. 
+
+Funções e Notas
+---------------
+
+  REG [0x3c] Graphic / Text Cursor Control Register (GTCCR)
+  
+  O Graphic / Text Cursor Control Register (GTCCR) controla dois aspectos importantes da saída do display:
+
+  - Ativação da correção gama (Gamma Correction Enable).
+  - Seleção da tabela de gama para MPU (Microprocessor Unit) escrever os dados de gama, que podem ser diferentes para cada componente de cor (R/G/B).
+
+  Função GammaCorrection_Enable(bool b)
+  -------------------------------------
+  Objetivo: Ativa ou desativa a correção gama.
+  Bit utilizado: bit 7 do registrador 0x3C.
+  Descrição de funcionamento:
+    0 → Correção gama desabilitada.
+    1 → Correção gama habilitada.
+  Aplicação:
+  Quando você quer que a intensidade de cor exibida no display seja ajustada para compensar a resposta não linear do LCD, aumentando a fidelidade visual.
+  Resumo: Controla se o display aplica a curva de correção gama na saída de vídeo.
+
+  Funções GammaTableforBlue/Green/Red()
+  -------------------------------------
+  Objetivo: Seleciona qual tabela de gama será escrita pelo MPU.
+  Bits utilizados: bit 6 e bit 5 do registrador 0x3C.
+  Função                Bits [6:5]    Tabela selecionada
+  GammaTableforBlue()   00            Blue
+  GammaTableforGreen()  01            Green
+  GammaTableforRed()    10            Red
+  Aplicação:
+    Quando você vai escrever os valores de correção gama, precisa indicar para qual cor os dados se aplicam.
+    Cada cor tem sua própria tabela, e o RA8889 usa esses bits para escolher entre elas.
+  Resumo:
+    Essas três funções têm finalidade similar: selecionar a tabela de gama para escrita, apenas mudando o valor dos bits 6 e 5.
+    Não alteram a correção gama em si (isso é feito pelo GammaCorrection_Enable).
+
+  Observações importantes
+  -----------------------
+  Ordem de uso:
+  1. Seleciona a tabela com GammaTableforBlue/Green/Red().
+  2. Escreve os valores de gama via MPU.
+  3. Habilita a correção gama com GammaCorrection_Enable(true).
+  Diferença chave:
+  GammaCorrection_Enable() ativa ou desativa a função.
+  GammaTableforX() seleciona a cor para a qual você quer configurar a tabela de correção gama.
+
+  Funções CursorGraphic_Set1/2/3/4
+  --------------------------------
+  
+  1. O que são esses “Cursor Set 1/2/3/4”
+  
+     O RA8889 tem quatro conjuntos de cursores gráficos predefinidos (ou “cursors sets”) que podem ser usados em aplicações gráficas, como:
+
+     - Jogos simples ou interfaces gráficas.
+     - Indicar seleção de itens (menus, botões).
+     - Cursor de desenho ou ponto de referência na tela.
+
+     Cada Set define uma forma ou padrão de pixels do cursor, por exemplo:
+     
+     Set     Padrão típico
+     1       Por exemplo: um quadrado sólido pequeno
+     2       Um círculo ou retângulo oco
+     3       Um cruz (“+”)
+     4       Um X ou outro símbolo gráfico
+
+     Obs.: Os detalhes exatos de cada set (como quais pixels acendem) estão 
+	 definidos internamente pelo RA8889. O datasheet não mostra um desenho 
+	 esquemático do cursor gráfico para cada Set.
+
+     Limitações:
+     Você não consegue mudar o padrão interno de cada Set diretamente; eles são fixos pelo hardware.
+     Se quiser um cursor completamente customizado, precisaria desenhar manualmente na tela usando a memória gráfica (como um bitmap) em vez de usar o Graphic Cursor interno.
+
+     Como usar:
+     - Ative o cursor gráfico com CursorGraphic_Enable(true) (bit 4).
+     - Escolha o Set com CursorGraphic_Set1/2/3/4() (bits 3-2).
+     - O controlador vai desenhar o cursor na posição definida pelos registradores de cursor X/Y (geralmente outros registradores, tipo GCX0/GCY0).
+     - Você pode trocar o Set dinamicamente para alterar o visual do cursor sem redesenhar nada manualmente.
+     - Não interfere no conteúdo da tela, porque o cursor é “sobreposto” na saída gráfica pelo RA8889.
+
+
+
+

@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../TesteC"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"sstream": "c",
+			"random": "cpp"
+		}
+	}
+}
