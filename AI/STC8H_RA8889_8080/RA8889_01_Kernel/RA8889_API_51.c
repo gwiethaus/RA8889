@@ -216,6 +216,7 @@ void MPU16_24bpp_Mode2_Memory_Write(
     Check_Mem_WR_FIFO_Empty();
 }
 
+//void PIP(bool On_Off, uint8_t PSelect, uint32_t PAddr, uint16_t Px, uint16_t Py, uint32_t ImageWidth, uint16_t Dx, uint16_t Dy, uint16_t Dwidth, uint16_t DHeight);
 void PIP(
     unsigned char On_Off // 0 : disable PIP, 1 : enable PIP, 2 : To maintain the original state
     ,
@@ -2774,6 +2775,7 @@ void BTE_Alpha_Blending_Picture_Mode(unsigned long S0_Addr, unsigned short S0_W,
     Check_BTE_Busy();
 }
 
+//void DMA_24bit(uint8_t clk, uint16_t x1, uint16_t y1, uint16_t Wx, uint16_t Hy, uint16_t picwidth, uint32_t addr);
 void DMA_24bit(
     unsigned char Clk // Clk : SPI Clock = System Clock /{(Clk)*2} , SPI CLK recommend <=90MHz
     ,
@@ -2806,6 +2808,7 @@ void DMA_24bit(
     Check_Busy_SFI_DMA(); // DMA Busy Check
 }
 
+//void DMA_32bit(uint8_t clk, uint16_t x1, uint16_t y1, uint16_t Wx, uint16_t Hy, uint16_t picwidth, uint32_t addr);
 void DMA_32bit(
     unsigned char Clk // Clk : SPI Clock = System Clock /{(Clk+1)*2}
     ,
@@ -2840,6 +2843,7 @@ void DMA_32bit(
     Select_SFI_24bit_Address();
 }
 
+//void Switch_24bitsTo32bits(uint8_t bus, uint8_t scs)
 void switch_24bits_to_32bits(unsigned char BUS, unsigned char SCS)
 {
     Enable_SFlash_SPI();
@@ -2885,6 +2889,7 @@ void switch_24bits_to_32bits(unsigned char BUS, unsigned char SCS)
     nSS_Inactive(); // nSS port will goes high
 }
 
+//void PWM0(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
 void PWM0(
     unsigned char on_off // on_off = 1 ,enable PWM, on_off = 0 , disable PWM.
     ,
@@ -2928,6 +2933,7 @@ void PWM0(
     }
 }
 
+//void PWM1(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
 void PWM1(
     unsigned char on_off // on_off = 1 ,enable PWM, on_off = 0 , disable PWM.
     ,
@@ -3255,9 +3261,10 @@ width : vedio width
 //    // Check_Busy_Media_Decode();
 //}
 
-void AVI_window(
-    unsigned char ON_OFF // 0 : turn off AVI window, 1 :turn on AVI window
-)
+
+//ON_OFF -> 0 : turn off AVI window, 1 :turn on AVI window
+//void AVI_Window(bool on_off)
+void AVI_window(unsigned char ON_OFF)
 {
     if (ON_OFF == 0) {
         Disable_PIP1();

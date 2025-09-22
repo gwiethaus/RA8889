@@ -60,8 +60,8 @@ void RA8889_Initial(void)
 //	11b: Mask high byte of even data (ex. 16 bit MPU I/F with 24-bpp data mode 2)
 	LCD_CmdWrite(0x02);	   	  //02h.bit7~6 register
 	temp = LCD_DataRead();
-	#if defined(MCU_8bit_ColorDepth_8bpp) || defined(MCU_8bit_ColorDepth_16bpp) || defined(MCU_8bit_ColorDepth_24bpp) || defined(MCU_16bit_ColorDepth_16bpp) || defined(MCU_16bit_ColorDepth_24bpp_Mode_1)  
-	    temp &= cClrb7;  
+	#if defined(MCU_8bit_ColorDepth_8bpp) || defined(MCU_8bit_ColorDepth_16bpp) || defined(MCU_8bit_ColorDepth_24bpp) || defined(MCU_16bit_ColorDepth_16bpp) || defined(MCU_16bit_ColorDepth_24bpp_Mode_1)
+	    temp &= cClrb7;
 	#endif
 	#ifdef MCU_16bit_ColorDepth_24bpp_Mode_2
 		temp |= cSetb7;
@@ -122,7 +122,7 @@ void RA8889_Initial(void)
 		IDEC_Destination_Color_16bpp();//
 	#endif
 
-	#if defined (MCU_8bit_ColorDepth_24bpp) || defined (MCU_16bit_ColorDepth_24bpp_Mode_1) || defined (MCU_16bit_ColorDepth_24bpp_Mode_2)	
+	#if defined (MCU_8bit_ColorDepth_24bpp) || defined (MCU_16bit_ColorDepth_24bpp_Mode_1) || defined (MCU_16bit_ColorDepth_24bpp_Mode_2)
 		Select_Main_Window_24bpp();		//[10h]Set main window color depth
 		Memory_24bpp_Mode();			//[5Eh]Set active memory color depth
 
@@ -235,7 +235,7 @@ Note: The bit will auto clear after reset.
 #endif
 }
 
-
+//IC_WaitReady
 void Check_IC_ready(void)
 {
 /*	[Status Register] bit1
@@ -567,7 +567,7 @@ void Enable_PLL(void)
 
 
 
-
+//void XnWAIT_Mask(bool mask)
 void Sent_XnWAIT_Status_When_CS_Low(void)
 { /*
      Mask XnWAIT on XnCS deassert
@@ -587,6 +587,8 @@ void Sent_XnWAIT_Status_When_CS_Low(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void XnWAIT_Mask(bool mask)
 void Sent_XnWAIT_Status_At_Any_Time(void)
 { /*
      Mask XnWAIT on XnCS deassert
@@ -606,6 +608,8 @@ void Sent_XnWAIT_Status_At_Any_Time(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void KeyScan_Enable(bool b)
 void Key_Scan_Enable(void)
 {
     /*  0: Disable.
@@ -616,6 +620,8 @@ void Key_Scan_Enable(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void KeyScan_Enable(bool b)
 void Key_Scan_Disable(void)
 {
     /*  0: Disable.
@@ -626,7 +632,9 @@ void Key_Scan_Disable(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
-void TFT_24bit(void) //
+
+//void TFT_24bit(void)
+void TFT_24bit(void)
 {
     /*  TFT Panel I/F Output pin Setting
     00b: 24-bits TFT output.
@@ -641,6 +649,8 @@ void TFT_24bit(void) //
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void TFT_18bit(void)
 void TFT_18bit(void)
 {
     /*  TFT Panel I/F Output pin Setting
@@ -656,6 +666,8 @@ void TFT_18bit(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void TFT_16bit(void)
 void TFT_16bit(void)
 {
     /*  TFT Panel I/F Output pin Setting
@@ -671,6 +683,8 @@ void TFT_16bit(void)
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void TFT_Without(void)
 void Without_TFT(void)
 {
     /*  TFT Panel I/F Output pin Setting
@@ -687,6 +701,7 @@ void Without_TFT(void)
     LCD_DataWrite(temp);
 }
 
+//void I2CM_Enable(bool b)
 void RA8889_I2CM_Enable(void)
 {
     /*  I2C master Interface Enable/Disable
@@ -699,6 +714,7 @@ void RA8889_I2CM_Enable(void)
     LCD_DataWrite(temp);
 }
 
+//void I2CM_Enable(bool b)
 void RA8889_I2CM_Disable(void)
 {
     /*  I2C master Interface Enable/Disable
@@ -711,6 +727,7 @@ void RA8889_I2CM_Disable(void)
     LCD_DataWrite(temp);
 }
 
+//void SFlashSPI_Enable(bool b)
 void Enable_SFlash_SPI(void)
 {
     /*	Serial Flash or SPI Interface Enable/Disable
@@ -725,6 +742,7 @@ void Enable_SFlash_SPI(void)
     LCD_DataWrite(temp);
 }
 
+//void SFlashSPI_Enable(bool b)
 void Disable_SFlash_SPI(void)
 {
     /*	Serial Flash or SPI Interface Enable/Disable
@@ -739,7 +757,7 @@ void Disable_SFlash_SPI(void)
     LCD_DataWrite(temp);
 }
 
-//void HostDataBus_Select_8bit(void);
+//void HostDataBus_Select_8bit(void)
 void Host_Bus_8bit(void)
 {
     /*  Parallel Host Data Bus Width Selection
@@ -752,7 +770,7 @@ void Host_Bus_8bit(void)
     LCD_DataWrite(temp);
 }
 
-//void HostDataBus_Select_16bit(void);
+//void HostDataBus_Select_16bit(void)
 void Host_Bus_16bit(void)
 {
     /*  Parallel Host Data Bus Width Selection
@@ -767,6 +785,7 @@ void Host_Bus_16bit(void)
 
 //[02h][02h][02h][02h][02h][02h][02h][02h][02h][02h][02h][02h][02h][02h][02h][02h]
 
+//void HostColorDepthFormat(uint8_t type)
 void Data_Format_8b_8bpp(void)
 {
     /* MPU read/write data format when access memory data port.
@@ -782,6 +801,8 @@ void Data_Format_8b_8bpp(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void HostColorDepthFormat(uint8_t type)
 void Data_Format_8b_16bpp(void)
 {
     /* MPU read/write data format when access memory data port.
@@ -797,6 +818,8 @@ void Data_Format_8b_16bpp(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void HostColorDepthFormat(uint8_t type)
 void Data_Format_8b_24bpp(void)
 {
     /* MPU read/write data format when access memory data port.
@@ -813,6 +836,7 @@ void Data_Format_8b_24bpp(void)
     LCD_DataWrite(temp);
 }
 
+//void HostColorDepthFormat(uint8_t type)
 void Data_Format_16b_8bpp(void)
 {
     /* MPU read/write data format when access memory data port.
@@ -824,6 +848,9 @@ void Data_Format_16b_8bpp(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+
+//void HostColorDepthFormat(uint8_t type)
 void Data_Format_16b_16bpp(void)
 {
     /* MPU read/write data format when access memory data port.
@@ -840,6 +867,9 @@ void Data_Format_16b_16bpp(void)
     //	temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+
+//void HostColorDepthFormat(uint8_t type)
 void Data_Format_16b_24bpp_mode1(void)
 {
     /* MPU read/write data format when access memory data port.
@@ -856,6 +886,8 @@ void Data_Format_16b_24bpp_mode1(void)
     //	temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void HostColorDepthFormat(uint8_t type)
 void Data_Format_16b_24bpp_mode2(void)
 {
     /* MPU read/write data format when access memory data port.
@@ -1621,6 +1653,8 @@ void Clear_PWM0_Interrupt_Flag(void)
     LCD_DataWrite(temp);
 }
 //[0Dh]=========================================================================
+
+//void XnINTR_ResumeInterrupt_Mask(bool b)
 void XnINTR_Mask_Resume_Interrupt_Flag(void)
 {
     /*
@@ -1634,6 +1668,8 @@ void XnINTR_Mask_Resume_Interrupt_Flag(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_ExtInterruptInput_Mask(bool b)
 void XnINTR_Mask_ExtInterrupt_Input_Flag(void)
 {
     /*
@@ -1647,6 +1683,8 @@ void XnINTR_Mask_ExtInterrupt_Input_Flag(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_I2CMInterrupt_Mask(bool b)
 void XnINTR_Mask_I2CM_Interrupt_Flag(void)
 {
     /*
@@ -1660,6 +1698,8 @@ void XnINTR_Mask_I2CM_Interrupt_Flag(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_VsyncInterrupt_Mask(void)
 void XnINTR_Mask_Vsync_Interrupt_Flag(void)
 {
     /*
@@ -1673,6 +1713,8 @@ void XnINTR_Mask_Vsync_Interrupt_Flag(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_KeyScanInterrupt_Mask(bool b)
 void XnINTR_Mask_KeyScan_Interrupt_Flag(void)
 {
     /*
@@ -1686,6 +1728,8 @@ void XnINTR_Mask_KeyScan_Interrupt_Flag(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_GenericInterrupt_Mask(bool b)
 void XnINTR_Mask_DMA_Draw_BTE_Interrupt_Flag(void)
 {
     /*
@@ -1700,6 +1744,8 @@ void XnINTR_Mask_DMA_Draw_BTE_Interrupt_Flag(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_PWM1Interrupt_Mask(void)
 void XnINTR_Mask_PWM1_Interrupt_Flag(void)
 {
     /*
@@ -1713,6 +1759,8 @@ void XnINTR_Mask_PWM1_Interrupt_Flag(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_PWM0Interrupt_Mask(bool b)
 void XnINTR_Mask_PWM0_Interrupt_Flag(void)
 {
     /*
@@ -1727,6 +1775,7 @@ void XnINTR_Mask_PWM0_Interrupt_Flag(void)
     LCD_DataWrite(temp);
 }
 
+//void XnINTR_ResumeInterrupt_Mask(bool b)
 void XnINTR_Unmask_Resume_Interrupt_Flag(void)
 {
     /*
@@ -1740,6 +1789,8 @@ void XnINTR_Unmask_Resume_Interrupt_Flag(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_ExtInterruptInput_Mask(bool b)
 void XnINTR_Unmask_ExtInterrupt_Input_Flag(void)
 {
     /*
@@ -1753,6 +1804,8 @@ void XnINTR_Unmask_ExtInterrupt_Input_Flag(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_I2CMInterrupt_Mask(bool b)
 void XnINTR_Unmask_I2CM_Interrupt_Flag(void)
 {
     /*
@@ -1766,6 +1819,8 @@ void XnINTR_Unmask_I2CM_Interrupt_Flag(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_VsyncInterrupt_Mask(void)
 void XnINTR_Unmask_Vsync_Interrupt_Flag(void)
 {
     /*
@@ -1779,6 +1834,8 @@ void XnINTR_Unmask_Vsync_Interrupt_Flag(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_KeyScanInterrupt_Mask(bool b)
 void XnINTR_Unmask_KeyScan_Interrupt_Flag(void)
 {
     /*
@@ -1792,6 +1849,8 @@ void XnINTR_Unmask_KeyScan_Interrupt_Flag(void)
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_GenericInterrupt_Mask(bool b)
 void XnINTR_Unmask_DMA_Draw_BTE_Interrupt_Flag(void)
 {
     /*
@@ -1806,6 +1865,8 @@ void XnINTR_Unmask_DMA_Draw_BTE_Interrupt_Flag(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_PWM1Interrupt_Mask(void)
 void XnINTR_Unmask_PWM1_Interrupt_Flag(void)
 {
     /*
@@ -1819,6 +1880,8 @@ void XnINTR_Unmask_PWM1_Interrupt_Flag(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void XnINTR_PWM0Interrupt_Mask(bool b)
 void XnINTR_Unmask_PWM0_Interrupt_Flag(void)
 {
     /*
@@ -1834,6 +1897,8 @@ void XnINTR_Unmask_PWM0_Interrupt_Flag(void)
 }
 
 //[0Eh]=========================================================================
+
+//void GPIOF_PullUp_Enable(void)
 void Enable_GPIOF_PullUp(void)
 {
     /*
@@ -1847,6 +1912,8 @@ void Enable_GPIOF_PullUp(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void GPIOE_PullUp_Enable(void)
 void Enable_GPIOE_PullUp(void)
 {
     /*
@@ -1860,6 +1927,8 @@ void Enable_GPIOE_PullUp(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void GPIOD_PullUp_Enable(void)
 void Enable_GPIOD_PullUp(void)
 {
     /*
@@ -1873,6 +1942,8 @@ void Enable_GPIOD_PullUp(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void GPIOC_PullUp_Enable(void)
 void Enable_GPIOC_PullUp(void)
 {
     /*
@@ -1887,6 +1958,8 @@ void Enable_GPIOC_PullUp(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void XDB15_8_PullUp_Enable(void)
 void Enable_XDB15_8_PullUp(void)
 {
     /*
@@ -1900,6 +1973,8 @@ void Enable_XDB15_8_PullUp(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void XDB7_0_PullUp_Enable(void)
 void Enable_XDB7_0_PullUp(void)
 {
     /*
@@ -1913,6 +1988,8 @@ void Enable_XDB7_0_PullUp(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void GPIOF_PullUp_Disable(void)
 void Disable_GPIOF_PullUp(void)
 {
     /*
@@ -1926,6 +2003,8 @@ void Disable_GPIOF_PullUp(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void GPIOE_PullUp_Disable(void)
 void Disable_GPIOE_PullUp(void)
 {
     /*
@@ -1939,6 +2018,8 @@ void Disable_GPIOE_PullUp(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void GPIOD_PullUp_Disable(void)
 void Disable_GPIOD_PullUp(void)
 {
     /*
@@ -1952,6 +2033,8 @@ void Disable_GPIOD_PullUp(void)
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void GPIOC_PullUp_Disable(void)
 void Disable_GPIOC_PullUp(void)
 {
     /*
@@ -1966,6 +2049,8 @@ void Disable_GPIOC_PullUp(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void XDB15_8_PullUp_Disable(void)
 void Disable_XDB15_8_PullUp(void)
 {
     /*
@@ -1979,6 +2064,8 @@ void Disable_XDB15_8_PullUp(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void XDB7_0_PullUp_Disable(void)
 void Disable_XDB7_0_PullUp(void)
 {
     /*
@@ -1992,7 +2079,10 @@ void Disable_XDB7_0_PullUp(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
 //[0Fh]=========================================================================
+
+//void XPDAT18_GPIO_D7_Mode(void)
 void XPDAT18_Set_GPIO_D7(void)
 {
     /*
@@ -2006,6 +2096,8 @@ void XPDAT18_Set_GPIO_D7(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT18_KOUT4_Mode(void)
 void XPDAT18_Set_KOUT4(void)
 {
     /*
@@ -2019,6 +2111,8 @@ void XPDAT18_Set_KOUT4(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT17_GPIO_D5_Mode(void)
 void XPDAT17_Set_GPIO_D5(void)
 {
     /*
@@ -2032,6 +2126,8 @@ void XPDAT17_Set_GPIO_D5(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT17_KOUT2_Mode(void)
 void XPDAT17_Set_KOUT2(void)
 {
     /*
@@ -2045,6 +2141,8 @@ void XPDAT17_Set_KOUT2(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT16_GPIO_D4_Mode(void)
 void XPDAT16_Set_GPIO_D4(void)
 {
     /*
@@ -2058,6 +2156,8 @@ void XPDAT16_Set_GPIO_D4(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT16_KOUT1_Mode(void)
 void XPDAT16_Set_KOUT1(void)
 {
     /*
@@ -2071,6 +2171,8 @@ void XPDAT16_Set_KOUT1(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT9_GPIO_D3_Mode(void)
 void XPDAT9_Set_GPIO_D3(void)
 {
     /*
@@ -2084,6 +2186,8 @@ void XPDAT9_Set_GPIO_D3(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT9_KOUT3_Mode(void)
 void XPDAT9_Set_KOUT3(void)
 {
     /*
@@ -2097,6 +2201,8 @@ void XPDAT9_Set_KOUT3(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT8_GPIO_D2_Mode(void)
 void XPDAT8_Set_GPIO_D2(void)
 {
     /*
@@ -2110,6 +2216,8 @@ void XPDAT8_Set_GPIO_D2(void)
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT8_KIN3_Mode(void)
 void XPDAT8_Set_KIN3(void)
 {
     /*
@@ -2123,6 +2231,8 @@ void XPDAT8_Set_KIN3(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT2_GPIO_D6_Mode(void)
 void XPDAT2_Set_GPIO_D6(void)
 {
     /*
@@ -2136,6 +2246,8 @@ void XPDAT2_Set_GPIO_D6(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT2_KIN4_Mode(void)
 void XPDAT2_Set_KIN4(void)
 {
     /*
@@ -2149,6 +2261,8 @@ void XPDAT2_Set_KIN4(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT1_GPIO_D1_Mode(void)
 void XPDAT1_Set_GPIO_D1(void)
 {
     /*
@@ -2162,6 +2276,8 @@ void XPDAT1_Set_GPIO_D1(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT1_KIN2_Mode(void)
 void XPDAT1_Set_KIN2(void)
 {
     /*
@@ -2175,6 +2291,8 @@ void XPDAT1_Set_KIN2(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT0_GPIO_D0_Mode(void)
 void XPDAT0_Set_GPIO_D0(void)
 {
     /*
@@ -2188,6 +2306,8 @@ void XPDAT0_Set_GPIO_D0(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void XPDAT0_KIN1_Mode(void)
 void XPDAT0_Set_KIN1(void)
 {
     /*
@@ -2204,7 +2324,7 @@ void XPDAT0_Set_KIN1(void)
 
 //[10h]=========================================================================
 
-//wiethaus, void Enable_PIP1(bool b)
+//void PIP1_Enable(bool b)
 void Enable_PIP1(void)
 {
     /*
@@ -2219,7 +2339,8 @@ void Enable_PIP1(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
-//wiethaus, void Enable_PIP1(bool b)
+
+//void PIP1_Enable(bool b)
 void Disable_PIP1(void)
 {
     /*
@@ -2234,7 +2355,8 @@ void Disable_PIP1(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
-//wiethaus, void Enable_PIP2(bool b)
+
+//void PIP2_Enable(bool b)
 void Enable_PIP2(void)
 {
     /*
@@ -2249,7 +2371,8 @@ void Enable_PIP2(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
-//wiethaus, void Enable_PIP2(bool b)
+
+//void PIP2_Enable(bool b)
 void Disable_PIP2(void)
 {
     /*
@@ -2264,7 +2387,8 @@ void Disable_PIP2(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
-//Wiethaus, void Select_PIP_Parameter(PIPSelect pip)
+
+//void PIP_Select_Parameter(ePIPSelect pip)
 void Select_PIP1_Parameter(void)
 {
     /*
@@ -2277,7 +2401,8 @@ void Select_PIP1_Parameter(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
-//Wiethaus, void Select_PIP_Parameter(PIPSelect pip)
+
+//void PIP_Select_Parameter(ePIPSelect pip)
 void Select_PIP2_Parameter(void)
 {
     /*
@@ -2290,6 +2415,8 @@ void Select_PIP2_Parameter(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void Select_MainWindow_8bpp(void)
 void Select_Main_Window_8bpp(void)
 {
     /*
@@ -2305,6 +2432,8 @@ void Select_Main_Window_8bpp(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void Select_MainWindow_16bpp(void)
 void Select_Main_Window_16bpp(void)
 {
     /*
@@ -2320,6 +2449,8 @@ void Select_Main_Window_16bpp(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void Select_MainWindow_24bpp(void)
 void Select_Main_Window_24bpp(void)
 {
     /*
@@ -2366,6 +2497,9 @@ void Select_LCD_DE_Mode(void)
 }
 
 //[11h]=========================================================================
+
+//void PIP1_Window_ColorDepth(eColorDepthBPP bpp)
+//void PIP1_Window_ColorDepth_8bpp(void)
 void Select_PIP1_Window_8bpp(void)
 {
     /*
@@ -2381,6 +2515,9 @@ void Select_PIP1_Window_8bpp(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void PIP1_Window_ColorDepth(eColorDepthBPP bpp)
+//void PIP1_Window_ColorDepth_16bpp(void)
 void Select_PIP1_Window_16bpp(void)
 {
     /*
@@ -2396,6 +2533,9 @@ void Select_PIP1_Window_16bpp(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void PIP1_Window_ColorDepth(eColorDepthBPP bpp)
+//void PIP1_Window_ColorDepth_24bpp(void)
 void Select_PIP1_Window_24bpp(void)
 {
     /*
@@ -2411,6 +2551,9 @@ void Select_PIP1_Window_24bpp(void)
     //    temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void PIP2_Window_ColorDepth(eColorDepthBPP bpp)
+//void PIP2_Window_ColorDepth_8bpp(void)
 void Select_PIP2_Window_8bpp(void)
 {
     /*
@@ -2426,6 +2569,9 @@ void Select_PIP2_Window_8bpp(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void PIP2_Window_ColorDepth(eColorDepthBPP bpp)
+//void PIP2_Window_ColorDepth_16bpp(void)
 void Select_PIP2_Window_16bpp(void)
 {
     /*
@@ -2441,6 +2587,8 @@ void Select_PIP2_Window_16bpp(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void PIP2_Window_ColorDepth(eColorDepthBPP bpp)
 void Select_PIP2_Window_24bpp(void)
 {
     /*
@@ -2458,6 +2606,8 @@ void Select_PIP2_Window_24bpp(void)
 }
 
 //[12h]=========================================================================
+
+//void PCLK_Rising(void)
 void PCLK_Rising(void)
 {
     /*
@@ -2471,6 +2621,8 @@ void PCLK_Rising(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void PCLK_Falling(void)
 void PCLK_Falling(void)
 {
     /*
@@ -2484,6 +2636,7 @@ void PCLK_Falling(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
 void Display_ON(void)
 {
     /*
@@ -2513,6 +2666,8 @@ void Display_OFF(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void DisplayTestBar(bool b)
 void Color_Bar_ON(void)
 {
     /*
@@ -2527,6 +2682,8 @@ void Color_Bar_ON(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void DisplayTestBar(bool b)
 void Color_Bar_OFF(void)
 {
     /*
@@ -2542,6 +2699,8 @@ void Color_Bar_OFF(void)
     LCD_DataWrite(temp);
 }
 
+//void VerticalScanDirection(VSCANDir direction)
+//void HScanDirection_LeftToRight (void)
 void HSCAN_L_to_R(void)
 {
     /*
@@ -2556,6 +2715,9 @@ void HSCAN_L_to_R(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void VerticalScanDirection(VSCANDir direction)
+//void HScanDirection_RightToLeft (void)
 void HSCAN_R_to_L(void)
 {
     /*
@@ -2570,6 +2732,9 @@ void HSCAN_R_to_L(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void VerticalScanDirection(VSCANDir direction)
+//void VScanDirection_TopToBottom(void)
 void VSCAN_T_to_B(void)
 {
     /*
@@ -2584,6 +2749,9 @@ void VSCAN_T_to_B(void)
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void VerticalScanDirection(VSCANDir direction)
+//void VScanDirection_BottomToTop(void)
 void VSCAN_B_to_T(void)
 {
     /*
@@ -2598,6 +2766,8 @@ void VSCAN_B_to_T(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void PDATA_ColorFmt(ePDATAColorFmt fmt)
 void PDATA_Set_RGB(void)
 {
     /*parallel PDATA[23:0] Output Sequence
@@ -2616,6 +2786,8 @@ void PDATA_Set_RGB(void)
     temp &= 0xf8;
     LCD_DataWrite(temp);
 }
+
+//void PDATA_ColorFmt(ePDATAColorFmt fmt)
 void PDATA_Set_RBG(void)
 {
     /*parallel PDATA[23:0] Output Sequence
@@ -2635,6 +2807,8 @@ void PDATA_Set_RBG(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void PDATA_ColorFmt(ePDATAColorFmt fmt)
 void PDATA_Set_GRB(void)
 {
     /*parallel PDATA[23:0] Output Sequence
@@ -2654,6 +2828,8 @@ void PDATA_Set_GRB(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void PDATA_ColorFmt(ePDATAColorFmt fmt)
 void PDATA_Set_GBR(void)
 {
     /*parallel PDATA[23:0] Output Sequence
@@ -2674,6 +2850,8 @@ void PDATA_Set_GBR(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void PDATA_ColorFmt(ePDATAColorFmt fmt)
 void PDATA_Set_BRG(void)
 {
     /*parallel PDATA[23:0] Output Sequence
@@ -2693,6 +2871,8 @@ void PDATA_Set_BRG(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void PDATA_ColorFmt(ePDATAColorFmt fmt)
 void PDATA_Set_BGR(void)
 {
     /*parallel PDATA[23:0] Output Sequence
@@ -2713,6 +2893,8 @@ void PDATA_Set_BGR(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void PDATA_ColorFmt(ePDATAColorFmt fmt)
 void PDATA_Set_Gray(void)
 {
     /*parallel PDATA[23:0] Output Sequence
@@ -2734,6 +2916,7 @@ void PDATA_Set_Gray(void)
     LCD_DataWrite(temp);
 }
 
+//void PDATA_ColorFmt(ePDATAColorFmt fmt)
 void PDATA_IDLE_STATE(void)
 {
     /*
@@ -2832,6 +3015,8 @@ void DE_High_Active(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void DE_IdleStateLow(void)
 void Idle_DE_Low(void)
 {
     /*
@@ -2846,6 +3031,8 @@ void Idle_DE_Low(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void DE_IdleStateHigh(void)
 void Idle_DE_High(void)
 {
     /*
@@ -2860,6 +3047,8 @@ void Idle_DE_High(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void PCLK_IdleStateLow(void)
 void Idle_PCLK_Low(void)
 {
     /*
@@ -2874,6 +3063,8 @@ void Idle_PCLK_Low(void)
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void PCLK_IdleStateHigh(void)
 void Idle_PCLK_High(void)
 {
     /*
@@ -2888,6 +3079,8 @@ void Idle_PCLK_High(void)
     temp |= cSetb3;
     LCD_DataWrite(temp);
 }
+
+//void PDAT_IdleStateLow(void)
 void Idle_PDAT_Low(void)
 {
     /*
@@ -2902,6 +3095,8 @@ void Idle_PDAT_Low(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void PDAT_IdleStateHigh(void)
 void Idle_PDAT_High(void)
 {
     /*
@@ -2916,6 +3111,8 @@ void Idle_PDAT_High(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void HSYNC_IdleStateLow(void)
 void Idle_HSYNC_Low(void)
 {
     /*
@@ -2930,6 +3127,8 @@ void Idle_HSYNC_Low(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void HSYNC_IdleStateHigh(void)
 void Idle_HSYNC_High(void)
 {
     /*
@@ -2944,6 +3143,8 @@ void Idle_HSYNC_High(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void VSYNC_IdleStateLow(void)
 void Idle_VSYNC_Low(void)
 {
     /*
@@ -2958,6 +3159,8 @@ void Idle_VSYNC_Low(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void VSYNC_IdleStateHigh(void)
 void Idle_VSYNC_High(void)
 {
     /*
@@ -2974,6 +3177,7 @@ void Idle_VSYNC_High(void)
 }
 
 //[14h][15h][1Ah][1Bh]=========================================================================
+//void HorizontalWidth_VerticalHeight(uint16_t wx, uint16_t hy)
 void LCD_HorizontalWidth_VerticalHeight(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3022,6 +3226,8 @@ void LCD_HorizontalWidth_VerticalHeight(unsigned short WX, unsigned short HY)
     }
 }
 //[16h][17h]=========================================================================
+
+//void Horizontal_NonDisplay(uint16_t hbpd)
 void LCD_Horizontal_Non_Display(unsigned short WX)
 {
     /*
@@ -3053,7 +3259,10 @@ void LCD_Horizontal_Non_Display(unsigned short WX)
         LCD_DataWrite(temp);
     }
 }
+
 //[18h]=========================================================================
+
+//void HSYNC_StartPosition(uint16_t hfpd)
 void LCD_HSYNC_Start_Position(unsigned short WX)
 {
     /*
@@ -3074,6 +3283,8 @@ void LCD_HSYNC_Start_Position(unsigned short WX)
     }
 }
 //[19h]=========================================================================
+
+//void HSYNC_PulseWidth(uint16_t hspw)
 void LCD_HSYNC_Pulse_Width(unsigned short WX)
 {
     /*
@@ -3196,6 +3407,8 @@ void Main_Window_Start_XY(unsigned short WX, unsigned short HY)
     LCD_DataWrite(HY >> 8);
 }
 //[2Ah][2Bh][2Ch][2Dh]=========================================================================
+
+//void PIP_Display_StartXY(uint16_t Wx, uint16_t Hy)
 void PIP_Display_Start_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3226,6 +3439,8 @@ void PIP_Display_Start_XY(unsigned short WX, unsigned short HY)
     LCD_DataWrite(HY >> 8);
 }
 //[2Eh][2Fh][30h][31h]=========================================================================
+
+//void PIP_Image_StartAddress(uint32_t addr)
 void PIP_Image_Start_Address(unsigned long Addr)
 {
     /*
@@ -3244,6 +3459,8 @@ void PIP_Image_Start_Address(unsigned long Addr)
     LCD_DataWrite(Addr >> 24);
 }
 //[32h][33h]=========================================================================
+
+//void PIP_Image_Width(uint16_t Wx)
 void PIP_Image_Width(unsigned short WX)
 {
     /*
@@ -3262,6 +3479,8 @@ void PIP_Image_Width(unsigned short WX)
     LCD_DataWrite(WX >> 8);
 }
 //[34h][35h][36h][37h]=========================================================================
+
+//void PIP_WindowImage_StartXY(uint16_t Wx, uint16_t Hy)
 void PIP_Window_Image_Start_XY(unsigned short WX, unsigned short HY)
 {
 
@@ -3293,6 +3512,8 @@ void PIP_Window_Image_Start_XY(unsigned short WX, unsigned short HY)
     LCD_DataWrite(HY >> 8);
 }
 //[38h][39h][3Ah][3Bh]=========================================================================
+
+//void PIP_Window_WidthHeight(uint16_t Wx, uint16_t Hy)
 void PIP_Window_Width_Height(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3322,6 +3543,8 @@ void PIP_Window_Width_Height(unsigned short WX, unsigned short HY)
 }
 
 //[3Ch]=========================================================================
+
+//void GammaCorrection_Enable(bool b)
 void Enable_Gamma_Correction(void)
 {
     /*
@@ -3337,6 +3560,8 @@ void Enable_Gamma_Correction(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
+//void GammaCorrection_Enable(bool b)
 void Disable_Gamma_Correction(void)
 {
     /*
@@ -3352,6 +3577,8 @@ void Disable_Gamma_Correction(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void GammaTableforBlue(void)
 void Gamma_Table_for_Blue(void)
 {
     /*
@@ -3368,6 +3595,8 @@ void Gamma_Table_for_Blue(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void GammaTableforGreen(void)
 void Gamma_Table_for_Green(void)
 {
     /*
@@ -3384,6 +3613,8 @@ void Gamma_Table_for_Green(void)
     temp |= cSetb5;
     LCD_DataWrite(temp);
 }
+
+//void GammaTableforRed(void)
 void Gamma_Table_for_Red(void)
 {
     /*
@@ -3401,6 +3632,7 @@ void Gamma_Table_for_Red(void)
     LCD_DataWrite(temp);
 }
 
+//void CursorGraphic_Enable(bool b)
 void Enable_Graphic_Cursor(void)
 {
     /*
@@ -3415,6 +3647,8 @@ void Enable_Graphic_Cursor(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void CursorGraphic_Enable(bool b)
 void Disable_Graphic_Cursor(void)
 {
     /*
@@ -3429,7 +3663,8 @@ void Disable_Graphic_Cursor(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
-//
+
+//void CursorGraphic_Set1(void)
 void Select_Graphic_Cursor_1(void)
 {
     /*
@@ -3448,6 +3683,8 @@ void Select_Graphic_Cursor_1(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void CursorGraphic_Set2(void)
 void Select_Graphic_Cursor_2(void)
 {
     /*
@@ -3466,6 +3703,8 @@ void Select_Graphic_Cursor_2(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void CursorGraphic_Set3(void)
 void Select_Graphic_Cursor_3(void)
 {
     /*
@@ -3484,6 +3723,8 @@ void Select_Graphic_Cursor_3(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void CursorGraphic_Set4+-(void)
 void Select_Graphic_Cursor_4(void)
 {
     /*
@@ -3502,7 +3743,8 @@ void Select_Graphic_Cursor_4(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
-//
+
+//void CursorText_Enable(bool b)
 void Enable_Text_Cursor(void)
 {
     /*
@@ -3519,6 +3761,8 @@ void Enable_Text_Cursor(void)
     temp |= cSetb1;
     LCD_DataWrite(temp);
 }
+
+//void CursorText_Enable(bool b)
 void Disable_Text_Cursor(void)
 {
     /*
@@ -3535,7 +3779,8 @@ void Disable_Text_Cursor(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
-//
+
+//void CursorText_Blinking_Enable(bool b)
 void Enable_Text_Cursor_Blinking(void)
 {
     /*
@@ -3550,6 +3795,8 @@ void Enable_Text_Cursor_Blinking(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void CursorText_Blinking_Enable(bool b)
 void Disable_Text_Cursor_Blinking(void)
 {
     /*
@@ -3564,7 +3811,10 @@ void Disable_Text_Cursor_Blinking(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
 //[3Dh]=========================================================================
+
+//void CursorText_BlinkingTimeFrames(uint8_t frames)
 void Blinking_Time_Frames(unsigned char temp)
 {
     /*
@@ -3578,7 +3828,10 @@ void Blinking_Time_Frames(unsigned char temp)
     LCD_CmdWrite(0x3D);
     LCD_DataWrite(temp);
 }
+
 //[3Eh]=========================================================================
+
+//void CursorText_Dimensions(uint8_t Wx, uint8_t Hy)
 void Text_Cursor_H_V(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3600,7 +3853,10 @@ void Text_Cursor_H_V(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0x3F);
     LCD_DataWrite(HY);
 }
+
 //[40h][41h][42h][43h]=========================================================================
+
+//void CursorGraphic_Position(uint16_t Wx, uint16_t Hy)
 void Graphic_Cursor_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3619,7 +3875,10 @@ void Graphic_Cursor_XY(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0x43);
     LCD_DataWrite(HY >> 8);
 }
+
 //[44h]=========================================================================
+
+//void CursorGraphic_Color0(uint8_t color)
 void Set_Graphic_Cursor_Color_1(unsigned char temp)
 {
     /*
@@ -3628,7 +3887,10 @@ void Set_Graphic_Cursor_Color_1(unsigned char temp)
     */
     LCD_RegisterWrite(0x44, temp);
 }
+
 //[45h]=========================================================================
+
+//void CursorGraphic_Color0(uint8_t color)
 void Set_Graphic_Cursor_Color_2(unsigned char temp)
 {
     /*
@@ -3639,6 +3901,8 @@ void Set_Graphic_Cursor_Color_2(unsigned char temp)
 }
 
 //[50h][51h][52h][53h]=========================================================================
+
+//void CanvasImage_StartAddr(uint32_t addr)
 void Canvas_Image_Start_address(unsigned long Addr)
 {
     /*
@@ -3657,6 +3921,8 @@ void Canvas_Image_Start_address(unsigned long Addr)
     LCD_DataWrite(Addr >> 24);
 }
 //[54h][55h]=========================================================================
+
+//void CanvasImage_Width(uint16_t Wx)
 void Canvas_image_width(unsigned short WX)
 {
     /*
@@ -3669,6 +3935,7 @@ void Canvas_image_width(unsigned short WX)
     LCD_DataWrite(WX >> 8);
 }
 //[56h][57h][58h][59h]=========================================================================
+//void ActiveWindow_XY(uint16_t Wx, uint16_t Hy)
 void Active_Window_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3687,6 +3954,7 @@ void Active_Window_XY(unsigned short WX, unsigned short HY)
     LCD_DataWrite(HY >> 8);
 }
 //[5Ah][5Bh][5Ch][5Dh]=========================================================================
+//void ActiveWindow_WidhtHeight(uint16_t Wx, uint16_t Hy)
 void Active_Window_WH(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3706,6 +3974,7 @@ void Active_Window_WH(unsigned short WX, unsigned short HY)
 }
 //[5Eh]=========================================================================
 
+//void Memory_BlockMode(void)
 void Memory_XY_Mode(void)
 {
     /*
@@ -3720,6 +3989,8 @@ void Memory_XY_Mode(void)
     temp &= cClrb2;
     LCD_DataWrite(temp);
 }
+
+//void Memory_LinearMode(void)
 void Memory_Linear_Mode(void)
 {
     /*
@@ -3734,6 +4005,8 @@ void Memory_Linear_Mode(void)
     temp |= cSetb2;
     LCD_DataWrite(temp);
 }
+
+//void Memory_8bpp_BlockMode(void)
 void Memory_8bpp_Mode(void)
 {
     /*
@@ -3754,6 +4027,8 @@ void Memory_8bpp_Mode(void)
     temp &= cClrb0;
     LCD_DataWrite(temp);
 }
+
+//void Memory_16bpp_BlockMode(void)
 void Memory_16bpp_Mode(void)
 {
     /*
@@ -3774,6 +4049,8 @@ void Memory_16bpp_Mode(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void Memory_24bpp_BlockMode(void)
 void Memory_24bpp_Mode(void)
 {
     /*
@@ -3796,6 +4073,8 @@ void Memory_24bpp_Mode(void)
 }
 
 //[5Fh][60h][61h][62h]=========================================================================
+
+//void GotoPixel_XY(uint16_t Wx, uint16_t Hy)
 void Goto_Pixel_XY(unsigned short WX, unsigned short HY)
 {
     /*
@@ -3817,6 +4096,8 @@ void Goto_Pixel_XY(unsigned short WX, unsigned short HY)
     LCD_CmdWrite(0x62);
     LCD_DataWrite(HY >> 8);
 }
+
+//
 void Goto_Linear_Addr(unsigned long Addr)
 {
     /*
@@ -3875,6 +4156,8 @@ Read Function
 0 : Draw Line
 1 : Draw Triangle
 */
+
+//void DrawEnable_AA(bool b)
 void Draw_Enable_AA(void)
 {
     unsigned char temp;
@@ -3885,6 +4168,8 @@ void Draw_Enable_AA(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void DrawEnable_AA(bool b)
 void Draw_Disable_AA(void)
 {
     unsigned char temp;
@@ -4339,6 +4624,8 @@ void Set_PWM_Prescaler_1_to_256(unsigned short WX)
     LCD_DataWrite(WX - 1);
 }
 //[85h]=========================================================================
+
+//void PWM1_ClockDividedBy(eDividerClock divider)
 void Select_PWM1_Clock_Divided_By_1(void)
 {
     /*
@@ -4353,6 +4640,8 @@ void Select_PWM1_Clock_Divided_By_1(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void PWM1_ClockDividedBy(eDividerClock divider)
 void Select_PWM1_Clock_Divided_By_2(void)
 {
     /*
@@ -4367,6 +4656,8 @@ void Select_PWM1_Clock_Divided_By_2(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void PWM1_ClockDividedBy(eDividerClock divider)
 void Select_PWM1_Clock_Divided_By_4(void)
 {
     /*
@@ -4381,6 +4672,8 @@ void Select_PWM1_Clock_Divided_By_4(void)
     temp &= cClrb6;
     LCD_DataWrite(temp);
 }
+
+//void PWM1_ClockDividedBy(eDividerClock divider)
 void Select_PWM1_Clock_Divided_By_8(void)
 {
     /*
@@ -4395,6 +4688,8 @@ void Select_PWM1_Clock_Divided_By_8(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void PWM0_ClockDividedBy(eDividerClock divider)
 void Select_PWM0_Clock_Divided_By_1(void)
 {
     /*
@@ -4409,6 +4704,8 @@ void Select_PWM0_Clock_Divided_By_1(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void PWM0_ClockDividedBy(eDividerClock divider)
 void Select_PWM0_Clock_Divided_By_2(void)
 {
     /*
@@ -4423,6 +4720,8 @@ void Select_PWM0_Clock_Divided_By_2(void)
     temp |= cSetb4;
     LCD_DataWrite(temp);
 }
+
+//void PWM0_ClockDividedBy(eDividerClock divider)
 void Select_PWM0_Clock_Divided_By_4(void)
 {
     /*
@@ -4437,6 +4736,8 @@ void Select_PWM0_Clock_Divided_By_4(void)
     temp &= cClrb4;
     LCD_DataWrite(temp);
 }
+
+//void PWM0_ClockDividedBy(eDividerClock divider)
 void Select_PWM0_Clock_Divided_By_8(void)
 {
     /*
@@ -4468,6 +4769,8 @@ void Select_PWM1_is_ErrorFlag(void)
     temp &= cClrb3;
     LCD_DataWrite(temp);
 }
+
+//void PWM1_Select(void)
 void Select_PWM1(void)
 {
     unsigned char temp;
@@ -4504,6 +4807,8 @@ void Select_PWM0_is_GPIO_C7(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void PWM0_Select(void)
 void Select_PWM0(void)
 {
     unsigned char temp;
@@ -4691,6 +4996,8 @@ void One_Shot_PWM0(void)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
+
+//void PWM0_StartTimer(void)
 void Start_PWM0(void)
 {
     /*
@@ -4705,6 +5012,8 @@ void Start_PWM0(void)
     temp |= cSetb0;
     LCD_DataWrite(temp);
 }
+
+//void PWM0_StopTimer(void)
 void Stop_PWM0(void)
 {
     /*
@@ -4731,6 +5040,8 @@ void Set_Timer0_Dead_Zone_Length(unsigned char temp)
     LCD_DataWrite(temp);
 }
 //[88h][89h]=========================================================================
+
+//void PWM0_SetCompareBuffer(uint16_t Wx)
 void Set_Timer0_Compare_Buffer(unsigned short WX)
 {
     /*
@@ -4745,6 +5056,8 @@ void Set_Timer0_Compare_Buffer(unsigned short WX)
     LCD_DataWrite(WX >> 8);
 }
 //[8Ah][8Bh]=========================================================================
+
+//void PWM0_SetCountBuffer(uint16_t Wx)
 void Set_Timer0_Count_Buffer(unsigned short WX)
 {
     /*
@@ -4759,6 +5072,8 @@ void Set_Timer0_Count_Buffer(unsigned short WX)
     LCD_DataWrite(WX >> 8);
 }
 //[8Ch][8Dh]=========================================================================
+
+//void PWM1_SetCompareBuffer(uint16_t Wx)
 void Set_Timer1_Compare_Buffer(unsigned short WX)
 {
     /*
@@ -4773,6 +5088,8 @@ void Set_Timer1_Compare_Buffer(unsigned short WX)
     LCD_DataWrite(WX >> 8);
 }
 //[8Eh][8Fh]=========================================================================
+
+//void PWM1_SetCountBuffer(uint16_t Wx)
 void Set_Timer1_Count_Buffer(unsigned short WX)
 {
     /*
@@ -5422,7 +5739,7 @@ void BTE_Alpha_Blending_Effect(unsigned char temp)
 //[B6h]=========================================================================
 
 
-//void Select_SFI_QuadDummyMode8T6Bh(void)
+//void Select_SFI_QuadData_6Bh(void)
 void Select_SFI_Quad_Mode_Dummy_8T_6Bh(void) //
 {
     /*[B6h]bit7-6=
@@ -5439,7 +5756,7 @@ void Select_SFI_Quad_Mode_Dummy_8T_6Bh(void) //
     LCD_DataWrite(temp);
 }
 
-//void Select_SFI_QuadDummyMode4TEBh(void);
+//void Select_SFI_QuadData_EBh(void)
 void Select_SFI_Quad_Mode_Dummy_4T_EBh(void) //
 {
     /*[B6h]bit7-6=
@@ -5517,6 +5834,8 @@ void Select_SFI_DMA_Mode(void)
     temp |= cSetb6;
     LCD_DataWrite(temp);
 }
+
+//void SFI_Select_24bitAddress(void)
 void Select_SFI_24bit_Address(void)
 {
     /*[bit5]
@@ -5530,6 +5849,8 @@ void Select_SFI_24bit_Address(void)
     temp &= cClrb5;
     LCD_DataWrite(temp);
 }
+
+//void SFI_Select_32bitAddress(void)
 void Select_SFI_32bit_Address(void)
 {
     /*[bit5]
@@ -5574,7 +5895,7 @@ void Select_RA8875_SPI_Mode0_and_Mode3(void)
     LCD_DataWrite(temp);
 }
 
-//void Select_SFI_SingleDummy0T03hMode(void);
+//void Select_SFI_SingleData_03h(void)
 void Select_SFI_Single_Mode_Dummy_0T_03h(void)
 {
     /*
@@ -5597,7 +5918,7 @@ void Select_SFI_Single_Mode_Dummy_0T_03h(void)
     LCD_DataWrite(temp);
 }
 
-//void Select_SFI_SingleDummyMode8T0Bh(void)
+//void Select_SFI_SingleData_0Bh(void)
 void Select_SFI_Single_Mode_Dummy_8T_0Bh(void)
 {
     /*
@@ -5622,6 +5943,7 @@ void Select_SFI_Single_Mode_Dummy_8T_0Bh(void)
 }
 
 //void Select_SFI_SingleDummyMode16T1Bh(void)
+//void Select_SFI_SingleData_1Bh(void)
 void Select_SFI_Single_Mode_Dummy_16T_1Bh(void)
 {
     /*
@@ -5645,7 +5967,7 @@ void Select_SFI_Single_Mode_Dummy_16T_1Bh(void)
     LCD_DataWrite(temp);
 }
 
-//void Select_SFI_DualDummyMode8T3Bh(void)
+//void Select_SFI_DualData_3Bh(void)
 void Select_SFI_Dual_Mode_Dummy_8T_3Bh(void)
 {
     /*
@@ -5668,7 +5990,7 @@ void Select_SFI_Dual_Mode_Dummy_8T_3Bh(void)
     LCD_DataWrite(temp);
 }
 
-//void Select_SFI_DualDummyMode4TBBh(void)
+//void Select_SFI_DualData_BBh(void)
 void Select_SFI_Dual_Mode_Dummy_4T_BBh(void)
 {
     /*
@@ -5694,7 +6016,7 @@ void Select_SFI_Dual_Mode_Dummy_4T_BBh(void)
 //[B8h]=========================================================================
 // REG[B8h] SPI master Tx /Rx FIFO Data Register (SPIDR)
 
-//uint8_t SPIM_TxRxFIFOData_Put(uint8_t data);
+//uint8_t SPIM_TxRxFIFOData_Put(uint8_t data)
 unsigned char SPI_Master_FIFO_Data_Put(unsigned char Data)
 {
     unsigned char temp;
@@ -5766,7 +6088,7 @@ void nSS_Inactive(void)
     LCD_DataWrite(temp);
 }
 
-//void nSS_Active(void);
+//void nSS_Active(void)
 // 1: active (nSS port will goes low)
 void nSS_Active(void)
 {
@@ -5822,7 +6144,7 @@ void Mask_EMTIRQEN_Interrupt(void)
     LCD_DataWrite(temp);
 }
 
-//void Interrupt_EMTIRQEN_Enable(bool b);
+//void Interrupt_EMTIRQEN_Enable(bool b)
 void Unmask_EMTIRQEN_Interrupt(void)
 {
     /*
@@ -5848,7 +6170,7 @@ mode / CPOL:Clock Polarity bit / CPHA:Clock Phase bit
     3	1	1
 */
 
-//void Reset_CPOL(void);
+//void Reset_CPOL(void)
 void Reset_CPOL(void)
 {
     unsigned char temp;
@@ -5858,7 +6180,7 @@ void Reset_CPOL(void)
     LCD_DataWrite(temp);
 }
 
-//void Set_CPOL(void);
+//void Set_CPOL(void)
 void Set_CPOL(void)
 {
     unsigned char temp;
@@ -5878,7 +6200,7 @@ void Reset_CPHA(void)
     LCD_DataWrite(temp);
 }
 
-//void Set_CPHA(void)/
+//void Set_CPHA(void)
 void Set_CPHA(void)
 {
     unsigned char temp;
@@ -5889,7 +6211,7 @@ void Set_CPHA(void)
 }
 
 // REG[BAh] SPI master Status Register (SPIMSR)
-//bool SPIM_TxFIFO_Empty(void);
+//bool SPIM_TxFIFO_Empty(void)
 unsigned char Tx_FIFO_Empty_Flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5899,7 +6221,7 @@ unsigned char Tx_FIFO_Empty_Flag(void)
         return 0;
 }
 
-//bool SPIM_TxFIFO_Full(void);
+//bool SPIM_TxFIFO_Full(void)
 unsigned char Tx_FIFO_Full_Flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5909,7 +6231,7 @@ unsigned char Tx_FIFO_Full_Flag(void)
         return 0;
 }
 
-//bool SPIM_RxFIFO_Empty(void);
+//bool SPIM_RxFIFO_Empty(void)
 unsigned char Rx_FIFO_Empty_Flag(void)
 {
     LCD_CmdWrite(0xBA);
@@ -5970,6 +6292,7 @@ void Clear_EMTI_Flag(void)
 }
 
 // REG[BB] SPI Clock period (SPIDIV)
+//void SPI_Clock_Period(uint8_t divisor)
 void SPI_Clock_Period(unsigned char temp)
 {
     /*
@@ -6949,12 +7272,15 @@ void CGRAM_Start_address(unsigned long Addr)
 10: Suspend Mode
 11: Sleep Mode
 */
+
+//void Power_NormalMode(void)
 void Power_Normal_Mode(void)
 {
     LCD_CmdWrite(0xDF);
     LCD_DataWrite(0x00);
     Check_IC_ready();
 }
+//void Power_SavingStandbyMode(void)
 void Power_Saving_Standby_Mode(void)
 {
     LCD_CmdWrite(0xDF);
@@ -6962,6 +7288,7 @@ void Power_Saving_Standby_Mode(void)
     //	LCD_CmdWrite(0xDF);
     LCD_DataWrite(0x81);
 }
+//void Power_SavingSuspendMode(void)
 void Power_Saving_Suspend_Mode(void)
 {
     LCD_CmdWrite(0xDF);
@@ -6969,6 +7296,7 @@ void Power_Saving_Suspend_Mode(void)
     //	LCD_CmdWrite(0xDF);
     LCD_DataWrite(0x82);
 }
+//void Power_SavingSleepMode(void)
 void Power_Saving_Sleep_Mode(void)
 {
     LCD_CmdWrite(0xDF);
@@ -7037,6 +7365,7 @@ unsigned char RA8889_I2CM_Receiver_Data(void)
 */
 
 //[bit7] START
+//void I2CM_WriteWithStart(void)
 void RA8889_I2CM_Write_With_Start(void)
 {
     LCD_CmdWrite(0xE9);
@@ -7050,6 +7379,7 @@ void RA8889_I2CM_Write_With_Start(void)
 }
 
 //[bit6] STOP
+//void I2CM_Stop(void)
 void RA8889_I2CM_Stop(void)
 {
     LCD_CmdWrite(0xE9);
@@ -7063,6 +7393,7 @@ void RA8889_I2CM_Stop(void)
 }
 
 //[bit5] READ
+//void I2CM_ReadWithAck(void)
 void RA8889_I2CM_Read_With_Ack(void)
 {
     LCD_CmdWrite(0xE9);
@@ -7074,6 +7405,7 @@ void RA8889_I2CM_Read_With_Ack(void)
 #endif
 }
 
+//void I2CM_ReadWithNack(void)
 void RA8889_I2CM_Read_With_Nack(void)
 {
     LCD_CmdWrite(0xE9);
@@ -7086,6 +7418,7 @@ void RA8889_I2CM_Read_With_Nack(void)
 }
 
 //[bit4] WRITE
+//void I2CM_Write(void)
 void RA8889_I2CM_Write(void)
 {
     LCD_CmdWrite(0xE9);
@@ -7098,7 +7431,7 @@ void RA8889_I2CM_Write(void)
 }
 
 //[EAh]=========================================================================
-
+//bool I2CM_CheckSlaveACK(void)
 unsigned char RA8889_I2CM_Check_Slave_ACK(void)
 {
     /*[bit7]
@@ -7115,7 +7448,7 @@ unsigned char RA8889_I2CM_Check_Slave_ACK(void)
     else
         return 0;
 }
-
+//bool I2CM_BusBusy(void)
 unsigned char RA8889_I2CM_Bus_Busy(void)
 {
     /*[bit6]
@@ -7132,7 +7465,7 @@ unsigned char RA8889_I2CM_Bus_Busy(void)
     else
         return 0;
 }
-
+//uint8_t I2CM_TransmitProgress(void)
 unsigned char RA8889_I2CM_transmit_Progress(void)
 {
     /*[bit6]
@@ -7149,6 +7482,7 @@ unsigned char RA8889_I2CM_transmit_Progress(void)
         return 0;
 }
 
+//uint8_t I2CM_Arbitration(void)
 unsigned char RA8889_I2CM_Arbitration(void)
 {
     /*[bit6]
@@ -7165,6 +7499,8 @@ unsigned char RA8889_I2CM_Arbitration(void)
 }
 
 //[F0h]=========================================================================
+
+//void GPIOA_InOut(uint8_t dir)
 void Set_GPIO_A_In_Out(unsigned char temp)
 {
     /*
@@ -7175,7 +7511,10 @@ void Set_GPIO_A_In_Out(unsigned char temp)
     LCD_CmdWrite(0xF0);
     LCD_DataWrite(temp);
 }
+
 //[F1h]=========================================================================
+
+//void GPIOA_Write(uint8_t value)
 void Write_GPIO_A_7_0(unsigned char temp)
 {
     /*
@@ -7185,6 +7524,8 @@ void Write_GPIO_A_7_0(unsigned char temp)
     LCD_CmdWrite(0xF1);
     LCD_DataWrite(temp);
 }
+
+//uint8_t GPIOA_Read(void)
 unsigned char Read_GPIO_A_7_0(void)
 {
     /*
@@ -7196,7 +7537,10 @@ unsigned char Read_GPIO_A_7_0(void)
     temp = LCD_DataRead();
     return temp;
 }
+
 //[F2h]=========================================================================
+
+//void GPIOB_Write(uint8_t value)
 void Write_GPIO_B_7_4(unsigned char temp)
 {
     /*
@@ -7206,6 +7550,8 @@ void Write_GPIO_B_7_4(unsigned char temp)
     LCD_CmdWrite(0xF2);
     LCD_DataWrite(temp);
 }
+
+//uint8_t GPIOB_Read(void)
 unsigned char Read_GPIO_B_7_0(void)
 {
     /*
@@ -7219,6 +7565,8 @@ unsigned char Read_GPIO_B_7_0(void)
 }
 
 //[F3h]=========================================================================
+
+//void GPIOC_InOut(uint8_t dir)
 void Set_GPIO_C_In_Out(unsigned char temp)
 {
     /*
@@ -7229,7 +7577,10 @@ void Set_GPIO_C_In_Out(unsigned char temp)
     LCD_CmdWrite(0xF3);
     LCD_DataWrite(temp);
 }
+
 //[F4h]=========================================================================
+
+//void GPIOC_Write(uint8_t value)
 void Write_GPIO_C_7_0(unsigned char temp)
 {
     /*
@@ -7240,6 +7591,8 @@ void Write_GPIO_C_7_0(unsigned char temp)
     LCD_CmdWrite(0xF4);
     LCD_DataWrite(temp);
 }
+
+//uint8_t GPIOC_Read(void)
 unsigned char Read_GPIO_C_7_0(void)
 {
     /*
@@ -7252,7 +7605,9 @@ unsigned char Read_GPIO_C_7_0(void)
     temp = LCD_DataRead();
     return temp;
 }
+
 //[F5h]=========================================================================
+//void GPIOD_InOut(uint8_t dir)
 void Set_GPIO_D_In_Out(unsigned char temp)
 {
     /*
@@ -7263,7 +7618,9 @@ void Set_GPIO_D_In_Out(unsigned char temp)
     LCD_CmdWrite(0xF5);
     LCD_DataWrite(temp);
 }
+
 //[F6h]=========================================================================
+//void GPIOD_Write(uint8_t value)
 void Write_GPIO_D_7_0(unsigned char temp)
 {
     /*
@@ -7272,6 +7629,7 @@ void Write_GPIO_D_7_0(unsigned char temp)
     LCD_CmdWrite(0xF6);
     LCD_DataWrite(temp);
 }
+//uint8_t GPIOD_Read(void)
 unsigned char Read_GPIO_D_7_0(void)
 {
     /*
@@ -7283,6 +7641,7 @@ unsigned char Read_GPIO_D_7_0(void)
     return temp;
 }
 //[F7h]=========================================================================
+//void GPIOE_InOut(uint8_t dir)
 void Set_GPIO_E_In_Out(unsigned char temp)
 {
     /*
@@ -7293,7 +7652,9 @@ void Set_GPIO_E_In_Out(unsigned char temp)
     LCD_CmdWrite(0xF7);
     LCD_DataWrite(temp);
 }
+
 //[F8h]=========================================================================
+//void GPIOE_Write(uint8_t value)
 void Write_GPIO_E_7_0(unsigned char temp)
 {
     /*
@@ -7303,6 +7664,7 @@ void Write_GPIO_E_7_0(unsigned char temp)
     LCD_CmdWrite(0xF8);
     LCD_DataWrite(temp);
 }
+//uint8_t GPIOE_Read(void)
 unsigned char Read_GPIO_E_7_0(void)
 {
     /*
@@ -7315,6 +7677,7 @@ unsigned char Read_GPIO_E_7_0(void)
     return temp;
 }
 //[F9h]=========================================================================
+//void GPIOF_InOut(uint8_t dir)
 void Set_GPIO_F_In_Out(unsigned char temp)
 {
     /*
@@ -7326,6 +7689,8 @@ void Set_GPIO_F_In_Out(unsigned char temp)
     LCD_DataWrite(temp);
 }
 //[FAh]=========================================================================
+
+//void GPIOF_Write(uint8_t value)
 void Write_GPIO_F_7_0(unsigned char temp)
 {
     /*
@@ -7335,6 +7700,8 @@ void Write_GPIO_F_7_0(unsigned char temp)
     LCD_CmdWrite(0xFA);
     LCD_DataWrite(temp);
 }
+
+//uint8_t GPIOF_Read(void)
 unsigned char Read_GPIO_F_7_0(void)
 {
     /*
@@ -7349,6 +7716,7 @@ unsigned char Read_GPIO_F_7_0(void)
 
 //[FBh]=========================================================================
 
+//void KeyScan_LongKeyEnable(bool b = true)
 void Long_Key_enable(void)
 {
     /*
@@ -7364,6 +7732,7 @@ void Long_Key_enable(void)
     LCD_DataWrite(temp);
 }
 
+//void KeyScan_Freguency(uint8_t setx)
 void Key_Scan_Freg(unsigned char setx)
 {
     /*KF2-0: Key-Scan Frequency */
@@ -7377,6 +7746,7 @@ void Key_Scan_Freg(unsigned char setx)
 
 //[FCh]=========================================================================
 
+//void KeyScan_WakeupFunctionEnable(bool b = true)
 void Key_Scan_Wakeup_Function_Enable(void)
 {
     /*
@@ -7393,6 +7763,7 @@ void Key_Scan_Wakeup_Function_Enable(void)
     LCD_DataWrite(temp);
 }
 
+//void KeyScan_LongKeyTimingAdjust(uint8_t setx)
 void Long_Key_Timing_Adjustment(unsigned char setx)
 {
     /*Long Key Timing Adjustment*/
@@ -7404,6 +7775,7 @@ void Long_Key_Timing_Adjustment(unsigned char setx)
     LCD_DataWrite(temp1);
 }
 
+//uint8_t KeyScan_KeyHits(void)
 unsigned char Numbers_of_Key_Hit(void)
 {
     unsigned char temp;
@@ -7414,6 +7786,8 @@ unsigned char Numbers_of_Key_Hit(void)
 }
 
 //[FDh][FEh][FFh]=========================================================================
+
+//uint8_t KeyScan_ReadKeyStrobeData0(void)
 unsigned char Read_Key_Strobe_Data_0(void)
 {
     /*
@@ -7425,6 +7799,8 @@ unsigned char Read_Key_Strobe_Data_0(void)
     temp = LCD_DataRead();
     return temp;
 }
+
+//uint8_t KeyScan_ReadKeyStrobeData1(void)
 unsigned char Read_Key_Strobe_Data_1(void)
 {
     /*
@@ -7436,6 +7812,8 @@ unsigned char Read_Key_Strobe_Data_1(void)
     temp = LCD_DataRead();
     return temp;
 }
+
+//uint8_t KeyScan_ReadKeyStrobeData2(void)
 unsigned char Read_Key_Strobe_Data_2(void)
 {
     /*
@@ -9144,6 +9522,8 @@ void RA8889_PLL(unsigned short DRAM_clock, unsigned short CORE_clock, unsigned s
 }
 
 //[46h]=========================================================================
+
+//void SPIM_ClockDivided_2(void)
 void SPIM_Clock_Divided_2(void) //(default)
 {
     /*
@@ -9162,7 +9542,9 @@ void SPIM_Clock_Divided_2(void) //(default)
 
     REG_Switch_to_REG0();
 }
-void SPIM_Clock_Divided_1(void) //
+
+//void SPIM_ClockDivided_1(void)
+void SPIM_Clock_Divided_1(void)
 {
     /*
     REG[46h] [bit2] Spi master frequency eliminator
@@ -9182,6 +9564,8 @@ void SPIM_Clock_Divided_1(void) //
     REG_Switch_to_REG0();
 }
 
+//Nao documentado em nenhum RA88xx
+//void SPIM_SelectableBusMode(void)
 void SPIM_Selectable_Bus_mode(void) //(default)
 {
     /*
@@ -9195,7 +9579,10 @@ void SPIM_Selectable_Bus_mode(void) //(default)
     temp &= cClrb1;
     LCD_DataWrite(temp);
 }
-void SPIM_Fixed_Bus_mode(void) //
+
+//Nao documentado em nenhum RA88xx
+//void SPIM_FixedBusMode(void)
+void SPIM_Fixed_Bus_mode(void) 
 {
     /*
     REG[46h] [bit1] SPI_Master_Separate
@@ -9242,6 +9629,8 @@ void REG_Switch_to_REG1(void) //
 }
 
 //[B7h]=========================================================================
+
+//void SFI_SelectROM_CS0(void)
 void Select_SFI_0(void)
 {
     /*[bit7]
@@ -9265,6 +9654,8 @@ void Select_SFI_0(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void SFI_SelectROM_CS1(void)
 void Select_SFI_1(void)
 {
     /*[bit7]
@@ -9288,6 +9679,8 @@ void Select_SFI_1(void)
     temp |= cSetb7;
     LCD_DataWrite(temp);
 }
+
+void SFI_SelectROM_CS2(void)
 void Select_SFI_2(void)
 {
     /*[bit7]
@@ -9311,6 +9704,8 @@ void Select_SFI_2(void)
     temp &= cClrb7;
     LCD_DataWrite(temp);
 }
+
+//void SFI_SelectROM_CS3(void)
 void Select_SFI_3(void)
 {
     /*[bit7]
@@ -9338,7 +9733,7 @@ void Select_SFI_3(void)
 //[B9h]=========================================================================
 // REG[B9h] SPI master Control Register (SPIMCR2)
 
-//void nSS_Select_Channel(NSS_Channel channel);
+//void nSS_Select_Channel(NSS_Channel channel)
 void Select_nSS_drive_on_xnsfcs0(void)
 {
     unsigned char temp;
@@ -9349,7 +9744,7 @@ void Select_nSS_drive_on_xnsfcs0(void)
     LCD_DataWrite(temp);
 }
 
-//void nSS_Select_Channel(NSS_Channel channel);
+//void nSS_Select_Channel(NSS_Channel channel)
 void Select_nSS_drive_on_xnsfcs1(void)
 {
     unsigned char temp;
@@ -9384,6 +9779,8 @@ void Select_nSS_drive_on_xnsfcs3(void)
 
 //[REG PAGE 1]
 //[0Bh]=========================================================================
+
+//void IDEC_InterruptEnable(bool b)
 void Disable_IDEC_Interrupt(void)
 {
     /* [REG PAGE 1], [0Bh]
@@ -9402,6 +9799,8 @@ void Disable_IDEC_Interrupt(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_InterruptEnable(bool b)
 void Enable_IDEC_Interrupt(void)
 {
     /* [REG PAGE 1], [0Bh]
@@ -9423,6 +9822,8 @@ void Enable_IDEC_Interrupt(void)
 
 //[REG PAGE 1]
 //[0Ch]=========================================================================
+
+//void IDEC_ClearInterrupt_Flag(void)
 void Clear_IDEC_Interrupt(void)
 {
     /* [REG PAGE 1], [0Ch]
@@ -9448,6 +9849,8 @@ void Clear_IDEC_Interrupt(void)
 
 //[REG PAGE 1]
 //[0Dh]=========================================================================
+
+//void IDEC_Unmask_Interrupt(void)
 void Unmask_IDEC_Interrupt(void)
 {
     /* [REG PAGE 1], [0Dh]
@@ -9466,6 +9869,8 @@ void Unmask_IDEC_Interrupt(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_Mask_Interrupt(void)
 void Mask_IDEC_Interrupt(void)
 {
     /* [REG PAGE 1], [0Dh]
@@ -9515,6 +9920,8 @@ void AVI_Shadow_PIP_Start_Address(unsigned long Addr)
 
 //[REG PAGE 1]
 //[A0h] ¨C Video Control (VC)=========================================================================
+
+//uint8_t Media_Error_Flag(void)
 unsigned char MediaFile_ErrorFlag(void)
 {
     /*[REG PAGE 1], REG[A0h],
@@ -9533,6 +9940,8 @@ unsigned char MediaFile_ErrorFlag(void)
     return temp;
 }
 
+//void Media_DecodeBusy(void)
+//void Media_DecodeWaitReady(void)
 void Check_Busy_Media_Decode(void)
 {
     /*[REG PAGE 1], REG[A0h],
@@ -9551,6 +9960,7 @@ void Check_Busy_Media_Decode(void)
     REG_Switch_to_REG0();
 }
 
+//uint8_t MediaDecodeBusy(void)
 unsigned char Read_Media_Decode_Busy(void)
 {
     /*[REG PAGE 1], REG[A0h],
@@ -9569,6 +9979,7 @@ unsigned char Read_Media_Decode_Busy(void)
     return temp;
 }
 
+//uint8_t Media_Fifo_Empty(void)  
 unsigned char Check_Media_Fifo_Flag(void)
 {
     /*[REG PAGE 1], REG[A0h],
@@ -9589,6 +10000,8 @@ unsigned char Check_Media_Fifo_Flag(void)
 
 //[REG PAGE 1]
 //[A1h]~[A8h]=========================================================================
+
+//uint16_t Media_HeaderImageHeight(void)	
 unsigned short Read_Media_Height(void)
 {
     /*[REG PAGE 1],
@@ -9611,6 +10024,8 @@ unsigned short Read_Media_Height(void)
 
     return Media_height;
 }
+
+//uint16_t Media_HeaderImageWidth(void)
 unsigned short Read_Media_Width(void)
 {
     /*[REG PAGE 1],
@@ -9634,6 +10049,7 @@ unsigned short Read_Media_Width(void)
     return Media_Width;
 }
 
+//uint32_t AVI_HeaderFramePeriod(void)
 unsigned long Read_Media_Data_Amount(void)
 {
     /*[REG PAGE 1],
@@ -9668,6 +10084,8 @@ unsigned long Read_Media_Data_Amount(void)
 
 //[REG PAGE 1]
 //[A9h]=========================================================================
+
+//void IDEC_Reset(void)
 void Reset_IDEC(void)
 {
     /*[REG PAGE 1], REG[A9h], Idec reset , clear Idec circuit
@@ -9686,6 +10104,9 @@ void Reset_IDEC(void)
 
 //[REG PAGE 1]
 //[B6h]=========================================================================
+
+
+//void IDEC_SFI_Select_ROM(eSFIROM sfirom)
 void IDEC_Select_SFI_0(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9707,6 +10128,7 @@ void IDEC_Select_SFI_0(void)
     REG_Switch_to_REG0();
 }
 
+//void IDEC_SFI_Select_ROM(eSFIROM sfirom)
 void IDEC_Select_SFI_1(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9728,6 +10150,8 @@ void IDEC_Select_SFI_1(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_SFI_Select_ROM(eSFIROM sfirom)
 void IDEC_Select_SFI_2(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9749,6 +10173,8 @@ void IDEC_Select_SFI_2(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_SFI_Select_ROM(eSFIROM sfirom)
 void IDEC_Select_SFI_3(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9772,6 +10198,8 @@ void IDEC_Select_SFI_3(void)
 }
 
 //[B6h][bit4-3]====
+
+//void Font_DMA_Select_Bus0(void)
 void FONT_DMA_Select_Bus_0(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9790,6 +10218,8 @@ void FONT_DMA_Select_Bus_0(void)
 
     REG_Switch_to_REG0();
 }
+
+//void Font_DMA_Select_Bus1(void)
 void FONT_DMA_Select_Bus_1(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9809,6 +10239,8 @@ void FONT_DMA_Select_Bus_1(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_Select_Bus0(void)
 void IDEC_Select_Bus_0(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9828,6 +10260,8 @@ void IDEC_Select_Bus_0(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_Select_Bus1(void)
 void IDEC_Select_Bus_1(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9850,6 +10284,9 @@ void IDEC_Select_Bus_1(void)
 }
 
 //[B6h][bit2-1]====
+
+//void IDEC_Destination_ColorDepth_8bpp(void)
+//void Panel_RA8889::IDEC_Destination_ColorDepth(eColorDepthBPP bpp)
 void IDEC_Destination_Color_8bpp(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9870,6 +10307,9 @@ void IDEC_Destination_Color_8bpp(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_Destination_ColorDepth_16bpp(void)
+//void Panel_RA8889::IDEC_Destination_ColorDepth(eColorDepthBPP bpp)
 void IDEC_Destination_Color_16bpp(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9891,6 +10331,9 @@ void IDEC_Destination_Color_16bpp(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_Destination_ColorDepth_24bpp(void)
+//void Panel_RA8889::IDEC_Destination_ColorDepth(eColorDepthBPP bpp)
 void IDEC_Destination_Color_24bpp(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9914,6 +10357,8 @@ void IDEC_Destination_Color_24bpp(void)
 }
 
 //[B6h][bit0]====
+
+//void IDEC_Starts_Decoding(void)
 void IDEC_Starts_Decoding(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9938,6 +10383,7 @@ void IDEC_Starts_Decoding(void)
     REG_Switch_to_REG0();
 }
 
+//void IDEC_WaitReady(void)
 void Check_Busy_IDEC(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9962,6 +10408,7 @@ void Check_Busy_IDEC(void)
     REG_Switch_to_REG0();
 }
 
+//uint8_t IDEC_Busy(void)
 unsigned char Read_IDEC_Busy(void)
 {
     /*[REG PAGE 1], REG[B6h],
@@ -9989,6 +10436,8 @@ unsigned char Read_IDEC_Busy(void)
 //[REG PAGE 1]
 //[B7h]=========================================================================
 
+
+//void IDEC_SFI_Select_24bitAddress(void)
 void IDEC_Select_SFI_24bit_Address(void)
 {
     /*[REG PAGE 1],[B7h] [bit5]
@@ -10007,6 +10456,8 @@ void IDEC_Select_SFI_24bit_Address(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_SFI_Select_32bitAddress(void)
 void IDEC_Select_SFI_32bit_Address(void)
 {
     /*[REG PAGE 1],[B7h] [bit5]
@@ -10066,6 +10517,7 @@ void IDEC_Select_RA8875_SPI_Mode0_and_Mode3(void)
     REG_Switch_to_REG0();
 }
 
+//parece nao existir no RA8889
 void IDEC_Select_SFI_Single_Mode_Dummy_0T_03h(void) //
 {
     /*[REG PAGE 1],[B7h]
@@ -10085,6 +10537,8 @@ void IDEC_Select_SFI_Single_Mode_Dummy_0T_03h(void) //
 
     REG_Switch_to_REG0();
 }
+
+//parece nao existir no RA8889
 void IDEC_Select_SFI_Single_Mode_Dummy_8T_0Bh(void) //
 {
     /*[REG PAGE 1],[B7h]
@@ -10105,6 +10559,8 @@ void IDEC_Select_SFI_Single_Mode_Dummy_8T_0Bh(void) //
 
     REG_Switch_to_REG0();
 }
+
+//parece nao existir no RA8889
 void IDEC_Select_SFI_Single_Mode_Dummy_16T_1Bh(void) //
 {
     /*[REG PAGE 1],[B7h]
@@ -10125,6 +10581,8 @@ void IDEC_Select_SFI_Single_Mode_Dummy_16T_1Bh(void) //
 
     REG_Switch_to_REG0();
 }
+
+//parece nao existir no RA8889
 void IDEC_Select_SFI_Dual_Mode_Dummy_8T_3Bh(void) //
 {
     /*[REG PAGE 1],[B7h]
@@ -10144,6 +10602,8 @@ void IDEC_Select_SFI_Dual_Mode_Dummy_8T_3Bh(void) //
 
     REG_Switch_to_REG0();
 }
+
+//parece nao existir no RA8889
 void IDEC_Select_SFI_Dual_Mode_Dummy_4T_BBh(void) //
 {
     /*[REG PAGE 1],[B7h]
@@ -10164,6 +10624,7 @@ void IDEC_Select_SFI_Dual_Mode_Dummy_4T_BBh(void) //
     REG_Switch_to_REG0();
 }
 
+//parece nao existir no RA8889
 void IDEC_Select_SFI_Quad_Mode_Dummy_8T_6Bh(void) //
 {
     /*[REG PAGE 1],[B7h]
@@ -10183,6 +10644,8 @@ void IDEC_Select_SFI_Quad_Mode_Dummy_8T_6Bh(void) //
 
     REG_Switch_to_REG0();
 }
+
+//parece nao existir no RA8889
 void IDEC_Select_SFI_Quad_Mode_Dummy_4T_EBh(void) //
 {
     /*[REG PAGE 1],[B7h]
@@ -10205,6 +10668,8 @@ void IDEC_Select_SFI_Quad_Mode_Dummy_4T_EBh(void) //
 
 //[REG PAGE 1]
 //[BBh]=========================================================================
+
+//void IDEC_SPI_ClockDivide(uint8_t spiclockdivide)
 void IDEC_SPI_Clock_Divide(unsigned char IDEC_SPIclock_divide) //
 {
     /*[REG PAGE 1],[BBh] idec SF Clock divide
@@ -10228,6 +10693,8 @@ void IDEC_SPI_Clock_Divide(unsigned char IDEC_SPIclock_divide) //
 
 //[REG PAGE 1]
 //[BCh]~[BFh]=========================================================================
+
+//void IDEC_Source_StartAddress(uint32_t addr)
 void IDEC_Source_Start_Address(unsigned long Addr) // AVI,JPG,BMP	//
 {
     /*[REG PAGE 1]
@@ -10252,6 +10719,8 @@ void IDEC_Source_Start_Address(unsigned long Addr) // AVI,JPG,BMP	//
 }
 //[REG PAGE 1]
 //[C0h][C1h][C2h][C3h]=========================================================================
+
+//void IDEC_Destination_UpperLeftCorner(uint16_t Wx, uint16_t Hy)
 void IDEC_Destination_Upper_Left_Corner(unsigned short WX, unsigned short HY)
 {
     /*
@@ -10276,6 +10745,9 @@ void IDEC_Destination_Upper_Left_Corner(unsigned short WX, unsigned short HY)
 
 //[REG PAGE 1]
 //[C5h]=========================================================================
+
+//void IDEC_AVI_Decoding_PIP1_Shadow(void)
+//void IDEC_AVI_SetMode(eAVIMode mode)
 void IDEC_AVI_Decoding_to_PIP1_and_Shadow(void)
 {
     /*[REG PAGE 1],[C5h]
@@ -10291,6 +10763,9 @@ void IDEC_AVI_Decoding_to_PIP1_and_Shadow(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_AVI_Decoding_PIP2_Shadow(void) 
+//void IDEC_AVI_SetMode(eAVIMode mode)
 void IDEC_AVI_Decoding_to_PIP2_and_Shadow(void)
 {
     /*[REG PAGE 1],[C5h]
@@ -10306,6 +10781,9 @@ void IDEC_AVI_Decoding_to_PIP2_and_Shadow(void)
 
     REG_Switch_to_REG0();
 }
+
+//void IDEC_AVI_Decoding_PIP1_NoShadow(void)
+//void IDEC_AVI_SetMode(eAVIMode mode)
 void IDEC_AVI_Decoding_to_PIP1_no_Shadow(void)
 {
     /*[REG PAGE 1],[C5h]
@@ -10324,6 +10802,8 @@ void IDEC_AVI_Decoding_to_PIP1_no_Shadow(void)
 
 //[REG PAGE 1]
 //[C6h][C7h][C8h][C9h]=========================================================================
+
+//void IDEC_SetImageDMANumber()(uint32_t num)
 void IDEC_Transfer_Number(unsigned long Num)
 {
     /*
@@ -10345,6 +10825,8 @@ void IDEC_Transfer_Number(unsigned long Num)
 
 //[REG PAGE 1]
 //[CAh][CBh][CCh][CDh]=========================================================================
+
+//void IDEC_Destination_StartAddress(uint32_t addr) 
 void IDEC_Destination_Start_Address(unsigned long Addr) // ,JPG,BMP	//
 {
     /*[REG PAGE 1]
@@ -10371,6 +10853,8 @@ void IDEC_Destination_Start_Address(unsigned long Addr) // ,JPG,BMP	//
 
 //[REG PAGE 1]
 //[CEh][CFh]=========================================================================
+
+//void IDEC_Destination_ImageWidth(uint16_t Wx)
 void IDEC_Destination_Image_Width(unsigned short WX) // ,JPG,BMP	//
 {
     /*[REG PAGE 1]
@@ -10391,6 +10875,8 @@ void IDEC_Destination_Image_Width(unsigned short WX) // ,JPG,BMP	//
 
 //[REG PAGE 0]
 //[C5h]=========================================================================
+
+//void SPIM_Select_Bus0(void)
 void SPIM_Select_Bus_0(void)
 {
     /*[REG PAGE 0],[C5h]
@@ -10407,6 +10893,8 @@ void SPIM_Select_Bus_0(void)
     temp &= 0x7F; // ÔO¶¨REG c5h, bit 7=0
     LCD_DataWrite(temp);
 }
+
+//void SPIM_Select_Bus1(void)
 void SPIM_Select_Bus_1(void) //
 {
     /*[REG PAGE 0],[C5h]
@@ -10424,6 +10912,8 @@ void SPIM_Select_Bus_1(void) //
     LCD_DataWrite(temp);
 }
 
+
+//void SPIM_RxLatchEdge_Rising
 void SPI_Master_LatchEdge_Select_Rising(void)
 {
     /*[REG PAGE 0],[C5h]
@@ -10440,6 +10930,8 @@ void SPI_Master_LatchEdge_Select_Rising(void)
     temp &= 0xDF; // ÔO¶¨REG c5h, bit 5=0, B1101_1111.
     LCD_DataWrite(temp);
 }
+
+//void SPIM_RxLatchEdge_Falling(void)
 void SPI_Master_LatchEdge_Select_Falling(void)
 {
     /*[REG PAGE 0],[C5h]
@@ -10459,6 +10951,8 @@ void SPI_Master_LatchEdge_Select_Falling(void)
 
 //[REG PAGE 1]
 //[D3h]=========================================================================
+
+//void AVI_Pause(void)
 void Press_AVI_Pause(void)
 {
     /*[REG PAGE 1], REG[D3h],
@@ -10479,6 +10973,8 @@ void Press_AVI_Pause(void)
 
 //[REG PAGE 1]
 //[D4h]=========================================================================
+
+//void AVI_Stop(void)
 void Stop_AVI(void)
 {
     /*[REG PAGE 1], REG[D4h],
