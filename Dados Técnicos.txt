@@ -1559,6 +1559,336 @@ Funções e Notas
      - Você pode trocar o Set dinamicamente para alterar o visual do cursor sem redesenhar nada manualmente.
      - Não interfere no conteúdo da tela, porque o cursor é “sobreposto” na saída gráfica pelo RA8889.
 
+RAIO RA8876/RA8877
+------------------
+
+   SPI Flash Function:
+   Pode implementar, apagar programar, verificar operaç~eos para a memroia flash serial diretamente atraves do uso da fruncao SPI Master.
+   Seleciona Serial Flash Tamanho (128Mb (16Mbyte)
+
+   Memory View Function:
+   Pode ser usada a Main Window para trocar a area do display. E então a area Non-Dipslay pode ser usada como buffer de trasnferencia de dados apra armazenar dados rpocessados.
+   Se desejarmos impelemtanr uma funcao de Scroll, pdoemos mperiodicamente trocar a area display e o buffer de iamgem para realziar o efeito de scrolling (rolagem)
+   O cponteudo fica numa area nao exibida do display que pdoem ser trazida apra a area do dsiplay mediante efeito de rolagem.
+   
+   MPU Write function:
+   user is able to dump iamge data from MCU to the SDRAM of RA8876/77 and show the image data on the LCD panel directly
+   
+   DMA Function:
+   user can speed up the data transfer to display memory without MPU intervene. Besides, before using DMA functions, user have to store the image data into the serial flash memory previously.
+   user can moving graphic from external serial flash: Execute a DMA function copying a picture into SDRAM from external serial flash memory.
+   Precisa: Sousce SPI flash (Start Address), source width, dfestination block width and height, destination upper-left corner coordination.
+   
+   MCU Write:
+   RA8876/77 provide a 6 type mode for MCU write data to SDRAM: 
+     - 8-bit MCU interface, 9bpp mode
+	 - 8-bit MCU interface, 16bpp mode
+	 - 8-bit MCU interface, 24bpp mode
+	 - 16-bit MCU interface, 16bpp mode
+	 - 16-bit MCU interface, 24bpp mode 1
+	 - 16-bit MCU interface, 24bpp mode 2
+   Ao programar o display, necessario previamente definir o numero de bits da MCU (8/16 bits) e o formato de daddos (ou seja o color depth 8/16/24bpp)
+   
+   Diagrama:
+                                             Display 1280x800@60
+                          Parallel 8            ^
+						  Parallel 16	        |
+						  SPI-3	                | LCD Inferface: RGB 16/18/24 (RA8876)
+						  SPI-4	                |                LVDS (RA8877)
+						  I2C	                |
+	 Host (MPU/MCU	<-----------------------> RA8889 <------------------------> SDRAM
+					                           ^  |
+					                           |  |-----------------> 2 PWM's
+					                           |  |-----------------> Key Pad 5x5
+										       |  |-----------------> I2C MAster
+										       |
+					                           |   DMA ou SPI MAster
+					                           |<---------------------> Device 1
+					                           |<---------------------> Device 2 (ROM comaptivel com Genitop Vendor apra bitmap char) 
+											   
+   Possui DMA e SPI MAster para mover dados  da memoria Serial Flash externa apra a memoria do display aumentando ainda mais a velocidade de transferencia sem a necessidade de invervenção da MCU.
+   A Serial Flash externa ou ROM pode ser tambem tratada como uam fonte de caracteres bitmap para suporte de uteis caracteres. Estes dados são disponiveis na SDRAM e ficam prontamente disponiveis arpa serem exibidos no nucleo do diplay RA8876.
+   Possui 2 saidas PWM, um I2C master (para uso de itenrface com com outros dispositivos externos como buzzer, etc) e funcoes de teclas Key scan de matriz 5x5 teclas. 
+    Suprota a SDRAM incorporada de 32Mbit ate 1Gbit.
+   
+   Suporta 2 ROM externa de caraceres 8x8, 12x24, 16x32 pontos ASCII. Para acessar a ROM fontes externa, GT21L16T1W, Genitop, ou outro dispositivo SPI nesta posição.
+   
+   Suporta SPI MAster Interface, e apra acessar esta funcao serial flash o usuario pode usar o DMA no modo acesso direto a memoria de DMA a partir da MCU setando a area de DMA é tratado como a origem dos dados de DMA.
+   O DMA é setado o destino para a SDRAM em uma posicao dela (0,0) e então começa a transferencia de dados da MCU apra o RA8876 e dela para a memopria SDRAM sem a intereferencia da MCU. Antes de tudo o usuario deve ter armazenado a imagem no Serial flash memoria, atens da transferencia pois é dali que o DMa pega as informações de iamgem e figuras para transfeir. 
+   Minha observação: Entao a LVGL que cosntroi as imagens em memoria da MCU, deve elvar o resultado finalç arpa a SPI Flash e de la usando a trasngerencia de DMA direto e muito mais rapido para a emmroia SDRAM e esta se encarrega de levar para a memoria do LCD>.
+   
+Serial Peripheral Interface (SPI)
+---------------------------------
+
+  With an SPI connection there is always one Controller device (usually a microcontroller) which controls the peripheral devices. Typically there are three lines common to all the devices:
+
+  - CIPO (Controller In Peripheral Out) - The Peripheral line for sending data to the Controller
+  - COPI (Controller Out Peripheral In) - The Controller line for sending data to the peripherals
+  - SCK (Serial Clock) - The clock pulses which synchronize data transmission generated by the Controller and one line specific for every device
+  - CS (Chip Select) - the pin on each device that the Controller can use to enable and disable specific devices. When a device's Chip Select pin is low, it communicates with the Controller. When it's high, it ignores the Controller. This allows you to have multiple SPI devices sharing the same CIPO, COPI, and SCK lines.
+
+  To write code for a new SPI device you need to note a few things:
+
+  - What is the maximum SPI speed your device can use? This is controlled by the first parameter in SPISettings. If you are using a chip rated at 15 MHz, use 15000000. Arduino will automatically use the best speed that is equal to or less than the number you use with SPISettings.
+  - Is data shifted in Most Significant Bit (MSB) or Least Significant Bit (LSB) first? This is controlled by second SPISettings parameter, either MSBFIRST or LSBFIRST. Most SPI chips use MSB first data order.
+  - Is the data clock idle when high or low? Are samples on the rising or falling edge of clock pulses? These modes are controlled by the third parameter in SPISettings.
+  - The SPI standard is loose and each device implements it a little differently. This means you have to pay special attention to the device's datasheet when writing your code.
+  
+  Generally speaking, there are four modes of transmission. These modes control whether data is shifted in and out on the rising or falling edge of the data clock signal (called the clock phase), and whether the clock is idle when high or low (called the clock polarity). The four modes combine polarity and phase according to this table:
+
+  Mode       Clock Polarity (CPOL)    Clock Phase (CPHA)  Output Edge   Data Capture
+  SPI_MODE0  0                        0                   Falling       Rising
+  SPI_MODE1  0                        1                   Rising        Falling
+  SPI_MODE2  1                        0                   Rising        Falling
+  SPI_MODE3  1                        1                   Falling       Rising
+
+  Once you have your SPI parameters, use SPI.beginTransaction() to begin using the SPI port. The SPI port will be configured with your all of your settings. The simplest and most efficient way to use SPISettings is directly inside SPI.beginTransaction(). For example:
+
+  SPI.beginTransaction(SPISettings(14000000, MSBFIRST, SPI_MODE0));
+  
+  If other libraries use SPI from interrupts, they will be prevented from accessing SPI until you call SPI.endTransaction(). The SPI settings are applied at the begin of the transaction and SPI.endTransaction() doesn't change SPI settings. Unless you, or some library, calls beginTransaction a second time, the setting are maintained. You should attempt to minimize the time between before you call SPI.endTransaction(), for best compatibility if your program is used together with other libraries which use SPI.
+
+  With most SPI devices, after SPI.beginTransaction(), you will write the Chip Select pin LOW, call SPI.transfer() any number of times to transfer data, then write the CS pin HIGH, and finally call SPI.endTransaction().
 
 
+  
+  SPITransaction Method
+  ---------------------
+
+  SPI transaction example:
+  
+  In this tutorial you will learn how to use the SPI transaction methods. For an explanation of SPI see the SPI EEPROM tutorial.
+  
+  A common problem used to be that different SPI devices needed different, incompatible settings. Your sketch had to take care of saving and restoring the SPI settings before communicating with each SPI device. If any SPI device was accessed from an interrupt, this could result in data corruption if another SPI device was communicating at the time.
+  
+  With the new SPI library, configure each SPI device once as an SPISettings object. Also, if that device will be called from an interrupt, say so with SPI.usingInterrupt(interruptNumber). To communicate with a specific SPI device, use SPI.beginTransaction which automatically uses the settings you declared for that device. In addition, it will disable any interrupts that use SPI for the duration of the transaction. Once you are finished, use SPI.endTransaction() which re-enables any SPI-using interrupts.
+
+  #include <SPI.h>
+
+  // using two incompatible SPI devices, A and B. Incompatible means that they need different SPI_MODE
+  const int slaveAPin = 20;
+  const int slaveBPin = 21;
+  
+  // set up the speed, data order and data mode
+  SPISettings settingsA(2000000, MSBFIRST, SPI_MODE1);
+  SPISettings settingsB(16000000, LSBFIRST, SPI_MODE3);
+  
+  void setup() {
+    // set the Slave Select Pins as outputs:
+    pinMode (slaveAPin, OUTPUT);
+    pinMode (slaveBPin, OUTPUT);
+    // initialize SPI:
+    SPI.begin();
+  }
+  
+  uint8_t stat, val1, val2, result;
+
+  void loop() {
+    // read three bytes from device A
+    SPI.beginTransaction(settingsA);
+    digitalWrite (slaveAPin, LOW);
+
+    // reading only, so data sent does not matter
+    stat = SPI.transfer(0);
+    val1 = SPI.transfer(0);
+    val2 = SPI.transfer(0);
+    digitalWrite (slaveAPin, HIGH);
+    SPI.endTransaction();
+  
+    // if stat is 1 or 2, send val1 or val2 else zero
+    if (stat == 1) {
+     result = val1;
+    } else if (stat == 2) {
+     result = val2;
+    } else {
+     result = 0;
+    }
+  
+    // send result to device B
+  
+    SPI.beginTransaction(settingsB);
+    digitalWrite (slaveBPin, LOW);
+    SPI.transfer(result);
+    digitalWrite (slaveBPin, HIGH);
+    SPI.endTransaction();
+  }
+
+  Although this question has an accepted answer, I'd like to provide some background and historical reasons to OP's question.
+
+  Transactional SPI using SPI.beginTransaction() was introduced in 2014, it was not available in the early version of Arduino, or example code published before that. As a result, there is still a lot of code out there on the Internet that shows the old way of setting up the SPI configuration.
+
+  What the SPI.beginTransaction() does is to allow each SPI device to have its own unique SPI settings (through SPISettings object) instead of having one setting across the entire network as the previous API does. SPI.beginTransaction() behaves like a locking mechanism to gain the exclusive use of the SPI bus, and therefore requires SPI.endTransaction() to release the bus for others to access it. SPI.beginTransaction() provides better cross-device compatibility and solves software conflicts, allowing multiple SPI devices to properly share the SPI bus. You should therefore use the SPI.beginTransaction() in your SPI sketch. You should also using the SPISettings object to configure your SPI communication interface, and not use deprecated methods such as SPI.setBitOrder(), SPI.setClockDivider() and SPI.setDataMode() for setting up the SPI configuration.
+
+  Although rarely needed today, there is a pre-defined macro SPI_HAS_TRANSACTION in the SPI library to check whether the firmware of the Arduino board supports SPI.beginTransaction(). It is useful for providing backward compatibility if you are writing an Arduino library.
+
+  #if defined(SPI_HAS_TRANSACTION)
+    SPISettings  spiSettings;
+  #endif
+  ...
+  ...
+  #ifdef SPI_HAS_TRANSACTION
+    SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+  #elseif
+    // use old Arduino SPI library syntax
+  #endif
+
+  SPI.endTransaction()
+  --------------------
+
+  Stop using the SPI bus. Normally this is called after de-asserting the chip select, to allow other libraries to use the SPI bus.
+  
+  SPI.begin()
+  -----------
+  
+  Initializes the SPI bus by setting SCK, MOSI, and SS to outputs, pulling SCK and MOSI low, and SS high.
+  
+  SPI.end()
+  ---------
+  
+  Disables the SPI bus (leaving pin modes unchanged).
+  
+  SPI.setBitOrder()
+  -----------------
+  
+  This function should not be used in new projects. Use SPISettings. with SPI.beginTransaction(). to configure SPI parameters.
+
+  Sets the order of the bits shifted out of and into the SPI bus, either LSBFIRST (least-significant bit first) or MSBFIRST (most-significant bit first).
+
+  Syntax?
+  SPI.setBitOrder(order)
+  
+  Parameters: 
+  order: either LSBFIRST or MSBFIRST
+  
+  SPI.setClockDivider()
+  ---------------------
+  
+  This function should not be used in new projects. Use SPISettings. with SPI.beginTransaction(). to configure SPI parameters.
+
+  Sets the SPI clock divider relative to the system clock. On AVR based boards, the dividers available are 2, 4, 8, 16, 32, 64 or 128. The default setting is SPI_CLOCK_DIV4, which sets the SPI clock to one-quarter the frequency of the system clock (4 Mhz for the boards at 16 MHz).
+
+  For Arduino Due: On the Due, the system clock can be divided by values from 1 to 255. The default value is 21, which sets the clock to 4 MHz like other Arduino boards.
+
+  Syntax
+  SPI.setClockDivider(divider)
+
+  Parameters
+  divider (only AVR boards):
+
+  - SPI_CLOCK_DIV2
+  - SPI_CLOCK_DIV4
+  - SPI_CLOCK_DIV8
+  - SPI_CLOCK_DIV16
+  - SPI_CLOCK_DIV32
+  - SPI_CLOCK_DIV64
+  - SPI_CLOCK_DIV128
+  - chipSelectPin: peripheral device CS pin (Arduino Due only)
+  - divider: a number from 1 to 255 (Arduino Due only)
+
+  SPI.setDataMode()
+  -----------------
+  
+  This function should not be used in new projects. Use SPISettings with SPI.beginTransaction(). to configure SPI parameters.
+
+  Sets the SPI data mode: that is, clock polarity and phase. See the Wikipedia article on SPI for details.
+
+  Syntax
+  SPI.setDataMode(mode)
+
+  Parameters
+  Mode:
+
+  - SPI_MODE0
+  - SPI_MODE1
+  - SPI_MODE2
+  - SPI_MODE3
+  - chipSelectPin - peripheral device CS pin (Arduino Due only)
+
+  SPI.transfer()
+  --------------
+  
+  PI transfer is based on a simultaneous send and receive: the received data is returned in receivedVal (or receivedVal16). In case of buffer transfers the received data is stored in the buffer in-place (the old data is replaced with the data received).
+
+  Syntax
+  receivedVal = SPI.transfer(val)
+  receivedVal16 = SPI.transfer16(val16)
+  SPI.transfer(buffer, size)
+  
+  Parameters
+  val: the byte to send out over the bus
+  val16: the two bytes variable to send out over the bus
+  buffer: the array of data to be transferred
+
+  SPI.usingInterrupt()
+  --------------------
+  
+  If your program will perform SPI transactions within an interrupt, call this function to register the interrupt number or name with the SPI library. This allows SPI.beginTransaction() to prevent usage conflicts. Note that the interrupt specified in the call to usingInterrupt() will be disabled on a call to beginTransaction() and re-enabled in endTransaction().
+
+  Syntax
+  SPI.usingInterrupt(interruptNumber)
+
+  Parameters
+  interruptNumber: the associated interrupt number.
+
+  
+  https://www.circuitbasics.com/how-to-set-up-spi-communication-for-arduino/
+  https://docs.arduino.cc/tutorials/communication/DigitalPotControl/
+  
+Ponteiro em C++
+---------------
+
+  uint16_t cores[] = {0x1234, 0x5678};
+  uint16_t *p16 = cores;
+
+  Ponteiro de 2 bytes incrementando 2 bytes por vez simpelsntem faça
+  
+  p16++;
+  
+  Incrementar um byte o ponteiro p16
+  Necessario passar a outra variavel de byte e incrementar ela, no entanto o ponteiro p16 nao sofrera alteracao do seu endereço
+  
+  uint8_t *p8 = (uint8_t*)p16; // cast
+  p88++;                       //aponta apra a matriz de cores, mas incrementa apenas em 1 byte
+                               //o poteniro p16 nao ira mudar
+  
+  Se precisar que o ponteiro p16 apotne apra o mesmo lugar de p8 precisara fazer o seguinte:
+
+  p16 = (uint16_t*)p8;
+  
+  Acessando memória com offset
+  ----------------------------
+  
+  Se você fizer:
+
+  uint16_t val = *((uint16_t*)(p8 + 2));
+  
+  O que acontece:
+  - p8 + 2 → aponta 2 bytes adiante do endereço original (p8).
+  - (uint16_t*) → interpreta 2 bytes consecutivos a partir desse endereço como um uint16_t.
+  - * → lê o valor, mas o ponteiro original p8 não muda.
+
+  Então sim:
+   O valor retornado é da posição 2 bytes à frente,
+   Sem alterar o ponteiro original.
+
+  Para o caso do Ponteiro p16 de tipo uint16_t* 
+  
+  Se você tem: uint16_t *p16;
+  
+  O tipo do ponteiro é uint16_t*, então cada incremento de 1 no ponteiro significa 2 bytes (tamanho de uint16_t).
+    
+  uint16_t val = *(p16 + 2);
+  
+  - p16 + 2 → move o ponteiro 2 elementos de uint16_t à frente.
+  - Cada elemento = 2 bytes → total = 4 bytes adiante do endereço original.
+  - * → lê o valor de 2 bytes que estão nesse endereço.
+  
+  Operação             Tipo do ponteiro  Deslocamento em bytes  Valor lido
+  ----------------------------------------------------------------------------------------
+  *(p16 + 1)            uint16_t*        2 bytes à frente       16 bits
+  *(p16 + 2)            uint16_t*        4 bytes à frente       16 bits
+  *((uint8_t*)p16 + 2)  uint8_t*         2 bytes à frente       16 bits se cast uint16_t*
+  ----------------------------------------------------------------------------------------
+  
+  Em resumo: o incremento depende do tipo do ponteiro, não do valor que você adiciona.
 

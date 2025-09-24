@@ -311,56 +311,89 @@ void DMA_32bit(
     unsigned long Addr)                                                      --> void DMA_32bit(uint8_t clk, uint16_t x1, uint16_t y1, uint16_t Wx, uint16_t Hy, uint16_t picwidth, uint32_t addr);
 void switch_24bits_to_32bits(unsigned char BUS, unsigned char SCS)           --> void Switch_24bitsTo32bits(uint8_t bus, uint8_t scs) 
 void SPI_Clock_Period(unsigned char temp)                                    --> void SPI_Clock_Period(uint8_t divisor)
-void Select_nSS_drive_on_xnsfcs0(void)                                          --> void nSS_Select_Channel(eNSS_Channel channel)
-void Select_nSS_drive_on_xnsfcs1(void)                                          --> void nSS_Select_Channel(eNSS_Channel channel)
-void Select_nSS_drive_on_xnsfcs2(void)                                          --> void nSS_Select_Channel(eNSS_Channel channel)
-void Select_nSS_drive_on_xnsfcs3(void)                                          --> void nSS_Select_Channel(eNSS_Channel channel)
-void nSS_Active(void)                                                       --> void nSS_Active(void)
-void Reset_CPOL(void)                                                           --> void Reset_CPOL(void)
-void Set_CPOL(void)          --> void Set_CPOL(void)
-void Unmask_EMTIRQEN_Interrupt(void)         --> void Interrupt_EMTIRQEN_Enable(bool b)
-void Reset_CPHA(void)   --> void Reset_CPHA(void)
-void Set_CPHA(void) --> void Set_CPHA(void)
-unsigned char Tx_FIFO_Empty_Flag(void)       --> bool SPIM_TxFIFO_Empty(void)
-unsigned char Tx_FIFO_Full_Flag(void) --> bool SPIM_TxFIFO_Full(void)
-unsigned char Rx_FIFO_Empty_Flag(void) --> bool SPIM_RxFIFO_Empty(void)
-unsigned char SPI_Master_FIFO_Data_Put(unsigned char Data)    --> uint8_t SPIM_TxRxFIFOData_Put(uint8_t data)
-void Select_PWM0(void) --> void PWM0_Select(void)
-void Select_PWM1(void) -->void PWM1_Select(void)
-void Set_PWM_Prescaler_1_to_256(unsigned short WX)  --> void PWM_Prescaler(uint8_t prescaler)
-void Select_PWM0_Clock_Divided_By_1(void)                                 --> void PWM0_ClockDividedBy(eDividerClock divider)
-void Select_PWM0_Clock_Divided_By_2(void)                                 --> void PWM0_ClockDividedBy(eDividerClock divider)
-void Select_PWM0_Clock_Divided_By_4(void)                                 --> void PWM0_ClockDividedBy(eDividerClock divider)
-void Select_PWM0_Clock_Divided_By_8(void)                                 --> void PWM0_ClockDividedBy(eDividerClock divider)
-void Set_Timer0_Count_Buffer(unsigned short WX)                           --> void PWM0_SetCountBuffer(uint16_t Wx)
-void Set_Timer1_Compare_Buffer(unsigned short WX)                         --> void PWM1_SetCompareBuffer(uint16_t Wx)
-void Set_Timer0_Compare_Buffer(unsigned short WX)                         --> void PWM0_SetCompareBuffer(uint16_t Wx)
-void Start_PWM0(void)          --> void PWM0_StartTimer(void)
-void Stop_PWM0(void)       --> void PWM0_StopTimer(void)
+void Select_nSS_drive_on_xnsfcs0(void)                                       --> void nSS_Select_Channel(eNSS_Channel channel)
+void Select_nSS_drive_on_xnsfcs1(void)                                       --> void nSS_Select_Channel(eNSS_Channel channel)
+void Select_nSS_drive_on_xnsfcs2(void)                                       --> void nSS_Select_Channel(eNSS_Channel channel)
+void Select_nSS_drive_on_xnsfcs3(void)                                       --> void nSS_Select_Channel(eNSS_Channel channel)
+void nSS_Active(void)                                                        --> void nSS_Active(void)
+void Reset_CPOL(void)                                                        --> void Reset_CPOL(void)
+void Set_CPOL(void)                                                          --> void Set_CPOL(void)
+void Unmask_EMTIRQEN_Interrupt(void)                                         --> void Interrupt_EMTIRQEN_Enable(bool b)
+void Reset_CPHA(void)                                                        --> void Reset_CPHA(void)
+void Set_CPHA(void)                                                          --> void Set_CPHA(void)
+unsigned char Tx_FIFO_Empty_Flag(void)                                       --> bool SPIM_TxFIFO_Empty(void)
+unsigned char Tx_FIFO_Full_Flag(void)                                        --> bool SPIM_TxFIFO_Full(void)
+unsigned char Rx_FIFO_Empty_Flag(void)                                       --> bool SPIM_RxFIFO_Empty(void)
+unsigned char SPI_Master_FIFO_Data_Put(unsigned char Data)                   --> uint8_t SPIM_TxRxFIFOData_Put(uint8_t data)
+void Select_PWM0(void)                                                       --> void PWM0_Select(void)
+void Select_PWM1(void)                                                       --> void PWM1_Select(void)
+void Set_PWM_Prescaler_1_to_256(unsigned short WX)                           --> void PWM_Prescaler(uint8_t prescaler)
+void Select_PWM0_Clock_Divided_By_1(void)                                    --> void PWM0_ClockDividedBy(eDividerClock divider)
+void Select_PWM0_Clock_Divided_By_2(void)                                    --> void PWM0_ClockDividedBy(eDividerClock divider)
+void Select_PWM0_Clock_Divided_By_4(void)                                    --> void PWM0_ClockDividedBy(eDividerClock divider)
+void Select_PWM0_Clock_Divided_By_8(void)                                    --> void PWM0_ClockDividedBy(eDividerClock divider)
+void Set_Timer0_Count_Buffer(unsigned short WX)                              --> void PWM0_SetCountBuffer(uint16_t Wx)
+void Set_Timer1_Compare_Buffer(unsigned short WX)                            --> void PWM1_SetCompareBuffer(uint16_t Wx)
+void Set_Timer0_Compare_Buffer(unsigned short WX)                            --> void PWM0_SetCompareBuffer(uint16_t Wx)
+void Start_PWM0(void)                                                        --> void PWM0_StartTimer(void)
+void Stop_PWM0(void)                                                         --> void PWM0_StopTimer(void)
 void PWM0(unsigned char on_off,
           unsigned char Clock_Divided,
           unsigned char Prescalar,
           unsigned short Count_Buffer,
-          unsigned short Compare_Buffer)  --> void PWM0(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
+          unsigned short Compare_Buffer)                                     --> void PWM0(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
 void PWM1(unsigned char on_off,
           unsigned char Clock_Divided,
           unsigned char Prescalar,
           unsigned short Count_Buffer,
-          unsigned short Compare_Buffer)  --> void PWM1(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
-void Select_PWM1_Clock_Divided_By_1(void)                                 --> void PWM1_ClockDividedBy(eDividerClock divider)
-void Select_PWM1_Clock_Divided_By_2(void)                                 --> void PWM1_ClockDividedBy(eDividerClock divider)
-void Select_PWM1_Clock_Divided_By_4(void)                                 --> void PWM1_ClockDividedBy(eDividerClock divider)
-void Select_PWM1_Clock_Divided_By_8(void)                                 --> void PWM1_ClockDividedBy(eDividerClock divider)
-void ER_TFTBasic::Set_Timer1_Count_Buffer(unsigned short WX)                           --> void PWM1_SetCountBuffer(uint16_t Wx)
-void AVI_window(unsigned char ON_OFF)       --> void AVI_Window(bool on_off)
-void Enable_PIP1(void)  -->         void PIP1_Enable(bool b)
-void Disable_PIP1(void)  -->        //void PIP1_Enable(bool b)
-void Enable_PIP2(void)  -->         void PIP2_Enable(bool b)
-void Disable_PIP2(void)  -->        //void PIP2_Enable(bool b)
-void Select_PIP1_Parameter(void)  --> void PIP_Select_Parameter(ePIPSelect pip)
-void Select_PIP2_Parameter(void)  --> void PIP_Select_Parameter(ePIPSelect pip)
+          unsigned short Compare_Buffer)                                     --> void PWM1(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
+void Select_PWM1_Clock_Divided_By_1(void)                                    --> void PWM1_ClockDividedBy(eDividerClock divider)
+void Select_PWM1_Clock_Divided_By_2(void)                                    --> void PWM1_ClockDividedBy(eDividerClock divider)
+void Select_PWM1_Clock_Divided_By_4(void)                                    --> void PWM1_ClockDividedBy(eDividerClock divider)
+void Select_PWM1_Clock_Divided_By_8(void)                                    --> void PWM1_ClockDividedBy(eDividerClock divider)
+void ER_TFTBasic::Set_Timer1_Count_Buffer(unsigned short WX)                 --> void PWM1_SetCountBuffer(uint16_t Wx)
+void AVI_window(unsigned char ON_OFF)                                        --> void AVI_Window(bool on_off)
+void Enable_PIP1(void)                                                       --> void PIP1_Enable(bool b)
+void Disable_PIP1(void)                                                      --> void PIP1_Enable(bool b)
+void Enable_PIP2(void)                                                       --> void PIP2_Enable(bool b)
+void Disable_PIP2(void)                                                      --> void PIP2_Enable(bool b)
+void Select_PIP1_Parameter(void)                                             --> void PIP_Select_Parameter(ePIPSelect pip)
+void Select_PIP2_Parameter(void)                                             --> void PIP_Select_Parameter(ePIPSelect pip)
 
 
+(AI) RA8889_API_51.c
+--------------------
+
+void MPU8_8bpp_Memory_Write(unsigned short x,
+                            unsigned short y,
+                            unsigned short w,
+                            unsigned short h,
+                            const unsigned char *data_array)                 --> void MPU8_8bpp_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data_array)
+void MPU8_16bpp_Memory_Write(unsigned short x,
+                             unsigned short y,
+                             unsigned short w,
+                             unsigned short h,
+                             const unsigned char *data_array)                --> void MPU8_16bpp_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data_array)
+void MPU8_24bpp_Memory_Write(unsigned short x,
+                             unsigned short y,
+                             unsigned short w,
+                             unsigned short h,
+                             const unsigned char *data_array)                --> void MPU8_24bpp_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data_array)
+void MPU16_16bpp_Memory_Write(unsigned short x,
+                              unsigned short y,
+                              unsigned short w,
+                              unsigned short h,
+                              const unsigned short *data_array)              --> void MPU16_16bpp_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data_array)
+void MPU16_24bpp_Mode1_Memory_Write(unsigned short x,
+                                    unsigned short y,
+                                    unsigned short w,
+                                    unsigned short h,
+                                    const unsigned short *data_array)        --> void MPU16_24bpp_Mode1_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data_array)
+void MPU16_24bpp_Mode2_Memory_Write(unsigned short x,
+                                    unsigned short y,
+                                    unsigned short w,
+                                    unsigned short h,
+                                    const unsigned short *data_array)        --> void MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data_array)
 
 (BuyDisplay) RA8889.cpp
 -----------------------
