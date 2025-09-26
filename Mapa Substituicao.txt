@@ -4,6 +4,11 @@ Mapa de substituicao
 (RA8889_arduino_reference_Ver_1.0) Ra8889_Lite.cpp
 --------------------------------------------------
 
+void Ra8889_Lite::fontDmaSelectSFI_3(void)                           --> void SFI_SelectROM_CS3(void)
+void Ra8889_Lite::fontDmaSelectSFI_2(void)                           --> void SFI_SelectROM_CS2(void)
+void Ra8889_Lite::fontDmaSelectSFI_1(void)                           --> void SFI_SelectROM_CS1 (void)
+void Ra8889_Lite::fontDmaSelectSFI_0(void)                           --> void SFI_SelectROM_CS0 (void)
+void Ra8889_Lite::fontDmaSelect_bus0(void)	                         --> void Font_DMA_Select_Bus0 (void)
 void Ra8889_Lite::displayImageStartAddress(ru32 addr)	             --> void MainImage_StartAddress(uint32_t addr)
 void Ra8889_Lite::displayImageWidth(ru16 width)	                     --> void MainImage_Width(uint16_t Wx) 
 void Ra8889_Lite::displayWindowStartXY(ru16 x0,ru16 y0)	             --> void MainWindow_StartXY(uint16_t wx, uint16_t hy)  
@@ -17,6 +22,203 @@ void Ra8889_Lite:: putPixel_24bpp(ru16 x,ru16 y,ru16 color)          --> void pu
 void Ra8889_Lite::lcdRegDataWrite(ru8 reg,ru8 data)                  --> void RegisterWrite(uint8_t Cmd, uint8_t Data)
 void Ra8889_Lite::registerPageSwitch(ru8 page)                       --> void PageSwitch(ePageReg pr)
 ru8 Ra8889_Lite::lcdRegDataRead(ru8 reg)                             --> uint8_t RegisterRead(uint8_t Cmd)
+void Ra8889_Lite:: putPixel_16bpp(ru16 x,ru16 y,ru16 color)          --> void PutPixel(uint16_t x, uint16_t y, uint32_t color)
+void Ra8889_Lite:: putPixel_24bpp(ru16 x,ru16 y,ru32 color)          --> void PutPixel(uint16_t x, uint16_t y, uint32_t color)
+ void Ra8889_Lite::setTextParameter1(ru8 source_select,ru8 size_select,ru8 iso_select) -->		void SetTextParameter0(uint8_t sourceselect, uint8_t sizeselect, uint8_t isoselect);
+void Ra8889_Lite::setTextParameter2(ru8 align, ru8 chroma_key, ru8 width_enlarge, ru8 height_enlarge) -->		void SetTextParameter1(uint8_t align, uint8_t chromakey, uint8_t widthenlarge, uint8_t heightenlarge);
+void Ra8889_Lite::genitopCharacterRomParameter(ru8 scs_select, ru8 clk_div, ru8 rom_select, ru8 character_select, ru8 gt_width)  -->void GTFont_CharacterROMParameter(uint8_t scsselect, uint8_t clkdiv, uint8_t romselect, uint8_t characterselect, uint8_t gtwidth)
+void Ra8889_Lite:: putString(ru16 x0,ru16 y0, char *str)  -->        void PutString(uint16_t x, uint16_t y, char *str);
+void Ra8889_Lite::textColor(ru32 foreground_color,ru32 background_color)  --> void TextColor(uint32_t foregcolor, uint32_t backgcolor)
+void Ra8889_Lite::bte_Source0_MemoryStartAddr(ru32 addr)             -->  void BTE_S0_MemoryStartAddress(uint32_t addr)
+   Por a funcao aqui                                                                 --> void BTE_MemoryCopy(uint32_t s0_addr, uint16_t s0_image_width, uint16_t s0_x, uint16_t s0_y, uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t copy_width, uint16_t copy_height);
+void Ra8889_Lite::bte_Source0_ImageWidth(ru16 width) -->  void BTE_S0_ImageWidth(uint16_t Wx)  
+void Ra8889_Lite::foreGroundColor24bpp(ru32 color)  --> void ForegroundColor24bpp(uint32_t color)
+void Ra8889_Lite::foreGroundColor16bpp(ru16 color)   --> void ForegroundColor16bpp(uint16_t color)
+void Ra8889_Lite::backGroundColor24bpp(ru32 color)  --> void BackgroundColor24bpp(uint32_t color)
+void  Ra8889_Lite::bte_DestinationMemoryStartAddr(ru32 addr)  --> void BTE_Destination_MemoryStartAddress(uint32_t addr) 
+void  Ra8889_Lite::bte_DestinationImageWidth(ru16 width) --> void Panel_RA8889::BTE_Destination_ImageWidth(uint16_t Wx)
+void  Ra8889_Lite::bte_DestinationWindowStartXY(ru16 x0,ru16 y0)	  --> void Panel_RA8889::BTE_Destination_WindowStart_XY(uint16_t Wx, uint16_t Hy)
+void  Ra8889_Lite::bte_WindowSize(ru16 width, ru16 height) --> void Panel_RA8889::BTE_WindowSize(uint16_t Wx, uint16_t Hy)
+void Ra8889_Lite::bte_Source0_WindowStartXY(ru16 x0,ru16 y0)  --> void Panel_RA8889::BTE_S0_WindowStart_XY(uint16_t Wx, uint16_t Hy)
+void Ra8889_Lite::bte_Source1_MemoryStartAddr(ru32 addr)	--> void Panel_RA8889::BTE_S1_MemoryStartAddress(uint32_t addr)
+void Ra8889_Lite::bte_Source1_ImageWidth(ru16 width)	--> void Panel_RA8889::BTE_S1_ImageWidth(uint16_t Wx)
+void Ra8889_Lite::bte_Source1_WindowStartXY(ru16 x0,ru16 y0)  --> void Panel_RA8889::BTE_S1_WindowStart_XY(uint16_t Wx, uint16_t Hy)
+void Ra8889_Lite:: ramAccessPrepare(void)     --> SPI_CmdWrite(REG_MRWDP)
+void Ra8889_Lite::checkWriteFifoEmpty(void)  --> void Panel_RA8889::Wait_WriteFIFO_Empty(void)
+void Ra8889_Lite::checkWriteFifoNotFull(void)  --> void Panel_RA8889::Wait_WriteFIFO_NotFull(void)
+void Ra8889_Lite::bteMemoryCopy(ru32 s0_addr,
+                                ru16 s0_image_width,
+                                ru16 s0_x,
+                                ru16 s0_y,
+                                ru32 des_addr,
+                                ru16 des_image_width,
+                                ru16 des_x,
+                                ru16 des_y,
+                                ru16 copy_width,
+                                ru16 copy_height)       --> void BTE_MemoryCopy(uint32_t s0_addr, uint16_t s0_image_width, uint16_t s0_x, uint16_t s0_y, uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t copy_width, uint16_t copy_height)
+void Ra8889_Lite::bteMemoryCopyWithROP(ru32 s0_addr,
+                                       ru16 s0_image_width,
+                                       ru16 s0_x,
+                                       ru16 s0_y,
+                                       ru32 s1_addr,
+                                       ru16 s1_image_width,
+                                       ru16 s1_x,
+                                       ru16 s1_y, 
+                                       ru32 des_addr,
+                                       ru16 des_image_width, 
+                                       ru16 des_x,
+                                       ru16 des_y,
+                                       ru16 copy_width,
+                                       ru16 copy_height,
+                                       ru8 rop_code)     --> void BTE_MemoryCopyWithROP(uint32_t s0_addr, uint16_t s0_image_width, uint16_t s0_x, uint16_t s0_y, uint32_t s1_addr, uint16_t s1_image_width, uint16_t s1_x, uint16_t s1_y, uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t copy_width, uint16_t copy_height, uint8_t rop_code)
+void Ra8889_Lite::bteMemoryCopyWithChromaKey(ru32 s0_addr,
+                                             ru16 s0_image_width,
+                                             ru16 s0_x,
+                                             ru16 s0_y, 
+                                             ru32 des_addr,
+                                             ru16 des_image_width, 
+                                             ru16 des_x,
+                                             ru16 des_y,
+                                             ru16 copy_width,
+                                             ru16 copy_height, 
+                                             ru32 chromakey_color)   -->   void BTE_MemoryCopyWithChromaKey(uint32_t s0_addr, uint16_t s0_image_width, uint16_t s0_x, uint16_t s0_y, uint32_t des_addr, uint16_t des_image_width,  uint16_t des_x, uint16_t des_y, uint16_t copy_width, uint16_t copy_height,  uint32_t chromakey_color)
+void Ra8889_Lite::bteMpuWriteWithROP(ru32 s1_addr,
+                                     ru16 s1_image_width,
+                                     ru16 s1_x,
+                                     ru16 s1_y,
+                                     ru32 des_addr,
+                                     ru16 des_image_width, 
+                                     ru16 des_x,
+                                     ru16 des_y,
+                                     ru16 width,
+                                     ru16 height,
+                                     ru8 rop_code,
+                                     const unsigned char *data)   --> void BTE_MPUWriteWithROP(uint32_t s1_addr, uint16_t s1_image_width, uint16_t s1_x, uint16_t s1_y, uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint8_t rop_code, const uint8_t *data)
+void Ra8889_Lite::bteMpuWriteWithROP(ru32 s1_addr,
+                                     ru16 s1_image_width,
+                                     ru16 s1_x,
+                                     ru16 s1_y,
+                                     ru32 des_addr,
+                                     ru16 des_image_width, 
+                                     ru16 des_x,
+                                     ru16 des_y,
+                                     ru16 width,
+                                     ru16 height,
+                                     ru8 rop_code,
+                                     const unsigned short *data) --> void BTE_MPUWriteWithROP(uint32_t s1_addr, uint16_t s1_image_width, uint16_t s1_x, uint16_t s1_y, uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint8_t rop_code, const uint16_t *data)
+void Ra8889_Lite::bteMpuWriteWithROP(ru32 s1_addr,
+                                     ru16 s1_image_width,
+                                     ru16 s1_x,
+                                     ru16 s1_y,
+                                     ru32 des_addr,
+                                     ru16 des_image_width,
+                                     ru16 des_x,
+                                     ru16 des_y,
+                                     ru16 width,
+                                     ru16 height,
+                                     ru8 rop_code)   --> void BTE_MPUWriteWithROP(uint32_t s1_addr, uint16_t s1_image_width, uint16_t s1_x, uint16_t s1_y, uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint8_t rop_code)
+void Ra8889_Lite::bteMpuWriteWithChromaKey(ru32 des_addr,
+                                           ru16 des_image_width, 
+                                           ru16 des_x,
+                                           ru16 des_y,
+                                           ru16 width,
+                                           ru16 height,
+                                           ru32 chromakey_color,
+                                           const unsigned char *data)  --> void BTE_MPUWriteWithChromaKey(uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint32_t chromakey_color, const uint8_t *data)
+void Ra8889_Lite::bteMpuWriteWithChromaKey(ru32 des_addr,
+                                           ru16 des_image_width, 
+                                           ru16 des_x,
+                                           ru16 des_y,
+                                           ru16 width,
+                                           ru16 height,
+                                           ru32 chromakey_color,
+                                           const unsigned short *data)  --> void BTE_MPUWriteWithChromaKey(uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint32_t chromakey_color, const uint16_t *data)
+void Ra8889_Lite::bteMpuWriteWithChromaKey(ru32 des_addr,
+                                           ru16 des_image_width, 
+                                           ru16 des_x,
+                                           ru16 des_y,
+                                           ru16 width,
+                                           ru16 height,
+                                           ru32 chromakey_color)   --> void BTE_MPUWriteWithChromaKey(uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint32_t chromakey_color)
+void Ra8889_Lite::bteMpuWriteColorExpansion(ru32 des_addr,
+                                            ru16 des_image_width, 
+                                            ru16 des_x,
+                                            ru16 des_y,
+                                            ru16 width,
+                                            ru16 height,
+                                            ru32 foreground_color,
+                                            ru32 background_color,
+                                            const unsigned char *data)  --> void BTE_MPUWriteColorExpansion(uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint32_t foreground_color, uint32_t background_color, const uint8_t *data)
+void Ra8889_Lite::bteMpuWriteColorExpansion(ru32 des_addr,
+                                            ru16 des_image_width, 
+                                            ru16 des_x,
+                                            ru16 des_y,
+                                            ru16 width,
+                                            ru16 height,
+                                            ru32 foreground_color,
+                                            ru32 background_color) --> void BTE_MPUWriteColorExpansion(uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint32_t foreground_color, uint32_t background_color)
+void Ra8889_Lite::bteMpuWriteColorExpansionWithChromaKey(ru32 des_addr,
+                                                         ru16 des_image_width, 
+                                                         ru16 des_x,
+                                                         ru16 des_y,
+                                                         ru16 width,
+                                                         ru16 height,
+                                                         ru32 foreground_color,
+                                                         ru32 background_color, 
+                                                         const unsigned char *data) --> void BTE_MPUWriteColorExpansionWithChromaKey(uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint32_t foreground_color, uint32_t background_color, const uint8_t *data)
+void Ra8889_Lite::bteMpuWriteColorExpansionWithChromaKey(ru32 des_addr,
+                                                         ru16 des_image_width, 
+                                                         ru16 des_x,
+                                                         ru16 des_y,
+                                                         ru16 width,
+                                                         ru16 height,
+                                                         ru32 foreground_color,
+                                                         ru32 background_color) --> void BTE_MPUWriteColorExpansionWithChromaKey(uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t width, uint16_t height, uint32_t foreground_color, uint32_t background_color) 
+void Ra8889_Lite::bteMemoryCopyWith_ARGB8888(ru32 s1_addr,
+                                             ru16 s1_image_width, 
+                                             ru32 des_addr,
+                                             ru16 des_image_width, 
+                                             ru16 des_x,
+                                             ru16 des_y,
+                                             ru16 copy_width,
+                                             ru16 copy_height) --> void BTE_MemoryCopyWith_ARGB8888(uint32_t s1_addr, uint16_t s1_image_width, uint32_t des_addr, uint16_t des_image_width, uint16_t des_x, uint16_t des_y, uint16_t copy_width, uint16_t copy_height)
+void Ra8889_Lite::dma_32bitAddressLinearMode(ru8 bus_select,
+                                 ru8 scs_select,
+                                 ru8 clk_div,
+                                 ru32 source_addr,
+                                 ru32 des_address,
+                                 ru32 number)                -->
+void Ra8889_Lite::dma_24bitAddressLinearMode(ru8 bus_select,
+                                             ru8 scs_select,
+                                             ru8 clk_div,
+                                             ru32 source_addr,
+                                             ru32 des_address,
+                                             ru32 number)      -->
+ void Ra8889_Lite::dma_32bitAddressBlockMode(ru8 bus_select,
+                                             ru8 scs_select,
+                                             ru8 clk_div,
+                                             ru16 x0,
+                                             ru16 y0,
+                                             ru16 width,
+                                             ru16 height,
+                                             ru16 picture_width,
+                                             ru32 addr)            -->
+void Ra8889_Lite::dma_24bitAddressBlockMode(ru8 bus_select,
+                                            ru8 scs_select,
+                                            ru8 clk_div,
+                                            ru16 x0,ru16 y0,
+                                            ru16 width,
+                                            ru16 height,
+                                            ru16 picture_width,
+                                            ru32 addr)       -->
+
+
+
+
+
+
+
+
 
 (AI) RA8889_51.c
 ----------------
@@ -30,8 +232,8 @@ void TFT_16bit(void)                                                          --
 void Without_TFT(void)                                                        --> void TFT_Without(void)
 void RA8889_I2CM_Enable(void)                                                 --> void I2CM_Enable(bool b)
 void Enable_SFlash_SPI(void)                                                  --> void SFlashSPI_Enable(bool b)
- void Disable_SFlash_SPI(void)                                                --> void SFlashSPI_Enable(bool b)
- void Host_Bus_8bit(void)                                                     --> void HostDataBus_Select_8bit(void)
+void Disable_SFlash_SPI(void)                                                 --> void SFlashSPI_Enable(bool b)
+void Host_Bus_8bit(void)                                                      --> void HostDataBus_Select_8bit(void)
 void Host_Bus_16bit(void)                                                     --> void HostDataBus_Select_16bit(void)
 void Data_Format_8b_16bpp(void)                                               --> void HostColorDepthFormat(uint8_t type)
 void Data_Format_8b_24bpp(void)                                               --> void HostColorDepthFormat(uint8_t type)
