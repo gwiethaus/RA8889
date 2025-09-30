@@ -1,19 +1,15 @@
 # RA8889
-Desenvolvimento e Adaptação de Driver para uso de display com controladora RA8889 baseado nos exemplos da BuyDisplay e RAIO.
+Desenvolvimento e Adaptação de Driver para uso de display com controladora RA8889 com tela de toque capacitivo baseado nos exemplos da BuyDisplay e RAIO.
 
 # Notas
 
-Não usar este projeto. Está em fase de desenvolvimento. Não está funcional. 
+Projeto funcional. 
 
-As bibliotecas serão feitas em orientação a objeto. Após conclusão e feito os testes e então iniciado a protabilidade para as biblioteca LovyanGFX.
+Os métodos das classes estão faltando ajsutar separando a visibildaide public, private e protected 
 
-Inicialziação do display feito com sucesso. Recursos de configuração da DRAM, PLL, Panel foram feitos corretamente. Display agora está apresentando imagens sem distoção com alta velocidade de exibição.
+Inicialziação do display feito com sucesso. Recursos de configuração da DRAM, PLL, Panel foram feitos corretamente. Display agora está apresentando imagens sem distoção com alta velocidade de exibição. Possui tambem módulo de tela de toque FocalTech da série FT5xx6
 
 # Todo
 
 - finalizando API Transferencia de DMA
-- finalizando API BTE
-- finalizando API Draw
-- finalziando API Pixel
-- finalizando API Font External/Internal/User
 - 
