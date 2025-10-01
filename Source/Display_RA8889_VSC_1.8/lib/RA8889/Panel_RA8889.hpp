@@ -355,14 +355,20 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 
 
 //--------------------------------------------------------------------------------
+// Configuracao do Usuario
+//--------------------------------------------------------------------------------
+
+//Ativa a Depuração da porta serial
+#define SERIAL_DEBUG
+
+//Ativa funcao de existencia da familia Raio RA8875/RA8876/RA8877/RA8889
+#define CHECK_RAIOFAMILY
+
+//--------------------------------------------------------------------------------
 // System
 //--------------------------------------------------------------------------------
 
-
-//Ativa funcao de existencia do RA8889
-//#define CHECK_RA8889
-
-//Cosntatens apra definir se as funcoes de GPIO sao de entrada ou saida
+//Cosntatens para definir se as funcoes de GPIO sao de entrada ou saida
 #define INPUT              0
 #define IN                 INPUT
 #define OUTPUT             1
@@ -1558,9 +1564,6 @@ class Panel_RA8889 {
   public:
     Panel_RA8889(uint8_t cs, uint8_t rst);
     bool Begin(void);
-    bool Begin2(void);
-    void PLL_Init2(void);
-    
     void DisplayOn(bool on);
     void DisplayTestBar(bool b);
     void GraphicMode(void);     
@@ -1569,7 +1572,6 @@ class Panel_RA8889 {
     uint16_t Width(void);
     uint16_t Height(void);
     uint8_t getColorDepth(void);
-    
     uint32_t LayerStartAddr(uint8_t layer);
     void MainImage_StartAddress(uint32_t addr);
     void MainImage_Width(uint16_t Wx);
@@ -1578,7 +1580,7 @@ class Panel_RA8889 {
     void CanvasImage_Width(uint16_t Wx);
     void ActiveWindow_XY(uint16_t Wx, uint16_t hHy);
     void ActiveWindow_WidhtHeight(uint16_t Wx, uint16_t Hy); 
-    
+
     void ForegroundColorRGB(uint8_t red, uint8_t green, uint8_t blue);
     void ForegroundColor8bpp(uint8_t color);
     void ForegroundColor16bpp(uint16_t color);
@@ -1587,7 +1589,7 @@ class Panel_RA8889 {
     void BackgroundColor8bpp(uint8_t color);
     void BackgroundColor16bpp(uint16_t color);
     void BackgroundColor24bpp(uint32_t color);
-    
+
     uint8_t Color16To8bpp(uint16_t color);
     uint16_t Color8To16bpp(uint8_t color8);
     uint16_t Color24To16bpp(uint32_t color24);
@@ -1598,9 +1600,12 @@ class Panel_RA8889 {
     uint16_t GetPixelPosY();
     pospixel_t GetPixelPosXY();
     void ClearCurrentPage(uint32_t color = 0x00000000);
-	void SetPage(uint8_t page);
+    uint8_t ReadIDCode(void);
+    void SetPage(uint8_t page);
 	void ShowPage(uint8_t page);
-	
+    void ShowPicturePgm(uint32_t size, const uint8_t *datap);
+    void ShowPicture(eColorDepthBPP pictureBpp, uint32_t numpixels, const uint8_t *datap);
+
     void PutPixel(uint16_t x, uint16_t y, uint32_t color);
     void PushBlock(uint16_t x, uint16_t y, uint16_t num_pixels, const void* color_buffer);
     void WritePixels(const void* color_buffer, uint32_t num_pixels, bool auto_increment = true);
@@ -1634,7 +1639,7 @@ class Panel_RA8889 {
     void DMA_24bit(uint8_t clk, uint16_t x1, uint16_t y1, uint16_t Wx, uint16_t Hy, uint16_t picwidth, uint32_t addr);
     void DMA_32bit(uint8_t clk, uint16_t x1, uint16_t y1, uint16_t Wx, uint16_t Hy, uint16_t picwidth, uint32_t addr);
     void Switch_24bitsTo32bits(uint8_t bus, uint8_t scs);
-    
+
     void DMA_24bitAddressBlockMode(uint8_t bus_select,
                                    uint8_t scs_select,
                                    uint8_t clk_div,
@@ -1665,12 +1670,12 @@ class Panel_RA8889 {
                                     uint32_t source_addr,
                                     uint32_t des_address,
                                     uint32_t number);
-    
+
     void PWM0(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
     void PWM1(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
     void AVI_Window(bool on_off);
     void PIP(bool On_Off, uint8_t PSelect, uint32_t PAddr, uint16_t Px, uint16_t Py, uint32_t ImageWidth, uint16_t Dx, uint16_t Dy, uint16_t Dwidth, uint16_t DHeight);
-        
+
     void BTE_MemoryCopy(uint32_t s0_addr,
                         uint16_t s0_image_width,
                         uint16_t s0_x,
@@ -1807,7 +1812,7 @@ class Panel_RA8889 {
                                     uint16_t des_y,
                                     uint16_t copy_width,
                                     uint16_t copy_height);
-	
+
     void MPU8_8bpp_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
     void MPU8_16bpp_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
     void MPU8_24bpp_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
@@ -1815,370 +1820,377 @@ class Panel_RA8889 {
     void MPU16_24bpp_Mode1_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data);
     void MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data);
     void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
-//Metodos PROTEGIDOS
 
-        void CoreTask_WaitReady(void);
-		void Draw_WaitReady(void);
-		bool IC_WaitReady(void);
-		bool Initialize(void);
-		void Wait_WriteFIFO_NotFull(void);
-		void Wait_WriteFIFO_Empty(void);
-		void Wait_ReadFIFO_NotFull(void);
-		void Wait_ReadFIFO_NotEmpty(void);
-		void GotoLinearAddr(uint32_t addr);
-		void GotoPixel_Linear(uint32_t addr);
-		void GotoPixel_XY(uint16_t Wx, uint16_t Hy);
-		void GotoText_XY(uint16_t Wx, uint16_t Hy);
-		void ShowPicturePgm(uint32_t size, const uint8_t *datap);
-		void ShowPicture(eColorDepthBPP pictureBpp, uint32_t numpixels, const uint8_t *datap);
-		uint8_t ReadIDCode(void);
+  protected:
+    uint8_t _cs;	                           //chip select pin
+    uint8_t _xnreset;	                       //chip reset pin
+    uint16_t _width;                           //lardura do display
+    uint16_t _height;                          //altura do display
+    uint8_t _bpp;                              //color depht 8/16/24 bit per pixel (bpp)
+    uint8_t _mcu;                              //tipo MCU/MPU 8 ou 16 bits 
+    uint8_t _colorfmt;                         //formato da cor RGB, RBG, GRB, GBR, ....
+    uint32_t _spi_clockmax;                    //velocidade de comunucacao de clock maximo do SPI
+    uint8_t _spi_datamode;                     //SPI_MODE0[1,2,3] de comunicacao
+    uint8_t _spi_dataorder;                    //ordem de dados spi MSBFIRST ou LSBFIRST
+    void CoreTask_WaitReady(void);
+    void Draw_WaitReady(void);
+    bool IC_WaitReady(void);
+    bool Initialize(void);
+    void Wait_WriteFIFO_NotFull(void);
+    void Wait_WriteFIFO_Empty(void);
+    void Wait_ReadFIFO_NotFull(void);
+    void Wait_ReadFIFO_NotEmpty(void);
+    void GotoLinearAddr(uint32_t addr);
+    void GotoPixel_Linear(uint32_t addr);
+    void GotoPixel_XY(uint16_t Wx, uint16_t Hy);
+    void GotoText_XY(uint16_t Wx, uint16_t Hy);
 
-		void PanelResolution(ePanelResolution resolution);
-		void PageSwitch(ePageReg pr);
-		void SPIM_SelectableBusMode(void);
-		void SPIM_FixedBusMode(void);
+    void PanelResolution(ePanelResolution resolution);
+    void PageSwitch(ePageReg pr);
+    void SPIM_SelectableBusMode(void);
+    void SPIM_FixedBusMode(void);
     void SPIM_ClockDivided_2(void);
-		void SPIM_ClockDivided_1(void);
+    void SPIM_ClockDivided_1(void);
 
     void SPI_Init(void);
-		void SPI_Clock_Period(uint8_t divisor);
-		
-		void PLL_WaitReady(void);
-		void PLL_Disable(void);
-		void PLL_Enable(void);
-		void PLL_ConfigClocks(uint8_t scanclk, uint8_t dramclk, uint8_t coreclk, uint8_t xtalclk);
-		void PLL_Init(void);
-		bool SDRAM_WaitReady(void);
-		void SDRAM_Init(void);
-		
-		void MemorySelect_SDRAM(void);
-		void MemorySelect_GammaTable(void);
-		void MemorySelect_GraphicCursorRAM(void);
-		void MemorySelect_ColorPaletteRAM(void);
-		void MemoryPort_Select(MemoryPortDest dest);
-		
-		void Interrupt_Resume_Enable(bool b);
-		void ExtInterrupt_Input_Enable(bool b);
-		void Interrupt_I2CM_Enable(bool b);
-		void Interrupt_VSync_Enable(bool b);
-		void Interrupt_KeyScan_Enable(bool b);
-		void Interrupt_ClearMultiEventTask_Enable(bool b);
-		void Interrupt_PWM1_Enable(bool b);
-		void Interrupt_PWM0_Enable(bool b);
-		uint8_t Interrupt_Status(void);
-		void VSYNC_WaitReady(void);
-		void Interrupt_ClearResume_Flag(void);
-		void ExtInterrupt_ClearInput_Flag(void);
-		void Interrupt_ClearI2CM_Flag(void);
-		void Interrupt_ClearVSync_Flag(void);
-		void Interrupt_ClearKeyScan_Flag(void);
-		bool Interrupt_IsKeyPressed(void);
-		void Interrupt_ClearMultiEventTask_Flag(void);
-		void Interrupt_ClearPWM0_Flag(void);
-		void Interrupt_ClearPWM1_Flag(void);
-		
-		void PIP1_Enable(bool b);
-		void PIP2_Enable(bool b);
-		void PIP_Select_Parameter(ePIPSelect pip);
-		void Select_MainWindow_8bpp(void);
-		void Select_MainWindow_16bpp(void);
-		void Select_MainWindow_24bpp(void);
-		void Select_LCD_SyncMode(void);
-		void Select_LCD_DEMode(void);
-		
-		void XnWAIT_Mask(bool mask);
-		void TFT_24bit(void);
-		void TFT_18bit(void);
-		void TFT_16bit(void);
-		void TFT_Without(void);
-		void TFT_Interface(TFTInterface mode);
-		void KeyScan_Enable(bool b);
-        
-    void SFlashSPI_Enable(bool b = true);
+    void SPI_Clock_Period(uint8_t divisor);
 
-		void HostDataBus_Select_8bit(void);
-		void HostDataBus_Select_16bit(void);
-        
-		
+    void PLL_WaitReady(void);
+    void PLL_Disable(void);
+    void PLL_Enable(void);
+    void PLL_ConfigClocks(uint8_t scanclk, uint8_t dramclk, uint8_t coreclk, uint8_t xtalclk);
+    void PLL_Init(void);
+    bool SDRAM_WaitReady(void);
+    void SDRAM_Init(void);
+
+    void MemorySelect_SDRAM(void);
+    void MemorySelect_GammaTable(void);
+    void MemorySelect_GraphicCursorRAM(void);
+    void MemorySelect_ColorPaletteRAM(void);
+    void MemoryPort_Select(MemoryPortDest dest);
+
+    void Interrupt_Resume_Enable(bool b);
+    void ExtInterrupt_Input_Enable(bool b);
+    void Interrupt_I2CM_Enable(bool b);
+    void Interrupt_VSync_Enable(bool b);
+    void Interrupt_KeyScan_Enable(bool b);
+    void Interrupt_ClearMultiEventTask_Enable(bool b);
+    void Interrupt_PWM1_Enable(bool b);
+    void Interrupt_PWM0_Enable(bool b);
+    uint8_t Interrupt_Status(void);
+    void VSYNC_WaitReady(void);
+    void Interrupt_ClearResume_Flag(void);
+    void ExtInterrupt_ClearInput_Flag(void);
+    void Interrupt_ClearI2CM_Flag(void);
+    void Interrupt_ClearVSync_Flag(void);
+    void Interrupt_ClearKeyScan_Flag(void);
+    bool Interrupt_IsKeyPressed(void);
+    void Interrupt_ClearMultiEventTask_Flag(void);
+    void Interrupt_ClearPWM0_Flag(void);
+    void Interrupt_ClearPWM1_Flag(void);
+
+    void PIP1_Enable(bool b);
+    void PIP2_Enable(bool b);
+    void PIP_Select_Parameter(ePIPSelect pip);
+    void Select_MainWindow_8bpp(void);
+    void Select_MainWindow_16bpp(void);
+    void Select_MainWindow_24bpp(void);
+    void Select_LCD_SyncMode(void);
+    void Select_LCD_DEMode(void);
+
+    void XnWAIT_Mask(bool mask);
+    void TFT_24bit(void);
+    void TFT_18bit(void);
+    void TFT_16bit(void);
+    void TFT_Without(void);
+    void TFT_Interface(TFTInterface mode);
+    void KeyScan_Enable(bool b);
+
+    void SFlashSPI_Enable(bool b = true);
+    void HostDataBus_Select_8bit(void);
+    void HostDataBus_Select_16bit(void);
     void HostColorDepthFormat(uint8_t type);
-		void Select_MCU_ColorDepth(void);
-		void HostReadMemoryDirection(MemoryDirection direction);
-		void HostWriteMemoryDirection(MemoryDirection direction);
+    void Select_MCU_ColorDepth(void);
+    void HostReadMemoryDirection(MemoryDirection direction);
+    void HostWriteMemoryDirection(MemoryDirection direction);
 		
-		void HScanDirection_LeftToRight(void);
-		void HScanDirection_RightToLeft(void);
-		void HorizontalScanDirection(HSCANDir direction);
-		void VScanDirection_TopToBottom(void);
-		void VScanDirection_BottomToTop(void);
-		void VerticalScanDirection(VSCANDir direction);
-		void PDATA_ColorFmt(ePDATAColorFmt fmt);
-		void PCLK_Rising(void);
-		void PCLK_Falling(void);
-		void PCLK_EdgeType(ePCLKEdge edge);
+    void HScanDirection_LeftToRight(void);
+    void HScanDirection_RightToLeft(void);
+    void HorizontalScanDirection(HSCANDir direction);
+    void VScanDirection_TopToBottom(void);
+    void VScanDirection_BottomToTop(void);
+    void VerticalScanDirection(VSCANDir direction);
+    void PDATA_ColorFmt(ePDATAColorFmt fmt);
+    void PCLK_Rising(void);
+    void PCLK_Falling(void);
+    void PCLK_EdgeType(ePCLKEdge edge);
 
     void HSYNC_PolarityLow(void);
-		void HSYNC_PolarityHigh(void);
-		void HSYNC_Polarity(eHSYNCPolarity val);
-		void VSYNC_PolarityLow(void);
-		void VSYNC_PolarityHigh(void);
-		void VSYNC_Polarity(eVSYNCPolarity val);
+    void HSYNC_PolarityHigh(void);
+    void HSYNC_Polarity(eHSYNCPolarity val);
+    void VSYNC_PolarityLow(void);
+    void VSYNC_PolarityHigh(void);
+    void VSYNC_Polarity(eVSYNCPolarity val);
     void DE_PolarityLow(void);
     void DE_PolarityHigh(void);
     void DE_Polarity(eDEPolarity val);
-		void DE_IdleStateLow(void);
+    void DE_IdleStateLow(void);
     void DE_IdleStateHigh(void);
     void PCLK_IdleStateLow(void);
-		void PCLK_IdleStateHigh(void);
-		void PDAT_IdleStateLow(void);
-		void PDAT_IdleStateHigh(void);
-		void HSYNC_IdleStateLow(void);
-		void HSYNC_IdleStateHigh(void);
-		void VSYNC_IdleStateLow(void);
-		void VSYNC_IdleStateHigh(void);
+    void PCLK_IdleStateHigh(void);
+    void PDAT_IdleStateLow(void);
+    void PDAT_IdleStateHigh(void);
+    void HSYNC_IdleStateLow(void);
+    void HSYNC_IdleStateHigh(void);
+    void VSYNC_IdleStateLow(void);
+    void VSYNC_IdleStateHigh(void);
 
-		void HorizontalWidth_VerticalHeight(uint16_t WX, uint16_t HY);
-		void Horizontal_NonDisplay(uint16_t hbpd);
-		void HSYNC_StartPosition(uint16_t hfpd);
-		void HSYNC_PulseWidth(uint16_t hspw);
-		void Vertical_NonDisplay(uint16_t vbpd);
-		void VSYNC_StartPosition(uint16_t vfpd);
-		void VSYNC_PulseWidth(uint8_t vspw);
-		void LCD_SetPanel(void);
-		
-		void Memory_BlockMode(void);
-		bool Memory_IsBlockMode(void);
-		void Memory_XYMode(void);
-		bool Memory_IsXYMode(void);
-		void Memory_LinearMode(void);
-		bool Memory_IsLinearMode(void);
-		void Memory_8bpp_BlockMode(void);
-		void Memory_16bpp_BlockMode(void);
-		void Memory_24bpp_BlockMode(void);
-		void Memory_ColorDepth_BlockMode(eColorDepthBPP colordepth);
+    void HorizontalWidth_VerticalHeight(uint16_t WX, uint16_t HY);
+    void Horizontal_NonDisplay(uint16_t hbpd);
+    void HSYNC_StartPosition(uint16_t hfpd);
+    void HSYNC_PulseWidth(uint16_t hspw);
+    void Vertical_NonDisplay(uint16_t vbpd);
+    void VSYNC_StartPosition(uint16_t vfpd);
+    void VSYNC_PulseWidth(uint8_t vspw);
+    void LCD_SetPanel(void);
 
-		uint8_t SPIM_TxRxFIFOData_Get(void);
-		uint8_t SPIM_TxRxFIFOData_Put(uint8_t data);
-		bool SPIM_TxFIFO_Empty(void);
+    void Memory_BlockMode(void);
+    bool Memory_IsBlockMode(void);
+    void Memory_XYMode(void);
+    bool Memory_IsXYMode(void);
+    void Memory_LinearMode(void);
+    bool Memory_IsLinearMode(void);
+    void Memory_8bpp_BlockMode(void);
+    void Memory_16bpp_BlockMode(void);
+    void Memory_24bpp_BlockMode(void);
+    void Memory_ColorDepth_BlockMode(eColorDepthBPP colordepth);
+
+    uint8_t SPIM_TxRxFIFOData_Get(void);
+    uint8_t SPIM_TxRxFIFOData_Put(uint8_t data);
+    bool SPIM_TxFIFO_Empty(void);
     bool SPIM_TxFIFO_Full(void);
-		bool SPIM_RxFIFO_Empty(void);
-		bool SPIM_RxFIFO_Full(void);
-		void SPIM_Select_Bus0(void);
+    bool SPIM_RxFIFO_Empty(void);
+    bool SPIM_RxFIFO_Full(void);
+    void SPIM_Select_Bus0(void);
     void SPIM_Select_Bus1(void);
-		void SPIM_RxLatchEdge_Rising(void);
-		void SPIM_RxLatchEdge_Falling(void);
+    void SPIM_RxLatchEdge_Rising(void);
+    void SPIM_RxLatchEdge_Falling(void);
 
-		bool Interrupt_Overflow_Flag(void);
-		void Interrupt_ClearOverflow_Flag(void);
-		bool EMTI_Flag(void);
-		void EMTI_Clear_Flag(void);
-		
-		void Interrupt_ActiveLevel(eInterruptLevel level);
-		void ExtInterrupt_Debounce(void);
-		void ExtInterrupt_NoDebounce(void);
-		void ExtInterrupt_InputLevelTrigger(eInterrupLevelTrigger leveltrg);
-		void LVDS_DataFormat_VESA(void);
-		void LVDS_DataFormat_JEIDA(void);
-		
-		void nSS_Select_Channel(eNSS_Channel channel);
-		void Interrupt_SPIM_Enable(bool b);
-		void nSS_Inactive(void);
-		void nSS_Active(void);
-		void Interrupt_FIFOOverflow_Enable(bool b);
-		void Interrupt_EMTIRQEN_Enable(bool b);
-		void Reset_CPOL(void);
-		void Set_CPOL(void);
-		void Reset_CPHA(void);
-		void Set_CPHA(void);
+    bool Interrupt_Overflow_Flag(void);
+    void Interrupt_ClearOverflow_Flag(void);
+    bool EMTI_Flag(void);
+    void EMTI_Clear_Flag(void);
 
-		void DrawEnable_AA(bool b);             //Verificar se funcao do RA8876/RA8877
-		void LineMode_Start(void);
+    void Interrupt_ActiveLevel(eInterruptLevel level);
+    void ExtInterrupt_Debounce(void);
+    void ExtInterrupt_NoDebounce(void);
+    void ExtInterrupt_InputLevelTrigger(eInterrupLevelTrigger leveltrg);
+    void LVDS_DataFormat_VESA(void);
+    void LVDS_DataFormat_JEIDA(void);
+		
+    void nSS_Select_Channel(eNSS_Channel channel);
+    void Interrupt_SPIM_Enable(bool b);
+    void nSS_Inactive(void);
+    void nSS_Active(void);
+    void Interrupt_FIFOOverflow_Enable(bool b);
+    void Interrupt_EMTIRQEN_Enable(bool b);
+    void Reset_CPOL(void);
+    void Set_CPOL(void);
+    void Reset_CPHA(void);
+    void Set_CPHA(void);
+
+    void DrawEnable_AA(bool b);                              //Verificar se funcao do RA8876/RA8877
+    void LineMode_Start(void);
     void TriangleMode_Start(bool fill);
     void CircleMode_Start(bool fill);
-		void EllipseMode_Start(bool fill);
-		void CurveLeftDownMode_Start(bool fill);
-		void CurveLeftUpMode_Start(bool fill);
-		void CurveRightUpMode_Start(bool fill);
-		void CurveRightDownMode_Start(bool fill);
-		void SquareMode_Start(bool fill);
-		void CircleSquareMode_Start(bool fill);
+    void EllipseMode_Start(bool fill);
+    void CurveLeftDownMode_Start(bool fill);
+    void CurveLeftUpMode_Start(bool fill);
+    void CurveRightUpMode_Start(bool fill);
+    void CurveRightDownMode_Start(bool fill);
+    void SquareMode_Start(bool fill);
+    void CircleSquareMode_Start(bool fill);
 		
     void Point1_XY(uint16_t wx, uint16_t hy);
-		void Point2_XY(uint16_t wx, uint16_t hy);
-		void Point3_XY(uint16_t wx, uint16_t hy);
-		void Line_Point1XY(uint16_t wx, uint16_t hy);            //Mesmo que Point1_XY()
-		void Line_Point2XY(uint16_t wx, uint16_t hy);            //Mesmo que Point2_XY()
-		void Triangle_Point1XY(uint16_t wx, uint16_t hy);        //Mesmo que Point1_XY()
-		void Triangle_Point2XY(uint16_t wx, uint16_t hy);        //Mesmo que Point2_XY()
-		void Triangle_Point3XY(uint16_t wx, uint16_t hy);        //Mesmo que Point3_XY()
-		void Square_Point1XY(uint16_t wx, uint16_t hy);          //Mesmo que Point1_XY()
-		void Square_Point2XY(uint16_t wx, uint16_t hy);          //Mesmo que Point2_XY()
+    void Point2_XY(uint16_t wx, uint16_t hy);
+    void Point3_XY(uint16_t wx, uint16_t hy);
+    void Line_Point1XY(uint16_t wx, uint16_t hy);            //Mesmo que Point1_XY()
+    void Line_Point2XY(uint16_t wx, uint16_t hy);            //Mesmo que Point2_XY()
+    void Triangle_Point1XY(uint16_t wx, uint16_t hy);        //Mesmo que Point1_XY()
+    void Triangle_Point2XY(uint16_t wx, uint16_t hy);        //Mesmo que Point2_XY()
+    void Triangle_Point3XY(uint16_t wx, uint16_t hy);        //Mesmo que Point3_XY()
+    void Square_Point1XY(uint16_t wx, uint16_t hy);          //Mesmo que Point1_XY()
+    void Square_Point2XY(uint16_t wx, uint16_t hy);          //Mesmo que Point2_XY()
     void Radius_RxRy(uint16_t Rx, uint16_t Ry);
-		void CircleRadius_R(uint16_t R);                         //Adaptado, mesmo que Radius_RxRy()
+    void CircleRadius_R(uint16_t R);                         //Adaptado, mesmo que Radius_RxRy()
     void EllipseRadius_RxRy(uint16_t Rx, uint16_t Ry);       //Mesmo que Radius_RxRy()
     void CircleSquareRadius_RxRy(uint16_t Rx, uint16_t Ry);  //Mesmo que Radius_RxRy()
-		void Center_XY(uint16_t Wx, uint16_t Hy);
-		void CircleCenter_XY(uint16_t Wx, uint16_t Hy);          //Mesmo que Center_XY()
+    void Center_XY(uint16_t Wx, uint16_t Hy);
+    void CircleCenter_XY(uint16_t Wx, uint16_t Hy);          //Mesmo que Center_XY()
     void EllipseCenter_XY(uint16_t Wx, uint16_t Hy);         //Mesmo que Center_XY()
 
     void GammaCorrection_Enable(bool b);
-		void GammaTableforBlue(void);
-		void GammaTableforGreen(void);
-		void GammaTableforRed(void);
+    void GammaTableforBlue(void);
+    void GammaTableforGreen(void);
+    void GammaTableforRed(void);
 
-		void CursorGraphic_Enable(bool b);
-		void CursorGraphic_Set1(void);
-		void CursorGraphic_Set2(void);
-		void CursorGraphic_Set3(void);
-		void CursorGraphic_Set4(void);
-		void CursorText_Enable(bool b);
-		void CursorText_Blinking_Enable(bool b);
-		void CursorText_BlinkingTimeFrames(uint8_t frames);
-		void CursorText_Dimensions(uint8_t Wx, uint8_t Hy);
+    void CursorGraphic_Enable(bool b);
+    void CursorGraphic_Set1(void);
+    void CursorGraphic_Set2(void);
+    void CursorGraphic_Set3(void);
+    void CursorGraphic_Set4(void);
+    void CursorText_Enable(bool b);
+    void CursorText_Blinking_Enable(bool b);
+    void CursorText_BlinkingTimeFrames(uint8_t frames);
+    void CursorText_Dimensions(uint8_t Wx, uint8_t Hy);
     void CursorGraphic_Position(uint16_t Wx, uint16_t Hy);
     void CursorGraphic_Color0(uint8_t color);
-		void CursorGraphic_Color1(uint8_t color);
+    void CursorGraphic_Color1(uint8_t color);
 
     void Font_UseUserDefined(void);
     void Font_UseInternalCGROM(void);
-		void Font_UseExternalCGROM(void);
-		void Font_SetSource(FontSource source);
+    void Font_UseExternalCGROM(void);
+    void Font_SetSource(FontSource source);
     void Font_SetHeight_16(void);
-		void Font_SetHeight_24(void);
-		void Font_SetHeight_32(void);
-		void Font_SetHeight(FontHeight height);
-		void Font_LineDistance(uint8_t gap);
-		void Font_toFontWidthSetting(uint8_t pixels);
-		void Font_FullAlignmentEnable(void);
-		void Font_FullAlignmentDisable(void);
+    void Font_SetHeight_24(void);
+    void Font_SetHeight_32(void);
+    void Font_SetHeight(FontHeight height);
+    void Font_LineDistance(uint8_t gap);
+    void Font_toFontWidthSetting(uint8_t pixels);
+    void Font_FullAlignmentEnable(void);
+    void Font_FullAlignmentDisable(void);
     void Font_UseBackgroundTransparency(void);
     void Font_UseBackgroundColor(void);
     void Font_0degree(void);
-		void Font_90degree(void);
-		void Font_WidthEnlargFactor(FontEnlargFactor factor);
-		void Font_HeightEnlargFactor(FontEnlargFactor factor);
-		void CGRAM_StartAddress(uint32_t addr);
-		void SetTextParameter0(uint8_t sourceselect, uint8_t sizeselect, uint8_t isoselect);
-		void SetTextParameter1(uint8_t align, uint8_t chromakey, uint8_t widthenlarge, uint8_t heightenlarge);
-		
+    void Font_90degree(void);
+    void Font_WidthEnlargFactor(FontEnlargFactor factor);
+    void Font_HeightEnlargFactor(FontEnlargFactor factor);
+    void CGRAM_StartAddress(uint32_t addr);
+    void SetTextParameter0(uint8_t sourceselect, uint8_t sizeselect, uint8_t isoselect);
+    void SetTextParameter1(uint8_t align, uint8_t chromakey, uint8_t widthenlarge, uint8_t heightenlarge);
+
     void Select_Internal_CGROM_ISOIEC8859_1(void);
-		void Select_Internal_CGROM_ISOIEC8859_2(void);
-		void Select_Internal_CGROM_ISOIEC8859_4(void);
-		void Select_Internal_CGROM_ISOIEC8859_5(void);
+    void Select_Internal_CGROM_ISOIEC8859_2(void);
+    void Select_Internal_CGROM_ISOIEC8859_4(void);
+    void Select_Internal_CGROM_ISOIEC8859_5(void);
     void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso);
-		void GTFont_Select_GT21L16T1W(void);
-		void GTFont_Select_GT30L16U2W(void);
-		void GTFont_Select_GT30L24T3Y(void);
-		void GTFont_Select_GT30L24M1Z(void);
-		void GTFont_Select_GT30L32S4W(void);
-		void GTFont_Select_GT20L24F6Y(void);
-		void GTFont_Select_GT21L24S1W(void);
-		void GTFont_SetDecoder(uint8_t temp);
-    void GTFont_CharacterROMParameter(uint8_t scsselect, uint8_t clkdiv, uint8_t romselect, uint8_t characterselect, uint8_t gtwidth);
-		
-		void Select_SFI_SingleData_03h(void);
-		void Select_SFI_SingleData_0Bh(void);
-		void Select_SFI_SingleData_1Bh(void);
+    void GTFont_Select_GT21L16T1W(void);
+    void GTFont_Select_GT30L16U2W(void);
+    void GTFont_Select_GT30L24T3Y(void);
+    void GTFont_Select_GT30L24M1Z(void);
+    void GTFont_Select_GT30L32S4W(void);
+    void GTFont_Select_GT20L24F6Y(void);
+    void GTFont_Select_GT21L24S1W(void);
+    void GTFont_SetDecoder(uint8_t temp);
+    void GTFont_CharacterROMParameter(uint8_t scsselect, 
+                                      uint8_t clkdiv, 
+                                      uint8_t romselect, 
+                                      uint8_t characterselect,
+                                      uint8_t gtwidth);
+
+    void Select_SFI_SingleData_03h(void);
+    void Select_SFI_SingleData_0Bh(void);
+    void Select_SFI_SingleData_1Bh(void);
     void Select_SFI_DualData_3Bh(void);
-		void Select_SFI_DualData_BBh(void);               //Only RA8876/RA8877
-		void Select_SFI_QuadData_6Bh(void);
-		void Select_SFI_QuadData_EBh(void);
-		
-		void IDEC_SPI_Select_StandardMode0orMode3(void);  //Only RA8876/RA8887
-		void IDEC_RA8875_SPI_Select_Mode0andMode3(void);  //Only RA8876/RA8887
-		
-		void IDEC_Unmask_Interrupt(void);
-		void IDEC_Mask_Interrupt(void);
-		void IDEC_Interrupt_Mask(bool b);
-		void IDEC_InterruptEnable(bool b);
-		void IDEC_ClearInterrupt_Flag(void);
-		void IDEC_Reset(void);
-		void IDEC_SFI_Select_ROM(eSFIROM sfirom);
-		void Font_DMA_Select_Bus0(void);
-		void Font_DMA_Select_Bus1(void);
-		void IDEC_Select_Bus0(void);
-		void IDEC_Select_Bus1(void);
-		void IDEC_Destination_ColorDepth_8bpp(void);
-		void IDEC_Destination_ColorDepth_16bpp(void);
-		void IDEC_Destination_ColorDepth_24bpp(void);
-		void IDEC_Destination_ColorDepth(eColorDepthBPP bpp);
-		void IDEC_Starts_Decoding(void);
-		void IDEC_WaitReady(void);
-		uint8_t IDEC_Busy(void);
+    void Select_SFI_DualData_BBh(void);                      //Only RA8876/RA8877
+    void Select_SFI_QuadData_6Bh(void);
+    void Select_SFI_QuadData_EBh(void);
+
+    void IDEC_SPI_Select_StandardMode0orMode3(void);         //Only RA8876/RA8887
+    void IDEC_RA8875_SPI_Select_Mode0andMode3(void);         //Only RA8876/RA8887
+    void IDEC_Unmask_Interrupt(void);
+    void IDEC_Mask_Interrupt(void);
+    void IDEC_Interrupt_Mask(bool b);
+    void IDEC_InterruptEnable(bool b);
+    void IDEC_ClearInterrupt_Flag(void);
+    void IDEC_Reset(void);
+    void IDEC_SFI_Select_ROM(eSFIROM sfirom);
+    void Font_DMA_Select_Bus0(void);
+    void Font_DMA_Select_Bus1(void);
+    void IDEC_Select_Bus0(void);
+    void IDEC_Select_Bus1(void);
+    void IDEC_Destination_ColorDepth_8bpp(void);
+    void IDEC_Destination_ColorDepth_16bpp(void);
+    void IDEC_Destination_ColorDepth_24bpp(void);
+    void IDEC_Destination_ColorDepth(eColorDepthBPP bpp);
+    void IDEC_Starts_Decoding(void);
+    void IDEC_WaitReady(void);
+    uint8_t IDEC_Busy(void);
     void IDEC_SFI_Select_24bitAddress(void);
     void IDEC_SFI_Select_32bitAddress(void);
     void IDEC_SPI_ClockDivide(uint8_t spiclockdivide);
     void IDEC_Source_StartAddress(uint32_t addr);
     void IDEC_Destination_UpperLeftCorner(uint16_t Wx, uint16_t Hy);
     void IDEC_AVI_Decoding_PIP1_Shadow(void);
-		void IDEC_AVI_Decoding_PIP2_Shadow(void);
-		void IDEC_AVI_Decoding_PIP1_NoShadow(void);
+    void IDEC_AVI_Decoding_PIP2_Shadow(void);
+    void IDEC_AVI_Decoding_PIP1_NoShadow(void);
     void IDEC_AVI_SetMode(eAVIMode mode);
-		void IDEC_SetImageDMANumber(uint32_t num);
+    void IDEC_SetImageDMANumber(uint32_t num);
     void IDEC_Destination_StartAddress(uint32_t addr);
-		void IDEC_Destination_ImageWidth(uint16_t Wx);
+    void IDEC_Destination_ImageWidth(uint16_t Wx);
 
-		void PWM_Prescaler(uint8_t prescaler);
+    void PWM_Prescaler(uint8_t prescaler);
     void PWM0_ClockDividedBy(eDividerClock divider);
-		void PWM1_ClockDividedBy(eDividerClock divider);
-		void PWM1_Select_ErrorFlag(void);
-		void PWM1_Select(void);
-		void PWM1_Select_OscillatorClock(void);
-		void PWM0_Select_GPIOC7(void);
-		void PWM0_Select(void);
-		void PWM0_Select_CoreClock(void);
-		void PWM1_InverterOn(boolean on);
-		void PWM1_Select_AutoReload(void);
-		void PWM1_Select_OneShot(void);
-		void PWM1_StartTimer(void);
-		void PWM1_StopTimer(void);
-		void PWM0_DeadZoneEnable(bool b);
-		void PWM0_InverterOn(bool on);
-		void PWM0_Select_AutoReload(void);
-		void PWM0_Select_OneShot(void);
-		void PWM0_StartTimer(void);
-		void PWM0_StopTimer(void);
+    void PWM1_ClockDividedBy(eDividerClock divider);
+    void PWM1_Select_ErrorFlag(void);
+    void PWM1_Select(void);
+    void PWM1_Select_OscillatorClock(void);
+    void PWM0_Select_GPIOC7(void);
+    void PWM0_Select(void);
+    void PWM0_Select_CoreClock(void);
+    void PWM1_InverterOn(boolean on);
+    void PWM1_Select_AutoReload(void);
+    void PWM1_Select_OneShot(void);
+    void PWM1_StartTimer(void);
+    void PWM1_StopTimer(void);
+    void PWM0_DeadZoneEnable(bool b);
+    void PWM0_InverterOn(bool on);
+    void PWM0_Select_AutoReload(void);
+    void PWM0_Select_OneShot(void);
+    void PWM0_StartTimer(void);
+    void PWM0_StopTimer(void);
     void PWM0_DeadZoneLength(uint8_t len);
-		void PWM0_SetCompareBuffer(uint16_t Wx);
-		void PWM0_SetCountBuffer(uint16_t Wx);
-		void PWM1_SetCompareBuffer(uint16_t Wx);
-		void PWM1_SetCountBuffer(uint16_t Wx);
+    void PWM0_SetCompareBuffer(uint16_t Wx);
+    void PWM0_SetCountBuffer(uint16_t Wx);
+    void PWM1_SetCompareBuffer(uint16_t Wx);
+    void PWM1_SetCountBuffer(uint16_t Wx);
 		
-		void SFI_Select_ROM0(void);
-		void SFI_Select_ROM1(void);
-		void SFI_DMA_WaitReady(void);
-		void SFI_DMA_Start(void);
-		void Select_SFI_FontMode(void);
-		void Select_SFI_DMAMode(void);
-		void SFI_Select_24bitAddress(void);
-		void SFI_Select_32bitAddress(void);
-		void SFI_Select_WaveformMode0(void);              //Only RA8876/RA8887
-		void SFI_Select_WaveformMode3(void);              //Only RA8876/RA8887
+    void SFI_Select_ROM0(void);
+    void SFI_Select_ROM1(void);
+    void SFI_DMA_WaitReady(void);
+    void SFI_DMA_Start(void);
+    void Select_SFI_FontMode(void);
+    void Select_SFI_DMAMode(void);
+    void SFI_Select_24bitAddress(void);
+    void SFI_Select_32bitAddress(void);
+    void SFI_Select_WaveformMode0(void);              //Only RA8876/RA8887
+    void SFI_Select_WaveformMode3(void);              //Only RA8876/RA8887
     void SFI_SelectROM_CS0 (void);
-		void SFI_SelectROM_CS1 (void);
-		void SFI_SelectROM_CS2(void);
-		void SFI_SelectROM_CS3(void);
-		inline void SFI_SelectROM_CS_Fast(uint8_t cs_num);
-		void SFI_DMA_SourceAddress(uint32_t addr);
-		void SFI_DMA_DestinationAddress(uint32_t addr);
-		void SFI_DMA_DestinationUpperLeftCorner(uint16_t Wx, uint16_t Hy);
-		void SFI_DMA_TransferNumber(uint32_t addr);
-		void SFI_DMA_TransferWidthHeight(uint16_t Wx, uint16_t Hy);
-		void SFI_DMA_SourceWidth(uint16_t Wx);
-				
-		void Power_NormalMode(void);
-		void Power_SavingStandbyMode(void);
-		void Power_SavingSuspendMode(void);
-		void Power_SavingSleepMode(void);
-		
-		void BTE_WaitReady(void);
-		void BTE_DualWaitReady(void);
-		void BTE_PatternFormat8X8(void);
-		void BTE_PatternFormat16X16(void);
-		void BTE_Enable(bool b);
-		void BTE_OperationCode(eBTEOpCode opcode);
-		void BTE_S0_ColorDeph(eColorDepthBPP bpp);
-		void BTE_S0_ColorDeph_8bpp(void);
-		void BTE_S0_ColorDeph_16bpp(void);
+    void SFI_SelectROM_CS1 (void);
+    void SFI_SelectROM_CS2(void);
+    void SFI_SelectROM_CS3(void);
+    inline void SFI_SelectROM_CS_Fast(uint8_t cs_num);
+    void SFI_DMA_SourceAddress(uint32_t addr);
+    void SFI_DMA_DestinationAddress(uint32_t addr);
+    void SFI_DMA_DestinationUpperLeftCorner(uint16_t Wx, uint16_t Hy);
+    void SFI_DMA_TransferNumber(uint32_t addr);
+    void SFI_DMA_TransferWidthHeight(uint16_t Wx, uint16_t Hy);
+    void SFI_DMA_SourceWidth(uint16_t Wx);
+
+    void Power_NormalMode(void);
+    void Power_SavingStandbyMode(void);
+    void Power_SavingSuspendMode(void);
+    void Power_SavingSleepMode(void);
+
+    void BTE_WaitReady(void);
+    void BTE_DualWaitReady(void);
+    void BTE_PatternFormat8X8(void);
+    void BTE_PatternFormat16X16(void);
+    void BTE_Enable(bool b);
+    void BTE_OperationCode(eBTEOpCode opcode);
+    void BTE_S0_ColorDeph(eColorDepthBPP bpp);
+    void BTE_S0_ColorDeph_8bpp(void);
+    void BTE_S0_ColorDeph_16bpp(void);
     void BTE_S0_ColorDeph_24bpp(void);
     void BTE_S1_ColorDeph_8bpp(void);
     void BTE_S1_ColorDeph_16bpp(void);
@@ -2187,59 +2199,59 @@ class Panel_RA8889 {
     void BTE_S1_ColorDeph_8bitAlpha(void);
     void BTE_S1_ColorDeph_16bitAlpha(void);
     void BTE_Destination_ColorDeph(eColorDepthBPP bpp);
-		void BTE_Destination_ColorDeph_16bpp(void);
-		void BTE_Destination_ColorDeph_24bpp(void);
-		void BTE_S0_MemoryStartAddress(uint32_t addr);
-		void BTE_S0_ImageWidth(uint16_t Wx);
-		void BTE_S0_WindowStart_XY(uint16_t Wx, uint16_t Hy);
-		void BTE_S1_MemoryStartAddress(uint32_t addr);
-		void S1_ConstantColor_256(uint8_t color);
-		void S1_ConstantColor_65k(uint16_t color);
-		void S1_ConstantColor_16M(uint32_t color);
-		void BTE_S1_ImageWidth(uint16_t Wx);
-		void BTE_S1_WindowStart_XY(uint16_t Wx, uint16_t Hy);
-		void BTE_Destination_MemoryStartAddress(uint32_t addr);
-		void BTE_Destination_ImageWidth(uint16_t Wx);
-		void BTE_Destination_WindowStart_XY(uint16_t Wx, uint16_t Hy);
-		void BTE_WindowSize(uint16_t Wx, uint16_t Hy);
-		void BTE_AlphaBlendingEffect(uint8_t value);
-		void BTE_ROPCode(eROPCode code);
-		
+    void BTE_Destination_ColorDeph_16bpp(void);
+    void BTE_Destination_ColorDeph_24bpp(void);
+    void BTE_S0_MemoryStartAddress(uint32_t addr);
+    void BTE_S0_ImageWidth(uint16_t Wx);
+    void BTE_S0_WindowStart_XY(uint16_t Wx, uint16_t Hy);
+    void BTE_S1_MemoryStartAddress(uint32_t addr);
+    void S1_ConstantColor_256(uint8_t color);
+    void S1_ConstantColor_65k(uint16_t color);
+    void S1_ConstantColor_16M(uint32_t color);
+    void BTE_S1_ImageWidth(uint16_t Wx);
+    void BTE_S1_WindowStart_XY(uint16_t Wx, uint16_t Hy);
+    void BTE_Destination_MemoryStartAddress(uint32_t addr);
+    void BTE_Destination_ImageWidth(uint16_t Wx);
+    void BTE_Destination_WindowStart_XY(uint16_t Wx, uint16_t Hy);
+    void BTE_WindowSize(uint16_t Wx, uint16_t Hy);
+    void BTE_AlphaBlendingEffect(uint8_t value);
+    void BTE_ROPCode(eROPCode code);
+
     void PIP_Display_StartXY(uint16_t Wx, uint16_t Hy);
     void PIP_Image_StartAddress(uint32_t addr);
-		void PIP_Image_Width(uint16_t Wx);
-		void PIP_WindowImage_StartXY(uint16_t Wx, uint16_t Hy);
-		void PIP_Window_WidthHeight(uint16_t Wx, uint16_t Hy);
+    void PIP_Image_Width(uint16_t Wx);
+    void PIP_WindowImage_StartXY(uint16_t Wx, uint16_t Hy);
+    void PIP_Window_WidthHeight(uint16_t Wx, uint16_t Hy);
     void PIP1_Window_ColorDepth(eColorDepthBPP bpp);
-		void PIP1_Window_ColorDepth_8bpp(void);
-		void PIP1_Window_ColorDepth_16bpp(void);
-		void PIP1_Window_ColorDepth_24bpp(void);
-		void PIP2_Window_ColorDepth(eColorDepthBPP bpp);
-		void PIP2_Window_ColorDepth_8bpp(void);
-		void PIP2_Window_ColorDepth_16bpp(void);
-		void PIP2_Window_ColorDepth_24bpp(void);
-       
-		void I2CM_Enable(bool b);
-		void I2CM_WriteWithStart(void);
+    void PIP1_Window_ColorDepth_8bpp(void);
+    void PIP1_Window_ColorDepth_16bpp(void);
+    void PIP1_Window_ColorDepth_24bpp(void);
+    void PIP2_Window_ColorDepth(eColorDepthBPP bpp);
+    void PIP2_Window_ColorDepth_8bpp(void);
+    void PIP2_Window_ColorDepth_16bpp(void);
+    void PIP2_Window_ColorDepth_24bpp(void);
+
+    void I2CM_Enable(bool b);
+    void I2CM_WriteWithStart(void);
     void I2CM_Stop(void);
     void I2CM_ReadWithAck(void);
-		void I2CM_ReadWithNack(void);
+    void I2CM_ReadWithNack(void);
     void I2CM_Write(void);
-		bool I2CM_CheckSlaveACK(void);
+    bool I2CM_CheckSlaveACK(void);
     bool I2CM_BusBusy(void);
     uint8_t I2CM_TransmitProgress(void);
-		uint8_t I2CM_Arbitration(void);
-		void I2CM_ClockPrescale(uint16_t prescale);
-		void I2CM_TransmitData(uint8_t data);
-		uint8_t I2CM_Receiver_Data(void);
-		void I2CM_SetFrequency(uint32_t xscl_hz, uint16_t coreclk_mhz);
+    uint8_t I2CM_Arbitration(void);
+    void I2CM_ClockPrescale(uint16_t prescale);
+    void I2CM_TransmitData(uint8_t data);
+    uint8_t I2CM_Receiver_Data(void);
+    void I2CM_SetFrequency(uint32_t xscl_hz, uint16_t coreclk_mhz);
 
     void GPIOA_InOut(uint8_t dir);
-		void GPIOA_Write(uint8_t value);
-		uint8_t GPIOA_Read(void);
+    void GPIOA_Write(uint8_t value);
+    uint8_t GPIOA_Read(void);
     void GPIOB_Write(uint8_t value);
     uint8_t GPIOB_Read(void);
-		void GPIOC_InOut(uint8_t dir);
+    void GPIOC_InOut(uint8_t dir);
     void GPIOC_Write(uint8_t value);
     uint8_t GPIOC_Read(void);
     void GPIOD_InOut(uint8_t dir);
@@ -2247,90 +2259,74 @@ class Panel_RA8889 {
     uint8_t GPIOD_Read(void);
     void GPIOE_InOut(uint8_t dir);
     void GPIOE_Write(uint8_t value);
-		uint8_t GPIOE_Read(void);
+    uint8_t GPIOE_Read(void);
     void GPIOF_InOut(uint8_t dir);
-		void GPIOF_Write(uint8_t value);
-		uint8_t GPIOF_Read(void);
+    void GPIOF_Write(uint8_t value);
+    uint8_t GPIOF_Read(void);
 
     void GPIOF_PullUp_Enable(void);
-		void GPIOF_PullUp_Disable(void);
-		void GPIOE_PullUp_Enable(void);
-		void GPIOE_PullUp_Disable(void);
-		void GPIOD_PullUp_Enable(void);
-		void GPIOD_PullUp_Disable(void);
-		void GPIOC_PullUp_Enable(void);
-		void GPIOC_PullUp_Disable(void);
-		void XDB15_8_PullUp_Enable(void);
-		void XDB15_8_PullUp_Disable(void);
-		void XDB7_0_PullUp_Enable(void);
-		void XDB7_0_PullUp_Disable(void);
+    void GPIOF_PullUp_Disable(void);
+    void GPIOE_PullUp_Enable(void);
+    void GPIOE_PullUp_Disable(void);
+    void GPIOD_PullUp_Enable(void);
+    void GPIOD_PullUp_Disable(void);
+    void GPIOC_PullUp_Enable(void);
+    void GPIOC_PullUp_Disable(void);
+    void XDB15_8_PullUp_Enable(void);
+    void XDB15_8_PullUp_Disable(void);
+    void XDB7_0_PullUp_Enable(void);
+    void XDB7_0_PullUp_Disable(void);
 
     void XPDAT18_GPIO_D7_Mode(void);
     void XPDAT18_KOUT4_Mode(void);
     void XPDAT17_GPIO_D5_Mode(void);
-		void XPDAT17_KOUT2_Mode(void);
-		void XPDAT16_GPIO_D4_Mode(void);
-		void XPDAT16_KOUT1_Mode(void);
-		void XPDAT9_GPIO_D3_Mode(void);
-		void XPDAT9_KOUT3_Mode(void);
-		void XPDAT8_GPIO_D2_Mode(void);
-		void XPDAT8_KIN3_Mode(void);
-		void XPDAT2_GPIO_D6_Mode(void);
-		void XPDAT2_KIN4_Mode(void);
-		void XPDAT1_GPIO_D1_Mode(void);
-		void XPDAT1_KIN2_Mode(void);
-		void XPDAT0_GPIO_D0_Mode(void);
-		void XPDAT0_KIN1_Mode(void);
+    void XPDAT17_KOUT2_Mode(void);
+    void XPDAT16_GPIO_D4_Mode(void);
+    void XPDAT16_KOUT1_Mode(void);
+    void XPDAT9_GPIO_D3_Mode(void);
+    void XPDAT9_KOUT3_Mode(void);
+    void XPDAT8_GPIO_D2_Mode(void);
+    void XPDAT8_KIN3_Mode(void);
+    void XPDAT2_GPIO_D6_Mode(void);
+    void XPDAT2_KIN4_Mode(void);
+    void XPDAT1_GPIO_D1_Mode(void);
+    void XPDAT1_KIN2_Mode(void);
+    void XPDAT0_GPIO_D0_Mode(void);
+    void XPDAT0_KIN1_Mode(void);
 		
     void KeyScan_LongKeyEnable(bool b = true);
     void KeyScan_Freguency(uint8_t setx);
     void KeyScan_WakeupFunctionEnable(bool b = true);
     void KeyScan_LongKeyTimingAdjust(uint8_t setx);
     uint8_t KeyScan_KeyHits(void);
-		uint8_t KeyScan_ReadKeyStrobeData0(void);
+    uint8_t KeyScan_ReadKeyStrobeData0(void);
     uint8_t KeyScan_ReadKeyStrobeData1(void);
     uint8_t KeyScan_ReadKeyStrobeData2(void);
     uint8_t KeyScan_ReadKeyStrobeData(uint8_t index);
-        
-		void XnINTR_ResumeInterrupt_Mask(bool b);
-		void XnINTR_ExtInterruptInput_Mask(bool b);
-		void XnINTR_I2CMInterrupt_Mask(bool b);
-		void XnINTR_VsyncInterrupt_Mask(bool b);
-		void XnINTR_KeyScanInterrupt_Mask(bool b);
-		void XnINTR_GenericInterrupt_Mask(bool b);
-		void XnINTR_PWM1Interrupt_Mask(bool b);
-		void XnINTR_PWM0Interrupt_Mask(bool b);
+
+    void XnINTR_ResumeInterrupt_Mask(bool b);
+    void XnINTR_ExtInterruptInput_Mask(bool b);
+    void XnINTR_I2CMInterrupt_Mask(bool b);
+    void XnINTR_VsyncInterrupt_Mask(bool b);
+    void XnINTR_KeyScanInterrupt_Mask(bool b);
+    void XnINTR_GenericInterrupt_Mask(bool b);
+    void XnINTR_PWM1Interrupt_Mask(bool b);
+    void XnINTR_PWM0Interrupt_Mask(bool b);
 
     void AVI_ShadowPIP_StartAddress(uint32_t addr);
     uint8_t Media_Error_Flag(void);
     void Media_DecodeBusy(void);
-		void Media_DecodeWaitReady(void);
-		uint8_t MediaDecodeBusy(void);
+    void Media_DecodeWaitReady(void);
+    uint8_t MediaDecodeBusy(void);
     uint8_t Media_Fifo_Empty(void);
     uint16_t Media_HeaderImageHeight(void);
     uint16_t Media_HeaderImageWidth(void);
     uint32_t AVI_HeaderFramePeriod(void);
     void AVI_Pause(void);
-		void AVI_Stop(void);
+    void AVI_Stop(void);
 
-
-	private:
-
-	protected:
-		uint8_t _cs;	              //chip select pin
-		uint8_t _xnreset;	          //chip reset pin
-		uint16_t _width;            //lardura do display
-		uint16_t _height;           //altura do display
-		uint8_t _bpp;               //color depht 8/16/24 bit per pixel (bpp)
-		uint8_t _mcu;               //tipo MCU/MPU 8 ou 16 bits 
-		uint8_t _colorfmt;          //formato da cor RGB, RBG, GRB, GBR, ....
-		uint32_t _spi_clockmax;     //velocidade de comunucacao de clock maximo do SPI
-		uint8_t _spi_datamode;      //SPI_MODE0[1,2,3] de comunicacao
-		uint8_t _spi_dataorder;     //ordem de dados spi MSBFIRST ou LSBFIRST
-        //static SPIClass* spi;       //ponteiro apra instancia SPI
 };
 
-#define SERIAL_DEBUG
 
 #define ACTIVE0
 #define ACTIVE1

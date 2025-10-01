@@ -66,10 +66,40 @@
 
 
 //================================================================================
-// Funções auxiliar
+// Funções/Macros auxiliares
 //================================================================================
 
+//Antes de usar macro DEBUG_PRINT, use no Setup() a macro DEBUG_BEGIN para iniciar a comunicacao serial.
+#ifdef SERIAL_DEBUG
+  bool serialStarted = false;
+  #define DEBUG_BEGIN(baud) do { Serial.begin(baud); serialStarted = true; } while(0)
+  #define DEBUG_PRINT(msg, val, b) SerialPrint(msg, val, b)
+#else
+   // Se não houver debug, macros não fazem nada
+  #define DEBUG_BEGIN(baud)
+  #define DEBUG_PRINT(msg, val, b)
+#endif
 
+
+/**
+ * @brief Depuracao do codigo
+ *
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void SerialPrint(String msg, uint32_t value, bool b = true)
+{
+  #ifdef SERIAL_DEBUG
+  if (!serialStarted) return;  // segurança extra
+  #endif
+  Serial.print(msg);
+  b ? Serial.println(value) : Serial.println("");
+}
 
 
 //================================================================================
@@ -128,15 +158,6 @@ void Panel_RA8889::PanelResolution(ePanelResolution resolution)
 }
 
 
-void SerialPrint(String msg, uint32_t value, bool b = true)
-{
-#ifdef SERIAL_DEBUG  
-  Serial.print(msg);
-  b ? Serial.println(value) : Serial.println("");
-#endif
-}
-
-
 /**
  * @brief Inicializa configurações basicas do display RA8889
  *
@@ -150,26 +171,26 @@ void SerialPrint(String msg, uint32_t value, bool b = true)
  */
 bool Panel_RA8889::Begin(void)
 {
-
-  SPI_Init();                           //inicializa comuncicao SPI
+  SPI_Init();                           //inicializa comunicação SPI
+  
   HardwareReset();                      //Inicia o reset de hardware
 
-  #ifdef CHECK_RA8889
+  #ifdef CHECK_RAIOFAMILY
   //Verifica se é um RA8889
   SerialPrint("ID Code: ", ReadIDCode());
-  if (ReadIDCode() == 0x89) { Serial.println("RA8889 connect pass!"); }
+  if (ReadIDCode() == 0x89) { DEBUG_PRINT("RA8889 connect pass!",0,false); }
   else { 
-    Serial.println("RA8889 not found!");
+    DEBUG_PRINT("RA8889 not found!",0,false);
     return false;
   }
   #endif
   
   //Inicializa as configurações basicas do display RA8889
   if (!Initialize()) {
-    Serial.println("RA8889 initial fail!");
+    DEBUG_PRINT("RA8889 initial fail!",0,false);
     return false;
   } else {
-    Serial.println("RA8889 initial sucess!");
+    DEBUG_PRINT("RA8889 initial sucess!",0,false);
   }
   
   return true;
@@ -190,9 +211,9 @@ bool Panel_RA8889::Begin(void)
 bool Panel_RA8889::Initialize(void)
 {
   uint8_t temp;
-  SerialPrint("Start PLL Wait for Ready...", 0, false);
+  DEBUG_PRINT("Start PLL Wait for Ready...", 0, false);  //Debug
   PLL_WaitReady();
-  SerialPrint("PLL Wait Ready: Pass", 0, false);
+  DEBUG_PRINT("PLL Wait Ready: Pass", 0, false);         //Debug
   delay(100);
   
   // Aguarda até que a inicialização interna do RA8889 termine
@@ -203,11 +224,10 @@ bool Panel_RA8889::Initialize(void)
   //Configura clock Pixel/SDRAM/Core PLL
   
   PLL_Init();
-  SerialPrint("PLL Init: Pass", 0, false);
-  //PLL_Init2();
+  DEBUG_PRINT("PLL Init: Pass", 0, false);     //Debug
 
   SDRAM_Init();                                //Inicializa a SDRAM
-  SerialPrint("SDRAM Init: Pass", 0, false);
+  DEBUG_PRINT("SDRAM Init: Pass", 0, false);   //Debug
 
 //Chip Configuration Register (CCR) [01h]
 //Nota: Não é obrigatorio que o TFT seja o mesmo apdrão de dados da MCU. Por comodismo deixei o mesmo
@@ -240,9 +260,9 @@ bool Panel_RA8889::Initialize(void)
 //Input Control Register (ICR) [03h]
 
   GraphicMode();
-  SerialPrint("Graphic Mode: Pass", 0, false);
+  DEBUG_PRINT("Graphic Mode: Pass",0,false);             //Debug
   MemorySelect_SDRAM();
-  SerialPrint("Memory Select SDRAM: Pass", 0, false);
+  DEBUG_PRINT("Memory Select SDRAM: Pass",0,false);      //Debug
 
 //Display Configuration Register (DPCR) [12h]
 //Panel scan Clock and Data Setting Register (PCSR) [13h]
@@ -259,7 +279,7 @@ bool Panel_RA8889::Initialize(void)
 //VSYNC Pulse Width Register (VPWR) [0x1f]
 
   LCD_SetPanel();                              //Configuração do Panel Screen LCD, de acordo com o tipo do fabricante
-  SerialPrint("LCD Panel: Pass", 0, false);
+  DEBUG_PRINT("LCD Panel: Pass",0,false);      //Debug
 
 #ifdef COLOR_DEPTH_8
   Select_MainWindow_8bpp();
@@ -1604,152 +1624,39 @@ void Panel_RA8889::PLL_ConfigClocks(uint8_t scanclk, uint8_t dramclk, uint8_t co
 	SPI_DataWrite((30*8/xtalclk)-1);           //Deve ser de 1~63, 0 é proibido
   }
 
-  //PLL_Enable();
-  //O fabricante permite que o dispositivo, possa fazer as configurações do PLL sem estar desligado ou desativado o PLL
-  //basta delsigar momentaneamente e religar ele para entrar em vigo as configurações de frequencia.
-  //Isso é feito apra simplificar e facilitar a progarmação e arquitetura sem gerar instabilidade no disposiutivo.
-  
-  // ---------- Desliga temporariamente o PLL ----------
-  //SPI_CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
-  //SPI_CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
-  //delay(1);                                    //Aguarda para estabilizar
-  
-  // ---------- Habilita PLL com novos valores ----------
-  //SPI_CmdWrite(0x80);                          //Comando para ligar PLL
-  //delay(2);                                    //Aguarda para estabilizar
-
-  //return ((SPI_DataRead() & 0x80) == 0x80 ? true : false);
-/*
-	SPI_CmdWrite(0x01);
-	SPI_CmdWrite(0x00);
-	delay(1);
-	SPI_CmdWrite(0x80);
-	//Enable_PLL();
-  delay(1);	
-  */
 }
-//OK
+
+
+/**
+ * @brief Inicializa o PLL do RA8889 com as frequências padrão
+ * 
+ * @details
+ * Esta função realiza a configuração completa do PLL do RA8889 utilizando
+ * os valores padrão definidos por macros:
+ * - SCAN_FREQ  : frequência do Pixel/Scan Clock
+ * - DRAM_FREQ  : frequência do SDRAM Clock
+ * - CORE_FREQ  : frequência do Core/System Clock
+ * - OSC_FREQ   : frequência do cristal externo
+ * 
+ * O procedimento segue o fluxo seguro:
+ * 1. Desabilita temporariamente o PLL via PLL_Disable()
+ * 2. Configura os divisores e multiplicadores apropriados chamando
+ *    PLL_ConfigClocks()
+ * 3. Habilita o PLL com os novos valores via PLL_Enable()
+ * 
+ * Após a execução, o PLL estará pronto para fornecer as frequências de
+ * operação ao RA8889.
+ * 
+ * @note Esta função depende de macros previamente definidas para as
+ * frequências de operação e do cristal externo. Também imprime uma
+ * mensagem no Serial indicando que a configuração foi concluída.
+ */
 void Panel_RA8889::PLL_Init(void)
 {
   PLL_Disable();  //O PLL so pode ser modificado com novos valores desligando antes
   PLL_ConfigClocks(SCAN_FREQ, DRAM_FREQ, CORE_FREQ, OSC_FREQ);
   PLL_Enable();	
-  Serial.println("PLL Configurado");
-}
-
-
-
-
-
-void Panel_RA8889::PLL_Init2(void) 
-{
-
-
- // Set pixel clock
-  if(SCAN_FREQ>=63)        //&&(SCAN_FREQ<=100))
-  {
-	SPI_CmdWrite(0x05);    //PLL Divided by 4
-	SPI_DataWrite(0x04);
-	SPI_CmdWrite(0x06);
-	SPI_DataWrite((SCAN_FREQ*4/OSC_FREQ)-1);
-  }
-  if((SCAN_FREQ>=32)&&(SCAN_FREQ<=62))
-  {           
-	SPI_CmdWrite(0x05);    //PLL Divided by 8
-	SPI_DataWrite(0x06);
-	SPI_CmdWrite(0x06);
-	SPI_DataWrite((SCAN_FREQ*8/OSC_FREQ)-1);
-  }
-  if((SCAN_FREQ>=16)&&(SCAN_FREQ<=31))
-  {           
-	SPI_CmdWrite(0x05);    //PLL Divided by 16
-	SPI_DataWrite(0x16);
-	SPI_CmdWrite(0x06);
-	SPI_DataWrite((SCAN_FREQ*16/OSC_FREQ)-1);
-  }
-  if((SCAN_FREQ>=8)&&(SCAN_FREQ<=15))
-  {
-	SPI_CmdWrite(0x05);    //PLL Divided by 32
-	SPI_DataWrite(0x26);
-	SPI_CmdWrite(0x06);
-	SPI_DataWrite((SCAN_FREQ*32/OSC_FREQ)-1);
-  }
-  if((SCAN_FREQ>0)&&(SCAN_FREQ<=7))
-  {
-	SPI_CmdWrite(0x05);    //PLL Divided by 64
-	SPI_DataWrite(0x36);
-	SPI_CmdWrite(0x06);
-	SPI_DataWrite((SCAN_FREQ*64/OSC_FREQ)-1);
-  }            
-  
-  // Set SDRAM clock
-  if(DRAM_FREQ>=125)        //&&(DRAM_FREQ<=166))
-  {
-	SPI_CmdWrite(0x07);    //PLL Divided by 2
-	SPI_DataWrite(0x02);
-	SPI_CmdWrite(0x08);
-	SPI_DataWrite((DRAM_FREQ*2/OSC_FREQ)-1);
-  }
-  if((DRAM_FREQ>=63)&&(DRAM_FREQ<=124))   //&&(DRAM_FREQ<=166)
-  {
-	SPI_CmdWrite(0x07);    //PLL Divided by 4
-	SPI_DataWrite(0x04);
-	SPI_CmdWrite(0x08);
-	SPI_DataWrite((DRAM_FREQ*4/OSC_FREQ)-1);
-  }
-  if((DRAM_FREQ>=31)&&(DRAM_FREQ<=62))
-  {           
-	SPI_CmdWrite(0x07);    //PLL Divided by 8
-	SPI_DataWrite(0x06);
-	SPI_CmdWrite(0x08);
-	SPI_DataWrite((DRAM_FREQ*8/OSC_FREQ)-1);
-  }
-  if(DRAM_FREQ<=30)
-  {
-	SPI_CmdWrite(0x07);    //PLL Divided by 8
-	SPI_DataWrite(0x06);
-	SPI_CmdWrite(0x08); //
-	SPI_DataWrite((30*8/OSC_FREQ)-1);
-  }
- 
-
-  // Set Core clock
-  if(CORE_FREQ>=125)
-  {
-	SPI_CmdWrite(0x09);    //PLL Divided by 2
-	SPI_DataWrite(0x02);
-	SPI_CmdWrite(0x0A);
-	SPI_DataWrite((CORE_FREQ*2/OSC_FREQ)-1);
-  }
-  if((CORE_FREQ>=63)&&(CORE_FREQ<=124))     
-  {
-	SPI_CmdWrite(0x09);    //PLL Divided by 4
-	SPI_DataWrite(0x04);
-	SPI_CmdWrite(0x0A);
-	SPI_DataWrite((CORE_FREQ*4/OSC_FREQ)-1);
-  }
-  if((CORE_FREQ>=31)&&(CORE_FREQ<=62))
-  {           
-	SPI_CmdWrite(0x09);    //PLL Divided by 8
-	SPI_DataWrite(0x06);
-	SPI_CmdWrite(0x0A);
-	SPI_DataWrite((CORE_FREQ*8/OSC_FREQ)-1);
-  }
-  if(CORE_FREQ<=30)
-  {
-	SPI_CmdWrite(0x09);    //PLL Divided by 8
-	SPI_DataWrite(0x06);
-	SPI_CmdWrite(0x0A); // 
-	SPI_DataWrite((30*8/OSC_FREQ)-1);
-  }
-
-	SPI_CmdWrite(0x01);
-	SPI_CmdWrite(0x00);
-	delay(1);
-	SPI_CmdWrite(0x80);
-	//Enable_PLL();
-
-	delay(1);	//
+  DEBUG_PRINT("PLL Initialized",0,false);
 }
 
 
@@ -2675,10 +2582,12 @@ void Panel_RA8889::MemoryPort_Select(MemoryPortDest dest)
 /**
  * @brief Interrupt Resume Enable/Disable
  *
- *        REG [0x0B] Interrupt Enable Register (INTEN)
- *                   bit [7] Wakeup/resume Interrupt Enable
- *                           0: Disable.
- *                           1: Enable.
+ * @verbatim
+ * REG [0x0B] Interrupt Enable Register (INTEN)
+ * bit [7] Wakeup/resume Interrupt Enable
+ *         0: Disable.
+ *         1: Enable.
+ * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
  *
@@ -2696,10 +2605,12 @@ void Panel_RA8889::Interrupt_Resume_Enable(bool b)
 /**
  * @brief External Interrupt Input Enable/Disable
  *
- *        REG [0x0B] Interrupt Enable Register (INTEN)
- *                   bit [6] External Interrupt (PS[0] pin) Enable
- *                           0: Disable.
- *                           1: Enable.
+ * @verbatim
+ * REG [0x0B] Interrupt Enable Register (INTEN)
+ * bit [6] External Interrupt (PS[0] pin) Enable
+ *         0: Disable.
+ *         1: Enable.
+ * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
  *
@@ -2717,10 +2628,12 @@ void Panel_RA8889::ExtInterrupt_Input_Enable(bool b)
 /**
  * @brief Interrupt I2C Master Enable/Disable
  *
- *        REG [0x0B] Interrupt Enable Register (INTEN)
- *                   bit [5] I2C Master Interrupt Enable
- *                           0: Disable.
- *                           1: Enable.
+ * @verbatim
+ * REG [0x0B] Interrupt Enable Register (INTEN)
+ * bit [5] I2C Master Interrupt Enable
+ *         0: Disable.
+ *         1: Enable.
+ * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
  *
@@ -2738,10 +2651,12 @@ void Panel_RA8889::Interrupt_I2CM_Enable(bool b)
 /**
  * @brief Interrupt Vertical Synchronization time base Enable/Disable
  *
- *        REG [0x0B] Interrupt Enable Register (INTEN)
- *                   bit [4] Vsync time base interrupt Enable Bit
- *                           0: Disable Interrupt.
- *                           1: Enable Interrupt.
+ * @verbatim
+ * REG [0x0B] Interrupt Enable Register (INTEN)
+ * bit [4] Vsync time base interrupt Enable Bit
+ *         0: Disable Interrupt.
+ *         1: Enable Interrupt.
+ * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
  *
@@ -2761,9 +2676,9 @@ void Panel_RA8889::Interrupt_VSync_Enable(bool b)
  *
  * @verbatim
  * REG [0x0B] Interrupt Enable Register (INTEN)
- *            bit [3] Key Scan Interrupt Enable Bit
- *                    0: Disable Key scan interrupt.
- *                    1: Enable Key scan interrupt.
+ * bit [3] Key Scan Interrupt Enable Bit
+ *         0: Disable Key scan interrupt.
+ *         1: Enable Key scan interrupt.
  * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
@@ -2784,10 +2699,10 @@ void Panel_RA8889::Interrupt_KeyScan_Enable(bool b)
  *
  * @verbatim
  * REG [0x0B] Interrupt Enable Register (INTEN)
- *            bit [2] Serial flash DMA Complete | Draw task finished | 
- *                    BTE Process Complete etc. Interrupt Enable
- *                    0: Disable interrupt.
- *                    1: Enable interrupt.
+ * bit [2] Serial flash DMA Complete | Draw task finished | 
+ *         BTE Process Complete etc. Interrupt Enable
+ *         0: Disable interrupt.
+ *         1: Enable interrupt.
  * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
@@ -2808,9 +2723,9 @@ void Panel_RA8889::Interrupt_ClearMultiEventTask_Enable(bool b)
  *
  * @verbatim
  * REG [0x0B] Interrupt Enable Register (INTEN)
- *            bit [1] PWM timer 1 Interrupt Enable Bit
- *                    0: Disable interrupt.
- *                    1: Enable interrupt.
+ * bit [1] PWM timer 1 Interrupt Enable Bit
+ *         0: Disable interrupt.
+ *         1: Enable interrupt.
  * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
@@ -2829,10 +2744,12 @@ void Panel_RA8889::Interrupt_PWM1_Enable(bool b)
 /**
  * @brief Interrupt PWM Timer 0 Enable/Disable
  *
- *        REG [0x0B] Interrupt Enable Register (INTEN)
- *                   bit [0] PWM timer 0 Interrupt Enable Bit
- *                           0: Disable interrupt.
- *                           1: Enable interrupt.
+ * @verbatim
+ * REG [0x0B] Interrupt Enable Register (INTEN)
+ * bit [0] PWM timer 0 Interrupt Enable Bit
+ *         0: Disable interrupt.
+ *         1: Enable interrupt.
+ * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
  *
@@ -2860,9 +2777,9 @@ void Panel_RA8889::Interrupt_PWM0_Enable(bool b)
  *
  * @verbatim
  * PAGE 1 REG [0x0B] Interrupt Enable Register (INTEN)
- *                   bit [0] IDEC Interrupt Enable Bit
- *                           0: Disable Interrupt.
- *                           1: Enable Interrupt.
+ *        bit [0] IDEC Interrupt Enable Bit
+ *                0: Disable Interrupt.
+ *                1: Enable Interrupt.
  * @endverbatim
  *
  * @param b: true Active Interrupt, False Deactive Interrupt
@@ -2896,30 +2813,30 @@ void Panel_RA8889::IDEC_InterruptEnable(bool b)
  *        
  * @verbatim
  * REG [0x0c] Interrupt Event Flag Register (INTF)
- *            Bit [7] Read Function ..Resume Interrupt Status
- *                    0: No Resume interrupt happens.
- *                    1: Resume interrupt happens.
- *            Bit [6] Read Function .. PS[0] pin Interrupt Status
- *                    0: No PS[0] pin interrupt happens.
- *                    1: PS[0] pin interrupt happens.
- *            Bit [5] Read Function .. I2C master Interrupt Status
- *                    0: No I2C master interrupt happens.
- *                    1: I2C master interrupt happens.
- *            Bit [4] Read Function .. Vsync Interrupt Status
- *                    0: No interrupt happens.
- *                    1: interrupt happens.
- *            Bit [3] Read Function ..Key Scan Interrupt Status
- *                    0: No Key Scan interrupt happens.
- *                    1: Key Scan interrupt happens.
- *            Bit [2] Read Function..Interrupt Status
- *                    0: No interrupt happens.
- *                    1: interrupt happens.
- *            Bit [1] Read Function..Interrupt Status
- *                    0: No interrupt happens.
- *                    1: interrupt happens.
- *            Bit [0] Read Function..Interrupt Status
- *                    0: No interrupt happens.
- *                    1: interrupt happens.
+ * Bit [7] Read Function ..Resume Interrupt Status
+ *         0: No Resume interrupt happens.
+ *         1: Resume interrupt happens.
+ * Bit [6] Read Function .. PS[0] pin Interrupt Status
+ *         0: No PS[0] pin interrupt happens.
+ *         1: PS[0] pin interrupt happens.
+ * Bit [5] Read Function .. I2C master Interrupt Status
+ *         0: No I2C master interrupt happens.
+ *         1: I2C master interrupt happens.
+ * Bit [4] Read Function .. Vsync Interrupt Status
+ *         0: No interrupt happens.
+ *         1: interrupt happens.
+ * Bit [3] Read Function ..Key Scan Interrupt Status
+ *         0: No Key Scan interrupt happens.
+ *         1: Key Scan interrupt happens.
+ * Bit [2] Read Function..Interrupt Status
+ *         0: No interrupt happens.
+ *         1: interrupt happens.
+ * Bit [1] Read Function..Interrupt Status
+ *         0: No interrupt happens.
+ *         1: interrupt happens.
+ * Bit [0] Read Function..Interrupt Status
+ *         0: No interrupt happens.
+ *         1: interrupt happens.
  * @endverbatim
  *                         
  * @param b: true, PIP enable, false, PIP disable
@@ -2938,13 +2855,13 @@ uint8_t Panel_RA8889::Interrupt_Status(void)
  *        
  * @verbatim
  * REG [0x0c] Interrupt Event Flag Register (INTF)
- *            Bit [4] Vsync Time base interrupt flag
- *                    Write Function .. Vsync Interrupt Clear Bit
- *                    0: No operation.
- *                    1: Clear the Vsync interrupt.
- *                    Read Function .. Vsync Interrupt Status
- *                    0: No interrupt happens.
- *                    1: interrupt happens.
+ * Bit [4] Vsync Time base interrupt flag
+ *         Write Function .. Vsync Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear the Vsync interrupt.
+ *         Read Function .. Vsync Interrupt Status
+ *         0: No interrupt happens.
+ *         1: interrupt happens.
  * @endverbatim
  *                         
  * @param None
@@ -2967,15 +2884,17 @@ void Panel_RA8889::VSYNC_WaitReady(void)
 /**
  * @brief Clear Resume Interrupt Flag
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [7] Wakeup/resume Interrupt flag
- *                           Write Function ➔ Wakeup/resume Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear Wakeup/resume interrupt.
- *                           
- *                           Read Function ➔ Wakeup/resume Interrupt Status
- *                           0: No Wakeup/resume interrupt happens.
- *                           1: Wakeup/resume interrupt happens.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [7] Wakeup/resume Interrupt flag
+ *         Write Function ➔ Wakeup/resume Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear Wakeup/resume interrupt.
+ *         
+ *         Read Function ➔ Wakeup/resume Interrupt Status
+ *         0: No Wakeup/resume interrupt happens.
+ *         1: Wakeup/resume interrupt happens.
+ * @endverbatim
  *                         
  * @param None
  *
@@ -2995,15 +2914,17 @@ void Panel_RA8889::Interrupt_ClearResume_Flag(void)
 /**
  * @brief Clear External Interrupt Input (PS[0] pin) Flag
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [6] External Interrupt (PS[0] pin) flag
- *                           Write Function ➔ XPS[0] pin edge Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear the XPS[0] pin edge interrupt.
- *                           
- *                           Read Function ➔ XPS[0] pin Interrupt Status
- *                           0: No XPS[0] pin interrupt happens.
- *                           1: XPS[0] pin interrupt happens.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [6] External Interrupt (PS[0] pin) flag
+ *         Write Function ➔ XPS[0] pin edge Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear the XPS[0] pin edge interrupt.
+ *         
+ *         Read Function ➔ XPS[0] pin Interrupt Status
+ *         0: No XPS[0] pin interrupt happens.
+ *         1: XPS[0] pin interrupt happens.
+ * @endverbatim
  *                           
  * @param None
  *
@@ -3023,15 +2944,17 @@ void Panel_RA8889::ExtInterrupt_ClearInput_Flag(void)
 /**
  * @brief Clear I2C Master Interrupt Flag
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [5] IIC master Interrupt flag
- *                           Write Function➔ IIC master Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear the IIC master interrupt.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [5] IIC master Interrupt flag
+ *         Write Function➔ IIC master Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear the IIC master interrupt.
  *
- *                           Read Function ➔ IIC master Interrupt Status
- *                           0: No IIC master interrupt happens.
- *                           1: IIC master interrupt happens.
+ *         Read Function ➔ IIC master Interrupt Status
+ *         0: No IIC master interrupt happens.
+ *         1: IIC master interrupt happens.
+ * @endverbatim
  *                           
  * @param None
  *
@@ -3051,14 +2974,16 @@ void Panel_RA8889::Interrupt_ClearI2CM_Flag(void)
 /**
  * @brief Clear Interrupt Vertical Synchronization Flag
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [4] Vsync Time base interrupt flag
- *                           Write Function ➔Vsync Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear the Vsync interrupt.
- *                           Read Function ➔ Vsync Interrupt Status
- *                           0: No Vsync interrupt happens.
- *                           1: Vsync interrupt happens.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [4] Vsync Time base interrupt flag
+ *         Write Function ➔Vsync Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear the Vsync interrupt.
+ *         Read Function ➔ Vsync Interrupt Status
+ *         0: No Vsync interrupt happens.
+ *         1: Vsync interrupt happens.
+ * @endverbatim
  *                         
  * @param None
  *
@@ -3078,15 +3003,17 @@ void Panel_RA8889::Interrupt_ClearVSync_Flag(void)
 /**
  * @brief Clear Interrupt Key Scan Flag
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [3] Key Scan Interrupt flag
- *                           Write Function ➔ Key Scan Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear the Key Scan interrupt.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [3] Key Scan Interrupt flag
+ *         Write Function ➔ Key Scan Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear the Key Scan interrupt.
  *
- *                           Read Function ➔ Key Scan Interrupt Status
- *                           0: No Key Scan interrupt happens.
- *                           1: Key Scan interrupt happens.
+ *         Read Function ➔ Key Scan Interrupt Status
+ *         0: No Key Scan interrupt happens.
+ *         1: Key Scan interrupt happens.
+ * @endverbatim
  *                         
  * @param None
  *
@@ -3106,15 +3033,17 @@ void Panel_RA8889::Interrupt_ClearKeyScan_Flag(void)
 /**
  * @brief Check for Interrupt Key Scan Occurred
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [3] Key Scan Interrupt flag
- *                           Write Function ➔ Key Scan Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear the Key Scan interrupt.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [3] Key Scan Interrupt flag
+ *         Write Function ➔ Key Scan Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear the Key Scan interrupt.
  *
- *                           Read Function ➔ Key Scan Interrupt Status
- *                           0: No Key Scan interrupt happens.
- *                           1: Key Scan interrupt happens.
+ *         Read Function ➔ Key Scan Interrupt Status
+ *         0: No Key Scan interrupt happens.
+ *         1: Key Scan interrupt happens.
+ * @endverbatim
  *                         
  * @param None
  *
@@ -3133,15 +3062,17 @@ bool Panel_RA8889::Interrupt_IsKeyPressed(void)
 /**
  * @brief  Clear Interrupt Serial Flash DMA, Draw Task, BTE Process Complete, etc. Flag
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [2] Serial flash DMA Complete | Draw task finished | 
- *                           BTE Process Complete | etc. Interrupt flag
- *                           Write Function➔ Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear interrupt.
- *                           Read Function➔Interrupt Status
- *                           0: No interrupt happens.
- *                           1: interrupt happens.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [2] Serial flash DMA Complete | Draw task finished | 
+ *         BTE Process Complete | etc. Interrupt flag
+ *         Write Function➔ Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear interrupt.
+ *         Read Function➔Interrupt Status
+ *         0: No interrupt happens.
+ *         1: interrupt happens.
+ * @endverbatim
  *                         
  * @param None
  *
@@ -3162,15 +3093,17 @@ void Panel_RA8889::Interrupt_ClearMultiEventTask_Flag(void)
 /**
  * @brief Clear Interrupt PWM 0 Timer Flag
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [0] PWM 0 timer Interrupt flag
- *                           Write Function ➔ Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear PWM0 interrupt.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [0] PWM 0 timer Interrupt flag
+ *         Write Function ➔ Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear PWM0 interrupt.
  *
- *                           Read Function ➔ Interrupt Status
- *                           0: No PWM0 interrupt happens.
- *                           1: PWM0 interrupt happens.
+ *         Read Function ➔ Interrupt Status
+ *         0: No PWM0 interrupt happens.
+ *         1: PWM0 interrupt happens.
+ * @endverbatim
  *                         
  * @param None
  *
@@ -3189,15 +3122,17 @@ void Panel_RA8889::Interrupt_ClearPWM0_Flag(void)
 /**
  * @brief Clear Interrupt PWM 1 Timer Flag
  *        
- *        REG [0x0c] Interrupt Event Flag Register (INTF)
- *                   Bit [1] PWM 1 timer Interrupt flag
- *                           Write Function ➔ Interrupt Clear Bit
- *                           0: No operation.
- *                           1: Clear PWM1 interrupt.
+ * @verbatim
+ * REG [0x0c] Interrupt Event Flag Register (INTF)
+ * Bit [1] PWM 1 timer Interrupt flag
+ *         Write Function ➔ Interrupt Clear Bit
+ *         0: No operation.
+ *         1: Clear PWM1 interrupt.
  *
- *                           Read Function ➔ Interrupt Status
- *                           0: No PWM1 interrupt happens.
- *                           1: PWM1 interrupt happens.
+ *         Read Function ➔ Interrupt Status
+ *         0: No PWM1 interrupt happens.
+ *         1: PWM1 interrupt happens.
+ * @endverbatim
  *                         
  * @param None
  *
@@ -5403,6 +5338,7 @@ void Panel_RA8889::PCLK_IdleStateLow(void)
   SPI_DataWrite(temp);
 }
 
+
 /**
  * @brief 
  *        
@@ -5451,6 +5387,7 @@ void Panel_RA8889::PDAT_IdleStateLow(void)
   CLRB(temp,2);
   SPI_DataWrite(temp);
 }
+
 
 /**
  * @brief 
@@ -5732,7 +5669,7 @@ void Panel_RA8889::HSYNC_StartPosition(uint16_t hfpd)
     SPI_DataWrite(temp);                       //
   }
 }
-	
+
 
 /** OK
  * @brief 
@@ -5768,6 +5705,7 @@ void Panel_RA8889::HSYNC_PulseWidth(uint16_t hspw)
 // [0x1d] Vertical Non-Display Period Register 1(VNDR1)
 //
 //================================================================================
+
 
 /** OK
  * @brief Define o Período Vertical de Não Exibição do LCD
@@ -6193,6 +6131,7 @@ void Panel_RA8889::AVI_ShadowPIP_StartAddress(uint32_t addr)
   SPI_DataWrite(addr >> 24);
   PageSwitch(ePageReg::Page0);
 }
+
 
 //================================================================================
 //
@@ -7287,10 +7226,10 @@ void Panel_RA8889::Memory_XYMode(void) { Memory_BlockMode(); }
  * @brief Check for Block Mode X-Y Coordinates Addressing
  *
  * @verbatim
- *        REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
- *                   bit [2] Canvas addressing mode
- *                           0b0: Block mode (X-Y coordinates addressing)
- *                           0b1: Linear mode
+ * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ * bit [2] Canvas addressing mode
+ *         0b0: Block mode (X-Y coordinates addressing)
+ *         0b1: Linear mode
  * @endverbatim
  *
  * @param None
@@ -7311,10 +7250,10 @@ bool Panel_RA8889::Memory_IsXYMode(void) { return Memory_IsBlockMode(); }
  * @brief Linear Mode Addressing
  *
  * @verbatim
- *        REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
- *                   bit [2] Canvas addressing mode
- *                           0b0: Block mode (X-Y coordinates addressing)
- *                           0b1: Linear mode
+ * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
+ * bit [2] Canvas addressing mode
+ *         0b0: Block mode (X-Y coordinates addressing)
+ *         0b1: Linear mode
  * @endverbatim
  *
  * @param None
@@ -7336,9 +7275,9 @@ void Panel_RA8889::Memory_LinearMode(void)
  *
  * @verbatim
  * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
- *            bit [2] Canvas addressing mode
- *                    0b0: Block mode (X-Y coordinates addressing)
- *                    0b1: Linear mode
+ * bit [2] Canvas addressing mode
+ *         0b0: Block mode (X-Y coordinates addressing)
+ *         0b1: Linear mode
  * @endverbatim
  *
  * @param None
@@ -7360,14 +7299,14 @@ bool Panel_RA8889::Memory_IsLinearMode(void)
  *
  * @verbatim
  * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
- *            bit [1-0] Canvas image’s color depth & memory R/W data width
- *                      In Block Mode:
- *                      00: 8bpp
- *                      01: 16bpp
- *                      1x: 24bpp
- *                      In Linear Mode:
- *                      x0: 8-bits memory data read/write.
- *                      x1: 16-bits memory data read/write
+ * bit [1-0] Canvas image’s color depth & memory R/W data width
+ *           In Block Mode:
+ *           00: 8bpp
+ *           01: 16bpp
+ *           1x: 24bpp
+ *           In Linear Mode:
+ *           x0: 8-bits memory data read/write.
+ *           x1: 16-bits memory data read/write
  * @endverbatim
  *
  * @param None
@@ -7391,14 +7330,14 @@ void Panel_RA8889::Memory_8bpp_BlockMode(void)
  *
  * @verbatim
  * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
- *            bit [1-0] Canvas image’s color depth & memory R/W data width
- *                      In Block Mode:
- *                      00: 8bpp
- *                      01: 16bpp
- *                      1x: 24bpp
- *                      In Linear Mode:
- *                      x0: 8-bits memory data read/write.
- *                      x1: 16-bits memory data read/write
+ * bit [1-0] Canvas image’s color depth & memory R/W data width
+ *           In Block Mode:
+ *           00: 8bpp
+ *           01: 16bpp
+ *           1x: 24bpp
+ *           In Linear Mode:
+ *           x0: 8-bits memory data read/write.
+ *           x1: 16-bits memory data read/write
  * @endverbatim
  *
  * @param None
@@ -7422,14 +7361,14 @@ void Panel_RA8889::Memory_16bpp_BlockMode(void)
  *
  * @verbatim
  * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
- *            bit [1-0] Canvas image’s color depth & memory R/W data width
- *                      In Block Mode:
- *                      00: 8bpp
- *                      01: 16bpp
- *                      1x: 24bpp
- *                      In Linear Mode:
- *                      x0: 8-bits memory data read/write.
- *                      x1: 16-bits memory data read/write
+ * bit [1-0] Canvas image’s color depth & memory R/W data width
+ *           In Block Mode:
+ *           00: 8bpp
+ *           01: 16bpp
+ *           1x: 24bpp
+ *           In Linear Mode:
+ *           x0: 8-bits memory data read/write.
+ *           x1: 16-bits memory data read/write
  * @endverbatim
  *
  * @param None
@@ -7452,14 +7391,14 @@ void Panel_RA8889::Memory_24bpp_BlockMode(void)
  *
  * @verbatim
  * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
- *            bit [1-0] Canvas image’s color depth & memory R/W data width
- *                      In Block Mode:
- *                      00: 8bpp
- *                      01: 16bpp
- *                      1x: 24bpp
- *                      In Linear Mode:
- *                      x0: 8-bits memory data read/write.
- *                      x1: 16-bits memory data read/write
+ * bit [1-0] Canvas image’s color depth & memory R/W data width
+ *           In Block Mode:
+ *           00: 8bpp
+ *           01: 16bpp
+ *           1x: 24bpp
+ *           In Linear Mode:
+ *           x0: 8-bits memory data read/write.
+ *           x1: 16-bits memory data read/write
  * @endverbatim
  *
  * @param colordepth:  Profundidade de cores
@@ -7472,8 +7411,6 @@ void Panel_RA8889::Memory_ColorDepth_BlockMode(eColorDepthBPP colordepth)
   if (colordepth == eColorDepthBPP::bpp16) Memory_16bpp_BlockMode();
   if (colordepth == eColorDepthBPP::bpp24) Memory_24bpp_BlockMode();
 }
-
-
 
 
 //================================================================================
@@ -7490,83 +7427,86 @@ void Panel_RA8889::Memory_ColorDepth_BlockMode(eColorDepthBPP colordepth)
  * @brief Set Graphic Read/Write Position X,Y
  *
  * @verbatim
- *        User should program proper active window related parameters before configure this register.
- *                   
- *        REG [0x5f] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
- *                   bit [7~0] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [7:0]
- *                             Unit: Byte
- *                             When Canvas In Block mode:
- *                             Graphic Read/Write Horizontal Position 0 [7:0]
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel                   
- *        REG [0x60] Graphic Read/Write position Horizontal Position Register 1 (CURH1)
- *                   bit [7~5] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [15:13]
- *                             Unit: Byte
- *                             When Canvas In Block mode: NA
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *                   bit [4~0] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [12:8]
- *                             Unit: Byte
- *                             When Canvas In Block mode:
- *                             Graphic Read/Write Horizontal Position 1 [12:8]
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *        REG [0x61] Graphic Read/Write position Vertical Position Register 0 (CURV0)
- *                   bit [7~0] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [23:16]
- *                             Unit: Byte
- *                             When Canvas In Block mode:
- *                             Graphic Read/Write Vertical Position 0 [7:0]
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *        REG [0x62] Graphic Read/Write position Vertical Position Register 1 (CURV1)
- *                   bit [7~5] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [31:29]
- *                             Unit: Byte
- *                             When Canvas In Block mode:NA
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *                   bit [4~0] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [28:24]
- *                             Unit: Byte
- *                             When Canvas In Block mode:
- *                             Graphic Read/Write Vertical Position 1 [12:8]
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
+ * User should program proper active window related parameters before configure this register.
+ *            
+ * REG [0x5f] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+ * bit [7~0] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [7:0]
+ *           Unit: Byte
+ *           When Canvas In Block mode:
+ *           Graphic Read/Write Horizontal Position 0 [7:0]
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel   
+ * 
+ * REG [0x60] Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+ * bit [7~5] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [15:13]
+ *           Unit: Byte
+ *           When Canvas In Block mode: NA
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
+ * bit [4~0] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [12:8]
+ *           Unit: Byte
+ *           When Canvas In Block mode:
+ *           Graphic Read/Write Horizontal Position 1 [12:8]
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
+ *
+ * REG [0x61] Graphic Read/Write position Vertical Position Register 0 (CURV0)
+ * bit [7~0] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [23:16]
+ *           Unit: Byte
+ *           When Canvas In Block mode:
+ *           Graphic Read/Write Vertical Position 0 [7:0]
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
+ *
+ * REG [0x62] Graphic Read/Write position Vertical Position Register 1 (CURV1)
+ * bit [7~5] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [31:29]
+ *           Unit: Byte
+ *           When Canvas In Block mode:NA
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
+ * bit [4~0] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [28:24]
+ *           Unit: Byte
+ *           When Canvas In Block mode:
+ *           Graphic Read/Write Vertical Position 1 [12:8]
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
  * @endverbatim
  *
  * @param (Wx, Hy): Posicao de coordenada
  *
  * @note        
- *        REG[5Eh].bit[3] Não existe a funcionalidade descrita por alguns autores 
- *        no RA8889/8877/8876/8875/8870
+ * REG[5Eh].bit[3] Não existe a funcionalidade descrita por alguns autores 
+ * no RA8889/8877/8876/8875/8870
  *
- *        Nota: REG[0x5E].bit2 = AW_COLOR Linear/Block mode (em RA8889 family).
- *        Quando Linear Mode = 1, registradores DMA (C0..C3) são interpretados como
- *        Destination Address [7:0]..[31:2] na SDRAM (32-bit). 
- *        Quando em Block Mode = 0, registrador de DMR (C0..C3) são interpretados como
- *        coordenadas X e Y a partir de 0,0. Não existe REG[0x5E].bit3 com essa função.
+ * Nota: REG[0x5E].bit2 = AW_COLOR Linear/Block mode (em RA8889 family).
+ * Quando Linear Mode = 1, registradores DMA (C0..C3) são interpretados como
+ * Destination Address [7:0]..[31:2] na SDRAM (32-bit). 
+ * Quando em Block Mode = 0, registrador de DMR (C0..C3) são interpretados como
+ * coordenadas X e Y a partir de 0,0. Não existe REG[0x5E].bit3 com essa função.
  *
- *        Precisa estar no modo SDRAM de Bloco, ou seja de coordenadas x,y. Para 
- *        verificar o modo atual, leia o registrador [5Eh].bit[2]
+ * Precisa estar no modo SDRAM de Bloco, ou seja de coordenadas x,y. Para 
+ * verificar o modo atual, leia o registrador [5Eh].bit[2]
  *
- *        Original da RAIO:
- *  
- *        REG[5Eh] bit3, Select to read back Graphic Read/Write position.
- *                 When DPRAM Linear mode:        Graphic Read/Write Position [31:24][23:16][15:8][7:0]
- *                 When DPRAM Active window mode: Graphic Read/Write
- *                 Horizontal Position [12:8][7:0],
- *                 Vertical Position [12:8][7:0].
- *                 Reference Canvas image coordinate. Unit: Pixel
+ * Original da RAIO:
+ * 
+ * REG[5Eh] bit3, Select to read back Graphic Read/Write position.
+ *          When DPRAM Linear mode:        Graphic Read/Write Position [31:24][23:16][15:8][7:0]
+ *          When DPRAM Active window mode: Graphic Read/Write
+ *          Horizontal Position [12:8][7:0],
+ *          Vertical Position [12:8][7:0].
+ *          Reference Canvas image coordinate. Unit: Pixel
  *
  * Use este para posicionar o local de um pixel na tela
  */
@@ -7588,83 +7528,86 @@ void Panel_RA8889::GotoPixel_XY(uint16_t Wx, uint16_t Hy)
  * @brief Set Graphic Read/Write Position Linear
  *
  * @verbatim
- *        User should program proper active window related parameters before configure this register.
- *                   
- *        REG [0x5F] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
- *                   bit [7~0] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [7:0]
- *                             Unit: Byte
- *                             When Canvas In Block mode:
- *                             Graphic Read/Write Horizontal Position 0 [7:0]
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel                   
- *        REG [0x60] Graphic Read/Write position Horizontal Position Register 1 (CURH1)
- *                   bit [7~5] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [15:13]
- *                             Unit: Byte
- *                             When Canvas In Block mode: NA
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *                   bit [4~0] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [12:8]
- *                             Unit: Byte
- *                             When Canvas In Block mode:
- *                             Graphic Read/Write Horizontal Position 1 [12:8]
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *        REG [0x61] Graphic Read/Write position Vertical Position Register 0 (CURV0)
- *                   bit [7~0] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [23:16]
- *                             Unit: Byte
- *                             When Canvas In Block mode:
- *                             Graphic Read/Write Vertical Position 0 [7:0]
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *        REG [0x62] Graphic Read/Write position Vertical Position Register 1 (CURV1)
- *                   bit [7~5] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [31:29]
- *                             Unit: Byte
- *                             When Canvas In Block mode:NA
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
- *                   bit [4~0] Write: Set Graphic Read/Write position
- *                             When Canvas In Linear mode:
- *                             Memory Read/Write address [28:24]
- *                             Unit: Byte
- *                             When Canvas In Block mode:
- *                             Graphic Read/Write Vertical Position 1 [12:8]
- *                             Please refer to the Canvas image coordinates.
- *                             Unit: Pixel
+ * User should program proper active window related parameters before configure this register.
+ *            
+ * REG [0x5F] Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+ * bit [7~0] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [7:0]
+ *           Unit: Byte
+ *           When Canvas In Block mode:
+ *           Graphic Read/Write Horizontal Position 0 [7:0]
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel         
+ * 
+ * REG [0x60] Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+ * bit [7~5] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [15:13]
+ *           Unit: Byte
+ *           When Canvas In Block mode: NA
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
+ * bit [4~0] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [12:8]
+ *           Unit: Byte
+ *           When Canvas In Block mode:
+ *           Graphic Read/Write Horizontal Position 1 [12:8]
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
+ *
+ * REG [0x61] Graphic Read/Write position Vertical Position Register 0 (CURV0)
+ * bit [7~0] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [23:16]
+ *           Unit: Byte
+ *           When Canvas In Block mode:
+ *           Graphic Read/Write Vertical Position 0 [7:0]
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
+ *
+ * REG [0x62] Graphic Read/Write position Vertical Position Register 1 (CURV1)
+ * bit [7~5] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [31:29]
+ *           Unit: Byte
+ *           When Canvas In Block mode:NA
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
+ * bit [4~0] Write: Set Graphic Read/Write position
+ *           When Canvas In Linear mode:
+ *           Memory Read/Write address [28:24]
+ *           Unit: Byte
+ *           When Canvas In Block mode:
+ *           Graphic Read/Write Vertical Position 1 [12:8]
+ *           Please refer to the Canvas image coordinates.
+ *           Unit: Pixel
  * @endverbatim
  *
  * @param (Wx, Hy): Posicao de coordenada
  *
  * @note        
- *        REG[5Eh].bit[3] Não exsite a funcionalidade descrita por alguns autores 
- *        no RA8889/8877/8876/8875/8870
+ * REG[5Eh].bit[3] Não exsite a funcionalidade descrita por alguns autores 
+ * no RA8889/8877/8876/8875/8870
  *
- *        Nota: REG[0x5E].bit2 = AW_COLOR Linear/Block mode (em RA8889 family).
- *        Quando Linear Mode = 1, registradores DMA (C0..C3) são interpretados como
- *        Destination Address [7:0]..[31:2] na SDRAM (32-bit). 
- *        Quando em Block Mode = 0, registrador de DMR (C0..C3) são interpretados como
- *        coordenadas X e Y a partir de 0,0. Não existe REG[0x5E].bit3 com essa função.
+ * Nota: REG[0x5E].bit2 = AW_COLOR Linear/Block mode (em RA8889 family).
+ * Quando Linear Mode = 1, registradores DMA (C0..C3) são interpretados como
+ * Destination Address [7:0]..[31:2] na SDRAM (32-bit). 
+ * Quando em Block Mode = 0, registrador de DMR (C0..C3) são interpretados como
+ * coordenadas X e Y a partir de 0,0. Não existe REG[0x5E].bit3 com essa função.
  *
- *        Precisa estar no modo SDRAM de Bloco, ou seja de coordenadas x,y. Para 
- *        verificar o modo atual, leia o registrador [5Eh].bit[2]
+ * Precisa estar no modo SDRAM de Bloco, ou seja de coordenadas x,y. Para 
+ * verificar o modo atual, leia o registrador [5Eh].bit[2]
  *
- *        Original da RAIO:
- *  
- *        REG[5Eh] bit3, Select to read back Graphic Read/Write position.
- *                 When DPRAM Linear mode:        Graphic Read/Write Position [31:24][23:16][15:8][7:0]
- *                 When DPRAM Active window mode: Graphic Read/Write
- *                 Horizontal Position [12:8][7:0],
- *                 Vertical Position [12:8][7:0].
- *                 Reference Canvas image coordinate. Unit: Pixel
+ * Original da RAIO:
+ * 
+ * REG[5Eh] bit3, Select to read back Graphic Read/Write position.
+ *          When DPRAM Linear mode:        Graphic Read/Write Position [31:24][23:16][15:8][7:0]
+ *          When DPRAM Active window mode: Graphic Read/Write
+ *          Horizontal Position [12:8][7:0],
+ *          Vertical Position [12:8][7:0].
+ *          Reference Canvas image coordinate. Unit: Pixel
  */
 void Panel_RA8889::GotoPixel_Linear(uint32_t addr)
 {
@@ -7972,6 +7915,7 @@ void Panel_RA8889::Line_Point2XY(uint16_t wx, uint16_t hy) { Point2_XY(wx, hy); 
  * @note None
  */ 
 void Panel_RA8889::Triangle_Point1XY(uint16_t wx, uint16_t hy) { Point1_XY(wx, hy); }
+
 
 /**
  * @brief Triangle Point 2
@@ -9752,8 +9696,7 @@ void Panel_RA8889::BTE_S0_ColorDeph_24bpp(void)
   SETB(temp,6);                                   //Set bits 6
   CLRB(temp,5);                                   //Reset bits 5
   SPI_DataWrite(temp);
-} 
-
+}
 
 
 /**
@@ -10107,7 +10050,6 @@ void Panel_RA8889::BTE_S0_ImageWidth(uint16_t Wx)
 // [0x9C] Source 0 Window Upper-Left corner Y-coordinates 1 (S0_Y1)
 //
 //================================================================================
-
 
 
 /**
@@ -10683,10 +10625,9 @@ uint32_t Panel_RA8889::AVI_HeaderFramePeriod(void)
 //================================================================================
 //
 // PAGE 1
-// [0xA9] 
+// [0xA9] Video Control (VC)
 //
 //================================================================================
-
 
 
 /**
@@ -11913,7 +11854,6 @@ void Panel_RA8889::IDEC_Destination_ColorDepth_24bpp(void)
 }
 
 
-
 /**
  * @brief IDEC Dstination Color Depth
  *        
@@ -12367,7 +12307,7 @@ void Panel_RA8889::IDEC_RA8875_SPI_Select_Mode0andMode3(void)
   //REG [46h-4eh] é reservado (sem funcao), mas o codigo abaixo para a 
   //escolha do bit 4 sim
   PageSwitch(ePageReg::Page1);                  //Troca para a Pagina 1 de registradores do RA8889, mas não existe no RA8876/RA8877
-                                       
+
   //Acessar o registrador SFL_CTRL do RA8876/RA8877
   SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL) do RA8876/RA8877
   temp = SPI_DataRead();                       
@@ -16422,8 +16362,6 @@ bool Panel_RA8889::I2CM_CheckSlaveACK(void)
 }
 
 
-
-
 /** 
  * @brief I²C Master Bus Busy
  *
@@ -17483,7 +17421,7 @@ void Panel_RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t
 }
 
 
-
+//NAO ESTA CONCLUIDA....
 //Esta funcao é a sitense das funcoes acima, funcionando de forma automatica, de acordo coma escolha inicial da
 //inicializacao do sistema com MPU e color depth escolhido
 void Panel_RA8889::MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data)
@@ -17707,7 +17645,7 @@ void Panel_RA8889::Switch_24bitsTo32bits(uint8_t bus, uint8_t scs)
 }
 
 
-/** EM CONTRUCAO
+/**
  * @brief 
  *
  * @param uint8_t bus_select
@@ -17778,7 +17716,7 @@ void Panel_RA8889::DMA_24bitAddressBlockMode(uint8_t bus_select,
  }
 
 
-/** EM CONTRUCAO
+/**
  * @brief 
  *
  * @param uint8_t bus_select
@@ -17850,7 +17788,7 @@ void Panel_RA8889::DMA_24bitAddressBlockMode(uint8_t bus_select,
  }
  
 
-/** EM CONTRUCAO
+/**
  * @brief 
  *
  * @param uint8_t bus_select
@@ -17957,7 +17895,7 @@ void Panel_RA8889::DMA_24bitAddressLinearMode(uint8_t bus_select,
  }
 
 
- /** EM CONTRUCAO
+ /**
  * @brief 
  *
  * @param uint8_t bus_select
@@ -18206,8 +18144,19 @@ void Panel_RA8889::AVI_Window(bool on_off)
 //================================================================================
 
 
-//retorna o numero de cores do sistema
-uint8_t Panel_RA8889::getColorDepth() { return _bpp; }
+/**
+ * @brief Retorna o numero de cores definidos do display
+ *
+ * @verbatim
+ * None
+ * @endverbatim
+ * 
+ * @param None
+ * 
+ * @return uint8_t color depth 8/16/24
+ *
+ */
+uint8_t Panel_RA8889::getColorDepth(void) { return _bpp; }
 
 
 /**
@@ -18304,6 +18253,7 @@ uint16_t Panel_RA8889::Color24To16bpp(uint32_t color24)
 
     return (r5 << 11) | (g6 << 5) | b5;
 }
+
 
 /**
  * @brief Converte uma cor no formato RGB565 (16 bpp) para RGB888 (24 bpp).
