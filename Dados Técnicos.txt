@@ -1515,8 +1515,8 @@ Funções e Notas
     Essas três funções têm finalidade similar: selecionar a tabela de gama para escrita, apenas mudando o valor dos bits 6 e 5.
     Não alteram a correção gama em si (isso é feito pelo GammaCorrection_Enable).
 
-  Observações importantes
-  -----------------------
+  ⚠️ Observações importantes
+  ---------------------------
   Ordem de uso:
   1. Seleciona a tabela com GammaTableforBlue/Green/Red().
   2. Escreve os valores de gama via MPU.
