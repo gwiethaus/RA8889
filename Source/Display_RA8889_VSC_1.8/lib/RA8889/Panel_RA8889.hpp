@@ -131,9 +131,13 @@
 //#define LQ150X1LGN2C_LVDS1                     //SHARP LQ150X1LGN2C_LVDS1 1024x768
 //#define LQ150X1LGN2C_LVDS2                     //SHARP LQ150X1LGN2C_LVDS2 1024x768
 
+#define LCD_IF_RGB_TTL     0                   // Padrão paralelo RGB (TTL)
+#define LCD_IF_VESA        1                   // Padrão LVDS - VESA mapping
+#define LCD_IF_JEIDA       2                   // Padrão LVDS - JEIDA mapping
 
 //Valores foi fornecido pela BuyDisplay
 #ifdef EK9713                                  //Fitipower EK9713 800x600/800x480
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           800                 //Horizontal Width
   #define LCD_VH           480                 //Vertical Height
   #define LCD_HBPD         20                  //HS Back Porch (Blanking)
@@ -145,11 +149,12 @@
 #endif
 
 #ifdef AT070TN92                               //Innolux AT070TN92 800X480 7"  TFT-LCD
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           800                 //Horizontal Width
   #define LCD_VH           480                 //Vertical Height
   #define LCD_HBPD         30                  //HS Back Porch (Blanking) - 46
   #define LCD_HFPD         210                 //HS Front Porch - 16~354
-  #define LCD_HSPW         16                  //HS Pulse Width - 1~40C
+  #define LCD_HSPW         16                  //HS Pulse Width - 1~40
   #define LCD_VBPD         13                  //VS Back Porch (Blanking) - 23
   #define LCD_VFPD         22                  //VS Front Porch - 7~147
   #define LCD_VSPW         10                  //VS Pulse Width - 1~20
@@ -157,6 +162,7 @@
 
 
 #ifdef AWT_1024600L7N03
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           1024                //Horizontal Width
   #define LCD_VH           600                 //Vertical Height
   #define LCD_HBPD         80                  //HS Back Porch (Blanking) - 
@@ -169,6 +175,7 @@
 
 
 #ifdef AWY_800480T70N02
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           800                 //Horizontal Width
   #define LCD_VH           480                 //Vertical Height
   #define LCD_HBPD         40                  //HS Back Porch (Blanking) - 
@@ -181,6 +188,7 @@
 
 
 #ifdef EJ080NA_05B                             //Innolux EJ080NA-05B 800x600 8.0" TFT-LCD
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           800                 //Horizontal Width
   #define LCD_VH           600                 //Vertical Height
   #define LCD_HBPD         38                  //HS Back Porch (Blanking) - 46
@@ -193,6 +201,7 @@
 
 
 #ifdef ET0700B3DMA
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           800                 //Horizontal Width
   #define LCD_VH           480                 //Vertical Height
   #define LCD_HBPD         46                  //HS Back Porch (Blanking) - 
@@ -205,6 +214,7 @@
 
 
 #ifdef ET101000DM6
+  #define LCD_FORMAT       LCD_IF_VESA          //Standard Format panel interface
   #define LCD_HW           1024                 //Horizontal Width
   #define LCD_VH           600                  //Vertical Height
   #define LCD_HBPD         160                  //HS Back Porch (Blanking) - 90~376@320 <-verificar
@@ -217,6 +227,7 @@
 
 
 #ifdef G190SVT01
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           1680                //Horizontal Width
   #define LCD_VH           342                 //Vertical Height
   #define LCD_HBPD         30                  //HS Back Porch (Blanking) - 288
@@ -229,6 +240,7 @@
 
 
 #ifdef HJ070IA_02F
+  #define LCD_FORMAT       LCD_IF_VESA         //Standard Format panel interface
   #define LCD_HW           1280                //Horizontal Width
   #define LCD_VH           800                 //Vertical Height
   #define LCD_HBPD         30                  //HS Back Porch (Blanking) - 160
@@ -241,6 +253,7 @@
 
 
 #ifdef LQ190E1LW52
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           1280                //Horizontal Width
   #define LCD_VH           1024                //Vertical Height
   #define LCD_HBPD         110                 //HS Back Porch (Blanking) - 204x2
@@ -252,8 +265,8 @@
 #endif
 
 
-
 #ifdef LQ035NC111
+  #define LCD_FORMAT       LCD_IF_RGB_TTL      //Standard Format panel interface
   #define LCD_HW           320                 //Horizontal Width
   #define LCD_VH           240                 //Vertical Height
   #define LCD_HBPD         38                  //HS Back Porch (Blanking) - 38
@@ -266,6 +279,7 @@
 
 
 #ifdef ZJ070NA_01B
+  #define LCD_FORMAT       LCD_IF_VESA         //Standard Format panel interface
   #define LCD_HW           1024                //Horizontal Width
   #define LCD_VH           600                 //Vertical Height
   #define LCD_HBPD         50                  //HS Back Porch (Blanking) - 320

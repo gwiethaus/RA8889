@@ -213,20 +213,20 @@ bool Panel_RA8889::Initialize(void)
 //Nota: Não é obrigatorio que o TFT seja o mesmo apdrão de dados da MCU. Por comodismo deixei o mesmo
 
 #if defined(COLOR_DEPTH_16) || defined(COLOR_DEPTH_8)
-  TFT_16bit();                                //LCD Panel Data Bus 65K colors output format for source drive
+  TFT_16bit();                                 //LCD Panel Data Bus 65K colors output format for source drive
 #elif defined(COLOR_DEPTH_24)
-  TFT_24bit();                                //LCD Panel Data Bus 16.7M colors output format for source drive
+  TFT_24bit();                                 //LCD Panel Data Bus 16.7M colors output format for source drive
 #endif
 
 //Ref. RAIO RA8876 / RA8877 AP Note_ Source Code 001_How to initial RA8876,RA8877. 
 //If MCU I/F select SPI-3, SPI-4 or I2C, chip will only allow Host_Bus_8bit.
   
-#ifdef COM_PARALLEL                             //Apenas para interface Paralela 8080/6800
+#ifdef COM_PARALLEL                            //Apenas para interface Paralela 8080/6800
   #ifdef MCU16
-    HostDataBus_Select_16bit();                  //MCU/MPU Host bus 16bit
+    HostDataBus_Select_16bit();                //MCU/MPU Host bus 16bit
   #endif
   #ifdef MCU8
-    HostDataBus_Select_8bit();                   //MCU/MPU Host bus 8bit
+    HostDataBus_Select_8bit();                 //MCU/MPU Host bus 8bit
   #endif
 #endif
 
@@ -345,15 +345,20 @@ uint16_t Panel_RA8889::Height(void)
 void Panel_RA8889::LCD_SetPanel(void)
 {
 
-#ifdef EK9713                                  //Fitipower EK9713 800x600/800x480
+#if defined(EK9713)                            //Fitipower EK9713 800x600/800x480
    
+  //Main/PIP Window Control Register (MPWCTR) [10h]
+  
+  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+
   //Display Configuration Register (DPCR) [12h]
   
-  //DisplayOn(false);                          //Display off
+  PCLK_EdgeType(ePCLKEdge::Falling);           //LCD PCLK Falling
+
   HScanDirection_LeftToRight();                //HSCAN Left to Right
   VScanDirection_TopToBottom();                //VSCAN Top to Bottom
+
   PDATA_ColorFmt(ePDATAColorFmt::RGB);         //Select RGB output
-  PCLK_EdgeType(ePCLKEdge::Falling);           //LCD PCLK Falling
 
   //Panel scan Clock and Data Setting Register (PCSR) [13h]
 
@@ -397,58 +402,253 @@ void Panel_RA8889::LCD_SetPanel(void)
   VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
   VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
   
-#endif
-
-
-#ifdef AT070TN92                               //Innolux AT070TN92 800X480 7"  TFT-LCD
-
-
-
-
-#endif
-
-
-#ifdef AWT_1024600L7N03
-
-
-
-#endif
-
-
-#ifdef AWY_800480T70N02
-
-
-
-#endif
-
-
-#ifdef EJ080NA_05B                             //Innolux EJ080NA-05B 800x600 8.0" TFT-LCD
-
-
-
-#endif
-
-
-#ifdef ET0700B3DMA
-
-
-
-#endif
-
-
-#ifdef ET101000DM6
-
-
-
-
-#endif
-
-
-#ifdef G190SVT01
+#elif defined(AT070TN92)                       //Innolux AT070TN92 800X480 7" TFT-LCD
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
   Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+
+  //Display Configuration Register (DPCR) [12h]
+
+  PCLK_Failing();
+   
+  VScanDirection_TopToBottom();
+  PDATA_ColorFmt(ePDATAColorFmt::RGB);
+
+  //Panel scan Clock and Data Setting Register (PCSR) [13h]
+
+  HSYNC_Polarity(eHSYNCPolarity::Low);
+  VSYNC_Polarity(eVSYNCPolarity::Low);
+  DE_Polarity(eDEPolarity::High);
+
+  //Horizontal Display Width Register (HDWR) [14h]
+  //Horizontal Display Width Fine Tune Register (HDWFTR) [15h]
+  //Vertical Display Height Register 0(VDHR0) [1Ah]
+  //Vertical Display Height Register 1 (VDHR1) [1Bh]
+  
+  HorizontalWidth_VerticalHeight(LCD_HW, LCD_VH);
+  
+  //Seta a resolução do display baseado no painel
+  
+  _width  = LCD_HW;
+  _height = LCD_VH;
+  
+  //Horizontal Non-Display Period(HNDR) [16h]
+  //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
+  //HSYNC Start Position Register (HSTR) [18h]
+  //HSYNC Pulse Width Register (HPWR) [19h]
+
+  Horizontal_NonDisplay(LCD_HBPD);             //(HS Blanking)
+  HSYNC_StartPosition(LCD_HFPD);               //(HS Front Porch)                  
+  HSYNC_PulseWidth(LCD_HSPW);                  //(HS Pulse Width)
+                            
+  //Vertical Non-Display Period Register 0(VNDR0) [0x1c]
+  //Vertical Non-Display Period Register 1(VNDR1) [0x1d]
+  //VSYNC Pulse Width Register (VPWR) [0x1f]
+ 
+  Vertical_NonDisplay(LCD_VBPD);               //(VS Blanking)
+  VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
+  VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
+
+#elif defined(AWT_1024600L7N03)
+
+  //Main/PIP Window Control Register (MPWCTR) [10h]
+  
+  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+
+  //Display Configuration Register (DPCR) [12h]
+
+  PCLK_Failing();
+   
+  VScanDirection_TopToBottom();
+  PDATA_ColorFmt(ePDATAColorFmt::RGB);
+
+  //Panel scan Clock and Data Setting Register (PCSR) [13h]
+
+  HSYNC_Polarity(eHSYNCPolarity::Low);
+  VSYNC_Polarity(eVSYNCPolarity::Low);
+  DE_Polarity(eDEPolarity::High);
+
+  //Horizontal Display Width Register (HDWR) [14h]
+  //Horizontal Display Width Fine Tune Register (HDWFTR) [15h]
+  //Vertical Display Height Register 0(VDHR0) [1Ah]
+  //Vertical Display Height Register 1 (VDHR1) [1Bh]
+  
+  HorizontalWidth_VerticalHeight(LCD_HW, LCD_VH);
+  
+  //Seta a resolução do display baseado no painel
+  
+  _width  = LCD_HW;
+  _height = LCD_VH;
+
+  //Horizontal Non-Display Period(HNDR) [16h]
+  //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
+  //HSYNC Start Position Register (HSTR) [18h]
+  //HSYNC Pulse Width Register (HPWR) [19h]
+
+  Horizontal_NonDisplay(LCD_HBPD);             //(HS Blanking)
+  HSYNC_StartPosition(LCD_HFPD);               //(HS Front Porch)                  
+  HSYNC_PulseWidth(LCD_HSPW);                  //(HS Pulse Width)
+                            
+  //Vertical Non-Display Period Register 0(VNDR0) [0x1c]
+  //Vertical Non-Display Period Register 1(VNDR1) [0x1d]
+  //VSYNC Pulse Width Register (VPWR) [0x1f]
+ 
+  Vertical_NonDisplay(LCD_VBPD);               //(VS Blanking)
+  VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
+  VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
+
+#elif defined(AWY_800480T70N02)
+
+  //Main/PIP Window Control Register (MPWCTR) [10h]
+  
+  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+
+  //Display Configuration Register (DPCR) [12h]
+
+  PCLK_Failing();
+   
+  VScanDirection_TopToBottom();
+  PDATA_ColorFmt(ePDATAColorFmt::RGB);
+
+  //Panel scan Clock and Data Setting Register (PCSR) [13h]
+
+  HSYNC_Polarity(eHSYNCPolarity::Low);
+  VSYNC_Polarity(eVSYNCPolarity::Low);
+  DE_Polarity(eDEPolarity::High);
+
+  //Horizontal Display Width Register (HDWR) [14h]
+  //Horizontal Display Width Fine Tune Register (HDWFTR) [15h]
+  //Vertical Display Height Register 0(VDHR0) [1Ah]
+  //Vertical Display Height Register 1 (VDHR1) [1Bh]
+  
+  HorizontalWidth_VerticalHeight(LCD_HW, LCD_VH);
+
+  //Seta a resolução do display baseado no painel
+  
+  _width  = LCD_HW;
+  _height = LCD_VH;
+
+  //Horizontal Non-Display Period(HNDR) [16h]
+  //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
+  //HSYNC Start Position Register (HSTR) [18h]
+  //HSYNC Pulse Width Register (HPWR) [19h]
+
+  Horizontal_NonDisplay(LCD_HBPD);             //(HS Blanking)
+  HSYNC_StartPosition(LCD_HFPD);               //(HS Front Porch)                  
+  HSYNC_PulseWidth(LCD_HSPW);                  //(HS Pulse Width)
+                            
+  //Vertical Non-Display Period Register 0(VNDR0) [0x1c]
+  //Vertical Non-Display Period Register 1(VNDR1) [0x1d]
+  //VSYNC Pulse Width Register (VPWR) [0x1f]
+ 
+  Vertical_NonDisplay(LCD_VBPD);               //(VS Blanking)
+  VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
+  VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
+
+#elif defined(EJ080NA_05B)                     //Innolux EJ080NA-05B 800x600 8.0" TFT-LCD
+
+  //Main/PIP Window Control Register (MPWCTR) [10h]
+  
+  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+
+  //Display Configuration Register (DPCR) [12h]
+
+  PCLK_Failing();
+   
+  VScanDirection_TopToBottom();
+  PDATA_ColorFmt(ePDATAColorFmt::RGB);
+
+  //Panel scan Clock and Data Setting Register (PCSR) [13h]
+
+  HSYNC_Polarity(eHSYNCPolarity::Low);
+  VSYNC_Polarity(eVSYNCPolarity::Low);
+  DE_Polarity(eDEPolarity::High);
+
+  //Horizontal Display Width Register (HDWR) [14h]
+  //Horizontal Display Width Fine Tune Register (HDWFTR) [15h]
+  //Vertical Display Height Register 0(VDHR0) [1Ah]
+  //Vertical Display Height Register 1 (VDHR1) [1Bh]
+  
+  HorizontalWidth_VerticalHeight(LCD_HW, LCD_VH);
+
+  //Seta a resolução do display baseado no painel
+  
+  _width  = LCD_HW;
+  _height = LCD_VH;
+
+  //Horizontal Non-Display Period(HNDR) [16h]
+  //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
+  //HSYNC Start Position Register (HSTR) [18h]
+  //HSYNC Pulse Width Register (HPWR) [19h]
+
+  Horizontal_NonDisplay(LCD_HBPD);             //(HS Blanking)
+  HSYNC_StartPosition(LCD_HFPD);               //(HS Front Porch)                  
+  HSYNC_PulseWidth(LCD_HSPW);                  //(HS Pulse Width)
+                            
+  //Vertical Non-Display Period Register 0(VNDR0) [0x1c]
+  //Vertical Non-Display Period Register 1(VNDR1) [0x1d]
+  //VSYNC Pulse Width Register (VPWR) [0x1f]
+ 
+  Vertical_NonDisplay(LCD_VBPD);               //(VS Blanking)
+  VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
+  VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
+
+#elif defined(ET0700B3DMA)
+
+  //Main/PIP Window Control Register (MPWCTR) [10h]
+  
+  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+
+  //Display Configuration Register (DPCR) [12h]
+
+  PCLK_Failing();
+   
+  VScanDirection_TopToBottom();
+  PDATA_ColorFmt(ePDATAColorFmt::RGB);
+
+  //Panel scan Clock and Data Setting Register (PCSR) [13h]
+
+  HSYNC_Polarity(eHSYNCPolarity::Low);
+  VSYNC_Polarity(eVSYNCPolarity::Low);
+  DE_Polarity(eDEPolarity::High);
+
+  //Horizontal Display Width Register (HDWR) [14h]
+  //Horizontal Display Width Fine Tune Register (HDWFTR) [15h]
+  //Vertical Display Height Register 0(VDHR0) [1Ah]
+  //Vertical Display Height Register 1 (VDHR1) [1Bh]
+  
+  HorizontalWidth_VerticalHeight(LCD_HW, LCD_VH);
+
+  //Seta a resolução do display baseado no painel
+  
+  _width  = LCD_HW;
+  _height = LCD_VH;
+
+  //Horizontal Non-Display Period(HNDR) [16h]
+  //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
+  //HSYNC Start Position Register (HSTR) [18h]
+  //HSYNC Pulse Width Register (HPWR) [19h]
+
+  Horizontal_NonDisplay(LCD_HBPD);             //(HS Blanking)
+  HSYNC_StartPosition(LCD_HFPD);               //(HS Front Porch)                  
+  HSYNC_PulseWidth(LCD_HSPW);                  //(HS Pulse Width)
+                            
+  //Vertical Non-Display Period Register 0(VNDR0) [0x1c]
+  //Vertical Non-Display Period Register 1(VNDR1) [0x1d]
+  //VSYNC Pulse Width Register (VPWR) [0x1f]
+ 
+  Vertical_NonDisplay(LCD_VBPD);               //(VS Blanking)
+  VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
+  VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
+
+#elif defined(G190SVT01)
+
+  //Main/PIP Window Control Register (MPWCTR) [10h]
+  
+  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+
+  //Display Configuration Register (DPCR) [12h]
 
   PCLK_Failing();
    
@@ -471,7 +671,7 @@ void Panel_RA8889::LCD_SetPanel(void)
   //Seta a resolução do display baseado no painel
   
   _width  = LCD_HW;
-  _height = 350;           //valor diferente de LCD_VH=342 
+  _height = 350;                               //valor diferente de LCD_VH=342 
 
   //[16h][17h] : Figure 19-3 [HND]	Non Display or Back porch (pixels)		= (HNDR + 1) * 8 + HNDFTR  
   //[18h]      : Figure 19-3 [HST]	Start Position or Front porch (pixels)	= (HSTR + 1) * 8
@@ -489,28 +689,55 @@ void Panel_RA8889::LCD_SetPanel(void)
   VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
   VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
 
-#endif
+#elif defined(LQ190E1LW52)
 
+  //Main/PIP Window Control Register (MPWCTR) [10h]
+  
+  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
 
-#ifdef HJ070IA_02F
+  //Display Configuration Register (DPCR) [12h]
 
+  PCLK_Failing();
+   
+  VScanDirection_TopToBottom();
+  PDATA_ColorFmt(ePDATAColorFmt::RGB);
 
+  //Panel scan Clock and Data Setting Register (PCSR) [13h]
+  
+  HSYNC_PolarityLow();
+  VSYNC_PolarityLow();
+  DE_PolarityHigh();
 
+  //Horizontal Display Width Register (HDWR) [14h]
+  //Horizontal Display Width Fine Tune Register (HDWFTR) [15h]
+  //Vertical Display Height Register 0(VDHR0) [1Ah]
+  //Vertical Display Height Register 1 (VDHR1) [1Bh]
+  
+  HorizontalWidth_VerticalHeight(LCD_HW, LCD_VH);
 
-#endif
+  //Seta a resolução do display baseado no painel
+  
+  _width  = LCD_HW;
+  _height = LCD_VH;
 
+  //Horizontal Non-Display Period(HNDR) [16h]
+  //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
+  //HSYNC Start Position Register (HSTR) [18h]
+  //HSYNC Pulse Width Register (HPWR) [19h]
 
+  Horizontal_NonDisplay(LCD_HBPD);             //(HS Blanking)
+  HSYNC_StartPosition(LCD_HFPD);               //(HS Front Porch)                  
+  HSYNC_PulseWidth(LCD_HSPW);                  //(HS Pulse Width)
+                            
+  //Vertical Non-Display Period Register 0(VNDR0) [0x1c]
+  //Vertical Non-Display Period Register 1(VNDR1) [0x1d]
+  //VSYNC Pulse Width Register (VPWR) [0x1f]
+ 
+  Vertical_NonDisplay(LCD_VBPD);               //(VS Blanking)
+  VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
+  VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
 
-#ifdef LQ190E1LW52
-
-
-
-
-#endif
-
-
-
-#ifdef LQ035NC111
+#elif defined(LQ035NC111)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
@@ -555,15 +782,9 @@ void Panel_RA8889::LCD_SetPanel(void)
   VSYNC_StartPosition(LCD_VFPD);               //(VS Front Porch)    
   VSYNC_PulseWidth(LCD_VSPW);                  //(VS pulse width)
   
+#else
+  #error "Nenhum formato de Painel LCD válido foi definido"
 #endif
-
-
-#ifdef ZJ070NA_01B
-
-
-
-#endif
-
 
 }
 
