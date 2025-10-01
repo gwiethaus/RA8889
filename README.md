@@ -12,4 +12,3 @@ Inicialziação do display feito com sucesso. Recursos de configuração da DRAM
 # Todo
 
 - finalizando API Transferencia de DMA
-- 
