@@ -223,6 +223,7 @@ void Ra8889_Lite::dma_24bitAddressBlockMode(ru8 bus_select,
 (AI) RA8889_51.c
 ----------------
 
+void Select_LCD_Sync_Mode(void)                                               --> void Select_LCD_SyncMode(void)
 void LCD_RegisterWrite(unsigned char Cmd,unsigned char Data)                  --> void RegisterWrite(uint8_t reg, uint8_t data)
 void Key_Scan_Enable(void)                                                    --> void KeyScan_Enable(bool b)
 void Key_Scan_Disable(void)                                                   --> void KeyScan_Enable(bool b)
@@ -241,12 +242,11 @@ void Data_Format_16b_8bpp(void)                                               --
 void Data_Format_16b_16bpp(void)                                              --> void HostColorDepthFormat(uint8_t type)
 void Data_Format_16b_24bpp_mode1(void)                                        --> void HostColorDepthFormat(uint8_t type)
 void Data_Format_16b_24bpp_mode2(void)                                        --> void HostColorDepthFormat(uint8_t type)
-void Select_Main_Window_8bpp(void)                                            --> void PIP1_Window_ColorDepth_8bpp(void)
-void Select_Main_Window_8bpp(void)                                            --> void PIP1_Window_ColorDepth(eColorDepthBPP bpp)
-void Select_Main_Window_16bpp(void)                                           --> void PIP1_Window_ColorDepth_16bpp(void)
-void Select_Main_Window_16bpp(void)                                           --> void PIP1_Window_ColorDepth(eColorDepthBPP bpp)
+void Select_Main_Window_8bpp(void)                                            --> void Select_MainWindow_8bpp(void)
+void Select_Main_Window_16bpp(void)                                           --> void Select_MainWindow_16bpp(void)
+void Select_Main_Window_24bpp(void)                                           --> void Select_MainWindow_24bpp(void)
 void Select_PIP1_Window_24bpp(void)                                           --> void PIP1_Window_ColorDepth_24bpp(void)
-void Select_PIP1_Window_24bpp(void)                                           --> void Panel_RA8889::Select_MainWindow_24bpp(void)
+void Select_PIP1_Window_24bpp(void)                                           --> void PIP1_Window_ColorDepth(eColorDepthBPP bpp)
 void Select_PIP2_Window_8bpp(void)                                            --> void PIP2_Window_ColorDepth(eColorDepthBPP bpp)
 void Select_PIP2_Window_8bpp(void)                                            --> void PIP2_Window_ColorDepth_8bpp(void)
 void Select_PIP2_Window_16bpp(void)                                           --> void PIP2_Window_ColorDepth(eColorDepthBPP bpp)
@@ -643,7 +643,7 @@ void ER_TFTBasic::Memory_16bpp_Mode(void)                                     --
 void ER_TFTBasic::Select_Main_Window_16bpp(void)                              --> void Select_MainWindow_16bpp(void)
 void ER_TFTBasic::Main_Image_Start_Address(unsigned long Addr)                --> void MainImage_StartAddress(uint32_t addr)
 void ER_TFTBasic::Main_Image_Width(unsigned short WX)                         --> void MainImage_Width(uint16_t Wx)
-void ER_TFTBasic::Main_Window_Start_XY(unsigned short WX,unsigned short HY)   --> void Panel_RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)  
+void ER_TFTBasic::Main_Window_Start_XY(unsigned short WX,unsigned short HY)   --> void MainWindow_StartXY(uint16_t wx, uint16_t hy)  
 void ER_TFTBasic::Canvas_Image_Start_address(unsigned long Addr)              --> void CanvasImage_StartAddr(uint32_t addr)
 void ER_TFTBasic::Canvas_image_width(unsigned short WX)                       --> void CanvasImage_Width(uint16_t wx)
 void ER_TFTBasic::Active_Window_XY(unsigned short WX,unsigned short HY)       --> void ActiveWindow_XY(uint16_t wx, uint16_t hy)

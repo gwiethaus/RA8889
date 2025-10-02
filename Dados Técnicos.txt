@@ -7,15 +7,35 @@ Display ER-TFT070-2-6105
   Description
   -----------
   
-  ER-TFT070-2-6105 is 7-inch TFT LCD display paired with 800x480 pixels and an RA8889 Controller Board. This controller board is notable for its low power consumption and integrated 128M SDRAM memory, enabling smooth video playback without lagging, even when interfaced with the simplest 8051 microcontroller. To ensure swift refreshing of screen content from the display memory, it supports a versatile range of interfaces, including 8080/6800 8-bit and 16-bit parallel, 3-wire, 4-wire, I2C SPI serial. Additionally, it boasts a built-in MicroSD card slot, making it optional microSD cards. Font chips and flash chips are also available.
+  ER-TFT070-2-6105 is 7-inch TFT LCD display paired with 800x480 pixels and an 
+  RA8889 Controller Board. This controller board is notable for its low power 
+  consumption and integrated 128M SDRAM memory, enabling smooth video playback 
+  without lagging, even when interfaced with the simplest 8051 
+  microcontroller. To ensure swift refreshing of screen content from the 
+  display memory, it supports a versatile range of interfaces, including 
+  8080/6800 8-bit and 16-bit parallel, 3-wire, 4-wire, I2C SPI serial. 
+  Additionally, it boasts a built-in MicroSD card slot, making it optional 
+  microSD cards. Font chips and flash chips are also available.
   
-  ER-TFT070-2-6105 is loaded with powerful features such as multiple display buffers, Picture-in-Picture capability, transparency control, display rotation and mirroring, as well as built-in JPEG and AVI decoders. It offers flexibility in touch panel options, being compatible with both resistive and capacitive touch panels.
+  ER-TFT070-2-6105 is loaded with powerful features such as multiple display 
+  buffers, Picture-in-Picture capability, transparency control, display 
+  rotation and mirroring, as well as built-in JPEG and AVI decoders. It offers 
+  flexibility in touch panel options, being compatible with both resistive and 
+  capacitive touch panels.
   
-  For Arduino enthusiasts, we provide an Arduino shield accessory that facilitates a quick and seamless connection between the ER-TFT070-2-6105 and the Arduino board. Recognizing the diverse connection requirements of our users, we offer two connection methods: FFC and pin header. To save you the hassle, we will prepare the connection for you, eliminating the need for manual assembly.
+  For Arduino enthusiasts, we provide an Arduino shield accessory that 
+  facilitates a quick and seamless connection between the ER-TFT070-2-6105 and 
+  the Arduino board. Recognizing the diverse connection requirements of our 
+  users, we offer two connection methods: FFC and pin header. To save you the 
+  hassle, we will prepare the connection for you, eliminating the need for 
+  manual assembly.
     
-  For users of 8051, we have also prepared corresponding sample programs that can be downloaded and used.
+  For users of 8051, we have also prepared corresponding sample programs that 
+  can be downloaded and used.
   
-  Lastly, the ER-TFT070-2-6105 offers an optional choice between 3.3V and 5V operation, further enhancing its versatility and compatibility with various systems and applications.
+  Lastly, the ER-TFT070-2-6105 offers an optional choice between 3.3V and 5V 
+  operation, further enhancing its versatility and compatibility with various 
+  systems and applications.
 
   Specification
   -------------
@@ -50,28 +70,16 @@ Display ER-TFT070-2-6105
   Operating Temperature       -20oC~70oC
   Storage Temperature         -30oC~80oC
 
+
 Legendas
 --------
 
-BTE                                 Block Transfer Engine
-CGROM                               Character Generator ROM
-I/F                                 Interface
-MCU                                 Microcontroller Unit
-MPU                                 Microprocessor Unit
-PIP                                 Picture-in-Picture
-
-Condicional Ternário em C++
----------------------------
-
-  Exemplo de retorno
-  
-  int imposto = salario > 2000 ? salario * 0.20 : salario * 0.1;
-  
-  int velocidade = (estado == 1) ? 50 : 100;
-  
-  Exemplo de Comparacao
-  
-  a == 2 ? b = true : b = false
+  BTE                         Block Transfer Engine
+  CGROM                       Character Generator ROM
+  I/F                         Interface
+  MCU                         Microcontroller Unit
+  MPU                         Microprocessor Unit
+  PIP                         Picture-in-Picture
 
 
 Serial Flash Interface e SPI Interface
@@ -110,6 +118,7 @@ Serial Flash Interface e SPI Interface
   registradores, porque quando o RA8889 assume o barramento em modo SFI, o MCU 
   não deve estar tentando usar o mesmo SPI em paralelo.
 
+
 o que é o Serial Flash or SPI Interface Enable/Disable
 ------------------------------------------------------
 
@@ -146,6 +155,7 @@ o que é o Serial Flash or SPI Interface Enable/Disable
   Ativar a interface SPI permite que o microcontrolador "fale" com a memória 
   flash para ler ou escrever dados, enquanto desativá-la impede essa 
   comunicação.
+
 
 Serial Flash or SPI Interface (reg [0x01])
 ------------------------------------------
@@ -268,56 +278,6 @@ Character Generator ROM
   precisar enviar bitmap do caractere.
 
 
-Tipos de Variaveis               
-------------------
-
-====================================================================================================================
-Tipo           Faixa de valores                                       Tamanho                  
-                                                                      (Arduino/AVR/PlatformIO) Equivalente
-====================================================================================================================
-int8_t         −128 a 127                                             8 bits*                  char
---------------------------------------------------------------------------------------------------------------------
-uint8_t         0 a 255                                               8 bits*                  unsigned char
---------------------------------------------------------------------------------------------------------------------
-int16_t        −32.768 a 32.767                                       16 bits*                 int(**)
---------------------------------------------------------------------------------------------------------------------
-uint16_t        0 a 65.535                                            16 bits*                 unsigned int(**)
---------------------------------------------------------------------------------------------------------------------
-                                                                                               unsigned short
-int32_t        −2.147.483.648 a 2.147.483.647                         32 bits*                 long          
---------------------------------------------------------------------------------------------------------------------
-uint32_t       0 a 4.294.967.295                                      32 bits*                 unsigned long 
---------------------------------------------------------------------------------------------------------------------
-int64_t        −9.223.372.036.854.775.808 a 9.223…e18                 64 bits*
---------------------------------------------------------------------------------------------------------------------
-uint64_t       0 a 18.446.744.073.709.551.615                         64 bits*
---------------------------------------------------------------------------------------------------------------------
-char           −128 a 127                                             8 bits
---------------------------------------------------------------------------------------------------------------------
-unsigned char  0 a 255                                                8 bits
---------------------------------------------------------------------------------------------------------------------
-short          −32.768 a 32.767                                       16 bits
---------------------------------------------------------------------------------------------------------------------
-unsigned short 0 a 65.535                                             16 bits
---------------------------------------------------------------------------------------------------------------------
-int	           −32.768 a 32.767 (AVR)                                 16 ou 32 bits**
-               −2.147.483.648 a 2.147.483.647 (ARM/ESP32) 
---------------------------------------------------------------------------------------------------------------------
-unsigned int   0 a 65.535 (AVR)                                       16 ou 32 bits**
-               0 a 4.294.967.295 (ARM/ESP32)
---------------------------------------------------------------------------------------------------------------------
-long           −2.147.483.648 a 2.147.483.647                         32 bits 
---------------------------------------------------------------------------------------------------------------------
-unsigned long  0 a 4.294.967.295                                      32 bits
---------------------------------------------------------------------------------------------------------------------
-long long      −9.223.372.036.854.775.808 a 9.223.372.036.854.775.807 64 bits
---------------------------------------------------------------------------------------------------------------------
-unsigned long long 0 a 18.446.744.073.709.551.615                     64 bits
-====================================================================================================================
-
-*  Independente da plataforma
-** O tamanho de int e unsigned int depende da plataforma: 16 bits no AVR, 32 bits em ARM/ESP32.
-
 Modo de Escrita/Leitura da SDRAM
 --------------------------------
 
@@ -385,6 +345,33 @@ Nota sobre nomenclatura "MPU I/F" vs "MCU I/F":
   Na prática atual, a interface é usada quase sempre com MCUs (microcontroladores
   como STM32, ESP32, PIC, etc.). Portanto, "MPU I/F" e "MCU I/F" podem ser lidos
   como equivalentes — o nome "MPU I/F" é apenas um legado histórico.
+
+
+Formato de Saída do Display
+---------------------------
+
+  Quando falamos de formato de saída de dados RGB/LVDS para painéis LCD, 
+  geralmente existem três padrões principais que os controladores como RA8876, 
+  RA8877 e RA8889 suportam:
+
+  RGB Parallel (ou TTL RGB) →
+  -------------------------
+  Esse é o “padrão normal” que você disse estar usando.
+  O nome técnico é RGB TTL (às vezes chamado também de “RGB interface” ou “digital RGB”), que é o modo clássico de transmissão paralelo de dados (RGB565, RGB666 ou RGB888), usado na maioria dos LCDs simples com interface paralela.
+  
+  VESA LVDS Mapping →
+  -----------------
+  Um dos dois mapeamentos definidos para painéis LVDS (Video Electronics Standards Association).
+  Define como os bits R/G/B são distribuídos nos pares diferenciais.
+  
+  JEIDA LVDS Mapping →
+  ------------------
+  O outro mapeamento para painéis LVDS, definido pela Japan Electronic Industry Development Association.
+  A diferença em relação ao VESA está no alinhamento dos bits mais significativos/menos significativos.
+
+  #define LCD_IF_RGB_TTL 0   // Padrão paralelo RGB (TTL)
+  #define LCD_IF_VESA    1   // LVDS - VESA mapping
+  #define LCD_IF_JEIDA   2   // LVDS - JEIDA mapping
 
 
 Horizontal Non-Display Period
@@ -1340,8 +1327,8 @@ Padrão de Cores RGB
     - << deslocamento de bits a esquerda
     - >> deslocamento de bits a direita
     
-  Para 256 cores (R3G3B2):
-  ------------------------
+  🔹 Para 256 cores (R3G3B2):
+  ---------------------------
   
   Padrao de bits      
   R3G3B2
@@ -1366,8 +1353,8 @@ Padrão de Cores RGB
   << 6
   
   
-  Para 65k cores (R5G6B5):
-  ------------------------
+  🔹 Para 65k cores (R5G6B5):
+  ---------------------------
   
   Padrao de bits                                      
   R5G6B5
@@ -1391,8 +1378,8 @@ Padrão de Cores RGB
   << 3
   
   
-  Para 16.7M cores (R8G8B8):
-  --------------------------
+  🔹 Para 16.7M cores (R8G8B8):
+  -----------------------------
   
   Padrao de bits                                      
   R8G8B8
@@ -1516,7 +1503,7 @@ Funções e Notas
     Não alteram a correção gama em si (isso é feito pelo GammaCorrection_Enable).
 
   ⚠️ Observações importantes
-  ---------------------------
+  --------------------------
   Ordem de uso:
   1. Seleciona a tabela com GammaTableforBlue/Green/Red().
   2. Escreve os valores de gama via MPU.
@@ -1544,15 +1531,15 @@ Funções e Notas
      3       Um cruz (“+”)
      4       Um X ou outro símbolo gráfico
 
-     Obs.: Os detalhes exatos de cada set (como quais pixels acendem) estão 
-	 definidos internamente pelo RA8889. O datasheet não mostra um desenho 
-	 esquemático do cursor gráfico para cada Set.
+     ⚠️ Observação: Os detalhes exatos de cada set (como quais pixels acendem) 
+	 estão definidos internamente pelo RA8889. O datasheet não mostra um 
+	 desenho esquemático do cursor gráfico para cada Set.
 
-     Limitações:
+     🔹 Limitações:
      Você não consegue mudar o padrão interno de cada Set diretamente; eles são fixos pelo hardware.
      Se quiser um cursor completamente customizado, precisaria desenhar manualmente na tela usando a memória gráfica (como um bitmap) em vez de usar o Graphic Cursor interno.
 
-     Como usar:
+     🔹 Como usar:
      - Ative o cursor gráfico com CursorGraphic_Enable(true) (bit 4).
      - Escolha o Set com CursorGraphic_Set1/2/3/4() (bits 3-2).
      - O controlador vai desenhar o cursor na posição definida pelos registradores de cursor X/Y (geralmente outros registradores, tipo GCX0/GCY0).
@@ -1615,7 +1602,8 @@ RAIO RA8876/RA8877
    
    Suporta SPI MAster Interface, e apra acessar esta funcao serial flash o usuario pode usar o DMA no modo acesso direto a memoria de DMA a partir da MCU setando a area de DMA é tratado como a origem dos dados de DMA.
    O DMA é setado o destino para a SDRAM em uma posicao dela (0,0) e então começa a transferencia de dados da MCU apra o RA8876 e dela para a memopria SDRAM sem a intereferencia da MCU. Antes de tudo o usuario deve ter armazenado a imagem no Serial flash memoria, atens da transferencia pois é dali que o DMa pega as informações de iamgem e figuras para transfeir. 
-   Minha observação: Entao a LVGL que cosntroi as imagens em memoria da MCU, deve elvar o resultado finalç arpa a SPI Flash e de la usando a trasngerencia de DMA direto e muito mais rapido para a emmroia SDRAM e esta se encarrega de levar para a memoria do LCD>.
+   
+   ⚠️ Minha observação: Entao a LVGL que cosntroi as imagens em memoria da MCU, deve elvar o resultado finalç arpa a SPI Flash e de la usando a trasngerencia de DMA direto e muito mais rapido para a emmroia SDRAM e esta se encarrega de levar para a memoria do LCD>.
 
 Alinhamento de Pixel na Memória de acordo com Color Depth
 ---------------------------------------------------------
@@ -1725,7 +1713,7 @@ Alinhamento de Pixel na Memória de acordo com Color Depth
     - Sequenciamento de pixels (você só manda os bytes na ordem certa).
     - Operações gráficas internas (retângulos, linhas, textos, transparência, camadas, janelas, etc., sem precisar calcular pixel a pixel).
 
-  Comparando com outros cenários
+  🔹 Comparando com outros cenários
   
   * Controladores simples (sem VRAM dedicada)
      Exemplo: ILI9341, ST7735, etc.
@@ -1740,7 +1728,7 @@ Alinhamento de Pixel na Memória de acordo com Color Depth
     → Muitas vezes permitem operações gráficas prontas (retângulo, gradiente, fontes, sprites).
     → O programador foca na lógica da aplicação, e não no detalhe de manipulação de memória.
   
-  Por que isso é importante?
+  🔹 Por que isso é importante?
   
   Imagine num MCU simples (8 ou 16 bits, rodando a poucos MHz) ter que:
   
@@ -1888,7 +1876,7 @@ Serial Peripheral Interface (SPI)
 
   Sets the order of the bits shifted out of and into the SPI bus, either LSBFIRST (least-significant bit first) or MSBFIRST (most-significant bit first).
 
-  Syntax?
+  Syntax:
   SPI.setBitOrder(order)
   
   Parameters: 
@@ -1903,10 +1891,10 @@ Serial Peripheral Interface (SPI)
 
   For Arduino Due: On the Due, the system clock can be divided by values from 1 to 255. The default value is 21, which sets the clock to 4 MHz like other Arduino boards.
 
-  Syntax
+  Syntax:
   SPI.setClockDivider(divider)
 
-  Parameters
+  Parameters:
   divider (only AVR boards):
 
   - SPI_CLOCK_DIV2
@@ -1926,10 +1914,10 @@ Serial Peripheral Interface (SPI)
 
   Sets the SPI data mode: that is, clock polarity and phase. See the Wikipedia article on SPI for details.
 
-  Syntax
+  Syntax:
   SPI.setDataMode(mode)
 
-  Parameters
+  Parameters:
   Mode:
 
   - SPI_MODE0
@@ -1943,12 +1931,12 @@ Serial Peripheral Interface (SPI)
   
   PI transfer is based on a simultaneous send and receive: the received data is returned in receivedVal (or receivedVal16). In case of buffer transfers the received data is stored in the buffer in-place (the old data is replaced with the data received).
 
-  Syntax
+  Syntax:
   receivedVal = SPI.transfer(val)
   receivedVal16 = SPI.transfer16(val16)
   SPI.transfer(buffer, size)
   
-  Parameters
+  Parameters:
   val: the byte to send out over the bus
   val16: the two bytes variable to send out over the bus
   buffer: the array of data to be transferred
@@ -2163,4 +2151,552 @@ Ponteiro em C++
 
   - O compilador cuida disso sozinho. Você escreve o mesmo código em C/C++ e ele gera o binário adequado para cada plataforma.
 
+digitalPinToInterrupt()
+-----------------------
+
+  The digitalPinToInterrupt() function takes a pin as an argument, and returns the same pin if it can be used as an interrupt. For example, digitalPinToInterrupt(4) on an Arduino UNO will not work, as interrupts are only supported on pins 2 and 3.
+
+  See attachInterrupt() for a full list of supported interrupt pins on all boards.
+  
+  Syntax
+  ------
+  To verify if a given pin can be used an interrupt use the following function:
+  
+  digitalPinToInterrupt(pin)
+  
+  Parameters
+  ----------
+  The function admits the following parameter:
+  
+  - pin: the pin we want to use for an interrupt.
+  
+  Returns
+  -------
+  - If the pin is available for interrupt, it will return the given pin (e.g. 2).
+  - If the pin is not available for interrupt, it will return -1.
+  
+  Example Code
+  ------------
+  
+  This example checks if a pin can be used as an interrupt.
+
+  int pin = 2;
+
+  void setup() {
+    Serial.begin(9600);
+    int checkPin = digitalPinToInterrupt(pin);
+  
+    if (checkPin == -1) {
+      Serial.println("Not a valid interrupt pin!");
+    } else {
+      Serial.println("Valid interrupt pin.");
+    }
+  }
+  
+  void loop() {
+  }
+
+attachInterrupt()
+-----------------
+
+  Pinos Digitais com Interrupções
+  -------------------------------
+  
+  O primeiro parâmetro de attachInterrupt() é o número da interrupção. É recomendado usar digitalPinToInterrupt(pino) para converter o número do pino digital para o número específico da interrupção. Por exemplo, se você usar o pino 3, passe digitalPinToInterrupt(3) como o primeiro parâmetro de attachInterrupt().
+  
+  --------------------------------------------------------------------------------------------------------------------------
+  Placa	                               Pinos digitais possíveis para interrupções
+  --------------------------------------------------------------------------------------------------------------------------
+  UNO, Nano, Mini e outros com 328p	   2, 3
+  UNO WiFi Rev2	                       todos os pinos digitais
+  Mega, Mega 2560, Mega ADK	           2, 3, 18, 19, 20, 21
+  Micro, Leonardo e outros com 32u4	   0, 1, 2, 3, 7
+  Zero	                               todos os pinos digitais, exceto 4
+  Família MKR	                       0, 1, 4, 5, 6, 7, 8, 9, A1, A2
+  Due	                               todos os pinos digitais
+  101	                               todos os pinos digitais (Apenas pinos 2, 5, 7, 8, 10, 11, 12, 13 funcionam com CHANGE)
+  ESP32-S3                             todos os pinos digitais
+  --------------------------------------------------------------------------------------------------------------------------
+  
+  Para as placas UNO WiFi Rev2, Due, Zero, Família MKR e 101, número da interrupção = número do pino.
+  
+  Notas e Advertências
+  --------------------
+  
+  Nota Dentro da função associada, delay() não funcionará e o valor retornado 
+  por millis() não será incrementado. Dados recebidos na porta serial enquanto 
+  a interrupção é executada podem ser perdidos. Você deve declarar como 
+  volatile quaisquer que você modificar dentro da função associada. Veja a 
+  seção sobre ISRs abaixo para mais informação.
+  
+  Usando Interrupções
+  -------------------
+  
+  Interrupções são úteis para fazer coisas automaticamente em programas de microcontroladores, e podem ajudar a resolver problemas de temporização. Boas tarefas para se usar uma interrupção podem incluir a leitura de um codificador rotativo, ou monitorar entradas de dados pelo usuário.
+  
+  Supomos que você quisesse ter certeza que um programa sempre captura os pulsos de um codifcador rotativo, sem nunca perder um pulso, seria muito complicado criar um programa que pudesse fazer qualquer outra coisa além disso, porque o programa precisaria checar constantemente os pinos do codificador, para capturar os pulsos exatamente quando eles ocorreram. Outros sensores são similarmente dinâmicos também, como um sensor de som que pode ser usado para capturar um clique, ou um sensor infravermelho (foto-interruptor) para capturar a queda de uma moeda. Em todas essas situações, usar uma interrupção pode permitir o microcontrolador trabalhar em outras tarefas sem perder a interrupção.
+  
+  Sobre Rotinas de Serviço de Interrupções (ISRs)
+  -----------------------------------------------
+  
+  ISRs são tipos especiais de funções que possuem algumas limitações únicas que as outras funções não possuem. Uma ISR não recebe argumentos, e não devem retornar nada.
+  
+  Geralmente, uma ISR deve ser o mais curta e rápida possível. Se o seu sketch usa múltiplas ISRs, apenas uma pode ser executada de cada vez, outras interrupções serão executadas após a atual terminar, em uma ordem que depende de sua prioridade. millis() depende de interrupções para contar, então essa nunca irá incrementar dentro de uma ISR. Como delay() também depende de interrupções, não irá funcionar dentro de uma ISR. micros() funciona inicialmente, mas começará a se comportar erraticamente após 1-2 ms. delayMicroseconds() não usa nenhum contador, então funciona normalmente.
+  
+  Tipicamente variáveis globais são usadas para passar dados entre uma ISR e o programa principal. Tenha certeza que variáveis compartilhadas entre uma ISR e o programa principal são atualizadas corretamente, para isso, as declare usando o modificador volatile.
+  
+  Para mais informações sobre interrupções, veja as notas de Nick Gammon’s (Em Inglês).
+  
+  Sintaxe
+  -------
+  
+  - attachInterrupt(digitalPinToInterrupt(pino), ISR, modo); (Recomendado)
+  - attachInterrupt(interrupção, ISR, modo); (Não recomendado)
+  - attachInterrupt(pino, ISR, modo); (Não recomendado. Além disso, essa sintaxe só funciona em placas Arduino SAMD, UNO WiFi Rev2, Due, e 101)
+  
+  Parâmetros
+  - interrupção: o número da interrupção (int)
+  - pino: o número do pino do Arduino
+  - ISR: a ISR a ser chamada quando a interrupção ocorre; essa função devenão tomar nenhum parâmetro nem retornar nada. Essa função é chamada de rotina de serviço da interrupção ou ISR (do Inglês, interrupt service routine).
+  - modo: define quando a interrupção deve ser ativada. Quatro constantes estão predefinidas como valores válidos:
+    * LOW acionar a interrupção quando o estado do pino for LOW,
+    * CHANGE acionar a interrupção quando o sempre estado do pino mudar
+    * RISING acionar a interrupção quando o estado do pino for de LOW para HIGH apenas,
+    * FALLING acionar a interrupção quando o estado do pino for de HIGH para LOW apenas.
+  
+  Placas Due, Zero e MKR1000 suportam também:
+  
+  HIGH acionar a interrupção quando o estado do pino for HIGH.
+  
+  Retorna
+  Nada
+  
+  Código de Exemplo
+  -----------------
+  O código abaixo usa uma interrupção para capturar a mudança no estado do pino 2 e acender o LED de acordo.
+
+  const byte ledPin = 13;
+  const byte interruptPin = 2;
+  volatile byte state = LOW;
+  
+  void setup() {
+    pinMode(ledPin, OUTPUT);
+    pinMode(interruptPin, INPUT_PULLUP);
+    attachInterrupt(digitalPinToInterrupt(interruptPin), blink, CHANGE);
+  }
+  
+  void loop() {
+    digitalWrite(ledPin, state);
+  }
+  
+  void blink() {
+    state = !state;
+  }
+
+  Números das Interrupções
+  ------------------------
+
+  Normalmente você deve usar digitalPinToInterrupt(pino), em vez de colocar 
+  diretamente o número da interrupção no seu sketch. Os pinos específicos para 
+  interrupções, e seu mapeamento para o número da interrupção variam para cada 
+  tipo de placa. O uso direto dos números das interrupções pode parecer mais 
+  simples, porém pode causar problemas de compatibilidade quando seu sketch 
+  for executado em uma placa diferente.
+  
+  Mesmo assim, sketches mais antigos frequentemente têm os números das 
+  interrupções usados diretamente. Frequentemente o número 0 (para o pino 
+  digital 2) ou o número 1 (para o pino digital 3) foram usados. A tabela 
+  abaixo mostra os pinos com interrupções disponíveis em cada placa.
+  
+  Note que na tabela abaixo, os números das interrupções se referem aos 
+  números a serem passados para attachInterrupt(). Por razões históricas, 
+  essa numeração nem sempre corresponde diretamente a numeração do chip ATmega 
+  (ex. int.0 corresponde à INT4 no chip ATmega2560).
+  
+  -----------------------------------------------------------
+  Placa                  int.0 int.1 int.2 int.3 int.4 int.5
+  -----------------------------------------------------------
+  UNO, Ethernet          2     3				
+  Mega 2560              2     3     21    20    19    18
+  Leonardo, Micro (32u4) 3     2     0     1     7	
+  -----------------------------------------------------------
+  
+  Para as placas Due, Zero, MKR1000 e 101 o número da interrupção = número do pino.
+
+Como passar callback para função interrupção
+--------------------------------------------
+
+Para passar um callback para uma função de interrupção em C++, declare um ponteiro de função como parâmetro da função de interrupção e, na função que a gerencia, passe o endereço da função callback desejada como argumento. A função de interrupção utiliza esse ponteiro para chamar a função callback no momento certo. 
+
+Passos para implementar um callback em uma função de interrupção: 
+
+1. Defina a Função Callback: Crie a função que você quer que seja executada quando a interrupção ocorrer.
+   Essa função deve ter a mesma assinatura (tipo de retorno e parâmetros) que o ponteiro de função que você usará.
+   Exemplo:
+   void minhaFuncaoCallback() {
+            // Código a ser executado na interrupção
+            std::cout << "Interrupção ocorreu!\n";
+   }
+   
+2. Declare o Ponteiro de Função como Parâmetro: Na função de interrupção, declare um ponteiro de função que irá receber o endereço da sua callback. 
+   
+   Exemplo:
+   
+    void minhaFuncaoInterrupcao(void (*callback)()) {
+            // ... código de inicialização da interrupção ...
+            // Ao ocorrer a interrupção, chama-se o callback:
+            callback();
+    }
+
+3. Passe o Endereço da Callback: Quando você chama a função de interrupção, passe o nome da função callback (que é implicitamente um ponteiro para ela) como argumento. 
+   
+   Exemplo:
+   
+   minhaFuncaoInterrupcao(&minhaFuncaoCallback); // Passa o endereço de minhaFuncaoCallback
+
+  Como funciona:
+  - Quando a interrupção é acionada, a função minhaFuncaoInterrupcao é executada. 
+  - Dentro dela, a linha callback() invoca a função que foi passada como parâmetro. 
+  - Como minhaFuncaoCallback foi passada, ela será executada nesse momento, realizando a ação desejada. 
+
+  Outras opções e considerações:
+  - std::function: Em C++, para um código mais flexível, você pode usar std::function, que pode armazenar diferentes tipos de "chamáveis" (funções, ponteiros de função, lambdas, objetos com operador ()). 
+  - Funções membro: Se a callback for um método de uma classe, você precisará usar ponteiros para funções membro e, possivelmente, a instância da classe. 
+  - Contexto do hardware: A forma exata de implementar interrupções e callbacks depende muito do hardware e da arquitetura do sistema (por exemplo, microcontroladores, sistemas operacionais). 
+
+Função callback passado por uma variavel para o attachInterrupt()
+-----------------------------------------------------------------
+
+  Para passar uma função callback por uma variável para a função attachInterrupt() no Arduino, você pode declarar a função como ponteiro e atribuí-la a uma variável, e então passar essa variável como segundo argumento para attachInterrupt(). 
+  Exemplo de Código (Arduino/C++)
+  
+  // Declaração da função de callback (que será executada quando a interrupção ocorrer)
+  void minhaFuncaoCallback() {
+    Serial.println("Interrupção detectada!");
+  }
+  
+  // Declaração da variável de ponteiro para função que irá receber o callback
+  void (*ptrFuncaoCallback)() = minhaFuncaoCallback; // <<!nav>>Atribui<<!/nav>> a função `minhaFuncaoCallback` à variável
+  
+  void setup() {
+    Serial.begin(9600);
+    pinMode(2, INPUT); // Configura o pino 2 como entrada para o botão
+  
+    // Atribui a função de callback (passada por variável) ao pino 2
+    // No Arduino Uno, o pino 2 tem um número de interrupção (INT0)
+    attachInterrupt(digitalPinToInterrupt(2), ptrFuncaoCallback, RISING); // <<!nav>>RISING<<!/nav>>: a interrupção ocorre na subida do sinal
+  }
+  
+  void loop() {
+    // O código principal do seu programa aqui
+    // A função de callback será executada automaticamente quando a interrupção ocorrer
+  }
+
+  Explicação
+  ----------
+  
+  1. Declaração do Callback:
+  
+  void minhaFuncaoCallback() é a função que você quer que seja executada quando uma interrupção acontece. Ela não recebe argumentos e não retorna nada (void), o que é um formato comum para callbacks de interrupção.
+  
+  2. Declaração da Variável de Ponteiro:
+  
+  void (*ptrFuncaoCallback)() = minhaFuncaoCallback;:
+  
+  void (*ptrFuncaoCallback)(): Isso declara ptrFuncaoCallback como um ponteiro para uma função que não recebe argumentos (()) e não retorna nenhum valor (void).
+  = minhaFuncaoCallback: A função minhaFuncaoCallback é atribuída a essa variável de ponteiro.
+  
+  3. Uso em attachInterrupt():
+  
+  attachInterrupt(digitalPinToInterrupt(2), ptrFuncaoCallback, RISING);:
+  
+  O primeiro argumento é o número da interrupção correspondente ao pino digital.
+  
+  O segundo argumento é ptrFuncaoCallback, a variável que agora "aponta" para a função minhaFuncaoCallback. attachInterrupt recebe essa variável e, quando a interrupção ocorrer, ele chamará a função apontada por ela.
+  
+  RISING é o modo de detecção, que faz a interrupção acontecer quando o sinal do pino vai de baixo para alto. 
+
+
+I2C Communications (Wire)
+-------------------------
+
+  This is an I2C communications library that facilitates two-wire class 
+  communications with I2C/TWI devices (also called "Wire Library"). The 
+  pull-up to communication lines are needed. With a total of 8 serial channels 
+  available. You cannot use slave device. The followings describe channels 
+  corresponding to pins and can confirmed using the pin map. To use, specify 
+  #include <wire.h>.
+    
+  begin()
+  -------
+
+  Initiates the Wire library.
+  
+  Syntax
+  
+  Wire.begin()
+  
+  Parameters
+  None
+  
+  Returns
+  None
+
+  requestFrom()
+  -------------
+  
+  This function is used by the controller device to request bytes from a peripheral device. The bytes may then be retrieved with the available() and read() functions. The requestFrom() method accepts a boolean argument changing its behavior for compatibility with certain I2C devices. If true, requestFrom() sends a stop message after the request, releasing the I2C bus. If false, requestFrom() sends a restart message after the request. The bus will not be released, which prevents another master device from requesting between messages. This allows one master device to send multiple requests while in control. The default value is true.
+
+  Syntax
+  
+  - Wire.requestFrom(address, quantity)
+  - Wire.requestFrom(address, quantity, stop)
+
+  Parameters
+    - address: the 7-bit slave address of the device to request bytes from.
+    - quantity: the number of bytes to request.
+    - stop: true or false. true will send a stop message after the request, releasing the bus. False will continually send a restart after the request, keeping the connection active.
+
+  Returns
+    - byte: the number of bytes returned from the peripheral device.
+
+
+  Wire.requestFrom() doesn't block until it receives data. It will configure the I2C interface as master (when previously in slave mode this will be temporary). Then it enforces a start condition on the bus, sends the address of the slave and then sends a clock pulse for the acknowledgement bit. During this clock pulse the slave can pull the SDA line low and signal that way, that it is reachable. After that the master continues to generate the clock for all the bytes it wants, expecting the slave to control the SDA line. If the slave doesn't do that (for example because you didn't connect the onRequest() callback), then the received data will just be 1s (so each byte 0xFF).
+
+  So Wire.requestFrom() does only block for the time, that the transmission needs. If the slave doesn't acknowledge its address, the function will exit after that. The transaction will only need a few milliseconds either way.
+
+  avoid any kind of multithreading or callback functions
+
+  On AVR based Arduinos (like the Uno or Nano) multithreading isn't really a thing (besides using a time sharing library, but still on only one core), though callbacks from interrupts are. And as long as you use the Wire library (and with it the I2C hardware interface of the microcontroller) you have to use interrupts and thus callback functions. And honestly there is normally no reason not to do that.
+
+  Another problem with what you are currently doing it, that both Arduinos act as masters on the bus. No two masters can send on the bus at the same time. While the I2C protocol has a way to determine, which master can send first, this is often implemented rather buggy. I don't know how good the Wire library is with this currently, but you should avoid a multi-master setup if possible.
+
+  A minor problem: The I2C address space has some reserved sections for special use. You can start your slave addresses at 8 (refer to the I2C specification on the web). Address 0 is meant as a general call address, so for master-write transactions, which target every slave on the bus. You shouldn't have a slave with that address.
+
+  What to do now? Just implement the code with the Wire library as it is meant, including the onRequest() callback function. Refer to the master-read example of the Wire library. Set the second Arduino as master and the first as slave. On the second Arduino you can call Wire.requestFrom() with the slaves address. This will trigger the onReqest() callback function on the first Arduino, where you can use Wire.write() to let the library send the desired data back to the master. On the master (Arduino 2) you an then read that data via Wire.read(). And thats it.
+
+  beginTransmission()
+  -------------------
+  
+  Begin a transmission to the I2C slave device with the given address. Subsequently, queue bytes for transmission with the write() function and transmit them by calling endTransmission().
+  
+  Syntax
+  
+  - Wire.beginTransmission(unsigned char address)
+  
+  Parameters
+    - address: The 7-bit address of the device to which to transmit
+  
+  Returns
+  None
+
+  endTransmission()
+  -----------------
+  
+  Ends a transmission to a slave device that was begun by beginTransmission() and transmits the bytes that were queued by write().
+  
+  Syntax
+  
+  - unsigned char Wire.endTransmission()
+  
+  Parameters
+  None
+  
+  Returns
+  - 0: Success
+  - 1: Data too long to fit in transmit buffer
+  - 2: Received NACK on transmit of address
+  - 3: Received NACK on transmit of data
+  - 4: Other error
+  
+  write()
+  -------
+  
+  Adds a character string or data to the end of the transmit buffer.
+  
+  Syntax
+  
+  - Wire.write(value)
+  - Wire.write(string)
+  - Wire.write(data, length)
+  
+  Parameters
+  - value: A value to send as a single byte
+  - string: A string to send as a series of bytes
+  - data: An array of data to send as bytes
+  - length: The number of bytes to transmit
+  
+  Returns
+  byte: Write() will return the number of bytes written, though reading that number is optional.
+  
+  available()
+  -----------
+  
+  Returns the number of bytes available for retrieval in the receive buffer.
+  
+  Syntax
+  
+  - Wire.available()
+  
+  Parameters
+  None
+  
+  Returns
+  The number of bytes available for reading.
+  
+  read()
+  ------
+  
+  Reads one byte of data from the receive buffer.
+  
+  Syntax
+  
+  - Wire.read()
+  
+  Parameters
+  None
+  
+  Returns
+  The next byte received.
+  
+  Sample Program
+  --------------
+  
+  Receive data from slave device #2.
+  
+  #include <Arduino.h>
+  #include <Wire.h>
+  void setup()
+  {
+    Wire.begin();        // join i2c bus (address optional for master)
+    Serial.begin(9600);  // start serial for output
+  }
+   
+  void loop()
+  {
+    Wire.requestFrom(2, 6);    // request 6 bytes from slave device #2
+   
+    while(Wire.available())    // slave may send less than requested
+    { 
+      char c = Wire.read();    // receive a byte as character
+      Serial.print(c);         // print the character
+    }
+   
+    delay(500);
+  } 
+
+
+Condicional Ternário em C++
+---------------------------
+
+  Exemplo de retorno
+  
+  int imposto = salario > 2000 ? salario * 0.20 : salario * 0.1;
+  
+  int velocidade = (estado == 1) ? 50 : 100;
+  
+  Exemplo de Comparacao
+  
+  a == 2 ? b = true : b = false
+
+
+Tipos de Variaveis em C++
+-------------------------
+
+====================================================================================================================
+Tipo           Faixa de valores                                       Tamanho                  
+                                                                      (Arduino/AVR/PlatformIO) Equivalente
+====================================================================================================================
+int8_t         −128 a 127                                             8 bits*                  char
+--------------------------------------------------------------------------------------------------------------------
+uint8_t         0 a 255                                               8 bits*                  unsigned char
+--------------------------------------------------------------------------------------------------------------------
+int16_t        −32.768 a 32.767                                       16 bits*                 int(**)
+--------------------------------------------------------------------------------------------------------------------
+uint16_t        0 a 65.535                                            16 bits*                 unsigned int(**)
+--------------------------------------------------------------------------------------------------------------------
+                                                                                               unsigned short
+int32_t        −2.147.483.648 a 2.147.483.647                         32 bits*                 long          
+--------------------------------------------------------------------------------------------------------------------
+uint32_t       0 a 4.294.967.295                                      32 bits*                 unsigned long 
+--------------------------------------------------------------------------------------------------------------------
+int64_t        −9.223.372.036.854.775.808 a 9.223…e18                 64 bits*
+--------------------------------------------------------------------------------------------------------------------
+uint64_t       0 a 18.446.744.073.709.551.615                         64 bits*
+--------------------------------------------------------------------------------------------------------------------
+char           −128 a 127                                             8 bits
+--------------------------------------------------------------------------------------------------------------------
+unsigned char  0 a 255                                                8 bits
+--------------------------------------------------------------------------------------------------------------------
+short          −32.768 a 32.767                                       16 bits
+--------------------------------------------------------------------------------------------------------------------
+unsigned short 0 a 65.535                                             16 bits
+--------------------------------------------------------------------------------------------------------------------
+int	           −32.768 a 32.767 (AVR)                                 16 ou 32 bits**
+               −2.147.483.648 a 2.147.483.647 (ARM/ESP32) 
+--------------------------------------------------------------------------------------------------------------------
+unsigned int   0 a 65.535 (AVR)                                       16 ou 32 bits**
+               0 a 4.294.967.295 (ARM/ESP32)
+--------------------------------------------------------------------------------------------------------------------
+long           −2.147.483.648 a 2.147.483.647                         32 bits 
+--------------------------------------------------------------------------------------------------------------------
+unsigned long  0 a 4.294.967.295                                      32 bits
+--------------------------------------------------------------------------------------------------------------------
+long long      −9.223.372.036.854.775.808 a 9.223.372.036.854.775.807 64 bits
+--------------------------------------------------------------------------------------------------------------------
+unsigned long long 0 a 18.446.744.073.709.551.615                     64 bits
+====================================================================================================================
+
+*  Independente da plataforma
+** O tamanho de int e unsigned int depende da plataforma: 16 bits no AVR, 32 bits em ARM/ESP32.
+
+
+LVGL flush_cb
+-------------
+
+  /**
+   * @brief Callback do LVGL para atualizar uma área do display RA8889.
+   *
+   * @verbatim
+   * O LVGL gera um buffer linear de pixels (px_map) correspondente à área que mudou
+   * (area->x1, y1 até area->x2, y2). Este callback transfere o buffer para o display.
+   *
+   * Mesmo sendo linear, o buffer não fica esticado porque:
+   * 1. A janela ativa do RA8889 é configurada com setWindow(area->x1, area->y1, width, height).
+   * 2. O RA8889 incrementa automaticamente o cursor interno ao receber pixels.
+   * 3. Ao final de cada linha da janela, o cursor passa automaticamente para a próxima linha.
+   *
+   * Assim, o buffer linear do LVGL é interpretado como um bloco 2D dentro da janela, 
+   * preservando a forma correta da imagem.
+   * @endverbatim
+   *
+   * @param disp Ponteiro para o display do LVGL.
+   * @param area Estrutura contendo as coordenadas da área a ser atualizada.
+   * @param px_map Ponteiro para o buffer linear de pixels do LVGL.
+   */  
+  void my_flush_cb(lv_display_t * disp, const lv_area_t * area, void * px_map)
+  {
+    int32_t w = area->x2 - area->x1 + 1;
+    int32_t h = area->y2 - area->y1 + 1;
+    uint32_t num_pixels = w * h;
+
+    // Seleciona a janela exata onde os pixels vão ser escritos
+    setWindow(area->x1, area->y1, w, h);
+
+    // Escreve os pixels do buffer do LVGL para o display
+    WritePixels(px_map, num_pixels, true);
+
+    // Muito importante: avisar ao LVGL que terminou
+    lv_display_flush_ready(disp);
+  }
+
+
+Links do LVGL
+-------------
+
+LVGL on STM32
+https://controllerstech.com/lvgl-on-stm32-part-1/
+
+Display interface
+https://docs.lvgl.io/9.0/porting/display.html
 
