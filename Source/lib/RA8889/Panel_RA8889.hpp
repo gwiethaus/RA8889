@@ -1578,17 +1578,11 @@ class Panel_RA8889 {
     void MainWindow_StartXY(uint16_t wx, uint16_t hy);
     void CanvasImage_StartAddr(uint32_t addr);
     void CanvasImage_Width(uint16_t Wx);
-    void ActiveWindow_XY(uint16_t Wx, uint16_t hHy);
-    void ActiveWindow_WidhtHeight(uint16_t Wx, uint16_t Hy); 
-
+    void setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height);
     void ForegroundColorRGB(uint8_t red, uint8_t green, uint8_t blue);
-    void ForegroundColor8bpp(uint8_t color);
-    void ForegroundColor16bpp(uint16_t color);
-    void ForegroundColor24bpp(uint32_t color);
+    void ForegroundColor(uint32_t color);
     void BackgroundColorRGB(uint8_t red, uint8_t green, uint8_t blue);
-    void BackgroundColor8bpp(uint8_t color);
-    void BackgroundColor16bpp(uint16_t color);
-    void BackgroundColor24bpp(uint32_t color);
+    void BackgroundColor(uint32_t color);
 
     uint8_t Color16To8bpp(uint16_t color);
     uint16_t Color8To16bpp(uint8_t color8);
@@ -1602,7 +1596,7 @@ class Panel_RA8889 {
     void ClearCurrentPage(uint32_t color = 0x00000000);
     uint8_t ReadIDCode(void);
     void SetPage(uint8_t page);
-	void ShowPage(uint8_t page);
+    void ShowPage(uint8_t page);
     void ShowPicturePgm(uint32_t size, const uint8_t *datap);
     void ShowPicture(eColorDepthBPP pictureBpp, uint32_t numpixels, const uint8_t *datap);
 
@@ -1623,7 +1617,7 @@ class Panel_RA8889 {
     void DrawCircleSquare(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
     void DrawPicturePgm(uint16_t Wx, uint16_t Hy, uint16_t width, uint16_t height, const uint8_t *datap);
     void DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-	void ShowText(char *str);
+    void ShowText(char *str);
     void Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, uint32_t backgcolor);
     void PutString(uint16_t x, uint16_t y, char *str);
     void TextColor(uint32_t foregcolor, uint32_t backgcolor);
@@ -1635,7 +1629,8 @@ class Panel_RA8889 {
     void PutString32x48(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, bool bgtransparent, char *ptr);
     void PutStringFmt(uint16_t x, uint16_t y, int32_t value, const char *fmt);
 
-	void DMA_24bit_Block (uint8_t SCS, uint8_t Clk, uint16_t X1, uint16_t Y1, uint16_t X_W, uint16_t Y_H, uint16_t P_W, uint32_t Addr);
+    void useDMA(bool b = true);	
+    void DMA_24bit_Block (uint8_t SCS, uint8_t Clk, uint16_t X1, uint16_t Y1, uint16_t X_W, uint16_t Y_H, uint16_t P_W, uint32_t Addr);
     void DMA_24bit(uint8_t clk, uint16_t x1, uint16_t y1, uint16_t Wx, uint16_t Hy, uint16_t picwidth, uint32_t addr);
     void DMA_32bit(uint8_t clk, uint16_t x1, uint16_t y1, uint16_t Wx, uint16_t Hy, uint16_t picwidth, uint32_t addr);
     void Switch_24bitsTo32bits(uint8_t bus, uint8_t scs);
@@ -1832,6 +1827,7 @@ class Panel_RA8889 {
     uint32_t _spi_clockmax;                    //velocidade de comunucacao de clock maximo do SPI
     uint8_t _spi_datamode;                     //SPI_MODE0[1,2,3] de comunicacao
     uint8_t _spi_dataorder;                    //ordem de dados spi MSBFIRST ou LSBFIRST
+	bool _usedma;                              //Uso de DMA para as funções que podem se utilziar deste recurso
     void CoreTask_WaitReady(void);
     void Draw_WaitReady(void);
     bool IC_WaitReady(void);
@@ -1999,6 +1995,8 @@ class Panel_RA8889 {
     void Reset_CPHA(void);
     void Set_CPHA(void);
 
+    void ActiveWindow_XY(uint16_t Wx, uint16_t Hy);
+    void ActiveWindow_WidhtHeight(uint16_t Wx, uint16_t Hy); 
     void DrawEnable_AA(bool b);                              //Verificar se funcao do RA8876/RA8877
     void LineMode_Start(void);
     void TriangleMode_Start(bool fill);
@@ -2028,6 +2026,12 @@ class Panel_RA8889 {
     void Center_XY(uint16_t Wx, uint16_t Hy);
     void CircleCenter_XY(uint16_t Wx, uint16_t Hy);          //Mesmo que Center_XY()
     void EllipseCenter_XY(uint16_t Wx, uint16_t Hy);         //Mesmo que Center_XY()
+    void ForegroundColor8bpp(uint8_t color);
+    void ForegroundColor16bpp(uint16_t color);
+    void ForegroundColor24bpp(uint32_t color);
+    void BackgroundColor8bpp(uint8_t color);
+    void BackgroundColor16bpp(uint16_t color);
+    void BackgroundColor24bpp(uint32_t color);
 
     void GammaCorrection_Enable(bool b);
     void GammaTableforBlue(void);
@@ -2326,22 +2330,3 @@ class Panel_RA8889 {
     void AVI_Stop(void);
 
 };
-
-
-#define ACTIVE0
-#define ACTIVE1
-#define ACTIVE2
-#define ACTIVE3
-//#define ACTIVE4
-#define ACTIVE5
-#define ACTIVE6
-#define ACTIVE7
-#define ACTIVE8
-#define ACTIVE9
-//#define ACTIVE10
-#define ACTIVE11
-//#define ACTIVE12
-//#define ACTIVE13
-//#define ACTIVE14
-//#define ACTIVE15
-//#define ACTIVE16

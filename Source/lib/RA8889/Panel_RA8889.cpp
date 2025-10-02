@@ -128,9 +128,15 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst)
   _bpp           = COLOR_DEPTH;
   _mcu           = MCU;
   _colorfmt      = static_cast<uint8_t>(ePDATAColorFmt::RGB); //iniciar com o formato de cor RGB
+  _usedma        = false;
 }
 
 
+
+//ESTUDAR A IMPLEMENTACAO
+//Existe a resolucao maxima do display ativado
+//esta funcao melhraor que podera acinar qualqeur uma das resolucoes permitidas
+//no entanto nao podera passar do maximo e nem do minimo. Se estiver ok, retorna true que foi efetivado a escolha ou false que foi recusado
 /**
  * @brief Define a resolução do display width x height
  *
@@ -369,7 +375,7 @@ void Panel_RA8889::LCD_SetPanel(void)
    
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   //Display Configuration Register (DPCR) [12h]
   
@@ -426,7 +432,7 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   //Display Configuration Register (DPCR) [12h]
 
@@ -474,7 +480,7 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   //Display Configuration Register (DPCR) [12h]
 
@@ -522,7 +528,7 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   //Display Configuration Register (DPCR) [12h]
 
@@ -570,7 +576,7 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   //Display Configuration Register (DPCR) [12h]
 
@@ -618,7 +624,7 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   //Display Configuration Register (DPCR) [12h]
 
@@ -666,7 +672,7 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   //Display Configuration Register (DPCR) [12h]
 
@@ -713,7 +719,7 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   //Display Configuration Register (DPCR) [12h]
 
@@ -761,7 +767,7 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Main/PIP Window Control Register (MPWCTR) [10h]
   
-  Select_LCD_Sync_Mode();                      //Enable XVSYNC, XHSYNC, XDE.
+  Select_LCD_SyncMode();                      //Enable XVSYNC, XHSYNC, XDE.
 
   PCLK_Rising();
   
@@ -7140,7 +7146,7 @@ void Panel_RA8889::CanvasImage_Width(uint16_t Wx)
  *                  Ignored if canvas is in linear addressing mode.
  * @endverbatim
  *
- * @param wx: width, hy: height
+ * @param Wx, Hy: coordenada x,y do ponto inicial da janela
  *
  * @note None
  */
@@ -17470,6 +17476,28 @@ void Panel_RA8889::MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , 
 //================================================================================
 
 
+
+/** IMPLEMENTACAO FUTURA
+ * @brief Uso de DMA em funções que podem se utilziar deste recurso
+ *
+ * @param bool b indica a necessidade de uso de DMA 
+ * 
+ * @code
+ * setWindow(area->x1, area->y1, w, h);
+ * useDMA(true);
+ * WritePixels(px_map, num_pixels, true);
+ * useDMA(false); 
+ * @endcode
+ * 
+ * @note None
+ */
+void Panel_RA8889::useDMA(bool b = true)
+{
+  _usedma = b;
+}
+
+
+
 /**
  * @brief 
  *
@@ -18286,6 +18314,60 @@ uint32_t Panel_RA8889::Color16To24bpp(uint16_t color16)
 
 
 /**
+ * @brief Cor de frente nas componentes Vermelho, Verde e Azul
+ *        
+ * A profundidade de cor será a que foi definida pelo display em suas 
+ * configurações
+ * 
+ * Color depht 8bpp/16bpp/24bpp
+ *
+ * @param color: entrada de dados no formato RGB
+ *
+ * @note None
+ *       
+ */
+void Panel_RA8889::ForegroundColor(uint32_t color)
+{
+#if defined(COLOR_DEPTH_8)
+  ForegroundColor8bpp(color & 0xff);
+#elif defined(COLOR_DEPTH_16)
+  ForegroundColor16bpp(color & 0xffff);
+#elif defined(COLOR_DEPTH_24)
+  ForegroundColor24bpp(color & 0xffffff);
+#else
+	#error "COLOR_DEPTH não definido corretamente"
+#endif
+}
+
+
+/**
+ * @brief Cor de fundo nas componentes Vermelho, Verde e Azul
+ *        
+ * A profundidade de cor será a que foi definida pelo display em suas 
+ * configurações
+ * 
+ * Color depht 8bpp/16bpp/24bpp
+ *
+ * @param color: entrada de dados no formato RGB
+ *
+ * @note None
+ *       
+ */
+void Panel_RA8889::BackgroundColor(uint32_t color)
+{
+#if defined(COLOR_DEPTH_8)
+  BackgroundColor8bpp(color & 0xff);
+#elif defined(COLOR_DEPTH_16)
+  BackgroundColor16bpp(color & 0xffff);
+#elif defined(COLOR_DEPTH_24)
+  BackgroundColor24bpp(color & 0xffffff);
+#else
+	#error "COLOR_DEPTH não definido corretamente"
+#endif
+}
+
+
+/**
  * @brief Seta a posicao do Pixel no display
  *        
  * @verbatim
@@ -18424,15 +18506,7 @@ void Panel_RA8889::ShowPage(uint8_t page)
 //limpa a tela com a cor desejada
 void Panel_RA8889::ClearCurrentPage(uint32_t color = 0x00000000)
 {
-#if defined(COLOR_DEPTH_8)
-    ForegroundColor8bpp(color & 0xff);
-#elif defined(COLOR_DEPTH_16)
-    ForegroundColor16bpp(color & 0xffff);
-#elif defined(COLOR_DEPTH_24)
-    ForegroundColor24bpp(color & 0xffffff);
-#else
-	#error "COLOR_DEPTH não definido corretamente"
-#endif
+  ForegroundColor(color);                      //High level, Foreground color
   Point1_XY(0, 0);
   Point2_XY(_width-1, _height-1);
   SquareMode_Start(true);
@@ -18547,11 +18621,30 @@ void Panel_RA8889::PushBlock(uint16_t x,
 }
 
 
-//Não testado
-//Para uso com area Window definida onhde a primeira posicao 0,0
-//Esta funcao muito usada com o LVGL para transferir volume de dados apra dentro de uma janela
-//onde flush_fb ira calcular as dimensoes e passado para esta funcao tasnferir os pixels para o display.
+//Para uso com area Window definida onde a primeira posicao 0,0
+//Esta funcao muito usada com o LVGL para transferir volume de dados para dentro de uma janela
+//onde flush_fb ira calcular as dimensoes e passado para esta funcao transferir os pixels para o display.
 //use com auto_increment = true, raramente se usa com false
+/**
+ * @brief Envia um bloco linear de pixels para o RA8889 dentro da janela ativa.
+ *
+ * @verbatim
+ * Esta função envia os pixels contidos no buffer 'color_buffer' diretamente para o display.
+ * 
+ * Mesmo que o buffer seja linear (uma sequência contínua de pixels), não haverá distorção
+ * ou esticamento da imagem, porque:
+ * 1. Antes da escrita, deve-se definir a janela ativa com setWindow(x, y, width, height).
+ * 2. O RA8889 incrementa automaticamente o cursor interno à medida que recebe pixels.
+ * 3. Ao final de cada linha da janela, o cursor automaticamente passa para o início da próxima linha.
+ *
+ * Dessa forma, o buffer linear é interpretado como um bloco 2D dentro da janela, preservando
+ * a forma correta da imagem.
+ * @endverbatim
+ *
+ * @param color_buffer Ponteiro para o buffer de cores (8/16/24 bits, dependendo do COLOR_DEPTH).
+ * @param num_pixels Número total de pixels a serem enviados.
+ * @param auto_increment true = avança automaticamente o cursor interno do RA8889.
+ */
 void Panel_RA8889::WritePixels(const void* color_buffer,
                                uint32_t num_pixels,
                                bool auto_increment = true  // true = avança cursor, false = mantém posição (cursosr interno do display)
@@ -18569,7 +18662,7 @@ void Panel_RA8889::WritePixels(const void* color_buffer,
 
         // mantém o cursor no mesmo pixel
         // precisa resetar para 0,0 ou posição inicial
-        if(!auto_increment_cursor) GotoPixel_XY(0, 0);
+        if(!auto_increment) GotoPixel_XY(0, 0);
     }
 
 #elif defined(COLOR_DEPTH_16)
@@ -18591,6 +18684,39 @@ void Panel_RA8889::WritePixels(const void* color_buffer,
 #else
     #error "COLOR_DEPTH não definido corretamente"
 #endif
+}
+
+
+/**
+ * @brief Define a região ativa (janela) para operações gráficas no RA8889.
+ *
+ * @verbatim
+ * A função configura a janela ativa do display RA8889, determinando a área 
+ * retangular (X, Y, largura e altura) onde os pixels subsequentes serão escritos.
+ * 
+ * Internamente:
+ *  - Chama ActiveWindow_XY(x, y) para definir o canto superior esquerdo.
+ *  - Chama ActiveWindow_WidhtHeight(width, height) para definir largura e altura.
+ *
+ * Após a configuração da janela, operações de escrita de pixels (ex: WritePixels) 
+ * afetam apenas essa região. É amplamente utilizada em conjunto com bibliotecas 
+ * gráficas como LVGL para atualização parcial da tela.
+ * @endverbatim
+ *
+ * @param x Coordenada X inicial (canto superior esquerdo da janela) (inicia valor 0...).
+ * @param y Coordenada Y inicial (canto superior esquerdo da janela) (inicia valor 0...).
+ * @param width Largura da janela em pixels (inicia valor 1...).
+ * @param height Altura da janela em pixels (inicia valor 1...).
+ *
+ * @note 
+ * - Certifique-se de que (x + width) e (y + height) não ultrapassem os limites 
+ *   máximos suportados pelo painel (8188 para X, 8191 para Y).
+ * - A janela definida permanece ativa até que outra seja configurada.
+ */
+void Panel_RA8889::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
+  ActiveWindow_XY(x, y);
+  ActiveWindow_WidhtHeight(width, height); 
 }
 
 
@@ -18688,12 +18814,7 @@ void Panel_RA8889::DrawLine(uint16_t x1,
                             uint32_t forecolor
                            )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                 //High level, Foreground color
   Point1_XY(x1, y1);
   Point2_XY(x2, y2);
   LineMode_Start();
@@ -18726,12 +18847,7 @@ void Panel_RA8889::DrawSquare(uint16_t x1,
                               bool bfill = false
                              )
 {
-  #ifdef COLOR_DEPTH_16
-    ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-    ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Point1_XY(x1, y1);
   Point2_XY(x2, y2);
   SquareMode_Start(bfill);
@@ -18767,12 +18883,7 @@ void Panel_RA8889::DrawTriangle(uint16_t x1,
                                 bool bfill = false
                                )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Point1_XY(x1, y1);
   Point2_XY(x2, y2);
   Point3_XY(x3, y3);
@@ -18804,12 +18915,7 @@ void Panel_RA8889::DrawCircle (uint16_t x1,
                                bool bfill = false
                               )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Center_XY(x1,y1);
   Radius_RxRy(R, R);
   CircleMode_Start(bfill);
@@ -18842,12 +18948,7 @@ void Panel_RA8889::DrawEllipse (uint16_t x1,
                                 bool bfill = false
                                )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   EllipseMode_Start(bfill);
@@ -18880,12 +18981,7 @@ void Panel_RA8889::DrawCurveLeftUp(uint16_t x1,
                                    bool bfill = false
                                   )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveLeftUpMode_Start(bfill);
@@ -18918,12 +19014,7 @@ void Panel_RA8889::DrawCurveRightDown(uint16_t x1,
                                       bool bfill = false
                                      )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveRightDownMode_Start(bfill);
@@ -18958,12 +19049,7 @@ void Panel_RA8889::DrawCurveRightUp(uint16_t x1,
                                     bool bfill = false
                                    )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveRightUpMode_Start(bfill);
@@ -18998,12 +19084,7 @@ void Panel_RA8889::DrawCurveLeftDown(uint16_t x1,
                                      bool bfill = false
                                     )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveLeftDownMode_Start(bfill); 
@@ -19041,12 +19122,7 @@ void Panel_RA8889::DrawCircleSquare(uint16_t x1,
                                     bool bfill = false
                                    )
 {
-  #ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(forecolor);
-  #endif
-  #ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(forecolor);
-  #endif
+  ForegroundColor(forecolor);                  //High level, Foreground color
   Point1_XY(x1, y1);
   Point2_XY(x2, y2);
   Radius_RxRy(Rx, Ry);
@@ -19230,14 +19306,11 @@ void Panel_RA8889::DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16
  */
 void Panel_RA8889::TextColor(uint32_t foregcolor, uint32_t backgcolor)
 { 
-#ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(foregcolor);
-  BackgroundColor16bpp(backgcolor);
-#endif
-#ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(foregcolor);
-  BackgroundColor24bpp(backgcolor);
-#endif
+  uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
+  TextMode();                                  //Modo texto 
+  ForegroundColor(foregcolor);                 //High level, Foreground color
+  BackgroundColor(backgcolor);                 //High level, Background color
+  if (mode) {GraphicMode();}                   //Restaura o modo anterior
 }
 
 
@@ -19287,19 +19360,13 @@ void Panel_RA8889::ShowText(char *str)
  */
 void Panel_RA8889::Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, uint32_t backgcolor)
 {
-  uint8_t mode = IsGraphicMode();  //Veja ese esta em modo grafico
-  TextMode();                      //Modo texto 
-#ifdef COLOR_DEPTH_16
-  ForegroundColor16bpp(foregcolor);
-  BackgroundColor16bpp(backgcolor);
-#endif
-#ifdef COLOR_DEPTH_24
-  ForegroundColor24bpp(foregcolor);
-  BackgroundColor24bpp(backgcolor);
-#endif
-  GotoText_XY(x, y);               //posiciona o texto
-  ShowText(str);                   //Envia caracterres para o portão de entrada da memoria
-  if (mode) {GraphicMode();}       //Restaura o modo anterior
+  uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
+  TextMode();                                  //Modo texto 
+  ForegroundColor(foregcolor);                 //High level, Foreground color
+  BackgroundColor(backgcolor);                 //High level, Background color
+  GotoText_XY(x, y);                           //posiciona o texto
+  ShowText(str);                               //Envia caracterres para o portão de entrada da memoria
+  if (mode) {GraphicMode();}                   //Restaura o modo anterior
 }
 
 
@@ -19843,11 +19910,7 @@ void Panel_RA8889::BTE_MemoryCopyWithChromaKey(uint32_t s0_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(copy_width,copy_height);
   
-#if defined(COLOR_DEPTH_16)
-  BackgroundColor16bpp(chromakey_color);
-#elif defined(COLOR_DEPTH_24)
-  BackgroundColor24bpp(chromakey_color);
-#endif
+  BackgroundColor(chromakey_color);           //High level, Background color
   
   SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MEMORY_COPY_WITH_CHROMA;
@@ -20121,11 +20184,7 @@ void Panel_RA8889::BTE_MPUWriteWithChromaKey(uint32_t des_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height);
 
-#if defined(COLOR_DEPTH_16)
-  BackgroundColor16bpp(chromakey_color);
-#elif defined(COLOR_DEPTH_24)
-  BackgroundColor24bpp(chromakey_color);
-#endif
+  BackgroundColor(chromakey_color);           //High level, Background color
   
   SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MPU_WRITE_WITH_CHROMA;
@@ -20201,12 +20260,8 @@ void Panel_RA8889::BTE_MPUWriteWithChromaKey(uint32_t des_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height);
 
-#if defined(COLOR_DEPTH_16)
-  BackgroundColor16bpp(chromakey_color);
-#elif defined(COLOR_DEPTH_24)
-  BackgroundColor24bpp(chromakey_color);
-#endif
-  
+  BackgroundColor(chromakey_color);           //High level, Background color
+
   SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MPU_WRITE_WITH_CHROMA;
   SPI_DataWrite(temp);
@@ -20264,11 +20319,7 @@ void Panel_RA8889::BTE_MPUWriteWithChromaKey(uint32_t des_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height);
   
-#if defined(COLOR_DEPTH_16)
-  BackgroundColor16bpp(chromakey_color);
-#elif defined(COLOR_DEPTH_24)
-  BackgroundColor24bpp(chromakey_color);
-#endif
+  BackgroundColor(chromakey_color);           //High level, Background color
   
   SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MPU_WRITE_WITH_CHROMA;
@@ -20323,13 +20374,8 @@ void Panel_RA8889::BTE_MPUWriteColorExpansion(uint32_t des_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height);
   
-#if defined(COLOR_DEPTH_16)
-  ForegroundColor16bpp(foreground_color);
-  BackgroundColor16bpp(background_color);
-#elif defined(COLOR_DEPTH_24)
-  ForegroundColor24bpp(foreground_color);
-  BackgroundColor24bpp(background_color);
-#endif
+  ForegroundColor(foreground_color);           //High level, Foreground color
+  BackgroundColor(background_color);           //High level, Background color
   
   SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_BUS_WIDTH8;
@@ -20392,13 +20438,8 @@ void Panel_RA8889::BTE_MPUWriteColorExpansion(uint32_t des_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height); 
 
-#if defined(COLOR_DEPTH_16)
-  ForegroundColor16bpp(foreground_color);
-  BackgroundColor16bpp(background_color);
-#elif defined(COLOR_DEPTH_24)
-  foreGroundColor24bpp(foreground_color);
-  BackgroundColor24bpp(background_color);
-#endif
+  ForegroundColor(foreground_color);           //High level, Foreground color
+  BackgroundColor(background_color);           //High level, Background color
   
   SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_BUS_WIDTH8;
@@ -20454,13 +20495,8 @@ void Panel_RA8889::BTE_MPUWriteColorExpansionWithChromaKey(uint32_t des_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height);
 
-#if defined(COLOR_DEPTH_16)
-  ForegroundColor16bpp(foreground_color);
-  BackgroundColor16bpp(background_color);
-#elif defined(COLOR_DEPTH_24)
-  ForegroundColor24bpp(foreground_color);
-  BackgroundColor24bpp(background_color);
-#endif
+  ForegroundColor(foreground_color);           //High level, Foreground color
+  BackgroundColor(background_color);           //High level, Background color
   
   SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_BUS_WIDTH8;
@@ -20524,13 +20560,8 @@ void Panel_RA8889::BTE_MPUWriteColorExpansionWithChromaKey(uint32_t des_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height);
   
-#if defined(COLOR_DEPTH_16)
-  ForegroundColor16bpp(foreground_color);
-  BackgroundColor16bpp(background_color);
-#elif defined(COLOR_DEPTH_24)
-  ForegroundColor24bpp(foreground_color);
-  BackgroundColor24bpp(background_color);
-#endif
+  ForegroundColor(foreground_color);           //High level, Foreground color
+  BackgroundColor(background_color);           //High level, Background color
 
   SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_BUS_WIDTH8;
