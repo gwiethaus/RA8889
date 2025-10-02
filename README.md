@@ -9,6 +9,8 @@ Os métodos das classes estão faltando ajsutar separando a visibildaide public,
 
 Inicialziação do display feito com sucesso. Recursos de configuração da DRAM, PLL, Panel foram feitos corretamente. Display agora está apresentando imagens sem distoção com alta velocidade de exibição. Possui tambem módulo de tela de toque FocalTech da série FT5xx6
 
+Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no formato Doxygen para gerar documentação.
+
 # Todo
 
 - finalizando API Transferencia de DMA
