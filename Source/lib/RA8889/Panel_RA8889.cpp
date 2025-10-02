@@ -18368,6 +18368,23 @@ void Panel_RA8889::BackgroundColor(uint32_t color)
 
 
 /**
+ * @brief Preenche o display com determinada cor
+ *        
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param color Cor de fundo
+ *
+ * @note None
+ */
+void Panel_RA8889::FillScreen(uint32_t color)
+{
+  DrawSquare(0, 0, _width-1, _height-1, color, true);
+}
+
+
+/**
  * @brief Seta a posicao do Pixel no display
  *        
  * @verbatim

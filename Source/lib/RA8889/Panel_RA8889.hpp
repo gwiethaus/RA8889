@@ -1583,7 +1583,7 @@ class Panel_RA8889 {
     void ForegroundColor(uint32_t color);
     void BackgroundColorRGB(uint8_t red, uint8_t green, uint8_t blue);
     void BackgroundColor(uint32_t color);
-
+    void FillScreen(uint32_t color);
     uint8_t Color16To8bpp(uint16_t color);
     uint16_t Color8To16bpp(uint8_t color8);
     uint16_t Color24To16bpp(uint32_t color24);
@@ -1827,7 +1827,7 @@ class Panel_RA8889 {
     uint32_t _spi_clockmax;                    //velocidade de comunucacao de clock maximo do SPI
     uint8_t _spi_datamode;                     //SPI_MODE0[1,2,3] de comunicacao
     uint8_t _spi_dataorder;                    //ordem de dados spi MSBFIRST ou LSBFIRST
-	bool _usedma;                              //Uso de DMA para as funções que podem se utilziar deste recurso
+    bool _usedma;                              //Uso de DMA para as funções que podem se utilziar deste recurso
     void CoreTask_WaitReady(void);
     void Draw_WaitReady(void);
     bool IC_WaitReady(void);
