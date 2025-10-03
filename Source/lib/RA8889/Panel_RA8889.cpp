@@ -41,14 +41,13 @@
 	Outra funcao DrawPixels (x, y, count, *data) o controle tera que ser por x,y e count na posicao do buffer apra a posicao de tela que deseja os pixels.
 	
   
-  
   Construção
 
-    void Panel_RA8889::DrawPixels(uint16_t x, uint16_t y, uint32_t color, uint32_t data[], uint16_t count)
 
 	Fazendo as funções: 
-
-
+    
+     void setCharacterSetsExternal(ExternalCGROM_ISO8859 iso, ExternalCGROM_Type type)
+     void Panel_RA8889::setFontParameters(FontParameters param)
 */
 
 
@@ -129,6 +128,7 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst)
   _mcu           = MCU;
   _colorfmt      = static_cast<uint8_t>(ePDATAColorFmt::RGB); //iniciar com o formato de cor RGB
   _usedma        = false;
+  _fntparam_source_select  = eFontSource::InternalCGROM;
 }
 
 
@@ -199,6 +199,33 @@ bool Panel_RA8889::Begin(void)
     DEBUG_PRINT("RA8889 initial sucess!",0,false);
   }
   
+  //Inicializa fonte
+
+  _fntparam_source_select = eFontSource::InternalCGROM; 
+  Font_SetSource(_fntparam_source_select);
+
+  _fntparam_size_select = eFontHeight::H16;
+  _fntparam_height = static_cast<uint8_t>(eFontHeight::H16);
+  Font_SetHeight_16();
+  
+  _fntparam_full_align = false;
+  Font_FullAlignmentDisable();
+
+  _fntparam_chroma_key = false;           //use backgraound color
+  Font_UseBackgroundColor();
+
+  _fntparam_width_enlarge = eFontEnlargFactor::X1;
+  Font_WidthEnlargFactor(_fntparam_width_enlarge);
+
+  _fntparam_height_enlarge = eFontEnlargFactor::X1;
+  Font_HeightEnlargFactor(_fntparam_height_enlarge);
+
+  //se setoru itnernal em FontParameters::eFontSource::
+  _fntparam_internal_iso_select = InternalCGROM_ISO8859::ISO8859_1;
+  Select_Internal_CGROM_ISOIEC8859_1();
+  
+  Font_0degree();
+
   return true;
 }
 
@@ -14066,13 +14093,13 @@ void Panel_RA8889::Font_UseExternalCGROM(void)
  *                            0b11: NA
  * @endverbatim
  *
- * @param FontSource::Internal : Select internal CGROM Character.
- *        FontSource::External : Select external CGROM Character. (Genitop serial flash)
- *        FontSource::User     : Select user-defined Character.
+ * @param eFontSource::Internal : Select internal CGROM Character.
+ *        eFontSource::External : Select external CGROM Character. (Genitop serial flash)
+ *        eFontSource::User     : Select user-defined Character.
  *
- * @note Exemplo: Font_SetSource(FontSource::ExternalCGROM); 
+ * @note Exemplo: Font_SetSource(eFontSource::ExternalCGROM); 
  */
-void Panel_RA8889::Font_SetSource(FontSource source)
+void Panel_RA8889::Font_SetSource(eFontSource source)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
@@ -14251,7 +14278,7 @@ void Panel_RA8889::Font_SetHeight_32(void)
  *       serial flash's font width is decided by font code or GT Font ROM
  *       control register.
  */ 
-void Panel_RA8889::Font_SetHeight(FontHeight height)
+void Panel_RA8889::Font_SetHeight(eFontHeight height)
 {
   uint8_t temp;
   uint8_t bits = 0;
@@ -14259,9 +14286,9 @@ void Panel_RA8889::Font_SetHeight(FontHeight height)
   // Mapear enum para bits [5:4] do CCR0
   switch(height)
   {
-      case FontHeight::H16: bits = 0x00;  break;
-      case FontHeight::H24: SETB(bits,0); break;
-      case FontHeight::H32: SETB(bits,1); break;
+      case eFontHeight::H16: bits = 0x00;  break;
+      case eFontHeight::H24: SETB(bits,0); break;
+      case eFontHeight::H32: SETB(bits,1); break;
       default: 
           return; // nunca deve acontecer
   }
@@ -14676,7 +14703,7 @@ void Panel_RA8889::Font_90degree(void)
  *
  * @note None
  */
-void Panel_RA8889::Font_WidthEnlargFactor(FontEnlargFactor factor)
+void Panel_RA8889::Font_WidthEnlargFactor(eFontEnlargFactor factor)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
@@ -14704,7 +14731,7 @@ void Panel_RA8889::Font_WidthEnlargFactor(FontEnlargFactor factor)
  *
  * @note None
  */
-void Panel_RA8889::Font_HeightEnlargFactor(FontEnlargFactor factor)
+void Panel_RA8889::Font_HeightEnlargFactor(eFontEnlargFactor factor)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
@@ -19384,6 +19411,88 @@ void Panel_RA8889::Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, 
   GotoText_XY(x, y);                           //posiciona o texto
   ShowText(str);                               //Envia caracterres para o portão de entrada da memoria
   if (mode) {GraphicMode();}                   //Restaura o modo anterior
+}
+
+
+//Não testado
+//eFontOrigin::User Fonte criado pelo usuario
+//eFontOrigin::External Fonte fonte de origem do CGROM
+//eFontOrigin::Internal Fonte de origem do RA8889 padrão
+void Panel_RA8889::setFontSource(eFontSource source)
+{
+  if (_fntparam_source_select == source) return;
+  if (source == eFontSource::InternalCGROM) Font_UseInternalCGROM();
+  if (source == eFontSource::ExternalCGROM) Font_UseExternalCGROM();
+  if (source == eFontSource::UserDefined)   Font_UseUserDefined();
+  _fntparam_source_select = source;
+}
+
+
+//Não testado
+//se setou o uso dem fonte interna, use esta funcao para selecionar alem do padrao 
+void Panel_RA8889::setCharacterSetsInternal(InternalCGROM_ISO8859 iso)
+ {
+  if (_fntparam_source_select !=  eFontSource::InternalCGROM ) return;
+  if (iso == _fntparam_internal_iso_select) return;
+  if (iso == InternalCGROM_ISO8859::ISO8859_1) Select_Internal_CGROM_ISOIEC8859_1();
+  if (iso == InternalCGROM_ISO8859::ISO8859_2) Select_Internal_CGROM_ISOIEC8859_2();
+  if (iso == InternalCGROM_ISO8859::ISO8859_4) Select_Internal_CGROM_ISOIEC8859_4();
+  if (iso == InternalCGROM_ISO8859::ISO8859_5) Select_Internal_CGROM_ISOIEC8859_5();
+  _fntparam_internal_iso_select = iso;
+ }
+
+
+//Não testado
+//implementar
+ //se setou o uso dem fonte Externa (ROM) Genitop, use esta funcao para selecionar alem do padrao 
+ void setCharacterSetsExternal(ExternalCGROM_ISO8859 iso, ExternalCGROM_Type type)
+ {
+
+ }
+
+
+//Não testado
+//implementar fonte da ROM genitop, veja exemplos do autor
+void Panel_RA8889::setFontParameters(FontParameters param)
+{
+  uint8_t temp = 0;
+
+  //Character Control Register 0 (CCR0)
+
+  if (_fntparam_source_select !=  param.source_select) {
+    setFontSource(param.source_select);
+  }
+
+  if (_fntparam_size_select != param.size_select)  {
+    if (param.size_select == eFontHeight::H16) Font_SetHeight_16();
+    if (param.size_select == eFontHeight::H24) Font_SetHeight_24();
+    if (param.size_select == eFontHeight::H32) Font_SetHeight_32();
+    _fntparam_height = static_cast<uint8_t>(param.size_select);
+    _fntparam_size_select = param.size_select;
+  }
+
+  //Character Control Register 1 (CCR1)
+
+  if ( _fntparam_full_align != param.full_align) {
+   if (param.full_align) {Font_FullAlignmentEnable(); } else {  Font_FullAlignmentDisable(); }
+    _fntparam_full_align = param.full_align;
+  }
+
+  if (_fntparam_chroma_key != param.chroma_key)  {
+    if (_fntparam_chroma_key) { Font_UseBackgroundTransparency(); } else { Font_UseBackgroundColor(); }
+    _fntparam_chroma_key =  param.chroma_key;
+  }
+
+  if (_fntparam_width_enlarge != param.width_enlarge)  {
+    Font_WidthEnlargFactor(_fntparam_width_enlarge);
+    _fntparam_width_enlarge = param.width_enlarge;
+  }
+
+  if (_fntparam_height_enlarge != param.height_enlarge)  {
+    Font_HeightEnlargFactor(_fntparam_height_enlarge);
+    _fntparam_height_enlarge = param.height_enlarge;
+  }
+
 }
 
 

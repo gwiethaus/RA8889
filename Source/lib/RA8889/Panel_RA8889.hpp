@@ -1411,7 +1411,7 @@ enum class eColorDepthBPP : uint8_t {
 };
 
 
-enum class FontSource : uint8_t {
+enum class eFontSource : uint8_t {
   InternalCGROM =  0x00,                        //0b00 Select internal CGROM Character.
   ExternalCGROM =  cSetb6,                      //0b01 Select external CGROM Character. (Genitop serial flash) 
   UserDefined   =  cSetb7                       //0b10 Select user-defined Character.
@@ -1427,9 +1427,41 @@ enum class InternalCGROM_ISO8859 : uint8_t {
 };
 
 
+// Enum para os padrões ISO/IEC 8859 suportados pela CGROM externa (Genitop)
+enum class ExternalCGROM_ISO8859 : uint8_t {
+  ASCII      = 0x20,                           //ASCII only (00h-1Fh, 80-FFh will send “blank space”)
+  ISO8859_1  = 0x88,                           //ISO-8859-1 + ASCII code
+  ISO8859_2  = 0x90,                           //ISO-8859-2 + ASCII code
+  ISO8859_3  = 0x98,                           //ISO-8859-3 + ASCII code
+  ISO8859_4  = 0xA0,                           //ISO-8859-4 + ASCII code
+  ISO8859_5  = 0xA8,                           //ISO-8859-5 + ASCII code
+  ISO8859_7  = 0xB0,                           //ISO-8859-7 + ASCII code
+  ISO8859_8  = 0xB8,                           //ISO-8859-8 + ASCII code
+  ISO8859_9  = 0xC0,                           //ISO-8859-9 + ASCII code
+  ISO8859_10 = 0xC8,                           //ISO-8859-10 + ASCII code
+  ISO8859_11 = 0xD0,                           //ISO-8859-11 + ASCII code
+  ISO8859_13 = 0xD8,                           //ISO-8859-13 + ASCII code
+  ISO8859_14 = 0xE0,                           //ISO-8859-14 + ASCII code
+  ISO8859_15 = 0xE8,                           //ISO-8859-15 + ASCII code
+  ISO8859_16 = 0xF0                            //ISO-8859-16 + ASCII code
+};
+
+
+enum class ExternalCGROM_Type : uint8_t {
+  GB2312      = 0x00,                         //GB2312
+  GB12345     = 0x08,                         //GB12345/GB18030
+  GB18030     = 0x08,                         //GB12345/GB18030
+  BIG5        = 0x10,                         //BIG5
+  UNICODE     = 0x18,                         //Unicode
+  UNIJapanese = 0x28,                         //UNI-Japanese
+  JIS0208     = 0x30,                         //JIS0208
+  LGCATH      = 0x31                          //Latin / Greek / Cyrillic / Arabic / Thai / Hebrew
+};
+
+
+
 // Enum para alturas de fonte suportadas
-enum class FontHeight : uint8_t
-{
+enum class eFontHeight : uint8_t {
   H16 = 16,                                    // 8x16 / 16x16
   H24 = 24,                                    // 12x24 / 24x24
   H32 = 32                                     // 16x32 / 32x32
@@ -1437,8 +1469,7 @@ enum class FontHeight : uint8_t
 
 
 // Enum Font Horizontal/Vertical Enlagement Factors
-enum class FontEnlargFactor : uint8_t
-{
+enum class eFontEnlargFactor : uint8_t {
   X1 = 0,                                      //factor 1x
   X2 = 1,                                      //factor 2x
   X3 = 2,                                      //factor 3x
@@ -1544,6 +1575,20 @@ struct pospixel_t {
 };
 
 
+struct FontParameters {
+  //uint8_t iso_select;          //iso_select = 0 : iso8859-1, iso_select = 1 : iso8859-2, iso_select = 2 : iso8859-4, iso_select = 3 : iso8859-5
+  eFontHeight size_select;      //size_select = 0 : 8*16/16*16, size_select = 1 : 12*24/24*24, size_select = 2 : 16*32/32*32
+  uint8_t width;               //largura da fonte 
+  uint8_t height;              //altura da fonte
+  eFontSource source_select;   //source_select = 0 : internal CGROM,  source_select = 1: external CGROM, source_select = 2: user-define
+  bool full_align;             //align = 0 : full alignment disable, align = 1 : full alignment enable 
+  uint8_t chroma_key;          //chroma_key = 0 : text with chroma key disable, chroma_key = 1 : text with chroma key enable
+  eFontEnlargFactor width_enlarge;  //width_enlarge can be set 0~3, (00b: X1) (01b : X2)  (10b : X3)  (11b : X4)
+  eFontEnlargFactor height_enlarge; //height_enlarge can be set 0~3, (00b: X1) (01b : X2)  (10b : X3)  (11b : X4)
+};
+
+
+
 class Panel_RA8889 {
   private:
     void SPISetCS(uint8_t level_cs);
@@ -1617,6 +1662,11 @@ class Panel_RA8889 {
     void DrawCircleSquare(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
     void DrawPicturePgm(uint16_t Wx, uint16_t Hy, uint16_t width, uint16_t height, const uint8_t *datap);
     void DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
+    
+    void setFontSource(eFontSource source);
+    void setFontParameters(FontParameters param);
+    void setCharacterSetsExternal(ExternalCGROM_ISO8859 iso, ExternalCGROM_Type type);
+    void setCharacterSetsInternal(InternalCGROM_ISO8859 iso);
     void ShowText(char *str);
     void Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, uint32_t backgcolor);
     void PutString(uint16_t x, uint16_t y, char *str);
@@ -1828,6 +1878,19 @@ class Panel_RA8889 {
     uint8_t _spi_datamode;                     //SPI_MODE0[1,2,3] de comunicacao
     uint8_t _spi_dataorder;                    //ordem de dados spi MSBFIRST ou LSBFIRST
     bool _usedma;                              //Uso de DMA para as funções que podem se utilziar deste recurso
+    
+    //Parametros da fonte
+    eFontSource _fntparam_source_select;
+    eFontHeight _fntparam_size_select;
+    uint8_t _fntparam_height;
+    InternalCGROM_ISO8859 _fntparam_internal_iso_select;
+    ExternalCGROM_ISO8859 _fntparam_external_iso_select;
+    ExternalCGROM_Type _fntparam_external_iso_type_select;
+    bool _fntparam_full_align;
+    bool _fntparam_chroma_key;
+    eFontEnlargFactor _fntparam_width_enlarge;
+    eFontEnlargFactor _fntparam_height_enlarge;
+
     void CoreTask_WaitReady(void);
     void Draw_WaitReady(void);
     bool IC_WaitReady(void);
@@ -2054,11 +2117,11 @@ class Panel_RA8889 {
     void Font_UseUserDefined(void);
     void Font_UseInternalCGROM(void);
     void Font_UseExternalCGROM(void);
-    void Font_SetSource(FontSource source);
+    void Font_SetSource(eFontSource source);
     void Font_SetHeight_16(void);
     void Font_SetHeight_24(void);
     void Font_SetHeight_32(void);
-    void Font_SetHeight(FontHeight height);
+    void Font_SetHeight(eFontHeight height);
     void Font_LineDistance(uint8_t gap);
     void Font_toFontWidthSetting(uint8_t pixels);
     void Font_FullAlignmentEnable(void);
@@ -2067,8 +2130,8 @@ class Panel_RA8889 {
     void Font_UseBackgroundColor(void);
     void Font_0degree(void);
     void Font_90degree(void);
-    void Font_WidthEnlargFactor(FontEnlargFactor factor);
-    void Font_HeightEnlargFactor(FontEnlargFactor factor);
+    void Font_WidthEnlargFactor(eFontEnlargFactor factor);
+    void Font_HeightEnlargFactor(eFontEnlargFactor factor);
     void CGRAM_StartAddress(uint32_t addr);
     void SetTextParameter0(uint8_t sourceselect, uint8_t sizeselect, uint8_t isoselect);
     void SetTextParameter1(uint8_t align, uint8_t chromakey, uint8_t widthenlarge, uint8_t heightenlarge);

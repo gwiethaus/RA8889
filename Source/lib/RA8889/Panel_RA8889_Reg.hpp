@@ -275,7 +275,31 @@
 
 //Text Engine
 #define REG_CCR0                               0xcc            //Page 0 Character Control Register 0 (CCR0)
+    #define BIT_SELECT_INTERNAL_CGROM          0x00
+    #define BIT_SELECT_EXTERNAL_CGROM          0x40            //Genitop serial flash
+    #define BIT_SELECT_USER_DEFINED            0x80
+    #define BIT_CHAR_HEIGHT_16                 0x00            //16: ex. 8x16 / 16x16 / variable character width x 16
+    #define BIT_CHAR_HEIGHT_24                 0x10            //24; ex. 12x24 / 24x24 / variable character width x 24
+    #define BIT_CHAR_HEIGHT_32                 0x20            //32; ex. 16x32 / 32x32 / variable character width x 32
+    #define BIT_SELECT_8859_1                  0x00            //ISO/IEC 8859-1
+    #define BIT_SELECT_8859_2                  0x01            //ISO/IEC 8859-2
+    #define BIT_SELECT_8859_4                  0x02            //ISO/IEC 8859-4
+    #define BIT_SELECT_8859_5                  0x03            //ISO/IEC 8859-5
 #define REG_CCR1                               0xcd            //Page 0 Character Control Register 1 (CCR1)
+    #define BIT_TEXT_FULL_ALIGN_DISABLE        0x00            //
+    #define BIT_TEXT_FULL_ALIGN_ENABLE         0x80            //
+    #define BIT_TEXT_CHROMA_KEY_DISABLE        0x00            //Character’s background displayed with specified color
+    #define BIT_TEXT_CHROMA_KEY_ENABLE         0x40            //Character’s background displayed with original canvas’ background (transparency)
+    #define BIT_TEXT_NO_ROTATION               0x00
+    #define BIT_TEXT_ROTATION                  0x10  
+    #define BIT_TEXT_WIDTH_ENLARGEMENT_X1      0x00
+    #define BIT_TEXT_WIDTH_ENLARGEMENT_X2      0x04
+    #define BIT_TEXT_WIDTH_ENLARGEMENT_X3      0x08
+    #define BIT_TEXT_WIDTH_ENLARGEMENT_X4      0x0c
+    #define BIT_TEXT_HEIGHT_ENLARGEMENT_X1     0x00
+    #define BIT_TEXT_HEIGHT_ENLARGEMENT_X2     0x01
+    #define BIT_TEXT_HEIGHT_ENLARGEMENT_X3     0x02
+    #define BIT_TEXT_HEIGHT_ENLARGEMENT_X4     0x03
 #define REG_GTFNT_SEL                          0xce            //Page 0 GT Character ROM Select (GTFNT_SEL)
 #define REG_GTFNT_CR                           0xcf            //Page 0 GT Character ROM Control register (GTFNT_CR)
 #define REG_FLDR                               0xd0            //Page 0 Character Line gap Setting Register (FLDR)

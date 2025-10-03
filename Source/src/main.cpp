@@ -252,8 +252,7 @@ void loop() {
 #ifdef ACTIVE11
 /////////////Text  
   gfx.GraphicMode();
-  gfx.setWindow(0, 0, gfx.Width()-1, gfx.Height()-1);
-  gfx.DrawSquare(0, 0, gfx.Width()-1, gfx.Height()-1, clBlack, true);
+  gfx.FillScreen(clBlack);
   
   gfx.Text(0,26,"buydisplay.com",clGreen, clBlack);
 
@@ -288,43 +287,29 @@ void loop() {
 
   gfx.DrawSquare(0, gfx.Height()-24, gfx.Width()-1, gfx.Height()-1, clBlue, true);
   
-  gfx.ForegroundColor16bpp(clWhite);
-  gfx.BackgroundColor16bpp(clBlue);
   gfx.Font_UseInternalCGROM();
   gfx.Font_SetHeight_24();
-  gfx.GotoText_XY(0,gfx.Height()-24);
-  gfx.ShowText("  Demo BTE Compare");
-  gfx.ForegroundColor16bpp(clBlack);
-  gfx.BackgroundColor16bpp(clWhite);
- 
-  gfx.GotoText_XY(0,gfx.Height()-48);
-  gfx.ShowText("Execute Logic 'OR' 0xf000");
+  gfx.Text(0,gfx.Height()-24-1,"Demo BTE Compare",clBlack, clWhite);
+  gfx.Text(0,gfx.Height()--48-1,"Execute Logic 'OR' 0xf000",clBlack, clWhite); 
 
   gfx.DrawPicture(20, 40, 80, 80, pic_80x80);
   
   gfx.DrawPicture(20+80+20, 40, 80, 80, pic_80x80);
   
   gfx.DrawPicture(20+80+20+80+20, 40, 80, 80, pic_80x80);
-  
-  gfx.ActiveWindow_XY(0,0);
-  gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );
-  gfx.ForegroundColor16bpp(clBlack);
-  gfx.BackgroundColor16bpp(clWhite);
+    
+  gfx.setWindow(0,0, gfx.Width(), gfx.Height());
+
   gfx.Font_UseInternalCGROM();
- 
-  gfx.GotoText_XY(20,130 );
-  gfx.ShowText("NO BTE");
-  gfx.GotoText_XY(120,130 );
-  gfx.ShowText("BTE ");
-  gfx.GotoText_XY(120,154 );
-  gfx.ShowText("ROP");
-  gfx.GotoText_XY(220,130 );
-  gfx.ShowText("BTE Move");
-  gfx.GotoText_XY(220,154 );
-  gfx.ShowText("ROP");
+  gfx.Text(0,130,"NO BTE",clBlack, clWhite); 
+  gfx.Text(120,130,"BTE ",clBlack, clWhite); 
+  gfx.Text(120,154,"ROP ",clBlack, clWhite); 
+  gfx.Text(220,130,"BTE Move",clBlack, clWhite); 
+  gfx.Text(220,154,"ROP",clBlack, clWhite); 
   delay(1000);
-  gfx.ActiveWindow_XY(20,40);
-  gfx.ActiveWindow_WidhtHeight(80,80); 
+
+  gfx.setWindow(20,40,80,80);
+
   gfx.GotoPixel_XY(20,40);
   gfx.SPI_CmdWrite(0x04);
   temp =  gfx.SPI_DataRead();
@@ -339,9 +324,10 @@ void loop() {
     gfx.SPI_DataWrite(temp>>8);
     gfx.Wait_WriteFIFO_NotFull();
   }
-  gfx.ActiveWindow_XY(0,0);
-  gfx.ActiveWindow_WidhtHeight( gfx.Width(), gfx.Height() );
+  
+  gfx.setWindow(0,0, gfx.Width(), gfx.Height());
   delay(1000);
+  
    //second block, MCU write with BTE ROP 
   gfx.BTE_S0_ColorDeph(eColorDepthBPP::bpp16);
   gfx.BTE_S1_ColorDeph_16bpp();
