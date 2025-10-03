@@ -2676,19 +2676,371 @@ LVGL flush_cb
    */  
   void my_flush_cb(lv_display_t * disp, const lv_area_t * area, void * px_map)
   {
-    int32_t w = area->x2 - area->x1 + 1;
-    int32_t h = area->y2 - area->y1 + 1;
-    uint32_t num_pixels = w * h;
+    int32_t w         = area->x2 - area->x1 + 1;
+    int32_t h         = area->y2 - area->y1 + 1;
+    lv_coord_t width  = lv_area_get_width(area);
+    lv_coord_t height = lv_area_get_height(area);
+	
+	uint32_t num_pixels = w * h;
 
     // Seleciona a janela exata onde os pixels vão ser escritos
     setWindow(area->x1, area->y1, w, h);
 
     // Escreve os pixels do buffer do LVGL para o display
+	// se o ponteiro for de formato diferente use (uint8_t)px_map, (uint16_t)px_map ou (uint32_t)px_map
     WritePixels(px_map, num_pixels, true);
 
     // Muito importante: avisar ao LVGL que terminou
     lv_display_flush_ready(disp);
   }
+
+
+Constatnes para Determinar se ARDUINO ou ESP_IDF
+------------------------------------------------
+
+  Eu uso isso para minhas bibliotecas duplas que suportam Arduino ou ESP-IDF.
+  
+  #if __has_include(<Arduino.h>)
+  
+  #include <Arduino.h>
+  
+  #elif !defined(ESP_PLATFORM)
+  
+  #error "Esta biblioteca requer Arduino ou um ESP32"
+  
+  #endif
+  
+  E daí em diante você pode simplesmente testar em #ifdef ARDUINO
+
+Using the SPI Master interface
+------------------------------
+  
+  https://esp32developer.com/programming-in-c-c/spi/using-the-spi-master-interface
+  
+  ESP32 S3 integrates 4 SPI peripherals
+  -------------------------------------
+  
+  SPI0 and SPI1
+
+    - Used internally to access the ESP32’s attached flash memory.
+
+  SPI2 and SPI3 / HSPI and VSPI
+
+    - General purpose SPI controllers, sometimes referred to as HSPI and VSPI, respectively. They are open to users.
+    - SPI2 and SPI3 have independent bus signals.
+    - Each bus has three CS lines to drive up to same number of SPI slaves.
+
+  SPI Mode
+  --------
+  
+  ----------------------------------------------------------------------------------------------------------
+  Mode  CPOL  CPHA
+  ----------------------------------------------------------------------------------------------------------
+  0     0     0     Clock idle low, data is clocked in on rising edge, output data (change) on falling edge
+  1     0     1     Clock idle low, data is clocked in on falling edge, output data (change) on rising edge
+  2     1     0     Clock idle high, data is clocked in on falling edge, output data (change) on rising edge
+  3     1     1     Clock idle high, data is clocked in on rising edge, output data (change) on falling edge
+  ----------------------------------------------------------------------------------------------------------
+  
+  Using SPI bus example
+  ---------------------
+  
+  #include "driver/spi_master.h"
+  
+  #define EXAMPLE_SPI_PORT_NAME					SPI2_HOST
+  #define EXAMPLE_SPI_PIN_MISO					13
+  #define EXAMPLE_SPI_PIN_MOSI					11
+  #define EXAMPLE_SPI_PIN_CLK					12
+  #define EXAMPLE_SPI_PIN_CS					10
+  
+  #define EXAMPLE_SPI_MAX_TRANSFER_SIZE_BYTES	32			//<<<<<<<<<<<<<<SET THIS BIG ENOUGH!!!
+        
+  //----- INITIALIZE SPI BUS -----
+  spi_device_handle_t  OurSpiDeviceHandle1;
+  
+  spi_bus_config_t SpiBusConfig={
+  	.miso_io_num = EXAMPLE_SPI_PIN_MISO,
+  	.mosi_io_num = EXAMPLE_SPI_PIN_MOSI,
+  	.sclk_io_num = EXAMPLE_SPI_PIN_CLK,
+  	.quadwp_io_num = -1,
+  	.quadhd_io_num = -1,
+  	.max_transfer_sz = EXAMPLE_SPI_MAX_TRANSFER_SIZE_BYTES,
+  	//.intr_flags = ESP_INTR_FLAG_LOWMED,				//<<<Optional, include to ensure SPI doesn't consume a level 1 irq if you are short of irqs
+  };
+  spi_bus_initialize(EXAMPLE_SPI_PORT_NAME, &SpiBusConfig, SPI_DMA_CH_AUTO);		//<<<You can use ESP_ERROR_CHECK() on this call if you are having issues
+  
+  
+  //----- ADD A SPI DEVICE -----
+  spi_device_interface_config_t SpiDeviceInterfaceConfig1 = {
+  	.clock_speed_hz = 10*1000*1000,				//Clock out at 10 MHz
+  	.mode = 0,									//<<< SPI mode 0
+  	.spics_io_num = EXAMPLE_SPI_PIN_CS,			//<<< CS pin number
+  	.queue_size = 1,							//<<< Number of transactions we want to be able to queue at a time using spi_device_queue_trans()
+  };
+  spi_bus_add_device(EXAMPLE_SPI_PORT_NAME, &SpiDeviceInterfaceConfig1, &OurSpiDeviceHandle1);		//<<<You can use ESP_ERROR_CHECK() on this call if you are having issues
+  
+  
+  //-------------------------
+  //----- TRANSMIT ONLY -----
+  //-------------------------
+  uint8_t TxData[2] = {0x01, 0x02};
+  
+  spi_transaction_t SpiTransaction;
+  memset(&SpiTransaction, 0, sizeof(SpiTransaction));			//Zero out the transaction ready to use
+  SpiTransaction.length = 2 * 8;								//Transaction length is in bits
+  SpiTransaction.tx_buffer = &TxData;							//Set the tx data buffer
+  //Do it
+  spi_device_polling_transmit(OurSpiDeviceHandle1, &SpiTransaction);		//Waits until the transfer is complete
+  
+  
+  //---------------------------------
+  //----- TRANSMIT THEN RECEIVE -----
+  //---------------------------------
+  //When using SPI_TRANS_CS_KEEP_ACTIVE, bus must be locked/acquired
+  spi_device_acquire_bus(OurSpiDeviceHandle1, portMAX_DELAY);
+  
+  //----- TRANSMIT BYTES -----
+  uint8_t TxData = 0x04;
+  spi_transaction_t SpiTransaction;
+  memset(&SpiTransaction, 0, sizeof(SpiTransaction));			//Zero out the transaction ready to use
+  SpiTransaction.length = 1 * 8;								//Transaction length is in bits
+  SpiTransaction.tx_buffer = &TxData;							//Set the tx data buffer
+  SpiTransaction.flags = SPI_TRANS_CS_KEEP_ACTIVE;			//Keep CS active after data transfer
+  //Do it
+  spi_device_polling_transmit(OurSpiDeviceHandle1, &SpiTransaction);		//Waits until the transfer is complete
+  
+  
+  //----- RECEIVE BYTES -----
+  uint8_t RxData = 0x04;
+  memset(&SpiTransaction, 0, sizeof(SpiTransaction));			//Zero out the transaction ready to use
+  SpiTransaction.length = 3 * 8;								//Transaction length is in bits
+  SpiTransaction.rx_buffer = &RxData[0];
+  //Do it
+  spi_device_polling_transmit(OurSpiDeviceHandle1, &SpiTransaction);		//Waits until the transfer is complete
+  
+  //Release bus
+  spi_device_release_bus(OurSpiDeviceHandle1);
+
+  CS Pin Control
+  --------------
+  
+  https://esp32developer.com/programming-in-c-c/spi/cs-pin-control
+  
+  Manually controlling CS pins
+  ----------------------------
+  
+  When adding a SPI device, set its .spics_io_num to -1
+
+  //----- SETUP IO PINS -----
+  //Set CS high
+  gpio_set_level(EXAMPLE_SPI_PIN_CS, 1);
+  gpio_set_direction(EXAMPLE_SPI_PIN_CS, GPIO_MODE_OUTPUT);
+  
+  //----- ADD A SPI DEVICE -----
+  spi_device_interface_config_t SpiDeviceInterfaceConfig1 = {
+  	.clock_speed_hz = 10*1000*1000,				//Clock out at 10 MHz
+  	.mode = 0,									//<<< SPI mode 0
+  	.spics_io_num = -1,			//<<< CS pin number (-1 = usunsed, you will control it yourself using GPIO)
+  	.queue_size = 1,							//<<< Number of transactions we want to be able to queue at a time using spi_device_queue_trans()
+  };
+  spi_bus_add_device(EXAMPLE_SPI_PORT_NAME, &SpiDeviceInterfaceConfig1, &OurSpiDeviceHandle1);		//<<<You can use ESP_ERROR_CHECK() on this call if you are having issues
+  
+  Now when you access other device, ensure you set CS low before you use it and high again afterwards
+
+  //CS Low
+  gpio_set_level(EXAMPLE_SPI_PIN_CS, 0);
+  
+  //your SPI access code here...
+  
+  //CS high
+  gpio_set_level(EXAMPLE_SPI_PIN_CS, 1);
+
+
+Uso de DMA no SPI em MCU
+------------------------
+
+  o uso de DMA no SPI para transferir grandes blocos de pixels (framebuffer) direto da RAM do MCU para o RA8889, sem CPU ficar empurrando byte a byte.
+  
+  👉 Nem todo MCU suporta isso. Vamos separar:
+  
+  🔴 Não suportam SPI DMA (ou é muito limitado)
+  ---------------------------------------------
+  
+  - Arduino Uno (ATmega328P)
+  - Arduino Nano (ATmega328P)
+  - Arduino Pro Mini (ATmega328P)
+  - Arduino Mega (ATmega2560)
+  
+  ➡️ Esses AVR clássicos não têm controladores DMA de uso geral.
+  No máximo dá para otimizar SPI com interrupção, mas sempre vai ser a CPU enviando cada byte.
+  Conclusão: não servem para empurrar framebuffer inteiro via DMA → vão ser lentos com displays grandes como 800x480.
+
+  🟡 DMA parcial ou restrito
+  --------------------------
+  
+  - Arduino Due (SAM3X8E – ARM Cortex-M3, 84 MHz)
+  
+    * Tem DMA Controller (PDC/DMAC).
+    * SPI pode usar DMA para enviar blocos de dados.
+    * Funciona, mas a velocidade máxima é bem menor que ESP32 (clock SPI típico < 42 MHz).
+  
+  - ESP32-C3 (RISC-V, 160 MHz, WiFi/BLE)
+  
+    * Tem SPI com DMA.
+    * Suporta buffers grandes.
+    * Limite de clock SPI menor que ESP32-S3 (~40 MHz típico).
+    * Serve, mas desempenho menor para tela grande.
+
+  🟢 DMA completo, ideal para displays
+  ------------------------------------
+  
+  - ESP32 original (dual-core Tensilica LX6)
+    * SPI com DMA até ~80 MHz.
+    * Suporta buffers grandes (com MALLOC_CAP_DMA).
+  - ESP32-S2
+    * Igual ao ESP32, com DMA forte.
+    * SPI DMA funciona bem.
+  - ESP32-S3 (dual-core Xtensa LX7, vetorizações)
+    * SPI com DMA até 80 MHz.
+    * Melhor suporte a RAM externa (PSRAM + DMA).
+    * Ideal para framebuffer grande (ex.: 800x480).
+  - ESP32-S3 com PSRAM
+    * Dá para colocar framebuffer inteiro na PSRAM e usar DMA.
+    * (Mas precisa configurar corretamente, porque nem toda PSRAM é DMA-capable).
+
+  🔑 Resumindo
+  ------------
+  
+  - AVR (Uno, Mega, Pro Mini, Nano) → ❌ não têm DMA → lentos para gráficos grandes.
+  - Arduino Due, ESP32-C3 → 🟡 têm DMA → funcionam, mas limitados em velocidade.
+  - ESP32, ESP32-S2, ESP32-S3 → 🟢 DMA rápido, ideal para mandar framebuffer inteiro.
+  
+  👉 Ou seja:
+  
+  - Para brincar com displays pequenos (128x160, 240x320), até Uno/Nano seguram.
+  - Para display grande tipo o teu 800x480 com RA8889, só compensa com ESP32 (melhor o S3).
+
+  3️⃣ Para SPI com DMA
+  ------------------
+  
+  Quando você envia dados usando DMA (transferBytes() ou equivalente):
+
+  O DMA não precisa de beginTransaction() para funcionar, mas é bom manter consistência.
+
+  CS ainda deve ser controlado manualmente durante toda a transferência DMA, ou seja, você coloca CS LOW antes de iniciar o DMA e CS HIGH só no final.
+
+  ✅ Resumo prático:
+
+  -------------------------------------------------------------------------
+  Caso                     beginTransaction()/endTransaction() necessário?
+  -------------------------------------------------------------------------
+  Um dispositivo SPI só    Não obrigatórios
+  Vários dispositivos SPI  Recomendado
+  Transferência DMA        Não obrigatório, mas útil para consistência
+  -------------------------------------------------------------------------
+
+  2️⃣ Para hardware SPI com múltiplos dispositivos no mesmo barramento
+  ------------------------------------------------------------------
+  
+  É recomendado usar beginTransaction()/endTransaction() para:
+
+  Garantir que os settings do SPI (clock, modo, bit order) fiquem corretos para aquele dispositivo.
+
+  Evitar interferência com outro dispositivo que compartilhe o mesmo SPI.
+
+  Exemplo:
+
+  spi.beginTransaction(SPISettings(40000000, MSBFIRST, SPI_MODE0)); // 40 MHz, MSB first, modo 0
+  digitalWrite(CS_RA8889, LOW);
+  spi.transfer(0xAA);
+  digitalWrite(CS_RA8889, HIGH);
+  spi.endTransaction();
+  
+  Por quê?
+
+  - beginTransaction() configura os registradores SPI (clock, modo, bit order) antes da transferência.
+  - Se você colocar CS LOW antes do beginTransaction(), existe um risco mínimo de o SPI estar com configuração antiga, especialmente se você tiver vários dispositivos SPI.
+  - No ESP32-S3 isso normalmente não quebra, mas é boa prática sempre ativar CS após beginTransaction().
+
+  2️⃣ Sobre desempenho na Criação do SPISettings()
+  ----------------------------------------------
+
+  SPISettings(40000000, MSBFIRST, SPI_MODE0) gera apenas um objeto com os valores de clock, bit order e modo.
+
+  Se você criar isso dentro da função cada vez, o compilador ainda consegue otimizar, mas tecnicamente é uma pequena sobrecarga de criação do objeto toda chamada.
+
+  Criando uma vez e reutilizando, você evita essa pequena sobrecarga e deixa o código mais limpo.  
+
+  Exemplo: 
+  
+  private:
+    SPIClass& spi;
+    SPISettings spiSettings;
+  ...
+  
+  spiSettings = SPISettings(40000000, MSBFIRST, SPI_MODE0); // 40 MHz, MSB first, modo 0
+  spi.beginTransaction(spiSettings); 
+  digitalWrite(CS_RA8889, LOW);
+  spi.transfer(0xAA);
+  digitalWrite(CS_RA8889, HIGH);
+  spi.endTransaction();
+
+
+  
+Imagens na Serial Flash nos Displays RA8889/RA8877/RA8876
+---------------------------------------------------------
+
+  O RA8889 não grava nada na flash ROM.
+  
+  Ele apenas lê (via barramento SPI conectado a uma Serial Flash externa) e copia para a SDRAM interna quando você manda.
+  
+  Ou seja:
+  
+  A Serial Flash é como um “pendrive” de imagens e fontes.
+  
+  O RA8889 só sabe buscar blocos de lá e jogar para a memória gráfica (via o “DMA interno” dele).
+
+  🔧 Como colocar imagens na Serial Flash
+  ---------------------------------------
+  
+  1. Converter a imagem para o formato suportado pelo RA8889
+  - Geralmente RAW RGB565 (ou outro formato que o RA8889 entende).
+  - A RAiO fornece ferramentas (ex.: Image Tool, Font Tool) que convertem BMP/JPG/PNG para o formato binário correto.
+  - Você também pode usar ferramentas como GIMP / ImageMagick para gerar RAW RGB565 direto.
+  
+  2. Gravar o arquivo convertido na flash externa
+  - Isso não é feito pelo RA8889, mas sim por você via:
+    - Programador SPI (ex.: CH341A, TL866, ST-LINK se suportar SPI Flash).
+    - Ou durante o processo de produção, a flash já vem gravada.
+    - Também é possível usar o MCU para gravar a flash pela primeira vez (fazendo uma rotina que envia os bytes).
+  - O que você grava na flash é literalmente um .bin com os pixels.
+  
+  3. Configurar a tabela de endereços no seu firmware
+  
+  - Quando manda o RA8889 buscar uma imagem, você passa o endereço inicial na Flash e o tamanho.
+  
+  - Exemplo:
+    - Logo da empresa em 0x000000 (tamanho 200 KB).
+    - Ícones em 0x030000, 0x050000, etc.
+  - Cada imagem fica em um offset da Serial Flash.
+  
+  4. Usar o comando DMA do RA8889 para transferir da Flash → SDRAM → tela
+     - O RA8889 tem registradores para configurar:
+       - Origem (endereço na Serial Flash).
+       - Destino (posição na SDRAM).
+       - Largura/altura da imagem.
+     - Depois você manda ele executar o “DMA Transfer” e pronto.
+  
+  🔑 Resumão
+  ----------
+  
+  - Quem grava a Serial Flash: você, com um gravador externo ou o próprio MCU.
+  - Formato das imagens: RAW (RGB565) ou binário gerado pelas ferramentas da RAiO.
+  - Como o RA8889 usa: você aponta o endereço na flash e manda ele copiar para a SDRAM.
+  - Por que é útil: você economiza RAM do MCU e SPI → porque o RA8889 busca direto na flash.
+
+
+
 
 
 Links do LVGL
@@ -2700,3 +3052,21 @@ https://controllerstech.com/lvgl-on-stm32-part-1/
 Display interface
 https://docs.lvgl.io/9.0/porting/display.html
 
+hideakitai/ESP32DMASPI
+https://github.com/hideakitai/ESP32DMASPI
+
+SPI Master Driver
+https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/spi_master.html
+
+Wire (I2C)
+https://docs.particle.io/reference/device-os/api/wire-i2c/
+
+🐿️ ESP32 IDF SDK 33: SPI Comunicación bien explicada
+https://www.youtube.com/watch?v=_N9lWWZbaKo
+
+esp32s3 lvgl esp32s3 lvgl demo 转
+https://blog.51cto.com/u_16099328/10150900
+
+ESP32 SPI Tutorial Master Slave Communication Example
+https://microcontrollerslab.com/esp32-spi-communication-tutorial-arduino/
+(Tenho no DataBook)
