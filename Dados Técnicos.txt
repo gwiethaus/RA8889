@@ -40,37 +40,44 @@ Display ER-TFT070-2-6105
   Specification
   -------------
   
-  Gross Weight (kg)           0.2330
-  Manufacturer                EastRising
-  Continuity Supply           We promise the long term continuity supply for this product no less than 10 years since 2025.
-  Part Number                 ER-TFT070-2-6105
-  Display Format              800x480 Pixels
-  Interface                   I2C, 3-wire SPI, 4-wire SPI, 6800 8-bit Parallel , 6800 16-bit Parallel , 8080 8-bit Parallel , 8080 16-bit Parallel
-  IC or Equivalent            RA8889
-  Appearance                  RGB
-  Diagonal Size               7.0“
-  Connection                  Pin Header, Plug-in FFC
-  Outline Dimension           180.00(W)x100.20(H)mm
-  Visual Area                 156.7x89.10mm
-  Active Area                 154.08(W)x85.92(H)mm
-  Dot (Pixel) Size            0.0642(W)x0.1790(H)mm
-  IC Package                  SMT
-  Display Type                TFT-LCD Color
-  Touch Panel Optional        Yes
-  Touch Panel Drive           FocalTech FT5316
-  IC Screen Drive:            Fitipower EK9713 (Informado pela BuyDisplay)
-  Sunlight Readable           No
-  Contrast Ratio(Typ)         500:1
-  Colors                      65K/262K/16.7M
-  Viewing Angle Range         Left:60.0 , Right:60.0 , Up:60.0 , Down:60.0 degree
-  Brightness(Typ)             200cd/m2
-  Backlight Color             White Color
-  Power Supply(Typ)           3.3V, 5V
-  Supply Current for LCM(Max) 480mA ( VDD=3.3V) / 300mA ( VDD=5.0V)
-  Operating Temperature       -20oC~70oC
-  Storage Temperature         -30oC~80oC
-
-
+  Gross Weight (kg)                 0.2330
+  Manufacturer                      EastRising
+  Continuity Supply                 We promise the long term continuity supply for this product no less than 10 years since 2025.
+  Part Number                       ER-TFT070-2-6105
+  Display Format                    800x480 Pixels
+  Interface                         I2C, 3-wire SPI, 4-wire SPI, 6800 8-bit Parallel , 6800 16-bit Parallel , 8080 8-bit Parallel , 8080 16-bit Parallel
+  IC or Equivalent                  RA8889
+  Appearance                        RGB
+  Diagonal Size                     7.0“
+  Connection                        Pin Header, Plug-in FFC
+  Outline Dimension                 180.00(W)x100.20(H)mm
+  Visual Area                       156.7x89.10mm
+  Active Area                       154.08(W)x85.92(H)mm
+  Dot (Pixel) Size                  0.0642(W)x0.1790(H)mm
+  IC Package                        SMT
+  Display Type                      TFT-LCD Color
+  Touch Panel Optional              Yes
+  Touch Panel Drive                 FocalTech FT5316
+  IC Screen Drive:                  Fitipower EK9713 (Informado pela BuyDisplay)
+  Sunlight Readable                 No
+  Contrast Ratio(Typ)               500:1
+  Colors                            65K/262K/16.7M
+  Viewing Angle Range               Left:60.0 , Right:60.0 , Up:60.0 , Down:60.0 degree
+  Brightness(Typ)                   200cd/m2
+  Backlight Color                   White Color
+  Power Supply(Typ)                 3.3V, 5V
+  Supply Current for LCM(Max)       480mA ( VDD=3.3V) / 300mA ( VDD=5.0V)
+  Operating Temperature             -20oC~70oC
+  Storage Temperature               -30oC~80oC
+  
+  Power Supply (Typ.):              VDD=5.0V
+  Touch Panel(Attached by default): 7"Capacitive Touch Panel with Controller
+  MicroSD Card Interface:           Pin Header Connection
+  Font Chip:                        ER3806-1 (Genitop GT20L24F6Y, Refer to font chip datasheet for detail)
+  Font chips number:                1
+  
+  * Arduino Shield (5V,4-wire SPI,FFC Connection by default)
+  
 Legendas
 --------
 
@@ -487,6 +494,8 @@ PIP (Picture-in-Picture)
 Mini-guia Doxygen
 -----------------
 
+  As principais tags de "referência cruzada" que ele suporta são:
+
   - @brief: descrição curta, aparece em sumários
   - @details: descrição longa, útil para explicar registradores, bits, contexto
   - @param: descreve cada parâmetro
@@ -496,7 +505,11 @@ Mini-guia Doxygen
   - @verbatim / @endverbatim: trechos de datasheet e tabelas que não serão formatados pelo doxygen
   - @warning → condições importantes.
   - @ingroup → organizar funções relacionadas.
-  
+  - @todo → para marcar pontos pendentes ou melhorias futuras.
+  - @bug → para documentar um bug conhecido.
+  - @warning → para destacar alertas ou situações problemáticas.
+  - @attention → para chamar atenção especial para algo crítico.
+
   Como o Doxygen trata a indentação
   ---------------------------------
   
@@ -2985,6 +2998,233 @@ Uso de DMA no SPI em MCU
   digitalWrite(CS_RA8889, HIGH);
   spi.endTransaction();
 
+Portas SPI no ESP32-S3
+----------------------
+
+  - O ESP32-S3 tem 4 controladores SPI: SPI0, SPI1, SPI2 e SPI3. 
+  - SPI0 e SPI1 são usados internamente para acessar a memória (flash/PSRAM) — normalmente não devem ser mexidos para comunicação com periféricos (operam em modo SPI memory / bus de memória). 
+  - SPI2 e SPI3 são os GP-SPI (general-purpose) que você usa para dispositivos externos (telas, SD, sensores, etc.). No ESP-IDF aparecem como SPI2_HOST e SPI3_HOST; na API Arduino/cores antigos elas correspondem aos buses «HSPI/VSPI» (nomes podem variar entre cores/versões). 
+  
+  Observações importantes:
+  
+  - Os sinais SPI são mapeáveis via GPIO matrix, então os pinos SCK/MOSI/MISO/CS podem ser atribuídos a muitos GPIOs (ver datasheet / TRM para restrições). 
+  - Algumas diferenças de comportamento/capacidades existem entre SPI2 e SPI3 (número de CS suportados, modos rápidos, limitações do driver em certas versões do core); se algo não funcionar troque entre SPI2_HOST e SPI3_HOST ao testar. 
+
+  🔹 O que é o FSPI
+  
+  No ESP32-S3, o FSPI significa Flash SPI, e corresponde ao controlador SPI0/SPI1, usado internamente para acessar a memória Flash externa (e também a PSRAM, se houver).
+  
+  📘 Em resumo:
+  
+  FSPI = Flash SPI bus
+  
+  É o barramento pelo qual o chip lê o firmware (código, dados, etc.) gravado na flash externa.
+
+  🔹 Diferença entre FSPI e VSPI/HSPI (SPI2/SPI3)
+  
+  ----------------------------------------------------------------------------------------------------------------------------------
+  Nome comum  Nome técnico no ESP-IDF                         Uso principal                          Disponibilidade para o usuário
+  ----------------------------------------------------------------------------------------------------------------------------------
+  FSPI        SPI0/SPI1 (interno)                             Acesso à flash e PSRAM                 ❌ Reservado (não usar)
+  SPI2        SPI2_HOST (também chamado HSPI em alguns cores) SPI genérico para periféricos externos ✅ Pode usar
+  SPI3        SPI3_HOST (às vezes chamado VSPI)               SPI genérico para periféricos externos ✅ Pode usar
+  ----------------------------------------------------------------------------------------------------------------------------------
+
+  🔹 Pode usar o FSPI para outro dispositivo?
+  
+  Em teoria sim, porque o hardware é completo, mas na prática não:
+  
+  - O FSPI é ocupado permanentemente pelo acesso à flash.
+  - Se você tentar usar o FSPI externamente, pode travar o sistema, já que o ESP32-S3 lê instruções e dados diretamente desse barramento.
+  - Ele não aparece como opção no driver spi_bus_initialize() (IDF) ou na SPIClass (Arduino).
+  
+  🔹 Exceção (modo QSPI compartilhado)
+  
+  Há um caso especial:
+  Quando o ESP32-S3 está configurado para usar Octal SPI (OSPI) ou Quad SPI (QSPI) com PSRAM e Flash no mesmo barramento, ele usa o FSPI como interface de alta velocidade.
+  Mesmo assim, isso é transparente para o usuário — você não precisa (e nem deve) mexer no FSPI manualmente.
+  
+  🔹 Resumo prático
+  
+  👉 Use apenas SPI2 e SPI3 para seus periféricos (display, sensores, SD, etc.).
+  👉 FSPI é reservado para a flash/PSRAM e não deve ser usado diretamente.
+  👉 Se vir referências a FSPI em código, geralmente significam “o barramento interno usado pela flash”.
+
+  🔹 O que é correto usar
+  
+  Para o ESP32-S3, só use SPI2 e SPI3 (chamados de HSPI e VSPI em alguns cores mais antigos):
+  
+  SPIClass spi2 = SPIClass(SPI2_HOST);  // preferencial
+  SPIClass spi3 = SPIClass(SPI3_HOST);  // alternativa
+  
+  ou, em versões mais antigas do core Arduino-ESP32:
+  
+  SPIClass spi2 = SPIClass(HSPI);
+  SPIClass spi3 = SPIClass(VSPI);
+    
+  (Ambos são barramentos SPI independentes do FSPI, e 100% seguros para usar com periféricos externos.)
+
+  // -----------------------------------------------------------------------------
+  // Criação da instância da SPI
+  // -----------------------------------------------------------------------------
+  #if defined(USE_HSPI_PORT)
+    SPIClass spi = SPIClass(HSPI);
+    #define SPI_PORT_NAME "HSPI"
+  
+  #elif defined(USE_VSPI_PORT)
+    SPIClass spi = SPIClass(VSPI);
+    #define SPI_PORT_NAME "VSPI"
+  
+  #else
+    SPIClass spi = SPIClass(VSPI);   // VSPI é o padrão
+    #define SPI_PORT_NAME "VSPI (default)"
+  #endif
+
+  ✅ Não use FSPI de jeito nenhum.
+  Ele pertence exclusivamente ao sistema interno (Flash e PSRAM).
+  
+  👍 Vamos montar uma macro em termos de VSPI e HSPI, que funcione bem tanto no ESP32 clássico quanto no ESP32-S3.
+
+  A ideia é ter algo flexível, permitindo selecionar qual porta usar (por exemplo, para displays, SD cards, etc.), mas sem correr o risco de cair no FSPI.
+
+  🔧 Exemplo de implementação segura
+  
+  // -----------------------------------------------------------------------------
+  // Seleção da porta SPI
+  // -----------------------------------------------------------------------------
+  
+  // Defina uma destas macros no seu build (platformio.ini ou no topo do código):
+  //   -DUSE_HSPI_PORT   → usa o barramento HSPI
+  //   -DUSE_VSPI_PORT   → usa o barramento VSPI
+  // Se nenhuma for definida, usará VSPI por padrão.
+  
+  // -----------------------------------------------------------------------------
+  // Criação da instância da SPI
+  // -----------------------------------------------------------------------------
+  #if defined(USE_HSPI_PORT)
+    SPIClass spi = SPIClass(HSPI);
+    #define SPI_PORT_NAME "HSPI"
+  
+  #elif defined(USE_VSPI_PORT)
+    SPIClass spi = SPIClass(VSPI);
+    #define SPI_PORT_NAME "VSPI"
+  
+  #else
+    SPIClass spi = SPIClass(VSPI);   // VSPI é o padrão
+    #define SPI_PORT_NAME "VSPI (default)"
+  #endif
+  
+  // -----------------------------------------------------------------------------
+  // Uso opcional: você pode imprimir para depuração
+  // -----------------------------------------------------------------------------
+  void setup() {
+    Serial.begin(115200);
+    Serial.printf("Inicializando SPI em %s\n", SPI_PORT_NAME);
+    spi.begin();  // inicializa pinos padrão
+  }
+  
+  🧠 Explicação rápida
+
+  - No ESP32 clássico e no ESP32-S3, o HSPI e o VSPI correspondem respectivamente aos SPI2 e SPI3 (barramentos de uso geral).
+  - Essa abordagem evita o FSPI, que é o SPI0/SPI1, reservado ao acesso da Flash e PSRAM.
+  - A vantagem de usar macros (-DUSE_HSPI_PORT ou -DUSE_VSPI_PORT) é poder alternar o barramento sem alterar o código-fonte, apenas ajustando a configuração do projeto.
+  
+  vamos fazer uma macro inteligente e multiplataforma, capaz de detectar automaticamente qual microcontrolador está sendo usado (ESP32, ESP32-S3, UNO, MEGA, DUO, etc.) quando você compila com o Arduino.h dentro do Visual Studio Code (PlatformIO).
+  
+  Essa macro vai:
+  ✅ Detectar o tipo de placa.
+  ✅ Selecionar corretamente o barramento SPI (HSPI/VSPI para ESP32 e ESP32-S3, SPI padrão para AVR como UNO/MEGA/DUO).
+  ✅ Evitar qualquer tentativa de usar FSPI.
+
+  🧩 Versão completa e compatível com múltiplas placas
+
+  #pragma once
+  #include <Arduino.h>
+  #include <SPI.h>
+
+  // ============================================================================
+  // Seleção automática e segura de barramento SPI
+  // ============================================================================
+  
+  // --- ESP32 e derivados -------------------------------------------------------
+  #if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
+  
+    // ESP32 Clássico, ESP32-S2, ESP32-S3, ESP32-C3, etc.
+    #if defined(USE_HSPI_PORT)
+      SPIClass spi = SPIClass(HSPI);
+      #define SPI_PORT_NAME "HSPI"
+    #elif defined(USE_VSPI_PORT)
+      SPIClass spi = SPIClass(VSPI);
+      #define SPI_PORT_NAME "VSPI"
+    #else
+      // Padrão → VSPI (SPI3_HOST)
+      SPIClass spi = SPIClass(VSPI);
+      #define SPI_PORT_NAME "VSPI (default)"
+    #endif
+  
+  // --- Placas AVR clássicas ----------------------------------------------------
+  #elif defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_NANO)
+    // Arduino UNO / Nano
+    #define SPI_PORT_NAME "SPI (UNO/NANO)"
+    #define spi SPI
+  
+  #elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
+    // Arduino MEGA 2560 / 1280
+    #define SPI_PORT_NAME "SPI (MEGA)"
+    #define spi SPI
+  
+  // --- Arduino Due -------------------------------------------------------------
+  #elif defined(ARDUINO_SAM_DUE)
+    #define SPI_PORT_NAME "SPI (DUE)"
+    #define spi SPI
+  
+  // --- Fallback para outros micros ---------------------------------------------
+  #else
+    #define SPI_PORT_NAME "SPI (default)"
+    #define spi SPI
+  #endif
+  
+  // ============================================================================
+  // Inicialização de exemplo
+  // ============================================================================
+  void setup() {
+    Serial.begin(115200);
+    Serial.printf("Inicializando SPI em %s\n", SPI_PORT_NAME);
+    spi.begin(); // inicia o barramento com pinos padrão
+  }
+  
+  void loop() {
+    // seu código aqui
+  }
+
+  ⚙️ Como usar
+  ------------
+
+  1. Defina no seu platformio.ini ou nas opções de compilação:
+
+  build_flags = -DUSE_VSPI_PORT
+
+  ou
+
+  build_flags = -DUSE_HSPI_PORT
+
+  (se quiser escolher manualmente o barramento do ESP32)
+
+  2. Se nada for definido, ele automaticamente usa o VSPI como padrão.
+  
+  3. Em placas UNO, MEGA ou DUE, ele usa o SPI padrão da Arduino core (sem precisar mudar nada).
+
+  🧠 Resumo técnico
+  -----------------
+  
+  -------------------------------------------------------------------
+  Plataforma    Porta padrão    Alternativas    FSPI        Status
+  -------------------------------------------------------------------
+  ESP32 / S3    VSPI            HSPI           ❌ Não usar	✅ Seguro
+  UNO / Nano    SPI              —             n/a          ✅ Seguro
+  MEGA          SPI              —             n/a          ✅ Seguro
+  DUE           SPI              —             n/a          ✅ Seguro
+  -------------------------------------------------------------------
 
   
 Imagens na Serial Flash nos Displays RA8889/RA8877/RA8876
@@ -3039,8 +3279,512 @@ Imagens na Serial Flash nos Displays RA8889/RA8877/RA8876
   - Como o RA8889 usa: você aponta o endereço na flash e manda ele copiar para a SDRAM.
   - Por que é útil: você economiza RAM do MCU e SPI → porque o RA8889 busca direto na flash.
 
+Padrão histórico do sprintf()
+-----------------------------
+
+  conforme o padrão do printf:
+  
+  "%12.3e" → alinhamento à direita → espaços à esquerda
+  → " -1.230e-04"
+  
+  "%-12.3e" → alinhamento à esquerda → espaços à direita
+  → "-1.230e-04 "
+  
+  Então realmente, nesse caso, nenhuma correção era necessária — o que você viu inicialmente (“faltando espaços”) era, na verdade, o comportamento esperado do printf.
+  
+  ✨ Em resumo:
+  -------------
+  
+  O alinhamento é controlado apenas pelo -:
+  
+  * Sem - → preenche à esquerda com espaços
+  * Com - → preenche à direita com espaços
+
+  Lógica Histórica
+  ----------------
+  
+  A lógica histórica e técnica por trás, faz sentido.
+  Vou explicar direitinho, no estilo engenheiro mesmo 👇
+  
+  💡 1. Origem da convenção
+  
+  O comportamento vem da formatação de texto em colunas fixas, usada desde o tempo dos terminais de texto e impressoras matriciais (décadas de 1970–80).
+  
+  Imagine uma tabela assim:
+  
+   Temperatura | Valor
+  --------------|--------
+            min |  -1.230e-04
+            max |   2.310e+00
+  
+  
+  Para alinhar as colunas, os números ficam à direita, com os espaços antes — como fazemos ao alinhar números em uma planilha.
+  Por isso o printf padrão alinha à direita por padrão (sem -), e o - serve para inverter isso.
+  
+  🧭 2. A lógica interna do printf
+  
+  Quando o printf vê algo como:
+  
+  printf("%12.3e", -0.000123);
+  
+  ele interpreta:
+  
+  Parte     Significado
+  -------------------------------------
+  %         início da especificação
+  12        largura mínima total do campo
+  .3        3 casas decimais
+  e         formato científico
+  sem o -   alinhamento à direita (preenche espaços antes)
+  
+  → Resultado: " -1.230e-04"
+  
+  O número ocupa 10 caracteres, então ele adiciona 2 espaços antes para totalizar 12.
+  
+  🧩 3. E por que o - faz o oposto?
+  
+  Porque às vezes você quer imprimir listas ou colunas de textos à esquerda, por exemplo:
+  
+  printf("%-12s|%d\n", "Sensor A", 25);
+  printf("%-12s|%d\n", "Sensor B", 31);
+    
+  gera:
+  
+  Sensor A    |25
+  Sensor B    |31
+    
+  Os textos ficam alinhados à esquerda, com os espaços depois.
+  
+  O printf manteve a mesma semântica para todos os tipos, inclusive números — coerência da API.
+  
+  🧠 4. Então resumindo
+  
+  Máscara   Alinhamento      Espaços            Exemplo
+  ----------------------------------------------------------------
+  %12.3e    Direita          à esquerda         " -1.230e-04"
+  %-12.3e   Esquerda         à direita          "-1.230e-04 "
+  %012.3e   Direita + zeros  à esquerda (zeros) "-0001.230e-04"
+  
+  Se você parar pra pensar, é perfeitamente consistente — só que à primeira 
+  vista contraria a intuição humana moderna, que costuma pensar 
+  “espaço depois = mais bonito”.
+  
+  Mas o printf veio da era dos dados tabulados em texto fixo, então foi 
+  projetado para alinhamento visual em colunas numéricas.
+
+  A confusão
+  ----------
+
+  Existe uma confusão que à primeira vista, porque o "-" aparece junto das 
+  flags, mas ele não tem nada a ver com o sinal do número — ele só indica o 
+  alinhamento do texto dentro do campo.
+
+  --------------------------------------------------------------
+  Flag     Significado
+  --------------------------------------------------------------
+  +        Sempre mostra sinal (+ ou -)
+  -        Alinhamento à esquerda dentro da largura especificada
+  0        Preenche com zeros à esquerda (respeitando sinal)
+  nenhum   Alinhamento padrão é à direita, com espaços à esquerda
+  
+  Exemplos usando valor = -3.14 e largura 6, 2 casas decimais:
+  
+  --------------------------------------------------------------
+  Formato	Saída       Observação
+  --------------------------------------------------------------
+  %6.2f     " -3.14"    alinhamento à direita (default)
+  %-6.2f    "-3.14 "    alinhamento à esquerda
+  %+6.2f    " -3.14"    sinal sempre visível (positivo teria +)
+  %+06.2f   "-03.14"    zero-padding, sinal preservado
+  --------------------------------------------------------------
+
+  Então resumindo:
+  ----------------
+  O - na máscara não diz para mostrar negativo, só diz “alinha à esquerda o campo, ao invés de à direita”.
+  O sinal do número vem naturalmente do valor, ou da flag + se você quiser forçar mostrar o +.
+
+  Mini-diagramação visual do Buffer
+  ---------------------------------
+  
+  A mini-diagramação visual, mostra uma linha de caracteres do buffer com 
+  setas indicando espaços, zeros e sinal, para deixar totalmente claro 
+  como o printf() lida com -, + e 0. Isso ajuda muito a visualizar o que 
+  está acontecendo. Desta forma, demostra como como o printf() lida com 
+  sinal, padding e alinhamento.
+
+  1️⃣ Configuração
+
+  Valor: -3.14
+  Largura: 6
+  Precisão: 2 casas decimais
+  
+  Formatos testados: %6.2f, %-6.2f, %+6.2f, %+06.2f
+  
+  2️⃣ Linha de buffer visual
+  
+  Legenda:
+  
+  - . → espaço
+  - 0 → zero-padding
+  - + / - → sinal
+  - * → dígito ou ponto decimal
+  
+  a) %6.2f → padrão, alinhamento à direita
+  
+  Buffer: . . - * * . * *
+            ^   ^^^^^^
+  Posição: 1 2 3 4 5 6
+  
+  Saída real: " -3.14"
+  - 2 espaços à esquerda
+  - sinal -
+  - número 3.14
+  
+  b) %-6.2f → alinhamento à esquerda
+  
+  Buffer: - * * . * * . .
+            ^^^^^^  ^^
+  Posição: 1 2 3 4 5 6
+    
+  Saída real: "-3.14 "
+  - Sinal - e número à esquerda
+  - Espaços preenchendo à direita para completar 6 caracteres
+  
+  c) %+6.2f → força mostrar sinal, alinhamento à direita
+  
+  Buffer: . + * * . * *
+            ^ ^^^^^^
+  Posição: 1 2 3 4 5 6
+    
+  Saída real: " -3.14"
+  - Sinal negativo aparece naturalmente
+  - Se fosse positivo, apareceria +
+  - Alinhamento à direita, espaços à esquerda
+  
+  d) %+06.2f → zero-padding, sinal preservado
+  
+  Buffer: - 0 0 * * . *
+            ^ ^ ^^^^^
+  Posição: 1 2 3 4 5 6
+  
+  Saída real: "-03.14"
+  - Sinal - na primeira posição
+  - Zeros de preenchimento antes do número
+  - Mantissa 3.14
+  
+  3️⃣ Observações importantes
+  
+  1. O - na máscara não indica negativo, só define alinhamento à esquerda.
+  2. O + na máscara força o sinal positivo se o valor for >= 0.
+  3. O 0 na máscara só funciona quando não há -, e preenche antes do número (respeitando o sinal).
+  4. Espaços vs zeros:
+     - Sem 0 → espaços (.)
+     - Com 0 → zeros (0)
 
 
+Arduino Float to String (That actually works)
+---------------------------------------------
+
+  If you have ever tried to use sprintf() on an Arduino to convert from a float to a string, you will notice it doesn’t work.
+  
+  sprintf(buf,"%f", floatvar);
+  
+  The above function will most likely return a “?” to your char buffer.
+  
+  If you google around, you’ll see various functions that people have written to overcome this, but all of them seem broken in one way or another. The alternative is to use dtostrf(), a standard avr-libc function. This provides a simple, tested function to convert from a float to a string.
+  
+  To use this function, simply replace sprintf() with dtostrf(), along with the self-explanatory parameters below.
+  
+  dtostrf(floatVar, minStringWidthIncDecimalPoint, numVarsAfterDecimal, charBuf);
+  
+  As the function name suggests, this will also work for the conversion of doubles to strings. (With Arduino Floats and doubles are handled the same)
+
+
+"sprintf()" exibe um ponto de interrogação (?) quando tento formatar um float [Arduino Uno]
+-------------------------------------------------------------------------------------------
+
+  Question
+  --------
+  
+  Isso funciona bem:
+
+  sprintf(msg, "HELLO\0");
+  
+  mas isso:
+  
+  sprintf(msg, "%2.2fx%c", 1.2, '\0');
+  
+  resulta em " ?x" sendo impresso na tela LCD (sem as aspas).
+  
+  Tentei alocar tamanhos diferentes para msg, não faz diferença:
+  
+  char msg[16];
+  
+  sprintf() está listado nesta página da web do gnu AVR:
+  
+  www.nongnu.org/avr-libc/user-manual/group__avr__stdio.html#ga6017094d9fd800fa02600d35399f2a2a
+
+  Então parece que deveria funcionar.
+
+  Se a funcionalidade completa, incluindo as conversões de ponto flutuante, for necessária, as seguintes opções devem ser usadas:
+
+  -Wl,-u,vfprintf -lprintf_flt -lm
+
+  Minha Nota: Utilizei este parametros de compilação no Platformio com avratmel e não surtiram efeito
+  
+  Solution
+  --------
+  
+  O tratamento do tipo de dados float/double em microcontroladores AVR é um pouco incomum, e sprintf sofre com isso. Em vez disso, use dtostrf().
+
+  Veja: http://blog.protoneer.co.nz/arduino-float-to-string-that-actually-works/
+  
+  Funciona muito bem, valeu.
+
+  Já que ele retorna char* e eu quero colocar em um char[17] (um extra para o caractere nulo), eu fiz isso:
+
+  sprintf( my_17_char_string, dtostrf( my_float, 16, 2, "%f\0" ) );
+  
+
+dtostrf()
+---------
+
+  Para usar dtostrf() no AVR Uno (Arduino), você precisa incluir <stdlib.h> ou <avr/dtostrf.h> no topo do seu sketch, pois a função não está disponível por padrão em todos os AVRs e o Arduino não fornece automaticamente o %f para a função printf ou sprintf que seria usado em outras plataformas. A função converte um número de ponto flutuante (float ou double) para um array de caracteres, usando quatro parâmetros: o número a ser convertido, a largura mínima do campo, o número de casas decimais e o buffer de caracteres para armazenar o resultado. 
+
+   Sintaxe da função
+   -----------------
+   
+   dtostrf(float_value, min_width, precision, buffer);
+
+   - float_value: O número de ponto flutuante que você quer converter. 
+   - min_width: A largura mínima do campo de saída. Se o número convertido for menor, ele será preenchido com espaços. Um valor negativo fará o número ser justificado à esquerda. 
+   - precision: O número de dígitos que devem aparecer após o ponto decimal. A função arredondará ou adicionará zeros conforme necessário. 
+   - buffer: Um array de caracteres (char) onde a string resultante será armazenada. O tamanho deste buffer deve ser suficiente para o maior número possível, incluindo o sinal de negativo, o ponto decimal e o caractere nulo (\0). 
+
+  Exemplo de uso em C++
+  ---------------------
+  
+  #include <stdlib.h> // Ou #include <avr/dtostrf.h>
+  
+  float valor = 123.456;
+  char buffer[15]; // Tamanho suficiente para '123.45\0' + outros (para segurança)
+  
+  void setup() {
+    Serial.begin(9600); // Inicializa a comunicação serial
+    
+    // Converte o float para string com 2 casas decimais e largura mínima de 8
+    dtostrf(valor, 8, 2, buffer); 
+  
+    Serial.print("O valor convertido é: ");
+    Serial.println(buffer); // Imprime a string "  123.46" (com espaços à esquerda)
+  }
+  
+  void loop() {
+    // O loop pode ser deixado vazio
+  }
+
+  Importante:
+  - Certifique-se de que o buffer (buffer) tenha um tamanho suficiente para o maior número que você pode ter, mais um para o caractere nulo \0. 
+  - A função é importante para o Arduino Uno e outros AVRs porque eles não suportam o formatador %f na biblioteca printf padrão para economizar memória Flash. 
+
+
+  Problemas no Visual Studio / Platformio
+  ---------------------------------------
+  
+  No arduino IDE esta função funciona adequadamente. No Visual Studio Code com Platformio
+  e Arduino uno não funciona e gera problemas para gravaçãod e buffer. As configurações do 
+  platformio é:
+  
+  [env:uno]
+  platform = atmelavr
+  board = uno
+  framework = arduino
+  monitor_speed = 115200
+  
+  ; garante que o diretório lib/ será usado
+  lib_deps = 
+      ${PROJECT_LIBDEPS_DIR}
+      ${PROJECT_LIB_DIR}
+  
+  ; se quiser adicionar caminhos extras manualmente
+  lib_extra_dirs = lib
+  ; suporte a ponto flutuante %f, %e e %g no AVG isso consome ~1,5kB
+  build_flags = -Wl,-u,vfprintf -lprintf_flt -lm
+
+  Exemplo:
+  --------
+  
+  float valor = 0.12;
+  char buffer[16];
+  dtostrf(valor, 0, 2, buffer);  // largura automática, 2 casas decimais
+  Serial.print("Buffer: ");
+  Serial.println(buffer);        // deve imprimir "0.12" no Arduino IDE
+
+  A saida no Serial em Platformio não aparece nada no buffer
+
+
+Why is dtostrf() not working for this one value?
+------------------------------------------------
+
+  I'm building a weather station using an ESP32 and BME280. I'm feeding the data via MQTT and Python into a database that is then used to make a nice dashboard for the data.
+  
+  The MQTT message needs to be a char, and the sensor readings are floats, so I'm using dtostrf() to convert them. This works fine for the temperature and pressure readings, but for some reason not for the humidity reading.
+  
+  I declare my variables:
+  
+  float temp;
+  float hum;
+  float pres;
+  
+  char mqttTemp[6];
+  char mqttHum[6];
+  char mqttPres[5];
+  
+  Then I get my readings:
+  
+  temp = mySensor.readTempC();
+  Serial.print("Temp: ");
+  Serial.print(temp);
+  hum = mySensor.readFloatHumidity();
+  Serial.print("Hum: ");
+  Serial.print(hum);
+  pres = mySensor.readFloatPressure();
+  Serial.print("Pres: ");
+  Serial.print(pres);
+  
+  This returns:
+  
+  Temp: 25.57 Hum: 40.15 Pres: 97684.39
+  
+  Then I run the results through the function:
+  
+  dtostrf(temp,4,2,mqttTemp);
+  dtostrf(hum,4,2,mqttHum);
+  dtostrf(pres,5,0,mqttPres);
+  Then I output these to Serial:
+  
+  Serial.print("Temperature: ");
+  Serial.print(mqttTemp);
+  Serial.print("Humidity: ");
+  Serial.print(mqttHum);
+  Serial.print("Pressure: ");
+  Serial.print(mqttPres);
+  Which gives me:
+  
+  Temperature: 25.57
+  ------------------------------
+  Humidity: 
+  ------------------------------
+  Pressure: 97684
+  
+  There is also no message sent via MQTT for humidity, but it works perfectly for the other two readings. What gives?
+  
+  Solution
+  --------
+  
+  What is happening is that the variables you declared for mqttTemp etc are stored in memory something like this
+
+  variable   memory address
+  mqttPres @ 1000-1004 (5 bytes)
+  mqttHum  @ 1005-1010 (6 bytes)
+  mqttTemp @ 1011-1015 (6 bytes)
+  
+  For a start, you only have enough room (with the mandatory NUL byte string terminator) for 4, 5 and 5 characters
+  
+  When you convert pressure, the NUL byte is being placed as the first byte in mqttHum, therefore, when printing mqttHum you get an empty string output (since the first byte is NUL)
+  
+  To really see what's happening, here's some code that illustrates the issue
+  
+  char mqttTemp[6] = "TTTTT";
+  char mqttHum[6] = "HHHHH";
+  char mqttPres[5] = "PPPP";
+  void setup() {
+    float temp = 25.57;
+    float hum = 40.15;
+    float pres = 97684.39;
+   
+    Serial.begin(74880);
+    // put your setup code here, to run once:
+    delay(100);
+    Serial.println("before");
+    printThem();
+    dtostrf(temp, 4, 2, mqttTemp);
+    Serial.println("converted temp");
+    printThem();
+    dtostrf(hum, 4, 2, mqttHum);
+    Serial.println("converted hum");
+    printThem();
+    dtostrf(pres, 5, 0, mqttPres);
+    Serial.println("converted press");
+    printThem();
+  }
+  void printThem()
+  {
+    Serial.print("mqttPres ");
+    Serial.print((unsigned long) &mqttPres, DEC);
+    Serial.print(": ");
+    for (int i = 0; i < 5; i++) {
+      Serial.print((int) mqttPres[i], DEC);
+      Serial.print(' ');
+    }
+    Serial.println();
+  
+    Serial.print("mqttHum  ");
+    Serial.print((unsigned long) &mqttHum, DEC);
+    Serial.print(": ");
+    for (int i = 0; i < 6; i++) {
+      Serial.print((int) mqttHum[i], DEC);
+      Serial.print(' ');
+    }
+    Serial.println();
+  
+    Serial.print("mqttTemp ");
+    Serial.print((unsigned long) &mqttTemp, DEC);
+    Serial.print(": ");
+    for (int i = 0; i < 6; i++) {
+      Serial.print((int) mqttTemp[i], DEC);
+      Serial.print(' ');
+    }
+    Serial.println();
+  }
+  
+  void loop() {
+    delay(50);
+    // put your main code here, to run repeatedly:
+  
+  }
+  
+  The above outputs the following:
+  
+  before
+  mqttPres 1073644748: 80 80 80 80 0 
+  mqttHum  1073644753: 72 72 72 72 72 0 
+  mqttTemp 1073644759: 84 84 84 84 84 0 
+  converted temp
+  mqttPres 1073644748: 80 80 80 80 0 
+  mqttHum  1073644753: 72 72 72 72 72 0 
+  mqttTemp 1073644759: 50 53 46 53 55 0 
+  converted hum
+  mqttPres 1073644748: 80 80 80 80 0 
+  mqttHum  1073644753: 52 48 46 49 53 0 
+  mqttTemp 1073644759: 50 53 46 53 55 0 
+  converted press
+  mqttPres 1073644748: 57 55 54 56 52 
+  mqttHum  1073644753: 0 48 46 49 53 0 
+                       ^ ======== note the leading 0
+  mqttTemp 1073644759: 50 53 46 53 55 0 
+  
+  The simplest fix, of course, is to declare your variables with the correct size
+  
+  char mqttTemp[7]; // because -10.00 takes 6 characters + 1 for NULL
+  char mqttHum[7];  // because 100.00 takes 6 characters + 1 for NULL
+  char mqttPres[6]; // because 97684 takes 5 characters + 1 for NULL - if pressure can reach 100000 then use 7 here as well
+  
+  and then use dtostrf correctly, i.e. the second argument is the total width, including . and a possible -
+  
+  dtostrf(temp,6,2,mqttTemp);
+  dtostrf(hum,6,2,mqttHum);
+  dtostrf(pres,5,0,mqttPres);
 
 
 Links do LVGL
