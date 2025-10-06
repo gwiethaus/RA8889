@@ -4,6 +4,7 @@ Mapa de substituicao
 (RA8889_arduino_reference_Ver_1.0) Ra8889_Lite.cpp
 --------------------------------------------------
 
+void Ra8889_Lite::genitopCharacterRomParameter(ru8 scs_select, ru8 clk_div, ru8 rom_select, ru8 character_select, ru8 gt_width) --> void GTFont_CharacterParameters(uint8_t scs_select, uint8_t clk_div, uint8_t rom_select, uint8_t character_select, uint8_t gt_width)
 void Ra8889_Lite::fontDmaSelectSFI_3(void)                           --> void SFI_SelectROM_CS3(void)
 void Ra8889_Lite::fontDmaSelectSFI_2(void)                           --> void SFI_SelectROM_CS2(void)
 void Ra8889_Lite::fontDmaSelectSFI_1(void)                           --> void SFI_SelectROM_CS1 (void)
