@@ -50,7 +50,7 @@ Panel_RA8889 gfx(PIN_CS, PIN_RESET);
 
 void setup() {
 
-  Serial.begin(9600);
+  DEBUG_BEGIN(115200);
 
   //Para Arduino, placa de desenvolvimento shield, ER5517
   //Somente arduino
@@ -73,6 +73,9 @@ void setup() {
   delay(3000);
 }
 
+void func(float x) {
+  Serial.println(x,5);
+}
 
 void loop() {
 
@@ -84,6 +87,7 @@ void loop() {
 
   gfx.setWindow(0,0, gfx.Width(), gfx.Height());
 
+#ifdef ACTIVE1
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clBlack, true);
 
   uint16_t w =  100 ;
@@ -100,7 +104,9 @@ void loop() {
   gfx.DrawPixels(200,300,30,myColors);
 
   delay (5000);
+#endif
 
+#ifdef ACTIVE2
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clRed, true);
   delay(500);
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clGreen, true);
@@ -109,6 +115,9 @@ void loop() {
   delay(500);
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clCyan, true);
   delay(500);
+#endif
+
+#ifdef ACTIVE3
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clYellow, true);
   delay(500); 
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clPurple, true);
@@ -117,27 +126,28 @@ void loop() {
   delay(500);
   gfx.DrawSquare(0, 0, gfx.Width()-1, gfx.Height()-1, clAmber, true);
   delay(500);
+#endif
 
-#ifdef ACTIVE6
+#ifdef ACTIVE5
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clBlack, true);
-  delay(500); 
+  delay(250); 
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clWhite, true);
-  delay(500);
+  delay(250);
 
   gfx.DrawSquare(300,300,600,400, clSandyBrown, true);
-  delay(500);
+  delay(250);
   gfx.DrawSquare(120,120,240,260, clRed);
-  delay(500);
+  delay(250);
   gfx.DrawSquare(10,10,600,400, clGreen);
-  delay(500);
+  delay(250);
   gfx.DrawSquare(100,100,400,200, clOlive);
-  delay(500);
+  delay(250);
   gfx.DrawSquare(0,0,50,80, clBlue, true);
 
   delay(1000);
 #endif
 
-#ifdef ACTIVE7
+#ifdef ACTIVE6
   ////////////////Square
   
   uint8_t i = 0;
@@ -171,7 +181,7 @@ void loop() {
   delay(100);
 #endif
 
-#ifdef ACTIVE8
+#ifdef ACTIVE7
   ///////////////////////////Circle
   
   gfx.GraphicMode();
@@ -205,7 +215,7 @@ void loop() {
   delay(100);
 #endif
   
-#ifdef ACTIVE9
+#ifdef ACTIVE8
  ////////////////////////////Triangle
   gfx.GraphicMode();
   gfx.FillScreen(clBlack);
@@ -221,7 +231,7 @@ void loop() {
   delay(100);
 #endif
 
-#ifdef ACTIVE10
+#ifdef ACTIVE9
  ////////////////////////////line
   gfx.GraphicMode();
   gfx.DrawLine(0, 0, gfx.Width()-1, gfx.Height()-1, clBlack);
@@ -249,11 +259,11 @@ void loop() {
   delay(100);  
 #endif
 
-#ifdef ACTIVE11
+#ifdef ACTIVE10
 /////////////Text  
-  gfx.GraphicMode();
   gfx.FillScreen(clBlack);
-  
+  gfx.TextMode();
+    
   gfx.Text(0,26,"buydisplay.com",clGreen, clBlack);
 
   //colocar isso numa API
@@ -262,14 +272,126 @@ void loop() {
   //gfx.Font_HeightEnlargFactor(FontEnlargFactor::X4);
 
   gfx.Text(0,90,"buydisplay.com",clRed, clBlack);
-  delay(2000); 
+  delay(5000); 
   
   //retorna ao modo normal
   //gfx.Font_WidthEnlargFactor(FontEnlargFactor::X1); 
   //gfx.Font_HeightEnlargFactor(FontEnlargFactor::X1);
 #endif
+
+#ifdef ACTIVE11
+  gfx.FillScreen(clBlack);
+  gfx.TextMode();
+
+  uint8_t index_line = 0;
+  uint8_t space = 4;
   
-#ifdef ACTIVE12
+  FontInternalParam fntinter;
+  
+  //Testes de Fontes Interna
+  
+  fntinter.charset_select = eInternalCharSet::ISO8859_1;
+  fntinter.full_align = false;
+  fntinter.chroma_key = false;
+  fntinter.width_enlarge = eFontEnlargFactor::X1;
+  fntinter.height_enlarge = eFontEnlargFactor::X1;
+  gfx.setFontInternal(fntinter, true);
+  
+  gfx.Text(0, (index_line*24)+space, "buydisplay.com",clBlue, clBlack);
+
+  delay(2000);
+#endif
+
+#ifdef ACTIVE12  
+  //Teste de caracteres externo
+  
+  FontExternalParam fntexter;
+  
+  fntexter.charset_select = eExternalCharSet::ISO8859_1;
+  fntexter.gt_width = eExternalCharWidthSet::VariableArial;
+  fntexter.scs_select = 0;
+  gfx.setFontExternal(fntexter, false);
+  gfx.setFontSource(eFontSource::ExternalCGROM);
+  
+  index_line++;
+  gfx.Text(0, (index_line*24)+space,"raio.tw",clRed,clBlack);
+  
+  index_line++;
+  gfx.PutHexa(0, (index_line*24)+space, 255, "%X");
+
+  index_line++;
+  gfx.PutDecimal(0, (index_line*24)+space, 255, "%-5d");
+
+  index_line++;
+  index_line++;
+  gfx.Text(0, (index_line*24)+space,"Teste de Ponto flutuante",clYellow,clBlack);
+  
+  index_line++;
+  gfx.PutFloat(0, (index_line*24)+space, 3.1416, "%6.3f"); //versão 2 esta funcionando bem este
+  
+  index_line++;
+  gfx.PutFloat(0, (index_line*24)+space, 3.1415, "%06.4f"); 
+  
+  index_line++;
+  gfx.PutFloat(0, (index_line*24)+space, -3.14, "%+05.2f");  
+    
+  index_line++;
+  gfx.PutFloat(0, (index_line*24)+space, 0.000123, "%10.3e");
+
+  index_line++;
+  gfx.PutFloat(0, (index_line*24)+space, -3.14, "%+05.2f");
+
+  index_line++;
+  gfx.PutFloat(0, (index_line*24)+space, -3.14, "%5.2f");
+
+  index_line++;
+  gfx.PutFloat(0, (index_line*24)+space, -3.14,  "%+08.2f");
+
+  index_line++;
+  gfx.PutFloat(0, (index_line*24)+space, 12345678.9, "%+12.2g");
+
+  //Teste de caracteres externo UNICODE (2 bytes)
+  //Verificar se como são 2 bytes a funcao, nao precise fazer ajuste interno do Text()
+  //para exibir corretamente a função
+/*  
+  fntexter.charset_select = eExternalCharSet::ISO8859_1;
+  fntexter.gt_width = eExternalCharWidthSet::Fixed;
+  fntexter.scs_select = 0;
+  gfx.setFontExternal(fntexter);
+  gfx.setFontSource(eFontSource::ExternalCGROM);
+  
+  index_line++;
+  gfx.Text(0, (index_line*16)+space,"DelWie Labs",clPink, clBlack);
+*/
+  //teste de caracteres de usuário
+  
+  
+  
+  //setFontSource(eFontOrigin::User);
+  
+  delay(8000);
+#endif  
+
+#ifdef ACTIVE13
+
+  //ra8889lite.pwm_Configuration(RA8889_PWM_TIMER1_INVERTER_ON,RA8889_PWM_TIMER1_AUTO_RELOAD,RA8889_PWM_TIMER1_START,RA8889_PWM_TIMER0_DEAD_ZONE_DISABLE 
+  //                    , RA8889_PWM_TIMER0_INVERTER_ON, RA8889_PWM_TIMER0_AUTO_RELOAD,RA8889_PWM_TIMER0_START);                     
+
+  //preescaler : if core_freq = 120MHz, pwm base clock = 120/(3+1) = 30MHz
+  //clockdivider:  pwm timer clock = 30/4 = 7.5MHz
+  // pwm0 = 7.5MHz/1024 = 7.3KHz
+  //pwm0 set 10/1024 duty
+  gfx.PWM0(true, eDividerClock::X4, 0x03,  1024, 10);
+
+  //preescaler : if core_freq = 120MHz, pwm base clock = 120/(3+1) = 30MHz
+  //clockdivider:  pwm timer clock = 30/4 = 7.5MHz
+  // pwm1 = 7.5MHz/256 = 29.2KHz
+  //pwm1 set 5/256 duty
+  gfx.PWM1(true, eDividerClock::X4, 0x03,  256, 5);
+
+#endif
+
+#ifdef ACTIVE14
   gfx.GraphicMode();
   unsigned int temp;
   uint32_t im = 1;

@@ -1,3 +1,6 @@
+#ifndef PANEL_RA8889_HPP
+#define PANEL_RA8889_HPP
+
 #include <SPI.h>
 #include "Panel_RA8889_Reg.hpp"
 #include <stdint.h>
@@ -292,6 +295,49 @@
 
 
 //--------------------------------------------------------------------------------
+// GT Serial Character ROM Select
+//--------------------------------------------------------------------------------
+
+//Escolha o modelo de chip Flash ROM de Font
+//Escolha o modelo da Flash ROM que vem com o fabricante do display
+//#define CHIP_GT21L16T1W                      //Integrate Circuit External CGROM GT21L16T1W OK
+//#define CHIP_GT30L16U2W                      //Integrate Circuit External CGROM GT30L16U2W  OK
+//#define CHIP_GT30L24T3Y                      //Integrate Circuit External CGROM GT30L24T3Y  OK
+//#define CHIP_GT30L24M1Z                      //Integrate Circuit External CGROM GT30L24M1Z  OK
+//#define CHIP_GT30L32S4W                      //Integrate Circuit External CGROM GT30L32S4W
+#define CHIP_GT20L24F6Y                        //Integrate Circuit External CGROM GT20L24F6Y  OK
+//#define CHIP_GT21L24S1W                      //Integrate Circuit External CGROM GT21L24S1W  OK
+
+#if defined(CHIP_GT21L16T1W)
+  #define GTSERIAL_CGROM       BIT_CGROM_GT21L16T1W //Genitop's IC GT21L16T1W Character Flash ROM
+#elif defined(CHIP_GT30L16U2W) 
+  #define GTSERIAL_CGROM       BIT_CGROM_GT30L16U2W //Genitop's IC GT30L16U2W Character Flash ROM
+#elif defined(CHIP_GT30L24T3Y) 
+  #define GTSERIAL_CGROM       BIT_CGROM_GT30L24T3Y //Genitop's IC GT30L24T3Y Character Flash ROM
+#elif defined(CHIP_GT30L24M1Z)   
+  #define GTSERIAL_CGROM       BIT_CGROM_GT30L24T3Y //Genitop's IC GT30L24M1Z Character Flash ROM
+#elif defined(CHIP_GT30L32S4W) 
+  #define GTSERIAL_CGROM       BIT_CGROM_GT30L32S4W //Genitop's IC GT30L32S4W Character Flash ROM
+#elif defined(CHIP_GT20L24F6Y) 
+  /* GT20L24F6Y
+     ----------
+     - ISO8859 (14 sets)：5x7, 8x16
+     - ASCII (11 sets)：5x7, 7x8, 6x12, 8x16, 12x12, 16x16, 24x24
+     - LCM Character Set (8 sets)：5x7, 5x10
+     - Unicode (173 coutries’ language, 16 dot matrix)： 5x7 ~ 24x24
+       （Latin, Greek, Cyrillic, Arabic, Hebrew, Thai）
+     - Data Arrangement: Vertical Byte,Horizontal String
+     - Data Arrangement: Vertical Byte,Horizontal String
+     - Bus Interface: SPI
+  */
+  #define GTSERIAL_CGROM       BIT_CGROM_GT20L24F6Y  //Genitop's IC GT20L24F6Y Character Flash ROM
+#elif defined(CHIP_GT21L24S1W)
+  #define GTSERIAL_CGROM       BIT_CGROM_GT21L24S1W  //Genitop's IC GT21L24S1W Character Flash ROM
+#else 
+	
+#endif
+
+//--------------------------------------------------------------------------------
 // Page(image buffer) configure
 //--------------------------------------------------------------------------------
 
@@ -351,7 +397,6 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 #define USE_SPI_PORT
 //#define USE_HSPI_PORT
 //#define USE_VSPI_PORT
-//#define USE_FSPI_PORT
 
 
 //--------------------------------------------------------------------------------
@@ -363,6 +408,20 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 
 //Ativa funcao de existencia da familia Raio RA8875/RA8876/RA8877/RA8889
 #define CHECK_RAIOFAMILY
+
+
+//Antes de usar macro DEBUG_PRINT, use no Setup() a macro DEBUG_BEGIN para iniciar a comunicacao serial.
+#ifdef SERIAL_DEBUG
+  extern bool serialStarted;
+  #define DEBUG_BEGIN(baud) do { Serial.begin(baud); serialStarted = true; } while(0)
+  #define DEBUG_PRINT(msg, val, b, newline) SerialPrint(msg, val, b, newline)
+  #define DEBUG_PRINTF(msg, val, decimal, b, newline) SerialPrintF(msg, val, decimal, b, newline)
+#else
+   // Se não houver debug, macros não fazem nada
+  #define DEBUG_BEGIN(baud)
+  #define DEBUG_PRINT(msg, val, b, newline)
+#endif
+
 
 //--------------------------------------------------------------------------------
 // System
@@ -1419,7 +1478,7 @@ enum class eFontSource : uint8_t {
 
 
 // Enum para os padrões ISO/IEC 8859 suportados pela CGROM interna
-enum class InternalCGROM_ISO8859 : uint8_t {
+enum class eInternalCharSet : uint8_t {
  ISO8859_1 = 0x0,                              // 0b00: Character ISO/IEC 8859-1
  ISO8859_2 = cSetb0,                           // 0b01: Character ISO/IEC 8859-2.
  ISO8859_4 = cSetb1,                           // 0b10: Character ISO/IEC 8859-4.
@@ -1428,36 +1487,40 @@ enum class InternalCGROM_ISO8859 : uint8_t {
 
 
 // Enum para os padrões ISO/IEC 8859 suportados pela CGROM externa (Genitop)
-enum class ExternalCGROM_ISO8859 : uint8_t {
-  ASCII      = 0x20,                           //ASCII only (00h-1Fh, 80-FFh will send “blank space”)
-  ISO8859_1  = 0x88,                           //ISO-8859-1 + ASCII code
-  ISO8859_2  = 0x90,                           //ISO-8859-2 + ASCII code
-  ISO8859_3  = 0x98,                           //ISO-8859-3 + ASCII code
-  ISO8859_4  = 0xA0,                           //ISO-8859-4 + ASCII code
-  ISO8859_5  = 0xA8,                           //ISO-8859-5 + ASCII code
-  ISO8859_7  = 0xB0,                           //ISO-8859-7 + ASCII code
-  ISO8859_8  = 0xB8,                           //ISO-8859-8 + ASCII code
-  ISO8859_9  = 0xC0,                           //ISO-8859-9 + ASCII code
-  ISO8859_10 = 0xC8,                           //ISO-8859-10 + ASCII code
-  ISO8859_11 = 0xD0,                           //ISO-8859-11 + ASCII code
-  ISO8859_13 = 0xD8,                           //ISO-8859-13 + ASCII code
-  ISO8859_14 = 0xE0,                           //ISO-8859-14 + ASCII code
-  ISO8859_15 = 0xE8,                           //ISO-8859-15 + ASCII code
-  ISO8859_16 = 0xF0                            //ISO-8859-16 + ASCII code
+enum class eExternalCharSet : uint8_t {
+  ASCII       = 0x20,                          //ASCII only (00h-1Fh, 80-FFh will send “blank space”)
+  ISO8859_1   = 0x88,                          //ISO-8859-1 and ASCII code
+  ISO8859_2   = 0x90,                          //ISO-8859-2 and ASCII code
+  ISO8859_3   = 0x98,                          //ISO-8859-3 and ASCII code
+  ISO8859_4   = 0xA0,                          //ISO-8859-4 and ASCII code
+  ISO8859_5   = 0xA8,                          //ISO-8859-5 and ASCII code
+  ISO8859_7   = 0xB0,                          //ISO-8859-7 and ASCII code
+  ISO8859_8   = 0xB8,                          //ISO-8859-8 and ASCII code
+  ISO8859_9   = 0xC0,                          //ISO-8859-9 and ASCII code
+  ISO8859_10  = 0xC8,                          //ISO-8859-10 and ASCII code
+  ISO8859_11  = 0xD0,                          //ISO-8859-11 and ASCII code
+  ISO8859_13  = 0xD8,                          //ISO-8859-13 and ASCII code
+  ISO8859_14  = 0xE0,                          //ISO-8859-14 and ASCII code
+  ISO8859_15  = 0xE8,                          //ISO-8859-15 and ASCII code
+  ISO8859_16  = 0xF0,                          //ISO-8859-16 and ASCII code
+  GB2312      = 0x00,                          //GB2312
+  GB12345     = 0x08,                          //GB12345/GB18030
+  GB18030     = 0x08,                          //GB12345/GB18030
+  BIG5        = 0x10,                          //BIG5
+  UNICODE     = 0x18,                          //Unicode
+  UNIJapanese = 0x28,                          //UNI-Japanese
+  JIS0208     = 0x30,                          //JIS0208
+  LGCATH      = 0x38                           //Latin / Greek / Cyrillic / Arabic / Thai / Hebrew
 };
 
 
-enum class ExternalCGROM_Type : uint8_t {
-  GB2312      = 0x00,                         //GB2312
-  GB12345     = 0x08,                         //GB12345/GB18030
-  GB18030     = 0x08,                         //GB12345/GB18030
-  BIG5        = 0x10,                         //BIG5
-  UNICODE     = 0x18,                         //Unicode
-  UNIJapanese = 0x28,                         //UNI-Japanese
-  JIS0208     = 0x30,                         //JIS0208
-  LGCATH      = 0x31                          //Latin / Greek / Cyrillic / Arabic / Thai / Hebrew
+// Enum para os padrões ISO/IEC 8859 Width Setting suportados pela CGROM externa (Genitop)
+enum class eExternalCharWidthSet : uint8_t {
+ Fixed              = 0x00,                    //bit 1-0, Fixed width
+ VariableArial      = 0x01,                    //bit 1-0, Variable width for Arial
+ VariableFixedRoman = 0x02,                    //bit 1-0, Variable and fixed width for Roman
+ Bold               = 0x03                     //bit 1-0, Fonte Bold
 };
-
 
 
 // Enum para alturas de fonte suportadas
@@ -1575,18 +1638,28 @@ struct pospixel_t {
 };
 
 
-struct FontParameters {
-  //uint8_t iso_select;          //iso_select = 0 : iso8859-1, iso_select = 1 : iso8859-2, iso_select = 2 : iso8859-4, iso_select = 3 : iso8859-5
-  eFontHeight size_select;      //size_select = 0 : 8*16/16*16, size_select = 1 : 12*24/24*24, size_select = 2 : 16*32/32*32
-  uint8_t width;               //largura da fonte 
-  uint8_t height;              //altura da fonte
-  eFontSource source_select;   //source_select = 0 : internal CGROM,  source_select = 1: external CGROM, source_select = 2: user-define
-  bool full_align;             //align = 0 : full alignment disable, align = 1 : full alignment enable 
-  uint8_t chroma_key;          //chroma_key = 0 : text with chroma key disable, chroma_key = 1 : text with chroma key enable
-  eFontEnlargFactor width_enlarge;  //width_enlarge can be set 0~3, (00b: X1) (01b : X2)  (10b : X3)  (11b : X4)
-  eFontEnlargFactor height_enlarge; //height_enlarge can be set 0~3, (00b: X1) (01b : X2)  (10b : X3)  (11b : X4)
+//API de estrutura para configuração de fonte Interna
+struct FontInternalParam {
+  eInternalCharSet charset_select;             //iso_select = 0 : iso8859-1, iso_select = 1 : iso8859-2, iso_select = 2 : iso8859-4, iso_select = 3 : iso8859-5
+  //eFontHeight size_select;                     //size_select = 0 : 8*16/16*16, size_select = 1 : 12*24/24*24, size_select = 2 : 16*32/32*32
+  bool full_align;                             //align = 0 : full alignment disable, align = 1 : full alignment enable 
+  bool chroma_key;                             //chroma_key = 0 : text with chroma key disable, chroma_key = 1 : text with chroma key enable
+  eFontEnlargFactor width_enlarge;             //width_enlarge can be set 0~3, (00b: X1) (01b : X2)  (10b : X3)  (11b : X4)
+  eFontEnlargFactor height_enlarge;            //height_enlarge can be set 0~3, (00b: X1) (01b : X2)  (10b : X3)  (11b : X4)
 };
 
+
+//API de estrutura para configuração de fonte Externa
+struct FontExternalParam {
+  uint8_t scs_select;                          //Select chip ROM source ROM #0/ ROM #1
+  eExternalCharSet charset_select;             //ISO8859 + ASCII Code
+  eExternalCharWidthSet gt_width;              //GT Width Setting Char
+};
+
+
+//API de estrutura para configuração de fonte Usuário
+struct FontUserParam {
+};
 
 
 class Panel_RA8889 {
@@ -1664,9 +1737,9 @@ class Panel_RA8889 {
     void DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
     
     void setFontSource(eFontSource source);
-    void setFontParameters(FontParameters param);
-    void setCharacterSetsExternal(ExternalCGROM_ISO8859 iso, ExternalCGROM_Type type);
-    void setCharacterSetsInternal(InternalCGROM_ISO8859 iso);
+    void setFontUser(FontUserParam param, bool enable = false);
+    void setFontInternal(FontInternalParam param, bool enable = false);
+    void setFontExternal(FontExternalParam param, bool enable = false);
     void ShowText(char *str);
     void Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, uint32_t backgcolor);
     void PutString(uint16_t x, uint16_t y, char *str);
@@ -1677,7 +1750,9 @@ class Panel_RA8889 {
     void PutString16x24(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, bool bgtransparent, char *ptr);
     void PutChar32x48(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, bool bgtransparent, uint8_t code);
     void PutString32x48(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, bool bgtransparent, char *ptr);
-    void PutStringFmt(uint16_t x, uint16_t y, int32_t value, const char *fmt);
+    void PutFloat(uint16_t x, uint16_t y, double value, const char *fmt);
+    void PutHexa(uint16_t x, uint16_t y, uint32_t value, const char *fmt);
+    void PutDecimal(uint16_t x, uint16_t y, uint32_t value, const char *fmt);
 
     void useDMA(bool b = true);	
     void DMA_24bit_Block (uint8_t SCS, uint8_t Clk, uint16_t X1, uint16_t Y1, uint16_t X_W, uint16_t Y_H, uint16_t P_W, uint32_t Addr);
@@ -1716,8 +1791,8 @@ class Panel_RA8889 {
                                     uint32_t des_address,
                                     uint32_t number);
 
-    void PWM0(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
-    void PWM1(bool on_off, uint8_t clock_divided, uint8_t prescalar, uint16_t count_buffer, uint16_t compare_buffer);
+    void PWM0(bool on_off, eDividerClock clock_divided, uint8_t prescalar, uint16_t clock_per_period, uint16_t duty);
+    void PWM1(bool on_off, eDividerClock clock_divided, uint8_t prescalar, uint16_t clock_per_period, uint16_t duty);
     void AVI_Window(bool on_off);
     void PIP(bool On_Off, uint8_t PSelect, uint32_t PAddr, uint16_t Px, uint16_t Py, uint32_t ImageWidth, uint16_t Dx, uint16_t Dy, uint16_t Dwidth, uint16_t DHeight);
 
@@ -1867,8 +1942,8 @@ class Panel_RA8889 {
     void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
 
   protected:
-    uint8_t _cs;	                           //chip select pin
-    uint8_t _xnreset;	                       //chip reset pin
+    uint8_t _cs;	                             //chip select pin
+    uint8_t _xnreset;	                         //chip reset pin
     uint16_t _width;                           //lardura do display
     uint16_t _height;                          //altura do display
     uint8_t _bpp;                              //color depht 8/16/24 bit per pixel (bpp)
@@ -1878,18 +1953,47 @@ class Panel_RA8889 {
     uint8_t _spi_datamode;                     //SPI_MODE0[1,2,3] de comunicacao
     uint8_t _spi_dataorder;                    //ordem de dados spi MSBFIRST ou LSBFIRST
     bool _usedma;                              //Uso de DMA para as funções que podem se utilziar deste recurso
-    
+    //uint16_t _disp_spi_clk_divier;            //Divisor de clock do SPI do display
+
     //Parametros da fonte
+    uint32_t _charsetresourceMap = 0;          //mapa de recurso de 32 bits do char set Chips Font Flash ROM
     eFontSource _fntparam_source_select;
     eFontHeight _fntparam_size_select;
     uint8_t _fntparam_height;
-    InternalCGROM_ISO8859 _fntparam_internal_iso_select;
-    ExternalCGROM_ISO8859 _fntparam_external_iso_select;
-    ExternalCGROM_Type _fntparam_external_iso_type_select;
+    eExternalCharSet _fntparam_extern_charset_select;
+	  eInternalCharSet _fntparam_intern_charset_select;
+	  eExternalCharWidthSet _fntparam_gt_width;
     bool _fntparam_full_align;
     bool _fntparam_chroma_key;
     eFontEnlargFactor _fntparam_width_enlarge;
     eFontEnlargFactor _fntparam_height_enlarge;
+
+//   _charsetresourceMap cada posicao de bits é recursos presente do CI
+//   bit    Conjunto de Fontes  Valor Hex.   Valor Dec.
+//   0      GB2312              0x00         0
+//   1      GB12345/GB18030     0x08         8
+//   2      BIG5                0x10         16
+//   3      ASCII               0x18         24
+//   4      UNICODE             0x20         32
+//   5      UNI Japanese        0x28         40
+//   6      JIS0208             0x30         48
+//   7      LGCATH              0x38         56
+//   8      reservado           0x40         64
+//   9      reservado           0x48         72
+//   10     ISO8859_1_ASCII     0x88         136
+//   11     ISO8859_2_ASCII     0x90         144
+//   12     ISO8859_3_ASCII     0x98         152
+//   13     ISO8859_4_ASCII     0xA0         160
+//   14     ISO8859_5_ASCII     0xA8         168
+//   15     ISO8859_7_ASCII     0xB0         176
+//   16     ISO8859_8_ASCII     0xB8         184
+//   17     ISO8859_9_ASCII     0xC0         192
+//   18     ISO8859_10_ASCII    0xC8         200
+//   19     ISO8859_11_ASCII    0xD0         208
+//   20     ISO8859_13_ASCII    0xD8         216
+//   21     ISO8859_14_ASCII    0xE0         224
+//   22     ISO8859_15_ASCII    0xE8         232
+//   23     ISO8859_16_ASCII    0xF0         240
 
     void CoreTask_WaitReady(void);
     void Draw_WaitReady(void);
@@ -2114,6 +2218,8 @@ class Panel_RA8889 {
     void CursorGraphic_Color0(uint8_t color);
     void CursorGraphic_Color1(uint8_t color);
 
+    void Font_Init(void);
+    void External_CGROM_CharSetResourceMap(void);                       //Cria mapa de recursos de fontes Externa do CGROM
     void Font_UseUserDefined(void);
     void Font_UseInternalCGROM(void);
     void Font_UseExternalCGROM(void);
@@ -2140,7 +2246,7 @@ class Panel_RA8889 {
     void Select_Internal_CGROM_ISOIEC8859_2(void);
     void Select_Internal_CGROM_ISOIEC8859_4(void);
     void Select_Internal_CGROM_ISOIEC8859_5(void);
-    void Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso);
+    void Select_Internal_CGROM_ISO8859(eInternalCharSet iso);
     void GTFont_Select_GT21L16T1W(void);
     void GTFont_Select_GT30L16U2W(void);
     void GTFont_Select_GT30L24T3Y(void);
@@ -2148,6 +2254,7 @@ class Panel_RA8889 {
     void GTFont_Select_GT30L32S4W(void);
     void GTFont_Select_GT20L24F6Y(void);
     void GTFont_Select_GT21L24S1W(void);
+    void GTFont_CharacterParameter(uint8_t scs_select, uint8_t clk_div, uint8_t rom_select, uint8_t character_select, uint8_t gt_width);
     void GTFont_SetDecoder(uint8_t temp);
     void GTFont_CharacterROMParameter(uint8_t scsselect, 
                                       uint8_t clkdiv, 
@@ -2217,10 +2324,10 @@ class Panel_RA8889 {
     void PWM0_StartTimer(void);
     void PWM0_StopTimer(void);
     void PWM0_DeadZoneLength(uint8_t len);
-    void PWM0_SetCompareBuffer(uint16_t Wx);
-    void PWM0_SetCountBuffer(uint16_t Wx);
-    void PWM1_SetCompareBuffer(uint16_t Wx);
-    void PWM1_SetCountBuffer(uint16_t Wx);
+    void PWM0_SetCompareBuffer(uint16_t duty);
+    void PWM0_SetCountBuffer(uint16_t clock_per_period);
+    void PWM1_SetCompareBuffer(uint16_t duty);
+    void PWM1_SetCountBuffer(uint16_t clock_per_period);
 		
     void SFI_Select_ROM0(void);
     void SFI_Select_ROM1(void);
@@ -2393,3 +2500,5 @@ class Panel_RA8889 {
     void AVI_Stop(void);
 
 };
+
+#endif    // fim de PANEL_RA8889_HPP

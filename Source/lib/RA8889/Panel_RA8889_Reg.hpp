@@ -142,6 +142,20 @@
 //PWM Timer Control Registers
 #define REG_PSCLR                              0x84            //Page 0 PWM Prescaler Register (PSCLR)
 #define REG_PMUXR                              0x85            //Page 0 PWM clock Mux Register (PMUXR)
+    #define BIT_PWM1_TIMER_DIV1                0x00            //clock divider’s MUX input for PWM Timer 1,  1
+    #define BIT_PWM1_TIMER_DIV2                0x40            //clock divider’s MUX input for PWM Timer 1,  1/2
+    #define BIT_PWM1_TIMER_DIV4                0x80            //clock divider’s MUX input for PWM Timer 1,  1/4
+    #define BIT_PWM1_TIMER_DIV8                0xC0            //clock divider’s MUX input for PWM Timer 1,  1/8
+    #define BIT_PWM0_TIMER_DIV1                0x00            //clock divider’s MUX input for PWM Timer 0,  1
+    #define BIT_PWM0_TIMER_DIV2                0x10            //clock divider’s MUX input for PWM Timer 0,  1/2
+    #define BIT_PWM0_TIMER_DIV4                0x20            //clock divider’s MUX input for PWM Timer 0,  1/4
+    #define BIT_PWM0_TIMER_DIV8                0x30            //clock divider’s MUX input for PWM Timer 0,  1/8
+    #define BIT_XPWM1_OUTPUT_ERROR_FLAG        0x00            //XPWM[1] output system error flag
+    #define BIT_XPWM1_OUTPUT_PWM_TIMER1        0x08            //XPWM[1] output PWM timer 1 event or invert of PWM timer 0
+    #define BIT_XPWM1_OUTPUT_OSC_CLK           0x0C            //XPWM[1] output oscillator clock
+    #define BIT_XPWM0_GPIO_C7                  0x00            //XPWM[0] becomes GPIO-C[7]
+    #define BIT_XPWM0_OUTPUT_PWM_TIMER0        0x02            //XPWM[0] output PWM timer 0
+    #define BIT_XPWM0_OUTPUT_CORE_CLK          0x03            //XPWM[0] output core clock 
 #define REG_PCFGR                              0x86            //Page 0 PWM Configuration Register (PCFGR)
 #define REG_DZ_LENGTH                          0x87            //Page 0 Timer 0 Dead zone length register [DZ_LENGTH]
 #define REG_TCMPB0L                            0x88            //Page 0 Timer 0 compare buffer register [TCMPB0L]
@@ -238,21 +252,21 @@
 #define REG_DMA_CTRL                           0xb6            //Page 0 Serial flash DMA Controller REG (DMA_CTRL)
     #define BIT_DMA_START                      0x01
 #define REG_SFL_CTRL                           0xb7            //Page 0 Serial Flash/ROM Controller Register (SFL_CTRL)
-    #define BIT_SERIAL_FLASH_SELECT0           0x00            //Serial Flash/ROM 0 I/F is selected
-    #define BIT_SERIAL_FLASH_SELECT1           0x80            //Serial Flash/ROM 1 I/F is selected.
+    #define BIT_SERIAL_FLASH_SELECT0           0x00            //Bit 7, Serial Flash/ROM 0 I/F is selected
+    #define BIT_SERIAL_FLASH_SELECT1           0x80            //Bit 7, Serial Flash/ROM 1 I/F is selected.
     #define BIT_SERIAL_FLASH_SELECT2           0x00            //when page1 B7h bit 7 = 1
     #define BIT_SERIAL_FLASH_SELECT3           0x80            //when page1 B7h bit 7 = 1
-    #define BIT_SERIAL_FLASH_FONT_MODE         0x00
-    #define BIT_SERIAL_FLASH_DMA_MODE          0x40
-    #define BIT_SERIAL_FLASH_ADDR_24BIT        0x00
-    #define BIT_SERIAL_FLASH_ADDR_32BIT        0x20
+    #define BIT_SERIAL_FLASH_FONT_MODE         0x00            //Bit 6
+    #define BIT_SERIAL_FLASH_DMA_MODE          0x40            //Bit 6 
+    #define BIT_SERIAL_FLASH_ADDR_24BIT        0x00            //Bit 5
+    #define BIT_SERIAL_FLASH_ADDR_32BIT        0x20            //Bit 5
     #define BIT_STANDARD_SPI_MODE              0x00
-    #define BIT_FOLLOW_RA8875_MODE             0x10
-    #define BIT_SPI_NORMAL_READ                0x00            //COMMAND 03h
-    #define BIT_SPI_FAST_READ_8DUMMY           0x04            //COMMAND 0Bh
-    #define BIT_SPI_FAST_READ_16DUMMY          0x08            //COMMAND 1Bh
-    #define BIT_SPI_DUAL_READ_8DUMMY           0x02            //COMMAND 3Bh
-    #define BIT_2XIO_READ_MODE_4DUMMY          0x03            //COMMAND BBh    
+    #define BIT_FOLLOW_RA8875_MODE             0x10            //Bit 4 
+    #define BIT_SPI_NORMAL_READ                0x00            //Bit 3:0 COMMAND 03h
+    #define BIT_SPI_FAST_READ_8DUMMY           0x04            //Bit 3:0 COMMAND 0Bh
+    #define BIT_SPI_FAST_READ_16DUMMY          0x08            //Bit 3:0 COMMAND 1Bh
+    #define BIT_SPI_DUAL_READ_8DUMMY           0x02            //Bit 3:0 COMMAND 3Bh
+    #define BIT_2XIO_READ_MODE_4DUMMY          0x03            //Bit 3:0 COMMAND BBh    
 #define REG_SPIDR                              0xb8            //Page 0 SPI master Tx /Rx FIFO Data Register (SPIDR)
 #define REG_SPIMCR2                            0xb9            //Page 0 SPI master Control Register (SPIMCR2)
 #define REG_SPIMSR                             0xba            //Page 0 SPI master Status Register (SPIMSR)
@@ -266,6 +280,10 @@
 #define REG_DMA_DY0                            0xc2            //Page 0 DMA Destination Window Upper-Left corner Y-coordinates 0 (DMA_DY0)
 #define REG_DMA_DY1                            0xc3            //Page 0 DMA Destination Window Upper-Left corner Y-coordinates 1 (DMA_DY1)
 #define REG_SPIMBS                             0xc5            //Page 0 SPI Master Bus Select (SPIMBS)
+    #define BIT_SPIM_SELECT_BUS0               0x00            //SPI master bus select BUS 0
+    #define BIT_SPIM_SELECT_BUS1               0x80            //SPI master bus select BUS 1
+    #define BIT_SPIM_RX_LATCH_RISING_EDGE      0x00            //SPI master rx register latch edge, cclk rising edge
+    #define BIT_SPIM_RX_LATCH_FALLING_EDGE     0x20            //SPI master rx register latch edge, cclk falling edge, suggested
 #define REG_DMAW_WTH0                          0xc6            //Page 0 DMA Block Width 0 (DMAW_WTH0)
 #define REG_DMAW_WTH1                          0xc7            //Page 0 DMA Block Width 1 (DMAW_WTH1)
 #define REG_DMAW_HIGH0                         0xc8            //Page 0 DMA Block Height 0 (DMAW_HIGH0)
@@ -301,7 +319,41 @@
     #define BIT_TEXT_HEIGHT_ENLARGEMENT_X3     0x02
     #define BIT_TEXT_HEIGHT_ENLARGEMENT_X4     0x03
 #define REG_GTFNT_SEL                          0xce            //Page 0 GT Character ROM Select (GTFNT_SEL)
+    #define BIT_CGROM_GT21L16T1W               0x00            //Integrate Circuit External CGROM GT21L16T1W
+    #define BIT_CGROM_GT30L16U2W               0x20            //Integrate Circuit External CGROM GT30L16U2W
+    #define BIT_CGROM_GT30L24T3Y               0x40            //Integrate Circuit External CGROM GT30L24T3Y
+    #define BIT_CGROM_GT30L24M1Z               0x60            //Integrate Circuit External CGROM GT30L24M1Z
+    #define BIT_CGROM_GT30L32S4W               0x80            //Integrate Circuit External CGROM GT30L32S4W
+    #define BIT_CGROM_GT20L24F6Y               0xA0            //Integrate Circuit External CGROM GT20L24F6Y
+    #define BIT_CGROM_GT21L24S1W               0xC0            //Integrate Circuit External CGROM GT21L24S1W
 #define REG_GTFNT_CR                           0xcf            //Page 0 GT Character ROM Control register (GTFNT_CR)
+    #define BIT_GB2312                         0x00            //bit 7-3, 
+    #define BIT_GB12345                        0x08            //bit 7-3, 
+	#define BIT_GB18030                        0x08            //bit 7-3, 
+    #define BIT_BIG5                           0x10            //bit 7-3, 
+    #define BIT_UNICODE                        0x18            //bit 7-3, 
+    #define BIT_ASCII                          0x20            //bit 7-3, 
+    #define BIT_UNI_JAPANESE                   0x28            //bit 7-3, 
+    #define BIT_JIS0208                        0x30            //bit 7-3, 
+    #define BIT_LGCATH                         0x38            //bit 7-3, Latin (L), Greek (G), Cyrillic (C), Arabic (A), Thai (T), Hebrew (H)
+    #define BIT_ISO8859_1_ASCII                0x88            //bit 7-3, ISO-8859-1 and ASCII code
+    #define BIT_ISO8859_2_ASCII                0x90            //bit 7-3, ISO-8859-2 and ASCII code
+    #define BIT_ISO8859_3_ASCII                0x98            //bit 7-3, ISO-8859-3 and ASCII code
+    #define BIT_ISO8859_4_ASCII                0xA0            //bit 7-3, ISO-8859-4 and ASCII code
+    #define BIT_ISO8859_5_ASCII                0xA8            //bit 7-3, ISO-8859-5 and ASCII code
+    #define BIT_ISO8859_7_ASCII                0xB0            //bit 7-3, ISO-8859-7 and ASCII code
+    #define BIT_ISO8859_8_ASCII                0xB8            //bit 7-3, ISO-8859-8 and ASCII code
+    #define BIT_ISO8859_9_ASCII                0xC0            //bit 7-3, ISO-8859-9 and ASCII code
+    #define BIT_ISO8859_10_ASCII               0xC8            //bit 7-3, ISO-8859-10 and ASCII code
+    #define BIT_ISO8859_11_ASCII               0xD0            //bit 7-3, ISO-8859-11 and ASCII code
+    #define BIT_ISO8859_13_ASCII               0xD8            //bit 7-3, ISO-8859-13 and ASCII code
+    #define BIT_ISO8859_14_ASCII               0xE0            //bit 7-3, ISO-8859-14 and ASCII code
+    #define BIT_ISO8859_15_ASCII               0xE8            //bit 7-3, ISO-8859-15 and ASCII code
+    #define BIT_ISO8859_16_ASCII               0xF0            //bit 7-3, ISO-8859-16 and ASCII code
+    #define BIT_GT_FIXED_WIDTH                 0x00            //bit 1-0, Fixed width
+    #define BIT_GT_VARIABLE_WIDTH_ARIAL        0x01            //bit 1-0, Variable width for Arial
+    #define BIT_GT_VARIABLE_FIXED_WIDTH_ROMAN  0x02            //bit 1-0, Variable and fixed width for Roman
+    #define BIT_GT_BOLD                        0x03            //bit 1-0, Fonte Bold
 #define REG_FLDR                               0xd0            //Page 0 Character Line gap Setting Register (FLDR)
 #define REG_F2FSSR                             0xd1            //Page 0 Character to Character Space Setting Register (F2FSSR)
 #define REG_FGCR                               0xd2            //Page 0 Foreground Color Register - Red (FGCR)
@@ -375,6 +427,11 @@
 #define REG_IDEC_CTRL0                         0xb6            //Page 1 Serial flash AVI/JPG/BMP (IDEC_CTRL)                                   
 #define REG_IDEC_CTRL1                         0xb7            //Page 1 Serial flash AVI/JPG/BMP (IDEC_CTRL)
 #define REG_IDEC_CLKDIV                        0xbb            //Page 1 IDEC Clock divide
+    #define BIT_SPI_DIV2                       0x00
+    #define BIT_SPI_DIV4                       0x01
+    #define BIT_SPI_DIV6                       0x02
+    #define BIT_SPI_DIV8                       0x03
+    #define BIT_SPI_DIV10                      0x04
 #define REG_IDEC_SADR0                         0xbc            //Page 1 Serial flash AVI/JPG/BMP Source Starting Address 0 (IDEC_SADR0)
 #define REG_IDEC_SADR1                         0xbd            //Page 1 Serial flash AVI/JPG/BMP Source Starting Address 1 (IDEC_SADR1)
 #define REG_IDEC_SADR2                         0xbe            //Page 1 Serial flash AVI/JPG/BMP Source Starting Address 2 (IDEC_SADR2)

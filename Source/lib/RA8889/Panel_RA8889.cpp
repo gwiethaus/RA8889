@@ -1,5 +1,28 @@
-#include <Arduino.h>
+// ---------- Detecta Arduino/ESP ----------
+#if defined(__has_include)
+  #if __has_include(<Arduino.h>)
+    #define USING_ARDUINO_H
+    #include <Arduino.h>
+  #endif
+#endif
+
+// ---------- Verifica se dtostrf precisa ser definida ----------
+#if !defined(USING_ARDUINO_H) || (defined(USING_ARDUINO_H) && !defined(__DTOSTRF_DEFINED__))
+  #ifndef __DTOSTRF_DEFINED__
+  #define __DTOSTRF_DEFINED__
+
+  // Inclui apenas quando necessário
+  #include <stdio.h>
+  #include <math.h> // para lidar com -0.0, NaN e INF
+
+  #endif
+#endif
+
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <SPI.h>
+
 #include <Panel_RA8889.hpp>
 #include <ascii_table_8x12.h>
 #include <ascii_table_16x24.h>
@@ -39,19 +62,16 @@
 	DrawPixels(x, y, w, h, *data); w e h não é da tela mas da area do pixel a transferir x, y vao incrementan do de acordo com w e h
 	fazendo a varredura em *data.
 	Outra funcao DrawPixels (x, y, count, *data) o controle tera que ser por x,y e count na posicao do buffer apra a posicao de tela que deseja os pixels.
-	
-  
+	  
   Construção
 
 
-	Fazendo as funções: 
+  Fazendo as funções:
     
-     void setCharacterSetsExternal(ExternalCGROM_ISO8859 iso, ExternalCGROM_Type type)
-     void Panel_RA8889::setFontParameters(FontParameters param)
+    void Panel_RA8889::setFontUser(FontUserParam param, bool enable = false)    
+
 */
 
-
-  //SPIClass& spi = SPIClass();   // pode ser SPI, HSPI, VSPI, etc.
 
 #ifdef USE_SPI_PORT
   SPIClass& spi = SPI;
@@ -64,21 +84,60 @@
 #endif
 
 
-//================================================================================
-// Funções/Macros auxiliares
-//================================================================================
+// ============================================================================
+//
+// Seleção automática e segura de barramento SPI
+//
+// ============================================================================
 
-//Antes de usar macro DEBUG_PRINT, use no Setup() a macro DEBUG_BEGIN para iniciar a comunicacao serial.
-#ifdef SERIAL_DEBUG
-  bool serialStarted = false;
-  #define DEBUG_BEGIN(baud) do { Serial.begin(baud); serialStarted = true; } while(0)
-  #define DEBUG_PRINT(msg, val, b) SerialPrint(msg, val, b)
+// --- ESP32 e derivados -------------------------------------------------------
+#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
+
+  // ESP32 Clássico, ESP32-S2, ESP32-S3, ESP32-C3, etc.
+  #if defined(USE_HSPI_PORT)
+    SPIClass spi = SPIClass(HSPI);
+    #define SPI_PORT_NAME "HSPI"
+  #elif defined(USE_VSPI_PORT)
+    SPIClass spi = SPIClass(VSPI);
+    #define SPI_PORT_NAME "VSPI"
+  #else
+    // Padrão → VSPI (SPI3_HOST)
+    SPIClass spi = SPIClass(VSPI);
+    #define SPI_PORT_NAME "VSPI (default)"
+  #endif
+
+// --- Placas AVR clássicas ----------------------------------------------------
+#elif defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_NANO)
+  // Arduino UNO / Nano
+  #define SPI_PORT_NAME "SPI (UNO/NANO)"
+  #define spi SPI
+
+#elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
+  // Arduino MEGA 2560 / 1280
+  #define SPI_PORT_NAME "SPI (MEGA)"
+  #define spi SPI
+
+// --- Arduino Due -------------------------------------------------------------
+#elif defined(ARDUINO_SAM_DUE)
+  #define SPI_PORT_NAME "SPI (DUE)"
+  #define spi SPI
+
+// --- Fallback para outros micros ---------------------------------------------
 #else
-   // Se não houver debug, macros não fazem nada
-  #define DEBUG_BEGIN(baud)
-  #define DEBUG_PRINT(msg, val, b)
+  #define SPI_PORT_NAME "SPI (default)"
+  #define spi SPI
 #endif
 
+
+//================================================================================
+//
+// Funções/Macros auxiliares
+//
+//================================================================================
+
+
+#ifdef SERIAL_DEBUG
+  bool serialStarted = false;
 
 /**
  * @brief Depuracao do codigo
@@ -91,13 +150,581 @@
  *
  * @note None
  */
-void SerialPrint(String msg, uint32_t value, bool b = true)
+void SerialPrint(String msg, uint32_t value, bool b, bool newline)
 {
   #ifdef SERIAL_DEBUG
   if (!serialStarted) return;  // segurança extra
   #endif
   Serial.print(msg);
-  b ? Serial.println(value) : Serial.println("");
+  if (b) {
+    newline ? Serial.println(value) : Serial.print(value);
+  } else {
+    if (newline) Serial.println("");
+  }
+}
+
+
+void SerialPrintF(String msg, double value, uint8_t decimal, bool b, bool newline)
+{
+  #ifdef SERIAL_DEBUG
+  if (!serialStarted) return;  // segurança extra
+  #endif
+  Serial.print(msg);
+  if (b) {
+    newline ? Serial.println(value, decimal) : Serial.print(value, decimal);
+  } else {
+    if (newline) Serial.println("");
+  }
+}
+#endif
+
+
+/**
+ * @brief Subtração binária de 8 bits usando bitwise (borrow)
+ * 
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+uint8_t Bin_subtract(uint8_t maior, uint8_t menor) {
+  while (menor != 0) {
+      int borrow = (~maior) & menor;
+      menor = menor ^ maior;
+      menor = borrow << 1;
+  }
+  return menor;
+}
+
+
+/**
+ * @brief Subtração condicional
+ * 
+ * @verbatim
+ * Apenas subtrai se 'a >= gt' --> ex. 'a > 9'
+ * 
+ * Uso em mapeamento onde valores possuem saltos e deseja colcoar em ordem ordinal
+ * ou ordem sequencial numérica
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+#define MAPBREAKPOS 0x38    //posicao de quabra caso fore maior que 16 os valores (uso no mapa de fontes - tipos de fontes)
+uint16_t conditional_subtract(uint8_t a, uint8_t b, uint8_t gt) {
+  return (a > gt) ? Bin_subtract(a, b) : a;
+}
+
+
+// ---------- Verifica se dtostrf já existe ----------
+#if !defined(USING_ARDUINO_H) || (defined(USING_ARDUINO_H) && !defined(__DTOSTRF_DEFINED__))
+  #ifndef __DTOSTRF_DEFINED__
+  #define __DTOSTRF_DEFINED__
+
+  #include <cstdio>
+  #include <cmath> // para evitar problemas com -0.0
+
+  inline char* dtostrf(double val, signed char width, unsigned char prec, char* buf) {
+      if (!buf) return nullptr;
+
+      // Tratamento especial para -0.0
+      if (val == 0.0) val = 0.0;
+
+      // Formata usando sprintf
+      sprintf(buf, "%*.*f", width, prec, val);
+      return buf;
+  }
+
+  #endif
+#endif
+
+
+
+/**
+ * @brief Converte um número do tipo double para string formatada.
+ * 
+ * Esta função é equivalente à função `dtostrf` do Arduino.  
+ * Caso esteja em um ambiente Arduino/ESP que já forneça dtostrf, a função nativa é usada.  
+ * Caso contrário, esta implementação é usada para C++ puro, garantindo portabilidade.
+ * 
+ * @param val   O valor numérico a ser convertido.
+ * @param width Largura mínima do campo resultante. Se negativo, alinha à esquerda.
+ * @param prec  Número de casas decimais após o ponto.
+ * @param buf   Ponteiro para o buffer de caracteres onde a string será armazenada.
+ *              O buffer deve ser grande o suficiente para conter o resultado.
+ * 
+ * @return Retorna o mesmo ponteiro fornecido em `buf`. Retorna nullptr se `buf` for nulo.
+ * 
+ * @note Trata casos especiais:
+ *       - Se `val` for -0.0, converte para 0.0.
+ *       - Se `val` for NaN, escreve "nan" no buffer.
+ *       - Se `val` for infinito, escreve "inf" no buffer.
+ * 
+ * @warning Esta função utiliza sprintf internamente. Para ambientes sem suporte a sprintf,
+ *          deve-se fornecer um buffer adequado e garantir compatibilidade do compilador.
+ * 
+ * @example
+ * char buffer[16];
+ * dtostrf(3.14159, 6, 2, buffer); // buffer conterá "  3.14"
+ */
+#if defined(__DTOSTRF_DEFINED__)
+inline char* dtostrf(double val, signed char width, unsigned char prec, char* buf) {
+    if (!buf) return nullptr;
+
+    // Corrige -0.0
+    if (val == 0.0) val = 0.0;
+
+    // Trata casos especiais
+    if (isnan(val)) { sprintf(buf, "nan"); return buf; }
+    if (isinf(val)) { sprintf(buf, "inf"); return buf; }
+
+    // Formata o valor normalmente
+    sprintf(buf, "%*.*f", width, prec, val);
+    return buf;
+}
+#endif
+
+
+/**
+ * @brief Equivalente ao dtostrf()
+ * 
+ * 
+ * @param width: largura mínima da string (incluindo sinal e ponto)
+ * @param precision: casas decimais
+ * @param *buffer: saída
+ */
+
+void my_dtostrf(float val, int width, int precision, char* buffer) {
+    char temp[32];
+    int pos = 0;
+
+    // --- sinal ---
+    if (val < 0) {
+        temp[pos++] = '-';
+        val = -val;
+    }
+
+    // --- parte inteira ---
+    long intPart = (long)val;
+    float fracPart = val - intPart;
+
+    // converte inteiro para string
+    char intStr[16];
+    int intLen = 0;
+    if (intPart == 0) intStr[intLen++] = '0';
+    else {
+        long n = intPart;
+        while (n > 0) {
+            intStr[intLen++] = '0' + (n % 10);
+            n /= 10;
+        }
+        // inverte
+        for (int i = 0; i < intLen / 2; i++) {
+            char c = intStr[i];
+            intStr[i] = intStr[intLen - 1 - i];
+            intStr[intLen - 1 - i] = c;
+        }
+    }
+    memcpy(temp + pos, intStr, intLen);
+    pos += intLen;
+
+    // --- parte decimal ---
+    if (precision > 0) {
+        temp[pos++] = '.';
+        float f = fracPart * pow(10, precision) + 0.5f; // arredonda
+        long fracInt = (long)f;
+        char fracStr[16];
+        for (int i = precision - 1; i >= 0; i--) {
+            fracStr[i] = '0' + (fracInt % 10);
+            fracInt /= 10;
+        }
+        memcpy(temp + pos, fracStr, precision);
+        pos += precision;
+    }
+
+    temp[pos] = '\0';
+
+    // --- aplica largura mínima ---
+    int len = strlen(temp);
+    int pad = (width > len) ? width - len : 0;
+    if (pad > 0) {
+        // espaços à esquerda
+        for (int i = 0; i < pad; i++) buffer[i] = ' ';
+        strcpy(buffer + pad, temp);
+    } else {
+        strcpy(buffer, temp);
+    }
+}
+
+
+/** OK
+ * @brief Formata um valor float em string usando máscara avançada similar a printf.
+ * 
+ * Esta função permite formatar números em ponto flutuante (`float`) em um buffer
+ * de caracteres, seguindo uma máscara semelhante às usadas em `printf` (`%f`, `%e`, `%g`),
+ * incluindo opções de largura mínima, casas decimais, sinal explícito, alinhamento e zero-padding.
+ * 
+ * @verbatim
+ * 
+ * Suporte a máscaras estendidas: %+6.2f, %-6.2f, %+06.2f, os símbolos significam:
+ *  - "+" → força o sinal positivo
+ *  - "-" → alinhamento à esquerda
+ *  - "0" → preenchimento com zeros à esquerda
+ * 
+ * Para funcionalidade semelhante ao sprintf() podemos exemplificar para valor como -0.000123:
+ *  - %12.3e (alinhamento à direita)   → " -1.230e-04" (2 espaços antes)
+ *  - %-12.3e (alinhamento à esquerda) → "-1.230e-04 " (2 espaços depois)
+ *
+ * 
+ * @param buffer  Ponteiro para o buffer de destino onde a string formatada será escrita.
+ *                O buffer deve ser suficientemente grande para conter o resultado.
+ * @param valor   Valor em ponto flutuante a ser formatado.
+ * @param mascara Máscara de formatação (ex: "%+08.2f", "%-10.3g", "%06.1e").
+ *                Suporta os seguintes elementos:
+ *                - `%`      : início da máscara
+ *                - `+`      : sinal explícito para valores positivos
+ *                - `-`      : alinhamento à esquerda
+ *                - `0`      : zero-padding à esquerda
+ *                - `width`  : largura mínima do campo
+ *                - `.prec`  : número de casas decimais
+ *                - `f`, `e`, `E`, `g`, `G` : tipo de formatação
+ * 
+ * @note A função realiza os seguintes comportamentos especiais:
+ *       - Para máscara `%g`/`%G` (`formatoAuto`), remove zeros à direita e ponto decimal se necessário.
+ *       - Para `%e`/`%E` (`formatoCientifico`), converte o valor para notação científica.
+ *       - Adiciona sinal positivo quando solicitado.
+ *       - Aplica alinhamento à esquerda ou zero-padding conforme máscara.
+ *       - Para valores negativos ou positivos com sinal, considera corretamente o preenchimento.
+ * 
+ * @warning O buffer deve ser grande o suficiente para conter a string resultante.  
+ *          Recomenda-se pelo menos 80 caracteres para garantir segurança.
+ * 
+ * @example
+ * char buf[50];
+ * formatFloatAdvanced(buf, 3.14159f, "%+08.2f");     // buf -> "+003.14"
+ * formatFloatAdvanced(buf, 0.0001234f, "%10.4g");    // buf -> "   0.0001234"
+ * formatFloatAdvanced(buf, -12345.678f, "%-12.2f");  // buf -> "-12345.68   "
+ * formatFloatAdvanced(buf, 123.456, "%10.2f");       // "    123.46"
+ * formatFloatAdvanced(buf, 0.0000123, "%10.3e", );   // " 1.230e-05"
+ * formatFloatAdvanced(buf, 12345678.9, "%+12.2g");   // "+1.23e+07"
+ * formatFloatAdvanced(buf, 0.000123, "%-10.4g");     // "1.23e-04  "
+ */
+void formatDoubleAdvanced(char* buffer, double valor, const char* mascara)
+{
+  int largura = 0;
+  int casas = -1;
+  bool sinalPositivo = false;
+  bool alinhamentoEsquerda = false;
+  bool zeroPadding = false;
+  bool formatoCientifico = false;
+  bool formatoAuto = false;
+
+  // --------------------------------------------------------------------------
+  // 1. Analisa a máscara (ex: "%+06.2f")
+  // --------------------------------------------------------------------------
+  const char* p = mascara;
+
+  if (*p == '%') p++;
+  if (*p == '+') { sinalPositivo = true; p++; }
+  if (*p == '-') { alinhamentoEsquerda = true; p++; }
+  if (*p == '0') { zeroPadding = true; p++; }
+
+  // Largura
+  if (isdigit(*p)) {
+    largura = atoi(p);
+    while (isdigit(*p)) p++;
+  }
+
+  // Casas decimais
+  if (*p == '.') {
+    p++;
+    casas = atoi(p);
+    while (isdigit(*p)) p++;
+  }
+
+  // Tipo
+  switch (*p) {
+    case 'e': case 'E': formatoCientifico = true; break;
+    case 'g': case 'G': formatoAuto = true; break;
+    default: break; // assume 'f'
+  }
+
+  if (casas < 0) casas = 6;  // padrão
+  if (largura <= 0) largura = 1;
+
+  // --------------------------------------------------------------------------
+  // 2. Decide entre notação científica ou decimal (%g)
+  // --------------------------------------------------------------------------
+  if (formatoAuto) {
+    double absValor = fabs(valor);
+    //if (absValor != 0.0f && (absValor < 0.0001f || absValor >= 1e7f)) {
+    if (absValor != 0.0 && (absValor < 0.0001 || absValor >= 1e7)) {
+      formatoCientifico = true;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // 3. Formata valor bruto em buffer temporário
+  // --------------------------------------------------------------------------
+  char temp[50];
+  temp[0] = '\0';
+
+  if (formatoCientifico) {
+    int expoente = 0;
+    double mantissa = valor;
+
+    if (mantissa != 0.0) {
+      while (fabs(mantissa) >= 10.0) { mantissa /= 10.0; expoente++; }
+      while (fabs(mantissa) < 1.0) { mantissa *= 10.0; expoente--; }
+    }
+
+    char mantissaStr[25];
+
+    my_dtostrf(mantissa, 0, casas, mantissaStr);
+    
+    // ⚠️ Remove zeros SOMENTE para formato %g, não para %e
+    if (formatoAuto) {
+      int len = strlen(mantissaStr);
+      while (len > 0 && mantissaStr[len - 1] == '0') mantissaStr[--len] = '\0';
+      if (len > 0 && mantissaStr[len - 1] == '.') mantissaStr[--len] = '\0';
+    }
+
+    sprintf(temp, "%se%+03d", mantissaStr, expoente);
+  } else {
+    //dtostrf(valor, 0, casas, temp);
+    my_dtostrf(valor, 0, casas, temp);
+    if (formatoAuto) {
+      // Remove zeros à direita e ponto decimal (%g)
+      int len = strlen(temp);
+      while (len > 0 && temp[len - 1] == '0') temp[--len] = '\0';
+      if (len > 0 && temp[len - 1] == '.') temp[--len] = '\0';
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // 4. Adiciona sinal positivo, se solicitado
+  // --------------------------------------------------------------------------
+  char temp2[60];
+
+  if (sinalPositivo && valor >= 0.0 && temp[0] != '+') {
+    snprintf(temp2, sizeof(temp2), "+%s", temp);
+    strcpy(temp, temp2);
+  }
+
+  // --------------------------------------------------------------------------
+  // 5. Preenchimento e alinhamento
+  // --------------------------------------------------------------------------
+  int len = strlen(temp);
+  int sinal = (temp[0] == '-' || temp[0] == '+') ? 1 : 0;
+
+  if ((int)len < largura) {
+    int pad = largura - len;
+    char temp3[80];
+
+    if (alinhamentoEsquerda) {
+      // ex: %-10.2f
+      strcpy(temp3, temp);
+      for (int i = 0; i < pad; i++) strcat(temp3, " ");
+      strcpy(buffer, temp3);
+    }
+    else if (zeroPadding) {
+      // ex: %+08.2f  →  "-003.14" ou "+003.14"
+      if (sinal) {
+        temp3[0] = temp[0];
+        for (int i = 0; i < pad; i++) temp3[sinal + i] = '0';
+        strcpy(temp3 + sinal + pad, temp + sinal);
+      } else {
+        for (int i = 0; i < pad; i++) temp3[i] = '0';
+        strcpy(temp3 + pad, temp);
+      }
+      temp3[sinal + pad + strlen(temp + sinal)] = '\0';
+      strcpy(buffer, temp3);
+    }
+    else {
+      // Preenche com espaços à esquerda
+      memset(buffer, ' ', pad);
+      buffer[pad] = '\0';
+      strcat(buffer, temp);
+    }
+  } else {
+    strcpy(buffer, temp);
+  }
+
+}
+
+
+/** OLD
+ * @brief Formata um valor double conforme máscara estilo printf (%+08.3f, %-10.2g, etc.)
+ * 
+ * Compatível com ambientes Arduino/AVR/ESP32, mesmo sem suporte a %f no printf.
+ * 
+ * @param buffer Buffer de saída (mínimo 80 bytes recomendados)
+ * @param valor  Valor numérico a ser formatado
+ * @param mascara Máscara de formatação (ex: "%+08.2f", "%-10.4g", "%e")
+ */
+void formatDoubleAdvanced2(char* buffer, double valor, const char* mascara)
+{
+    int largura = 0;
+    int casas = -1;
+    bool sinalPositivo = false;
+    bool alinhamentoEsquerda = false;
+    bool zeroPadding = false;
+    bool formatoCientifico = false;
+    bool formatoAuto = false;
+
+    const char* p = mascara;
+    if (*p == '%') p++;
+
+    // Aceita modificadores em qualquer ordem: +, -, 0
+    bool parsing = true;
+    while (parsing) {
+        switch (*p) {
+            case '+': sinalPositivo = true; p++; break;
+            case '-': alinhamentoEsquerda = true; p++; break;
+            case '0': zeroPadding = true; p++; break;
+            default: parsing = false; break;
+        }
+    }
+
+    // Largura mínima
+    if (isdigit(*p)) largura = strtol(p, (char**)&p, 10);
+
+    // Casas decimais
+    if (*p == '.') {
+        p++;
+        casas = strtol(p, (char**)&p, 10);
+    }
+
+    // Tipo
+    switch (*p) {
+        case 'e': case 'E': formatoCientifico = true; break;
+        case 'g': case 'G': formatoAuto = true; break;
+        default: break; // assume 'f'
+    }
+
+    if (casas < 0) casas = 6;  // padrão
+    if (largura <= 0) largura = 1;
+
+    if (formatoAuto) {
+        double absValor = fabs(valor);
+        if (absValor != 0.0 && (absValor < 0.0001 || absValor >= 1e7)) formatoCientifico = true;
+    }
+
+    // -------------------------------------------------
+    // Buffer temporário único
+    // -------------------------------------------------
+    char temp[80] = {0};  // único buffer temporário seguro
+    char* strNum = temp;  // ponteiro para construção da string
+
+    if (formatoCientifico) {
+        int expoente = 0;
+        double mantissa = valor;
+
+        if (mantissa != 0.0) {
+            while (fabs(mantissa) >= 10.0) { mantissa /= 10.0; expoente++; }
+            while (fabs(mantissa) < 1.0)   { mantissa *= 10.0; expoente--; }
+        }
+
+        // usa parte inicial do buffer para mantissa
+        char* mantStr = temp;
+        dtostrf(mantissa, 0, casas, mantStr);
+        
+        // remove zeros à direita se %g
+        if (formatoAuto) {
+            int len = strlen(mantStr);
+            while (len > 0 && mantStr[len - 1] == '0') mantStr[--len] = '\0';
+            if (len > 0 && mantStr[len - 1] == '.') mantStr[--len] = '\0';
+        }
+
+        // concatena expoente no mesmo buffer
+        snprintf(temp, sizeof(temp), "%se%+03d", mantStr, expoente);
+    }
+    else {
+        dtostrf(valor, 0, casas, temp);
+
+        if (formatoAuto) {
+            int len = strlen(temp);
+            while (len > 0 && temp[len - 1] == '0') temp[--len] = '\0';
+            if (len > 0 && temp[len - 1] == '.') temp[--len] = '\0';
+        }
+    }
+
+    // -------------------------------------------------
+    // Adiciona sinal positivo, se necessário
+    // -------------------------------------------------
+    if (sinalPositivo && valor >= 0.0 && temp[0] != '+') {
+        // desloca tudo 1 posição à direita dentro do mesmo buffer
+        size_t len = strlen(temp);
+        if (len < sizeof(temp) - 1) {
+            memmove(temp + 1, temp, len + 1);  // inclui '\0'
+            temp[0] = '+';
+        }
+    }
+
+    // -------------------------------------------------
+    // Preenchimento e alinhamento
+    // -------------------------------------------------
+    int len = strlen(temp);
+    int sinal = (temp[0] == '-' || temp[0] == '+') ? 1 : 0;
+
+    if (len < largura) {
+        int pad = largura - len;
+        if (alinhamentoEsquerda) {
+            // "%-10.2f" → esquerda
+            memmove(buffer, temp, len + 1);
+            for (int i = 0; i < pad; i++) buffer[len + i] = ' ';
+            buffer[len + pad] = '\0';
+        }
+        else if (zeroPadding) {
+            // "%+08.2f" → zeros à esquerda
+            if (sinal) {
+                buffer[0] = temp[0];
+                for (int i = 0; i < pad; i++) buffer[sinal + i] = '0';
+                memmove(buffer + sinal + pad, temp + sinal, len - sinal + 1);
+            } else {
+                for (int i = 0; i < pad; i++) buffer[i] = '0';
+                memmove(buffer + pad, temp, len + 1);
+            }
+        }
+        else {
+            // espaço à esquerda
+            int i;
+            for (i = 0; i < pad; i++) buffer[i] = ' ';
+            memmove(buffer + pad, temp, len + 1);
+        }
+    }
+    else {
+        memmove(buffer, temp, len + 1);
+    }
+}
+
+
+/**
+ * @brief Função auxiliar: escreve um inteiro positivo no buffer
+ * 
+ * 
+ * @param val
+ * @param *buf
+ * @param minWidth
+ */
+static int intToStr(int val, char* buf, int minWidth) 
+{
+    char tmp[12]; // suporta até 32 bits
+    int i = 0;
+    if(val == 0) tmp[i++] = '0';
+    while(val > 0) {
+        tmp[i++] = '0' + (val % 10);
+        val /= 10;
+    }
+    while(i < minWidth) tmp[i++] = '0'; // zero padding
+    // inverte
+    for(int j = 0; j < i; j++) buf[j] = tmp[i - j - 1];
+    buf[i] = '\0';
+    return i;
 }
 
 
@@ -128,7 +755,7 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst)
   _mcu           = MCU;
   _colorfmt      = static_cast<uint8_t>(ePDATAColorFmt::RGB); //iniciar com o formato de cor RGB
   _usedma        = false;
-  _fntparam_source_select  = eFontSource::InternalCGROM;
+  _fntparam_source_select  = eFontSource::InternalCGROM;      //Default do display
 }
 
 
@@ -183,51 +810,75 @@ bool Panel_RA8889::Begin(void)
 
   #ifdef CHECK_RAIOFAMILY
   //Verifica se é um RA8889
-  SerialPrint("ID Code: ", ReadIDCode());
-  if (ReadIDCode() == 0x89) { DEBUG_PRINT("RA8889 connect pass!",0,false); }
+  SERIAL_DEBUG("ID Code: ",ReadIDCode(),true,true);
+  if (ReadIDCode() == 0x89) { DEBUG_PRINT("RA8889 connect pass!",0,false, true); }
   else { 
-    DEBUG_PRINT("RA8889 not found!",0,false);
+    DEBUG_PRINT("RA8889 not found!",0,false,true);
     return false;
   }
   #endif
   
   //Inicializa as configurações basicas do display RA8889
   if (!Initialize()) {
-    DEBUG_PRINT("RA8889 initial fail!",0,false);
+    DEBUG_PRINT("RA8889 initial fail!",0,false,true);
     return false;
   } else {
-    DEBUG_PRINT("RA8889 initial sucess!",0,false);
+    DEBUG_PRINT("RA8889 initial sucess!",0,false,true);
   }
   
   //Inicializa fonte
 
-  _fntparam_source_select = eFontSource::InternalCGROM; 
-  Font_SetSource(_fntparam_source_select);
-
-  _fntparam_size_select = eFontHeight::H16;
-  _fntparam_height = static_cast<uint8_t>(eFontHeight::H16);
-  Font_SetHeight_16();
-  
-  _fntparam_full_align = false;
-  Font_FullAlignmentDisable();
-
-  _fntparam_chroma_key = false;           //use backgraound color
-  Font_UseBackgroundColor();
-
-  _fntparam_width_enlarge = eFontEnlargFactor::X1;
-  Font_WidthEnlargFactor(_fntparam_width_enlarge);
-
-  _fntparam_height_enlarge = eFontEnlargFactor::X1;
-  Font_HeightEnlargFactor(_fntparam_height_enlarge);
-
-  //se setoru itnernal em FontParameters::eFontSource::
-  _fntparam_internal_iso_select = InternalCGROM_ISO8859::ISO8859_1;
-  Select_Internal_CGROM_ISOIEC8859_1();
-  
-  Font_0degree();
+  Font_Init();
 
   return true;
 }
+
+
+//https://gaotongfont.cn/zlxz/list_29.aspx?sjId=3&page=4
+//mapa de recursos de caracteres no CI ROM
+void Panel_RA8889::External_CGROM_CharSetResourceMap(void)
+{
+#if defined(CHIP_GT30L24T3Y)
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_BIG5, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_GB2312, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_GB12345, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_UNICODE, MAPBREAKPOS, 0x88));
+#elif defined(CHIP_GT20L24F6Y)
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_1_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_2_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_3_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_4_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_5_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_7_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_8_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_9_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_10_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_11_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_14_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_15_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ISO8859_16_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_LGCATH, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_UNICODE, MAPBREAKPOS, 0x88));
+#elif defined(CHIP_GT21L16T1W)
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_BIG5, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_GB12345, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_JIS0208, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_UNICODE, MAPBREAKPOS, 0x88));
+#elif defined(CHIP_GT21L24S1W)
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_GB2312, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ASCII, MAPBREAKPOS, 0x88));
+#elif defined(CHIP_GT30L24M1Z)
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_GB18030, MAPBREAKPOS, 0x88));
+#elif defined(CHIP_GT30L16U2W)
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_ASCII, MAPBREAKPOS, 0x88));
+    _charsetresourceMap |= (1UL << conditional_subtract(BIT_UNICODE, MAPBREAKPOS, 0x88));    //Padrao 3.0, GB13000
+#endif
+
+}
+
 
 
 /**
@@ -244,9 +895,9 @@ bool Panel_RA8889::Begin(void)
 bool Panel_RA8889::Initialize(void)
 {
   uint8_t temp;
-  DEBUG_PRINT("Start PLL Wait for Ready...", 0, false);  //Debug
+  DEBUG_PRINT("Start PLL Wait for Ready...", 0, false, true);  //Debug
   PLL_WaitReady();
-  DEBUG_PRINT("PLL Wait Ready: Pass", 0, false);         //Debug
+  DEBUG_PRINT("PLL Wait Ready: Pass", 0, false, true);         //Debug
   delay(100);
   
   // Aguarda até que a inicialização interna do RA8889 termine
@@ -257,10 +908,10 @@ bool Panel_RA8889::Initialize(void)
   //Configura clock Pixel/SDRAM/Core PLL
   
   PLL_Init();
-  DEBUG_PRINT("PLL Init: Pass", 0, false);     //Debug
+  DEBUG_PRINT("PLL Init: Pass", 0, false,true);     //Debug
 
   SDRAM_Init();                                //Inicializa a SDRAM
-  DEBUG_PRINT("SDRAM Init: Pass", 0, false);   //Debug
+  DEBUG_PRINT("SDRAM Init: Pass", 0, false,true);   //Debug
 
 //Chip Configuration Register (CCR) [01h]
 //Nota: Não é obrigatorio que o TFT seja o mesmo apdrão de dados da MCU. Por comodismo deixei o mesmo
@@ -293,9 +944,9 @@ bool Panel_RA8889::Initialize(void)
 //Input Control Register (ICR) [03h]
 
   GraphicMode();
-  DEBUG_PRINT("Graphic Mode: Pass",0,false);             //Debug
+  DEBUG_PRINT("Graphic Mode: Pass",0,false,true);             //Debug
   MemorySelect_SDRAM();
-  DEBUG_PRINT("Memory Select SDRAM: Pass",0,false);      //Debug
+  DEBUG_PRINT("Memory Select SDRAM: Pass",0,false,true);      //Debug
 
 //Display Configuration Register (DPCR) [12h]
 //Panel scan Clock and Data Setting Register (PCSR) [13h]
@@ -312,7 +963,7 @@ bool Panel_RA8889::Initialize(void)
 //VSYNC Pulse Width Register (VPWR) [0x1f]
 
   LCD_SetPanel();                              //Configuração do Panel Screen LCD, de acordo com o tipo do fabricante
-  DEBUG_PRINT("LCD Panel: Pass",0,false);      //Debug
+  DEBUG_PRINT("LCD Panel: Pass",0,false, true);      //Debug
 
 #ifdef COLOR_DEPTH_8
   Select_MainWindow_8bpp();
@@ -1689,7 +2340,7 @@ void Panel_RA8889::PLL_Init(void)
   PLL_Disable();  //O PLL so pode ser modificado com novos valores desligando antes
   PLL_ConfigClocks(SCAN_FREQ, DRAM_FREQ, CORE_FREQ, OSC_FREQ);
   PLL_Enable();	
-  DEBUG_PRINT("PLL Initialized",0,false);
+  DEBUG_PRINT("PLL Initialized",0,false, true);
 }
 
 
@@ -5865,7 +6516,7 @@ uint32_t Panel_RA8889::LayerStartAddr(uint8_t layer)
 {
   if (layer > MAX_LAYER-1) return 0;
   return _width * _height * (_bpp / 8) * layer;   //ex. 800x480 * (16 (16bpp)/8) * 1 = 768000 = 0xbb800
-  SerialPrint("LayerStartAddr, _bpp: ", _bpp);    //Debug
+  SERIAL_DEBUG("LayerStartAddr, _bpp: ",_bpp,true,true);    //Debug
 }
 
 
@@ -8516,12 +9167,12 @@ void Panel_RA8889::EllipseCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy)
  *
  * @param Wx, Hy: coordenada central (x,y)
  *
- * @note 
+ * @note These 8 bits determine prescaler value for Timer 0 and 1
  */
  void Panel_RA8889::PWM_Prescaler(uint8_t prescaler)
 {
-  prescaler = prescaler - 1;
-  SPI_CmdWrite(REG_PSCLR);   //0x84, PWM Prescaler Register (PSCLR)
+  prescaler = prescaler - 1;                   //0..255
+  SPI_CmdWrite(REG_PSCLR);                     //0x84, PWM Prescaler Register (PSCLR)
   SPI_DataWrite(prescaler);
 }
 
@@ -8633,11 +9284,11 @@ void Panel_RA8889::PWM1_Select_ErrorFlag(void)
  *
  * @verbatim
  * REG [0x85] PWM clock Mux Register (PMUXR)
- *            bit [3-2] XPWM[1] pin function control
- *                      0b0x: XPWM[1] output system error flag (REG[00h] bit[1:0], Scan bandwidth FIFO insufficient pop error or Memory access out of range)
- *                      0b10: XPWM[1] output PWM timer 1 event or invert of PWM timer 0
- *                      0b11: XPWM[1] output oscillator clock
- *            If XTEST[0] set high, then XPWM[1] will become panel scan clock input.
+ * bit [3-2] XPWM[1] pin function control
+ *           0b0x: XPWM[1] output system error flag (REG[00h] bit[1:0], Scan bandwidth FIFO insufficient pop error or Memory access out of range)
+ *           0b10: XPWM[1] output PWM timer 1 event or invert of PWM timer 0
+ *           0b11: XPWM[1] output oscillator clock
+ * If XTEST[0] set high, then XPWM[1] will become panel scan clock input.
  * @endverbatim
  *
  * @param None
@@ -9136,7 +9787,7 @@ void Panel_RA8889::PWM0_DeadZoneLength(uint8_t len)
 
 
 /**
- * @brief Configura o valor do Compare Buffer do PWM Timer 0.
+ * @brief Configura o valor do Compare Buffer (Duty Cycle) do PWM Timer 0.
  *
  *@verbatim
  * REG [0x88] Timer 0 compare buffer register [TCMPB0L]
@@ -9170,19 +9821,23 @@ void Panel_RA8889::PWM0_DeadZoneLength(uint8_t len)
  *   Em outras palavras: o Compare Buffer define o duty cycle do PWM.
  * @endverbatim
  *
- * @param Wx Valor de 16 bits para o compare buffer do Timer 0.
+ * @param duty Valor de 16 bits para o compare buffer do Timer 0.
  *
+ * @example
+ *       WX = 1024
+ *       pwm0 = 7.5MHz/WX = 7.3KHz
+ * 
  * @note When timer counter equal or less than compare buffer register will 
  *       cause PWM out high level if inv_on bit is off. 
  *       Este buffer determina o ponto em que o PWM muda de nível durante o ciclo.
  *       É útil para ajustar o duty cycle do PWM com precisão.
  */
-void Panel_RA8889::PWM0_SetCompareBuffer(uint16_t Wx)   
+void Panel_RA8889::PWM0_SetCompareBuffer(uint16_t duty)   
 {   
   SPI_CmdWrite(REG_TCMPB0L);                   //0x88, Timer 0 compare buffer register [TCMPB0L]
-  SPI_DataWrite(Wx);                           
+  SPI_DataWrite(duty);                           
   SPI_CmdWrite(REG_TCMPB0H);                   //0x89, Timer 0 compare buffer register [TCMPB0H]
-  SPI_DataWrite(Wx >> 8);                      
+  SPI_DataWrite(duty >> 8);                      
 }
 
 
@@ -9195,7 +9850,7 @@ void Panel_RA8889::PWM0_SetCompareBuffer(uint16_t Wx)
 
 
 /**
- * @brief Count Buffer PWM Timer 0
+ * @brief Set Clock per Period from Tiemr 0 (Count Buffer PWM Timer 0)
  *
  *@verbatim
  * REG [0x8a] Timer 0 count buffer register [TCNTB0L]
@@ -9209,18 +9864,24 @@ void Panel_RA8889::PWM0_SetCompareBuffer(uint16_t Wx)
  *            The current value of the timer counter (TCNT0) can be read back when the PWM timer starts.
  * @endverbatim
  *
- * @param Wx
+ * @param clock_per_period
  *
+ * @example
+ *       pwm_timer_clock = 7.5MHz
+ *       clock_per_period = 1024
+ *       pwm0 = pwm_timer_clock / clock_per_period = 7.3KHz
+ * 
  * @note Count buffer register total has 16 bits.
  *       When timer counter equal to 0 will cause PWM timer reload Count buffer register if reload_en bit set as enable.
- *       It may read back timer counter��s real time value when PWM timer start.
+ *       It may read back timer counter's real time value when PWM timer start.
+ * 
  */
-void Panel_RA8889::PWM0_SetCountBuffer(uint16_t Wx)
+void Panel_RA8889::PWM0_SetCountBuffer(uint16_t clock_per_period)
 {
   SPI_CmdWrite(REG_TCNTB0L);                   //0x8a, Timer 0 count buffer register [TCNTB0L]
-  SPI_DataWrite(Wx);                           
+  SPI_DataWrite(clock_per_period);             
   SPI_CmdWrite(REG_TCNTB0H);                   //0x8b, Timer 0 count buffer register [TCNTB0H]
-  SPI_DataWrite(Wx >> 8);                      
+  SPI_DataWrite(clock_per_period >> 8);        
 }
 
 
@@ -9233,7 +9894,7 @@ void Panel_RA8889::PWM0_SetCountBuffer(uint16_t Wx)
 
 
 /**
- * @brief Configura o valor do Compare Buffer do PWM Timer 1.
+ * @brief Configura o valor do Compare Buffer (Duty Cycle) do PWM Timer 1.
  *
  *@verbatim
  * REG [0x8c] Timer 1 compare buffer register [TCMPB1L]
@@ -9260,19 +9921,23 @@ void Panel_RA8889::PWM0_SetCountBuffer(uint16_t Wx)
  *   Em outras palavras: o Compare Buffer define o duty cycle do PWM.
  * @endverbatim
  *
- * @param Wx Valor de 16 bits para o compare buffer do Timer 1.
+ * @param duty Valor de 16 bits para o compare buffer do Timer 1.
  *
+ * @example
+ *       WX = 1024
+ *       pwm0 = 7.5MHz/WX = 7.3KHz
+ * 
  * @note When timer counter equal or less than compare buffer register will 
  *       cause PWM out high level if inv_on bit is off. 
  *       Este buffer determina o ponto em que o PWM muda de nível durante o ciclo.
  *       É útil para ajustar o duty cycle do PWM com precisão.
  */
-void Panel_RA8889::PWM1_SetCompareBuffer(uint16_t Wx)
+void Panel_RA8889::PWM1_SetCompareBuffer(uint16_t duty)
 {
   SPI_CmdWrite(REG_TCMPB1L);                   //0x8c, Timer 1 compare buffer register [TCMPB1L]
-  SPI_DataWrite(Wx);                           
-  SPI_CmdWrite(REG_TCMPB1H);                  //0x8d, Timer 1 compare buffer register [TCMPB1H]
-  SPI_DataWrite(Wx >> 8);                      
+  SPI_DataWrite(duty);                         
+  SPI_CmdWrite(REG_TCMPB1H);                   //0x8d, Timer 1 compare buffer register [TCMPB1H]
+  SPI_DataWrite(duty >> 8);                    
 }
 
 
@@ -9285,7 +9950,7 @@ void Panel_RA8889::PWM1_SetCompareBuffer(uint16_t Wx)
 
 
 /**
- * @brief Count Buffer PWM Timer 1
+ * @brief Set Clock per Period from Tiemr 1 (Count Buffer PWM Timer 1)
  *
  *@verbatim
  * REG [0x8e] Timer 1 count buffer register [TCNTB1L]
@@ -9299,18 +9964,23 @@ void Panel_RA8889::PWM1_SetCompareBuffer(uint16_t Wx)
  *            The current value of the timer counter (TCNT1) can be read back when the PWM timer starts.
  * @endverbatim
  *
- * @param Wx
+ * @param clock_per_period
+ *
+ * @example
+ *       pwm_timer_clock = 7.5MHz
+ *       clock_per_period = 1024
+ *       pwm0 = pwm_timer_clock / clock_per_period = 7.3KHz
  *
  * @note Count buffer register total has 16 bits.
  *       When timer counter equal to 0 will cause PWM timer reload Count buffer register if reload_en bit set as enable.
- *       It may read back timer counter��s real time value when PWM timer start.
+ *       It may read back timer counter's real time value when PWM timer start.
  */
-void Panel_RA8889::PWM1_SetCountBuffer(uint16_t Wx)
+void Panel_RA8889::PWM1_SetCountBuffer(uint16_t clock_per_period)
 {
   SPI_CmdWrite(REG_TCNTB1L);                   //0x8e, Timer 1 count buffer register [TCNTB1L]
-  SPI_DataWrite(Wx);                           
+  SPI_DataWrite(clock_per_period);             
   SPI_CmdWrite(REG_TCNTB1H);                   //0x8f, Timer 1 count buffer register [TCNTB1H]
-  SPI_DataWrite(Wx >> 8);                      
+  SPI_DataWrite(clock_per_period >> 8);        
 }
 
 
@@ -10936,9 +11606,9 @@ void Panel_RA8889::SFI_DMA_WaitReady(void)
  *        
  * @verbatim                  
  * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *            bit [6] Serial Flash / ROM Access Mode
- *                    0b0: Font mode – for external CGROM
- *                    0b1: DMA mode – for CGRAM , pattern , boot start image or OSD
+ * bit [6] Serial Flash / ROM Access Mode
+ *     0b0: Font mode – for external CGROM
+ *     0b1: DMA mode – for CGRAM, pattern, boot start image or OSD
  * @endverbatim
  *
  * @param None
@@ -10962,9 +11632,9 @@ void Panel_RA8889::Select_SFI_FontMode(void)
  *        
  * @verbatim                  
  * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *            bit [6] Serial Flash / ROM Access Mode
- *                    0b0: Font mode – for external CGROM
- *                    0b1: DMA mode – for CGRAM, pattern, boot start image or OSD
+ * bit [6] Serial Flash / ROM Access Mode
+ *     0b0: Font mode – for external CGROM
+ *     0b1: DMA mode – for CGRAM, pattern, boot start image or OSD
  * @endverbatim
  *
  * @param None
@@ -10988,13 +11658,13 @@ void Panel_RA8889::Select_SFI_DMAMode(void)
  *        
  * @verbatim                  
  * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *            bit [5] Serial Flash / ROM Access Mode
- *                    0b0: 24 bits address mode
- *                    0b1: 32 bits address mode
- *                    
- *                    If user wants to use 32 bits address mode, user 
- *                    must manual send EX4B command (B7h) to serial 
- *                    flash then set this bit to 1.
+ * bit [5] Serial Flash / ROM Access Mode
+ *         0b0: 24 bits address mode
+ *         0b1: 32 bits address mode
+ *         
+ *         If user wants to use 32 bits address mode, user 
+ *         must manual send EX4B command (B7h) to serial 
+ *         flash then set this bit to 1.
  * @endverbatim
  *
  * @param None
@@ -11018,13 +11688,13 @@ void Panel_RA8889::SFI_Select_24bitAddress(void)
  *        
  * @verbatim                  
  * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
- *            bit [5] Serial Flash / ROM Access Mode
- *                    0b0: 24 bits address mode
- *                    0b1: 32 bits address mode
- *                    
- *                    If user wants to use 32 bits address mode, user 
- *                    must manual send EX4B command (B7h) to serial 
- *                    flash then set this bit to 1.
+ * bit [5] Serial Flash / ROM Access Mode
+ *     0b0: 24 bits address mode
+ *     0b1: 32 bits address mode
+ *     
+ *     If user wants to use 32 bits address mode, user 
+ *     must manual send EX4B command (B7h) to serial 
+ *     flash then set this bit to 1.
  * @endverbatim
  *
  * @param None
@@ -13109,7 +13779,6 @@ void Panel_RA8889::EMTI_Clear_Flag(void)
  * REG [0xbb] SPI Clock period (SPI_DIVSOR)
  * bit [7-0] SPI Clock period (default Fsck=3)
  * According to system clock to set low & high period for SPI clock. 
- *  
  * SPI Master:
  *   Fsck = Fcore / (divisor * 2)
  * Serial Flash:
@@ -14110,7 +14779,7 @@ void Panel_RA8889::Font_SetSource(eFontSource source)
 }
 
 
-/**
+/** OK
  * @brief Select Fonte Height 8x16 / 16x16
  *
  * @verbatim
@@ -14154,8 +14823,8 @@ void Panel_RA8889::Font_SetHeight_16(void)
 }
 
 
-/**
- * @brief Select Fonte Height 12x24 / 24x24
+/** OK
+ * @brief Select Fonte Height 12x24 / 24x24 (Default)
  *
  * @verbatim
  *        REG [CCh] Character Control Register 0 (CCR0)
@@ -14198,7 +14867,7 @@ void Panel_RA8889::Font_SetHeight_24(void)
 }
 
 
-/**
+/** OK
  * @brief Select Fonte Height 16x32 / 32x32
  *
  * @verbatim
@@ -14430,22 +15099,22 @@ void Panel_RA8889::Select_Internal_CGROM_ISOIEC8859_5(void)
  *
  * @verbatim
  * REG [0xcc] Character Control Register 0 (CCR0)
- *            bit [1-0] Character Selection for internal CGROM
- *                      When FNCR0 [7-6] 0b00, Internal CGROM 
- *                      supports character sets with the standard coding 
- *                      of ISO/IEC 8859-1,2,4,5, which supports English 
- *                      and most of European country languages
- *                      0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
- *                      0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
- *                      0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
- *                      0b11 : ISO/IEC 8859-5 - Latin/Cirílico
+ * bit [1-0] Character Selection for internal CGROM
+ *     When FNCR0 [7-6] 0b00, Internal CGROM 
+ *     supports character sets with the standard coding 
+ *     of ISO/IEC 8859-1,2,4,5, which supports English 
+ *     and most of European country languages
+ *     0b00 : ISO/IEC 8859-1 - Latin-1 (Ocidental/Europeu Ocidental)
+ *     0b01 : ISO/IEC 8859-2 - Latin-2 (Europeu Central)
+ *     0b10 : ISO/IEC 8859-4 - Latin-4 (Europeu do Norte)
+ *     0b11 : ISO/IEC 8859-5 - Latin/Cirílico
  * @endverbatim
  *
- * @param iso ISO/IEC 8859 code to select (InternalCGROM_ISO8859)
+ * @param iso ISO/IEC 8859 code to select (eInternalCharSet)
  *
  * @note None
  */
-void Panel_RA8889::Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso)
+void Panel_RA8889::Select_Internal_CGROM_ISO8859(eInternalCharSet iso)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_CCR0);                      // Seleciona o registrador CCR0
@@ -14492,7 +15161,7 @@ void Panel_RA8889::Select_Internal_CGROM_ISO8859(InternalCGROM_ISO8859 iso)
  *        0: 8*16/16*16
  *        1: 12*24/24*24
  *        2: 16*32/32*32
- * @param isoselect: ISO/IEC 8859 code to select (InternalCGROM_ISO8859)
+ * @param isoselect: ISO/IEC 8859 code to select (eInternalCharSet)
  *        0: iso8859-1
  *        1: iso8859-2
  *        2: iso8859-4
@@ -15072,94 +15741,155 @@ void Panel_RA8889::GTFont_Select_GT21L24S1W(void)
 }
 
 
-/**
- * @brief Font Genitop Character ROM Parameter
+/** OK
+ * @brief Font Genitop Character ROM Parameters
  * 
  * @verbatim 
+ * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
+ * bit [7] Page 0 FONT/DMA Serial Flash/ROM I/F # Select
+ *     0: Serial Flash/ROM 0 I/F is selected.
+ *     1: Serial Flash/ROM 1 I/F is selected.
+ *     Note: when page1 B7h bit 7 = 1 , then serial flash chip select 2,3 * bit [6] Serial Flash / ROM Access Mode
+ * bit [6] Serial Flash / ROM Access Mode
+ *     0b0: Font mode – for external CGROM
+ *     0b1: DMA mode – for CGRAM, pattern, boot start image or OSD * 
+ * bit [5] Serial Flash / ROM Access Mode
+ *     0b0: 24 bits address mode
+ *     0b1: 32 bits address mode
+ * 
+ *     If user wants to use 32 bits address mode, user 
+ *     must manual send EX4B command (B7h) to serial 
+ *     flash then set this bit to 1.
+ * bit [3-0] Read Command code & behavior selection
+ *     0b000x: 1x read command code – 03h. Normal read 
+ *     speed. Single data input on xmiso. Without 
+ *     dummy cycle between address and data.
+ *     
+ *     0b010x: 1x read command code – 0Bh. To some 
+ *     serial flash provide faster read speed. Single 
+ *     data input on xmiso. 8 dummy cycles inserted 
+ *     between address and data.
+ *     
+ *     0b1x0x: 1x read command code – 1Bh. To some 
+ *     serial flash provide fastest read speed. Single 
+ *     data input on xmiso. 16 dummy cycles inserted 
+ *     between address and data.
+ *
+ *     0bxx10: 2x read command code – 3Bh. Interleaved 
+ *     data input on xmiso & xmosi. 8 dummy cycles 
+ *     inserted between address and data phase. (dual 
+ *     mode 0, reference Figure 16-7).
+ *
  * REG [0xce] GT Character ROM Select (GTFNT_SEL)
  * bit [7-5] GT Serial Character ROM Select (Genitop's Inc.)
- *     0b000 : Circuito Integrado External CGROM GT21L16T1W
- *     0b001 : Circuito Integrado External CGROM GT30L16U2W
- *     0b010 : Circuito Integrado External CGROM GT30L24T3Y
- *     0b011 : Circuito Integrado External CGROM GT30L24M1Z
- *     0b100 : Circuito Integrado External CGROM GT30L32S4W
- *     0b101 : Circuito Integrado External CGROM GT20L24F6Y
- *     0b110 : Circuito Integrado External CGROM GT21L24S1W
+ *     0b000 : Integrate Circuit External CGROM GT21L16T1W
+ *     0b001 : Integrate Circuit External CGROM GT30L16U2W
+ *     0b010 : Integrate Circuit External CGROM GT30L24T3Y
+ *     0b011 : Integrate Circuit External CGROM GT30L24M1Z
+ *     0b100 : Integrate Circuit External CGROM GT30L32S4W
+ *     0b101 : Integrate Circuit External CGROM GT20L24F6Y
+ *     0b110 : Integrate Circuit External CGROM GT21L24S1W
  *
- * REG [0xcf] GT Character ROM Control register (GTFNT_CR)
+ * REG [0xbb] SPI Clock period (SPI_DIVSOR)
+ * bit [7-0] SPI Clock period (default Fsck=3)
+ * According to system clock to set low & high period for SPI clock. 
+ * SPI Master:
+ *   Fsck = Fcore / (divisor * 2)
+ * Serial Flash:
+ *   Fsck = Fcore / (divisor * 2)
+ * When SPI_DIVSOR = 0,
+ *   Fsck = Fcore
+ * 
+ * REG [CFh] GT Character ROM Control register (GTFNT_CR)
  * bit [7-3] Character sets
- *     For specific GT serial Character ROM, the coding method must be set for decoding.
- *     a. Single byte character code for following character sets:
- *     0b00100: ASCII only (00h-1Fh, 80-FFh will send “blank space”)
- *     0b10001: ISO-8859-1 + ASCII code
- *     0b10010: ISO-8859-2 + ASCII code
- *     0b10011: ISO-8859-3 + ASCII code
- *     0b10100: ISO-8859-4 + ASCII code
- *     0b10101: ISO-8859-5 + ASCII code
- *     0b10110: ISO-8859-7 + ASCII code
- *     0b10111: ISO-8859-8 + ASCII code
- *     0b11000: ISO-8859-9 + ASCII code
- *     0b11001: ISO-8859-10 + ASCII code
- *     0b11010: ISO-8859-11 + ASCII code
- *     0b11011: ISO-8859-13 + ASCII code
- *     0b11100: ISO-8859-14 + ASCII code
- *     0b11101: ISO-8859-15 + ASCII code
- *     0b11110: ISO-8859-16 + ASCII code
- *     b. Two byte character code for following character sets:
- *     0b00000: GB2312
- *     0b00001: GB12345/GB18030
- *     0b00010: BIG5
- *     0b00011: UNICODE
- *     0b00101: UNI-Japanese
- *     0b00110: JIS0208
- *     0b00111: Latin / Greek / Cyrillic / Arabic / Thai / Hebrew Note: While character sets are not 00011b, 00101b, 00110b, 00111b (UNICODE, UNI-Japanese, JIS0208, Latin / Greek / Cyrillic / Arabic / Thai / Hebrew then if 1st character code under 80h will treat as ASCII code.
+ *          FONT ROM Coding Setting
+ *           For specific GT serial Font ROM, the coding method must be set for decoding.
+ *           
+ *           b. Two byte character code for following character sets:
+ *              0b00000: GB2312
+ *              0b00001: GB12345/GB18030
+ *              0b00010: BIG5
+ *              0b00011: UNICODE
+ *              0b00100: ASCII
+ *              0b00101: UNI-Japanese
+ *              0b00110: JIS0208
+ *              0b00111: Latin/Greek/ Cyrillic / Arabic/Thai/Hebrew
  *
+ *           a. Single byte character code for following character sets:
+ *              0b01000: Korea
+ *              0b10001: ISO-8859-1
+ *              0b10010: ISO-8859-2
+ *              0b10011: ISO-8859-3
+ *              0b10100: ISO-8859-4
+ *              0b10101: ISO-8859-5
+ *              0b10110: ISO-8859-6
+ *              0b10111: ISO-8859-7
+ *              0b11000: ISO-8859-8
+ *              0b11001: ISO-8859-9
+ *              0b11010: ISO-8859-10
+ *              0b11011: ISO-8859-11
+ *              0b11100: ISO-8859-12
+ *              0b11101: ISO-8859-13
+ *              0b11110: ISO-8859-14
+ *              0b11111: ISO-8859-15
+ *
+ * [bit 1-0] GT Character width setting
+ *           00b: for fix width’s font sets. Its width is half of character height.
+ *            Ex. ISO-8859, GB2312, GB12345/GB18030, BIG5,
+ *            UNI-Japanese, JIS0208, Thai.
+ *            Others: variable width for following character sets: ASCII, Latin,
+ *            Greek, Cyrillic & Arabic.
+ *            
+ *            ASCII / Latin/Greek/ Cyrillic / Arabic
+ *               
+ *                     (ASCII)   (Latin/Greek/Cyrillic)      (Arabic)
+ *            00b       Normal            Normal                NA
+ *            01b       Arial         Variable Width     Presentation Forms-A
+ *            10b       Roman               NA           Presentation Forms-B
+ *            11b       Bold                NA                  NA
  * @endverbatim
  *
- * @param uint8_t scsselect
- * @param uint8_t clkdiv
- * @param uint8_t romselect
- * @param uint8_t characterselect
- * @param uint8_t gtwidth
+ * @param scs_select : Serial chip Select
+ *        0: Serial Flash/ROM 0 I/F is selected
+ *        1: Serial Flash/ROM 1 I/F is selected
  *
- * @note None
+ * @param clk_div: Divisor de clock
+ *
+ * @param rom_select: Modelo Genitop Font Serial Flash ROM
+ *        0: GT21L16T1W
+ *        1: GT30L16U2W
+ *        2: GT30L24T3Y
+ *        3: GT30L24M1Z
+ *        4: GT30L32S4W
+ *        5: GT20L24F6Y
+ *        6: GT21L24S1W
+ *        
+ * @param character_select
+ *        
+ * @param gt_width
+ *
+ * @note A escolha de rom_select vai depender do modelo da ROM soldado na placa de circuito do dsiplay.
+ *       Pode apresnetar na placa dois chip's ROM que podems er escolhidos com scs_select.
+ *       Use esta funcao com 
  */
-void Panel_RA8889::GTFont_CharacterROMParameter(uint8_t scsselect, uint8_t clkdiv, uint8_t romselect, uint8_t characterselect, uint8_t gtwidth)
+void Panel_RA8889::GTFont_CharacterParameter(uint8_t scs_select, uint8_t clk_div, uint8_t rom_select, uint8_t character_select, uint8_t gt_width)
 { 
   uint8_t temp;
+  
+  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  scs_select &= 0x01;
+  if(scs_select==0) RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0|BIT_SERIAL_FLASH_FONT_MODE|BIT_SERIAL_FLASH_ADDR_24BIT|BIT_FOLLOW_RA8875_MODE|BIT_SPI_FAST_READ_8DUMMY);
+  if(scs_select==1) RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1|BIT_SERIAL_FLASH_FONT_MODE|BIT_SERIAL_FLASH_ADDR_24BIT|BIT_FOLLOW_RA8875_MODE|BIT_SPI_FAST_READ_8DUMMY);
+  
+  //0xbb, SPI Clock period (SPI_DIVSOR)
+  RegisterWrite(REG_SPI_DIVSOR, clk_div);
+  
+  //0xce, Character Control Register 0 (GTFNT_SEL)
+  RegisterWrite(REG_GTFNT_SEL, rom_select);
+  
+  //0xcf, GT Character ROM Control register (GTFNT_CR)
+  RegisterWrite(REG_GTFNT_CR, (character_select & 0xf8) | (gt_width & 0x03));
 
-  if(scsselect==0) {
-    SPI_CmdWrite(REG_SFL_CTRL);                      //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-    temp = SPI_DataRead();                       
-    CLRB(temp,7);                                    //Reset bit 7
-	CLRB(temp,6);                                    //Reset bit 6
-	CLRB(temp,5);                                    //Reset bit 5
-	SETB(temp,4);                                    //Set bit 4
-	temp |= 0x4;                                     ///Command 0x0B
-    SPI_DataWrite(temp);      
-  } else if (scsselect==1) {
-    SPI_CmdWrite(REG_SFL_CTRL);                      //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-    temp = SPI_DataRead();                       
-    SETB(temp,7);                                    //Set bit 7
-	CLRB(temp,6);                                    //Reset bit 6
-	CLRB(temp,5);                                    //Reset bit 5
-	SETB(temp,4);                                    //Set bit 4
-	temp |= 0x4;                                     ///Command 0x0B
-    SPI_DataWrite(temp);
-  }
-  
-  SPI_CmdWrite(REG_SPI_DIVSOR);                      //0xbb, SPI Clock period (SPI_DIVSOR)
-  SPI_DataWrite(clkdiv);
-  
-  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
-  temp = (romselect & 0x7) << 5;                    //3 bits
-  SPI_DataWrite(temp );      
-  
-  SPI_CmdWrite(REG_GTFNT_CR);                       //0xcf, GT Character ROM Control register (GTFNT_CR)
-  temp = (characterselect & 0x1f) << 3;             //5 bits
-  temp |= (gtwidth & 0x03);                         //2 bits
-  SPI_DataWrite(temp);
-  
 }
 
 
@@ -15174,53 +15904,53 @@ void Panel_RA8889::GTFont_CharacterROMParameter(uint8_t scsselect, uint8_t clkdi
  * @brief Genitop's Character Set and Decoder
  *
  * @verbatim  
- *        REG [CFh] GT Character ROM Control register (GTFNT_CR)
- *                  bit [7-3] Character sets
- *                           FONT ROM Coding Setting
- *                            For specific GT serial Font ROM, the coding method must be set for decoding.
- *                            
- *                            b. Two byte character code for following character sets:
- *                               0b00000: GB2312
- *                               0b00001: GB12345/GB18030
- *                               0b00010: BIG5
- *                               0b00011: UNICODE
- *                               0b00100: ASCII
- *                               0b00101: UNI-Japanese
- *                               0b00110: JIS0208
- *                               0b00111: Latin/Greek/ Cyrillic / Arabic/Thai/Hebrew
+ * REG [CFh] GT Character ROM Control register (GTFNT_CR)
+ * bit [7-3] Character sets
+ *          FONT ROM Coding Setting
+ *           For specific GT serial Font ROM, the coding method must be set for decoding.
+ *           
+ *           b. Two byte character code for following character sets:
+ *              0b00000: GB2312
+ *              0b00001: GB12345/GB18030
+ *              0b00010: BIG5
+ *              0b00011: UNICODE
+ *              0b00100: ASCII
+ *              0b00101: UNI-Japanese
+ *              0b00110: JIS0208
+ *              0b00111: Latin/Greek/ Cyrillic / Arabic/Thai/Hebrew
  *
- *                            a. Single byte character code for following character sets:
- *                               0b01000: Korea
- *                               0b10001: ISO-8859-1
- *                               0b10010: ISO-8859-2
- *                               0b10011: ISO-8859-3
- *                               0b10100: ISO-8859-4
- *                               0b10101: ISO-8859-5
- *                               0b10110: ISO-8859-6
- *                               0b10111: ISO-8859-7
- *                               0b11000: ISO-8859-8
- *                               0b11001: ISO-8859-9
- *                               0b11010: ISO-8859-10
- *                               0b11011: ISO-8859-11
- *                               0b11100: ISO-8859-12
- *                               0b11101: ISO-8859-13
- *                               0b11110: ISO-8859-14
- *                               0b11111: ISO-8859-15
+ *           a. Single byte character code for following character sets:
+ *              0b01000: Korea
+ *              0b10001: ISO-8859-1
+ *              0b10010: ISO-8859-2
+ *              0b10011: ISO-8859-3
+ *              0b10100: ISO-8859-4
+ *              0b10101: ISO-8859-5
+ *              0b10110: ISO-8859-6
+ *              0b10111: ISO-8859-7
+ *              0b11000: ISO-8859-8
+ *              0b11001: ISO-8859-9
+ *              0b11010: ISO-8859-10
+ *              0b11011: ISO-8859-11
+ *              0b11100: ISO-8859-12
+ *              0b11101: ISO-8859-13
+ *              0b11110: ISO-8859-14
+ *              0b11111: ISO-8859-15
  *
- *                  [bit 1-0] GT Character width setting
- *                            00b: for fix width’s font sets. Its width is half of character height.
- *                             Ex. ISO-8859, GB2312, GB12345/GB18030, BIG5,
- *                             UNI-Japanese, JIS0208, Thai.
- *                             Others: variable width for following character sets: ASCII, Latin,
- *                             Greek, Cyrillic & Arabic.
- *                             
- *                             ASCII / Latin/Greek/ Cyrillic / Arabic
- *                                
- *                                      (ASCII)   (Latin/Greek/Cyrillic)      (Arabic)
- *                             00b       Normal            Normal                NA
- *                             01b       Arial         Variable Width     Presentation Forms-A
- *                             10b       Roman               NA           Presentation Forms-B
- *                             11b       Bold                NA                  NA
+ * [bit 1-0] GT Character width setting
+ *           00b: for fix width’s font sets. Its width is half of character height.
+ *            Ex. ISO-8859, GB2312, GB12345/GB18030, BIG5,
+ *            UNI-Japanese, JIS0208, Thai.
+ *            Others: variable width for following character sets: ASCII, Latin,
+ *            Greek, Cyrillic & Arabic.
+ *            
+ *            ASCII / Latin/Greek/ Cyrillic / Arabic
+ *               
+ *                     (ASCII)   (Latin/Greek/Cyrillic)      (Arabic)
+ *            00b       Normal            Normal                NA
+ *            01b       Arial         Variable Width     Presentation Forms-A
+ *            10b       Roman               NA           Presentation Forms-B
+ *            11b       Bold                NA                  NA
  * @endverbatim
  * @param temp
  *
@@ -18099,36 +18829,47 @@ void Panel_RA8889::PIP(bool On_Off,                   // 0 : disable PIP, 1 : en
 /**
  * @brief 
  *
- * @param bool on_off             -> true ON pwm, false OFF pwm
- * @param uint8_t clock_divided   -> divided PWM clock, only 0~3(1,1/2,1/4,1/8)
- * @param uint8_t prescalar       -> Prescaler : only 1~256
- * @param uint16_t count_buffer   -> Count_Buffer : set PWM output period time
- * @param uint16_t compare_buffer -> Compare_Buffer : set PWM output high level time(Duty cycle)
+ * @param bool on_off                 -> true ON pwm, false OFF pwm
+ * @param eDividerClock clock_divided -> divided PWM clock
+ *                      eDividerClock::X1 = 1/1
+ *                      eDividerClock::X2 = 1/2
+ *                      eDividerClock::X4 = 1/4
+ *                      eDividerClock::X8 = 1/8                             
+ * @param uint8_t prescalar           -> Prescaler : only 1~256
+ * @param uint16_t clock_per_period   -> Clock per Period (Count_Buffer) : set PWM output period time
+ * @param uint16_t duty               -> ducty cicle (Compare_Buffer) : set PWM output high level time(Duty cycle)
  * 
  * @note 
  * Such as the following formula :
  *   PWM CLK = (Core CLK / Prescalar ) /2^ divided clock
  *   PWM output period = (Count Buffer + 1) x PWM CLK time
  *   PWM output high level time = (Compare Buffer + 1) x PWM CLK time
- */
-void Panel_RA8889::PWM0(bool on_off,            // true ON pwm, false OFF pwm
-                        uint8_t clock_divided,  // divided PWM clock, only 0~3(1,1/2,1/4,1/8)
-                        uint8_t prescalar,      // Prescaler : only 1~256
-                        uint16_t count_buffer,  // Count_Buffer : set PWM output period time
-                        uint16_t compare_buffer // Compare_Buffer : set PWM output high level time(Duty cycle)
+ */    
+void Panel_RA8889::PWM0(bool on_off,                  // true ON pwm, false OFF pwm
+                        eDividerClock clock_divided,  // divided PWM clock
+                        uint8_t prescalar,            // Prescaler : only 1~256
+                        uint16_t clock_per_period,    // clock per period (Count_Buffer) : set PWM output period time
+                        uint16_t duty                 // duty (compare buffer) : set PWM output high level time (Duty cycle)
                         )
 {
-  PWM0_Select();
+  //0x84, PWM Prescaler Register (PSCLR)
+
+  PWM0_Select();                                
   PWM_Prescaler(prescalar);
 
-  if (clock_divided == 0) { PWM0_ClockDividedBy(eDividerClock::X1); }
-  if (clock_divided == 1) { PWM0_ClockDividedBy(eDividerClock::X2); }
-  if (clock_divided == 2) { PWM0_ClockDividedBy(eDividerClock::X4); }
-  if (clock_divided == 3) { PWM0_ClockDividedBy(eDividerClock::X8); }
+  //0x85, PWM clock Mux Register (PMUXR)
 
-  PWM0_SetCountBuffer(count_buffer);           //Medidor superior
-  PWM0_SetCompareBuffer(compare_buffer);       //DUTY
+  PWM0_ClockDividedBy(clock_divided);
+  
+  //0x8a, Timer 0 count buffer register [TCNTB0L]
+  //0x8b, Timer 0 count buffer register [TCNTB0H]
+  PWM0_SetCountBuffer(clock_per_period);       //Medidor superior
+  
+  //0x88, Timer 0 compare buffer register [TCMPB0L]
+   //0x89, Timer 0 compare buffer register [TCMPB0H]
+  PWM0_SetCompareBuffer(clock_per_period);     //DUTY
 
+  //0x86, PWM Configuration Register (PCFGR) 
   on_off ? PWM0_StartTimer() : PWM0_StopTimer();
 }
 
@@ -18136,11 +18877,15 @@ void Panel_RA8889::PWM0(bool on_off,            // true ON pwm, false OFF pwm
 /**
  * @brief 
  *
- * @param bool on_off             -> true ON pwm, false OFF pwm
- * @param uint8_t clock_divided   -> divided PWM clock, only 0~3(1,1/2,1/4,1/8)
- * @param uint8_t prescalar       -> Prescaler : only 1~256
- * @param uint16_t count_buffer   -> Count_Buffer : set PWM output period time
- * @param uint16_t compare_buffer -> Compare_Buffer : set PWM output high level time(Duty cycle)
+ * @param bool on_off                 -> true ON pwm, false OFF pwm
+ * @param eDividerClock clock_divided -> divided PWM clock
+ *                      eDividerClock::X1 = 1/1
+ *                      eDividerClock::X2 = 1/2
+ *                      eDividerClock::X4 = 1/4
+ *                      eDividerClock::X8 = 1/8                             
+ * @param uint8_t prescalar           -> Prescaler : only 1~256
+ * @param uint16_t clock_per_period   -> Clock per Period (Count_Buffer) : set PWM output period time
+ * @param uint16_t duty               -> ducty cicle (Compare_Buffer) : set PWM output high level time(Duty cycle)
  * 
  * @note 
  * Such as the following formula :
@@ -18148,24 +18893,31 @@ void Panel_RA8889::PWM0(bool on_off,            // true ON pwm, false OFF pwm
  *   PWM output period = (Count Buffer + 1) x PWM CLK time
  *   PWM output high level time = (Compare Buffer + 1) x PWM CLK time
  */
-void Panel_RA8889::PWM1(bool on_off,            // true ON pwm, false OFF pwm
-                        uint8_t clock_divided,  // divided PWM clock, only 0~3(1,1/2,1/4,1/8)
-                        uint8_t prescalar,      // Prescaler : only 1~256
-                        uint16_t count_buffer,  // Count_Buffer : set PWM output period time
-                        uint16_t compare_buffer // Compare_Buffer : set PWM output high level time(Duty cycle)
+void Panel_RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
+                        eDividerClock clock_divided,  // divided PWM clock
+                        uint8_t prescalar,            // Prescaler : only 1~256
+                        uint16_t clock_per_period,    // clock per period (Count_Buffer) : set PWM output period time
+                        uint16_t duty                 // duty (compare buffer) : set PWM output high level time (Duty cycle)
                         )
 {
-  PWM0_Select();
+  //0x84, PWM Prescaler Register (PSCLR)
+
+  PWM1_Select();
   PWM_Prescaler(prescalar);
 
-  if (clock_divided == 0) { PWM1_ClockDividedBy(eDividerClock::X1); }
-  if (clock_divided == 1) { PWM1_ClockDividedBy(eDividerClock::X2); }
-  if (clock_divided == 2) { PWM1_ClockDividedBy(eDividerClock::X4); }
-  if (clock_divided == 3) { PWM1_ClockDividedBy(eDividerClock::X8); }
+  //0x85, PWM clock Mux Register (PMUXR)
 
-  PWM1_SetCountBuffer(count_buffer);            // Medidor superior
-  PWM1_SetCompareBuffer(compare_buffer);        // DUTY
+  PWM1_ClockDividedBy(clock_divided);
 
+  //0x8e, Timer 1 count buffer register [TCNTB1L]
+  //0x8f, Timer 1 count buffer register [TCNTB1H]
+  PWM1_SetCountBuffer(clock_per_period);       //Medidor superior
+
+  //0x8c, Timer 1 compare buffer register [TCMPB1L]
+  //0x8d, Timer 1 compare buffer register [TCMPB1H]
+  PWM1_SetCompareBuffer(clock_per_period);     //DUTY
+
+  //0x86, PWM Configuration Register (PCFGR) 
   on_off ? PWM1_StartTimer() : PWM1_StopTimer();
 }
 
@@ -18407,7 +19159,10 @@ void Panel_RA8889::BackgroundColor(uint32_t color)
  */
 void Panel_RA8889::FillScreen(uint32_t color)
 {
+  uint8_t mode = IsGraphicMode();   //Veja ese esta em modo grafico
+  if (!mode) GraphicMode();         //Muda para modo grafico
   DrawSquare(0, 0, _width-1, _height-1, color, true);
+  if (!mode) {TextMode();}          //Restaura o modo anterior
 }
 
 
@@ -18780,7 +19535,6 @@ void Panel_RA8889::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t he
  */
 void Panel_RA8889::DrawPixel(uint16_t x, uint16_t y, uint32_t color)
 {  
-  if (!IsGraphicMode()) GraphicMode();   //Se no modo texto, muda para o modo grafico
   PutPixel(x, y, color);
 }
 
@@ -18804,8 +19558,6 @@ void Panel_RA8889::DrawPixel(uint16_t x, uint16_t y, uint32_t color)
  */
 void Panel_RA8889::DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, uint16_t *data)
 {  
-  if (!IsGraphicMode()) GraphicMode();          //Se no modo texto, muda apra o modo grafico
-  
   GotoPixel_XY(x, y);
   SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   Wait_WriteFIFO_NotFull();                    //Espera que a FIFO não esteja cheia de algum outro processamento anterior
@@ -19336,6 +20088,48 @@ void Panel_RA8889::DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16
 
 
 /**
+ * @brief Inicializa a fonte primaria (interna) do display
+ *        
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ *
+ */
+void Panel_RA8889::Font_Init(void)
+{
+  _fntparam_source_select = eFontSource::InternalCGROM; 
+  Font_SetSource(_fntparam_source_select);
+
+  //Nota: CGROM Internal, suporta apenas format font 12x24 (default)
+  _fntparam_size_select = eFontHeight::H24;
+  _fntparam_height = static_cast<uint8_t>(_fntparam_size_select);
+  Font_SetHeight_24();
+
+  _fntparam_full_align = false;
+  Font_FullAlignmentDisable();
+
+  _fntparam_chroma_key = false;           //use backgraound color
+  Font_UseBackgroundColor();
+
+  _fntparam_width_enlarge = eFontEnlargFactor::X1;
+  Font_WidthEnlargFactor(_fntparam_width_enlarge);
+
+  _fntparam_height_enlarge = eFontEnlargFactor::X1;
+  Font_HeightEnlargFactor(_fntparam_height_enlarge);
+
+  //se setoru itnernal em FontParameters::eFontSource::
+  _fntparam_intern_charset_select = eInternalCharSet::ISO8859_1;
+  Select_Internal_CGROM_ISOIEC8859_1();
+  
+  Font_0degree();
+}
+
+
+/**
  * @brief Seta cor do texto
  *        
  * @verbatim
@@ -19351,14 +20145,14 @@ void Panel_RA8889::DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16
 void Panel_RA8889::TextColor(uint32_t foregcolor, uint32_t backgcolor)
 { 
   uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
-  TextMode();                                  //Modo texto 
+  if (mode) TextMode();                        //Modo texto
   ForegroundColor(foregcolor);                 //High level, Foreground color
   BackgroundColor(backgcolor);                 //High level, Background color
   if (mode) {GraphicMode();}                   //Restaura o modo anterior
 }
 
 
-/**
+/** OK
  * @brief Envia texto para porta de entrada da memória do display
  *        
  * @verbatim
@@ -19381,7 +20175,7 @@ void Panel_RA8889::ShowText(char *str)
     Wait_WriteFIFO_NotFull();                  //
     ++str;                                     //proximo caracter para imprimir no display
   }
-  CoreTask_WaitReady();                        
+  CoreTask_WaitReady();
 }
 
 
@@ -19399,13 +20193,17 @@ void Panel_RA8889::ShowText(char *str)
  * @param foregcolor cor de frente do texto
  * @param backgcolor cor de fundo do texto
  * 
+ * @bug
+ * Se a primeira fonte for grande e imimir ela novamente na tela, fica com residuos por baixo.
+ * Acho que precisa criar um window para cada string sendo impressa no display. PAra isso deve levar em consideração a altura da fonte, largura da fonte, espaçamento e e largura da string total a ser impressa na tela
+ *
  * @note support ra8889 internal font and external string font code write from data pointer
  *
  */
 void Panel_RA8889::Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, uint32_t backgcolor)
 {
   uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
-  TextMode();                                  //Modo texto 
+  if (mode) TextMode();                        //Modo texto 
   ForegroundColor(foregcolor);                 //High level, Foreground color
   BackgroundColor(backgcolor);                 //High level, Background color
   GotoText_XY(x, y);                           //posiciona o texto
@@ -19415,6 +20213,10 @@ void Panel_RA8889::Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, 
 
 
 //Não testado
+//Escolhe a Origem da Fonte. Somente após a execução deste método que as configuracoes de fontes entrarão em vigor
+//ou permite a troca do uso de fontes na ROM, Interno ou contruidos por matriz de pixel do usuário.
+//Se é a primeira vez que esta configurando os aprametros de fonte o ideal é excutar este método após a configuração.
+//Se as fotnes já estão configuradas da ROM, Interno ou usuário, então este método é utilziado apra permutar entre as diversas origens de fontes.
 //eFontOrigin::User Fonte criado pelo usuario
 //eFontOrigin::External Fonte fonte de origem do CGROM
 //eFontOrigin::Internal Fonte de origem do RA8889 padrão
@@ -19428,50 +20230,110 @@ void Panel_RA8889::setFontSource(eFontSource source)
 }
 
 
-//Não testado
-//se setou o uso dem fonte interna, use esta funcao para selecionar alem do padrao 
-void Panel_RA8889::setCharacterSetsInternal(InternalCGROM_ISO8859 iso)
- {
-  if (_fntparam_source_select !=  eFontSource::InternalCGROM ) return;
-  if (iso == _fntparam_internal_iso_select) return;
-  if (iso == InternalCGROM_ISO8859::ISO8859_1) Select_Internal_CGROM_ISOIEC8859_1();
-  if (iso == InternalCGROM_ISO8859::ISO8859_2) Select_Internal_CGROM_ISOIEC8859_2();
-  if (iso == InternalCGROM_ISO8859::ISO8859_4) Select_Internal_CGROM_ISOIEC8859_4();
-  if (iso == InternalCGROM_ISO8859::ISO8859_5) Select_Internal_CGROM_ISOIEC8859_5();
-  _fntparam_internal_iso_select = iso;
- }
+/** Em construção
+ * @brief Seta as configurações para fonte de usuário
+ *        
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param enable                : opcao que ao excutar esta funcao ja muda e ativa a fonte externa da Flash ROM sem necessidade de uso de setFontUser(). Por padrão vem desabilitado
+ * @param FontUserParam param   : parâmetros
+ *
+ * @todo None
+ *
+ * @note None
+ *
+ */
+void Panel_RA8889::setFontUser(FontUserParam param, bool enable = false)
+{
+//compeltar... codigo aqui faltando
+
+  //Character Control Register 0 (CCR0) [0xcc]
+    
+  if ((_fntparam_source_select != eFontSource::UserDefined) && enable){
+    setFontSource(eFontSource::UserDefined);
+  }
+}
 
 
-//Não testado
-//implementar
- //se setou o uso dem fonte Externa (ROM) Genitop, use esta funcao para selecionar alem do padrao 
- void setCharacterSetsExternal(ExternalCGROM_ISO8859 iso, ExternalCGROM_Type type)
- {
+/** OK
+ * @brief Seta as configurações para fonte externa da Flash ROM
+ *        
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param enable                  : opcao que ao excutar esta funcao ja muda e ativa a fonte externa da Flash ROM sem necessidade de uso de setFontUser(). Por padrão vem desabilitado
+ * @param FontExternalParam param : parâmetros
+ *        width_set:   
+ *           eExternalCharWidthSet::Fixed              BIT_GT_FIXED_WIDTH                0x00 Fixed width
+ *           eExternalCharWidthSet::VariableArial      BIT_GT_VARIABLE_WIDTH_ARIAL       0x01 Variable width for Arial
+ *           eExternalCharWidthSet::VariableFixedRoman BIT_GT_VARIABLE_FIXED_WIDTH_ROMAN 0x02 Variable and fixed width for Roman
+ *           eExternalCharWidthSet::Bold               BIT_GT_BOLD                       0x03 Bold
+ *
+ * @todo None
+ *
+ * @note Essa função se utiliza das configurações realizadas para fonte 
+ *       interna setFontInternal(). A fonte por padrão do sistema vem 
+ *       configurada como tamanho 8x16, ISOIEC8859-1, com chromakey 
+ *       desabilitado.
+ */
+void Panel_RA8889::setFontExternal(FontExternalParam param, bool enable = false)
+{
+  
+  GTFont_CharacterParameter(param.scs_select,
+                            BIT_SPI_DIV4, 
+                            GTSERIAL_CGROM,
+                            static_cast<uint8_t>(param.charset_select),
+                            static_cast<uint8_t>(param.gt_width)                   
+                           );
+	
+  //Character Control Register 0 (CCR0) [0xcc]
+    
+  if ((_fntparam_source_select != eFontSource::ExternalCGROM) && enable){
+    setFontSource(eFontSource::ExternalCGROM);
+  }
 
- }
+}
 
 
-//Não testado
-//implementar fonte da ROM genitop, veja exemplos do autor
-void Panel_RA8889::setFontParameters(FontParameters param)
+/** OK
+ * @brief Seta as configurações para fonte CGROM interna do RA8889
+ *        
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param enable                  :  opcao que ao excutar esta funcao ja muda e ativa a fonte inrna sem necessidade de uso de setFontUser(). Por padrão vem desabilitado
+ * @param FontInternalParam param : parâmetros
+ *
+ * @todo None
+ *
+ * @note A fonte por padrão do sistema vem configurada como tamanho 12x24, 
+ *       ISOIEC8859-1, com chromakey desabilitado. Não suporta outros valores
+ *       de height de fonte interna.
+ */
+void Panel_RA8889::setFontInternal(FontInternalParam param, bool enable = false)
 {
   uint8_t temp = 0;
 
-  //Character Control Register 0 (CCR0)
+  //Character Control Register 0 (CCR0) [0xcc]
 
-  if (_fntparam_source_select !=  param.source_select) {
-    setFontSource(param.source_select);
-  }
+  if (_fntparam_intern_charset_select != param.charset_select) {
+    if (param.charset_select == eInternalCharSet::ISO8859_1) Select_Internal_CGROM_ISOIEC8859_1();
+    if (param.charset_select == eInternalCharSet::ISO8859_2) Select_Internal_CGROM_ISOIEC8859_2();
+    if (param.charset_select == eInternalCharSet::ISO8859_4) Select_Internal_CGROM_ISOIEC8859_4();
+    if (param.charset_select == eInternalCharSet::ISO8859_5) Select_Internal_CGROM_ISOIEC8859_5();
+    _fntparam_intern_charset_select = param.charset_select;
+ }
 
-  if (_fntparam_size_select != param.size_select)  {
-    if (param.size_select == eFontHeight::H16) Font_SetHeight_16();
-    if (param.size_select == eFontHeight::H24) Font_SetHeight_24();
-    if (param.size_select == eFontHeight::H32) Font_SetHeight_32();
-    _fntparam_height = static_cast<uint8_t>(param.size_select);
-    _fntparam_size_select = param.size_select;
-  }
+  //Nota: CGROM Internal, suporta apenas format font 12x24 (default)
+  _fntparam_size_select = eFontHeight::H24;
+  _fntparam_height = static_cast<uint8_t>(_fntparam_size_select);
+  Font_SetHeight_24();
 
-  //Character Control Register 1 (CCR1)
+  //Character Control Register 1 (CCR1) [0xcd]
 
   if ( _fntparam_full_align != param.full_align) {
    if (param.full_align) {Font_FullAlignmentEnable(); } else {  Font_FullAlignmentDisable(); }
@@ -19491,6 +20353,12 @@ void Panel_RA8889::setFontParameters(FontParameters param)
   if (_fntparam_height_enlarge != param.height_enlarge)  {
     Font_HeightEnlargFactor(_fntparam_height_enlarge);
     _fntparam_height_enlarge = param.height_enlarge;
+  }
+
+  //Character Control Register 0 (CCR0) [0xcc]
+    
+  if ((_fntparam_source_select != eFontSource::InternalCGROM) && enable){
+    setFontSource(eFontSource::InternalCGROM);
   }
 
 }
@@ -19515,7 +20383,7 @@ void Panel_RA8889::setFontParameters(FontParameters param)
 void Panel_RA8889::PutString(uint16_t x, uint16_t y, char *str)
 {
   uint8_t mode = IsGraphicMode();  //Veja ese esta em modo grafico
-  TextMode();                      //Modo texto 
+  if (mode) TextMode();            //Modo texto 
   GotoText_XY(x, y);               //posiciona o texto
   ShowText(str);                   //Envia caracterres para o portão de entrada da memoria
   if (mode) {GraphicMode();}       //Restaura o modo anterior
@@ -19782,28 +20650,12 @@ void Panel_RA8889::PutString32x48(uint16_t x, uint16_t y, uint32_t fgcolor, uint
 }
 
 
-
 /**
- * @brief Put value format base on sprintf()
+ * @brief Put double precision value format base on sprintf()
  *        
  * @verbatim
  * Tamanho máximo de 32 caracteres o buffer interno
- * 
- * Value Decimal: 
- *   value: -2147483648(-2^31) ~ 2147483647(2^31-1)
- *   len:   1~11 minimum output length
- *   Joker:
- *     n: Direita
- *     -: Esquerda
- *     +: Exibe um sinal
- *     (espaço): Exibe um espaço quando nenhum sinal é exibido
- *     0: Preenche a esquerda com 0s em vez de espaços.
- *   Example:
- *     "%1d"
- *     "%-5d"
- *     "%-5d"
- *     "%02d"
- * 
+ *
  *  Value Float:    
  *    Arduino Floats have only 6-7 decimal digits of precision. That means the
  *    total number of digits, not the number to the right of the decimal point. 
@@ -19824,6 +20676,81 @@ void Panel_RA8889::PutString32x48(uint16_t x, uint16_t y, uint32_t fgcolor, uint
  *      "%3.1f"
  *      "%-1.4f"
  *      "%02.3f"
+ *      "%12.3e" de +0.000123 retrona "  -1.230e-04"
+ *       %e → sem largura (sem espaço)
+ *       %+e → sempre mostra sinal
+ *       %0Xe → com zero padding, ex: %010.3e
+ * Logo, para -0.000123:
+ * - %12.3e (alinhamento à direita) → " -1.230e-04" (2 espaços antes)
+ *  - %-12.3e (alinhamento à esquerda) → "-1.230e-04 " (2 espaços depois)
+ *       
+ * @endverbatim
+ *
+ * @param fmt : formato de string para exibição - Mascara de Formatação (Identico a mascara de sprintf() 
+ *
+ * @note None
+ *
+ */
+void Panel_RA8889::PutFloat(uint16_t x, uint16_t y, double value, const char *fmt)
+{
+  char buffer[32];
+
+ #if defined(ARDUINO_ARCH_AVR)
+    formatDoubleAdvanced(buffer, value, fmt);
+ #elif defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ESP32) || defined(ESP8266)
+    // Arduino Due (SAM), Zero (SAMD), ESP32, ESP8266: têm suporte a float no sprintf
+    sprintf(buffer, fmt, value);  // 2 casas decimais
+  #else
+    sprintf(buffer, fmt, value);
+  #endif  
+
+  PutString(x, y, buffer);
+}
+
+
+
+
+
+/**
+ * @brief Put decimal value format base on sprintf()
+ *        
+ * @verbatim
+ * Tamanho máximo de 12 caracteres o buffer interno
+ * 
+ * Value Decimal: 
+ *   value: -2147483648(-2^31) ~ 2147483647(2^31-1)
+ *   len:   1~11 minimum output length
+ *   Joker:
+ *     n: Direita
+ *     -: Esquerda
+ *     +: Exibe um sinal
+ *     (espaço): Exibe um espaço quando nenhum sinal é exibido
+ *     0: Preenche a esquerda com 0s em vez de espaços.
+ *   Example:
+ *     "%1d"
+ *     "%-5d"
+ *     "%-5d"
+ *     "%02d"
+ * @endverbatim
+ *
+ * @param fmt : formato de string para exibição - Mascara de Formatação (Identico a mascara de sprintf() 
+ *
+ * @note None
+ *
+ */
+void Panel_RA8889::PutDecimal(uint16_t x, uint16_t y, uint32_t value, const char *fmt)
+{
+  char buffer[12];
+  sprintf(buffer ,fmt, value);
+  PutString(x, y, buffer);
+}
+ 
+
+/**
+ * @brief Put hexadecimal value format base on sprintf()
+ *        
+ * @verbatim
+ * Tamanho máximo de 12 caracteres o buffer interno
  * 
  * Value Hexadecimal:
  *   Value: 0x00000000 ~ 0xffffffff
@@ -19838,6 +20765,7 @@ void Panel_RA8889::PutString32x48(uint16_t x, uint16_t y, uint32_t fgcolor, uint
  *     "%08x"
  *     "%#6x"
  *     "%#08x"
+ *     "%X"      hexadecimal em caixa alta
  * @endverbatim
  *
  * @param fmt : formato de string para exibição - Mascara de Formatação (Identico a mascara de sprintf() 
@@ -19845,9 +20773,9 @@ void Panel_RA8889::PutString32x48(uint16_t x, uint16_t y, uint32_t fgcolor, uint
  * @note None
  *
  */
-void Panel_RA8889::PutStringFmt(uint16_t x, uint16_t y, int32_t value, const char *fmt)
+void Panel_RA8889::PutHexa(uint16_t x, uint16_t y, uint32_t value, const char *fmt)
 {
-  char buffer[32];
+  char buffer[12];
   sprintf(buffer ,fmt, value);
   PutString(x, y, buffer);
 }
