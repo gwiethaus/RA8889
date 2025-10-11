@@ -12,6 +12,22 @@
 //Chip Configuration Registers
 #define REG_SRR                                0x00            //Software Reset Register (SRR)
 #define REG_CCR                                0x01            //Chip Configuration Register (CCR)
+    #define BIT_PLL_ENABLE                     0x80            //PLL Reconfigure/Enable, torna efetivo os novos valores do PLL
+    #define BIT_PLL_DISBLE                     0x00            //PLL Disable
+    #define BIT_XnWAIT_NO_MASK                 0x00
+    #define BIT_XnWAIT_MASK                    0x40  
+    #define BIT_KEY_SCAN_DISABLE               0x00
+    #define BIT_KEY_SCAN_ENABLE                0x20
+    #define BIT_TFT_OUTPUT24                   0x00
+    #define BIT_TFT_OUTPUT18                   0x08
+    #define BIT_TFT_OUTPUT16                   0x18
+    #define BIT_I2C_MASTER_DISABLE             0x00 
+    #define BIT_I2C_MASTER_ENABLE              0x04
+    #define BIT_SERIAL_IF_DISABLE              0x00
+    #define BIT_SERIAL_IF_ENABLE               0x02
+    #define BIT_HOST_DATA_BUS_SERIAL           0x00
+    #define BIT_HOST_DATA_BUS_8BIT             0x00
+    #define BIT_HOST_DATA_BUS_16BIT            0x01
 #define REG_MACR                               0x02            //Memory Access Control Register (MACR)
 #define REG_ICR                                0x03            //Input Control Register (ICR) 
 #define REG_MRWDP                              0x04            //Memory Data Read/Write Port (MRWDP)
@@ -141,6 +157,7 @@
 
 //PWM Timer Control Registers
 #define REG_PSCLR                              0x84            //Page 0 PWM Prescaler Register (PSCLR)
+    #define BIT_PRESCALER                      0x03            //PWM0 or 1 Preescaler register, Time base is “Core_Freq / (Prescaler + 1)”
 #define REG_PMUXR                              0x85            //Page 0 PWM clock Mux Register (PMUXR)
     #define BIT_PWM1_TIMER_DIV1                0x00            //clock divider’s MUX input for PWM Timer 1,  1
     #define BIT_PWM1_TIMER_DIV2                0x40            //clock divider’s MUX input for PWM Timer 1,  1/2
@@ -157,6 +174,20 @@
     #define BIT_XPWM0_OUTPUT_PWM_TIMER0        0x02            //XPWM[0] output PWM timer 0
     #define BIT_XPWM0_OUTPUT_CORE_CLK          0x03            //XPWM[0] output core clock 
 #define REG_PCFGR                              0x86            //Page 0 PWM Configuration Register (PCFGR)
+    #define BIT_PWM1_INVERTER_OFF              0x00            //bit 6, PWM Timer 1 output inverter off
+    #define BIT_PWM1_INVERTER_ON               0x40            //bit 6, PWM Timer 1 output inverter on
+    #define BIT_PWM1_ONE_SHOT                  0x00            //bit 5, PWM Timer 1 auto reload one-shot
+    #define BIT_PWM1_AUTO_RELOAD               0x20            //bit 5, PWM Timer 1 auto reload Interval mode(auto reload)
+    #define BIT_PWM1_STOP                      0x00            //bit 4, PWM Timer 1 stop
+    #define BIT_PWM1_START                     0x10            //bit 4, PWM Timer 1 start
+    #define BIT_PWM0_DEAD_ZONE_DISABLE         0x00            //bit 3, PWM Timer 0 Dead zone disable
+    #define BIT_PWM0_DEAD_ZONE_ENABLE          0x08            //bit 3, PWM Timer 0 Dead zone enable
+    #define BIT_PWM0_INVERTER_OFF              0x00            //bit 2, PWM Timer 0 output inverter off
+    #define BIT_PWM0_INVERTER_ON               0x04            //bit 2, PWM Timer 0 output inverter on
+    #define BIT_PWM0_ONE_SHOT                  0x00            //bit 1, PWM Timer 0 auto reload one-shot
+    #define BIT_PWM0_AUTO_RELOAD               0x02            //bit 1, PWM Timer 0 auto reload  Interval mode(auto reload)
+    #define BIT_PWM0_STOP                      0x00            //bit 0, PWM Timer 0 stop
+    #define BIT_PWM0_START                     0x01            //bit 0, PWM Timer 1 start 
 #define REG_DZ_LENGTH                          0x87            //Page 0 Timer 0 Dead zone length register [DZ_LENGTH]
 #define REG_TCMPB0L                            0x88            //Page 0 Timer 0 compare buffer register [TCMPB0L]
 #define REG_TCMPB0H                            0x89            //Page 0 Timer 0 compare buffer register [TCMPB0H]
@@ -271,6 +302,11 @@
 #define REG_SPIMCR2                            0xb9            //Page 0 SPI master Control Register (SPIMCR2)
 #define REG_SPIMSR                             0xba            //Page 0 SPI master Status Register (SPIMSR)
 #define REG_SPI_DIVSOR                         0xbb            //Page 0 SPI Clock period (SPI_DIVSOR)
+    #define BIT_SPI_DIV2                       0x00            //Fsck = Fcore / ((divisor + 1) * 2), divisor=0, (0+1)*2 = DIV2
+    #define BIT_SPI_DIV4                       0x01            //Fsck = Fcore / ((divisor + 1) * 2), divisor=1, (1+1)*2 = DIV4
+    #define BIT_SPI_DIV6                       0x02            //Fsck = Fcore / ((divisor + 1) * 2), divisor=2, (2+1)*2 = DIV6
+    #define BIT_SPI_DIV8                       0x03            //Fsck = Fcore / ((divisor + 1) * 2), divisor=3, (3+1)*2 = DIV8
+    #define BIT_SPI_DIV10                      0x04            //Fsck = Fcore / ((divisor + 1) * 2), divisor=4, (4+1)*2 = DIV10
 #define REG_DMA_SSTR0                          0xbc            //Page 0 Serial flash DMA Source Starting Address 0 (DMA_SSTR0)
 #define REG_DMA_SSTR1                          0xbd            //Page 0 Serial flash DMA Source Starting Address 1 (DMA_SSTR1)
 #define REG_DMA_SSTR2                          0xbe            //Page 0 Serial flash DMA Source Starting Address 2 (DMA_SSTR2)
@@ -427,11 +463,9 @@
 #define REG_IDEC_CTRL0                         0xb6            //Page 1 Serial flash AVI/JPG/BMP (IDEC_CTRL)                                   
 #define REG_IDEC_CTRL1                         0xb7            //Page 1 Serial flash AVI/JPG/BMP (IDEC_CTRL)
 #define REG_IDEC_CLKDIV                        0xbb            //Page 1 IDEC Clock divide
-    #define BIT_SPI_DIV2                       0x00
-    #define BIT_SPI_DIV4                       0x01
-    #define BIT_SPI_DIV6                       0x02
-    #define BIT_SPI_DIV8                       0x03
-    #define BIT_SPI_DIV10                      0x04
+    #define BIT_IDEC_SPI_DIV1                  0x00            //idec_clck = clk/1
+    #define BIT_IDEC_SPI_DIV2                  0x01            //idec_clck = clk/2
+    #define BIT_IDEC_SPI_DIV4                  0x02            //idec_clck = clk/4
 #define REG_IDEC_SADR0                         0xbc            //Page 1 Serial flash AVI/JPG/BMP Source Starting Address 0 (IDEC_SADR0)
 #define REG_IDEC_SADR1                         0xbd            //Page 1 Serial flash AVI/JPG/BMP Source Starting Address 1 (IDEC_SADR1)
 #define REG_IDEC_SADR2                         0xbe            //Page 1 Serial flash AVI/JPG/BMP Source Starting Address 2 (IDEC_SADR2)

@@ -1,3 +1,305 @@
+//baixar
+//https://github.com/Lvkyky/RA8889
+//https://github.com/wwatson4506/TeensyRA8889-SPI
+//https://github.com/cycccc/zijia_ra8889_ceshi
+//https://github.com/wwatson4506/TeensyRA8876-SPI
+//https://github.com/wwatson4506/Ra8876LiteTeensy
+
+/*
+	Notas para Fazer:
+	- Determinar a autoconfiguracao das portas MISO, MOSI, CLK da micrcontroladora
+	- Determinar manual das portas MISO, MOSI, CLK da micrcontroladora
+	- tipo de comunciacao SPI MODO 0, 1, 2 dependedo da microcontroladora
+    - Sistema da porta de itnerrupção para a tela de toque do display
+	- Verificar a funcao DrawEnable_AA() deve ser do RA8876, pois no RA8889 deve ser zero
+	  
+	Links:
+	https://xod.io/libs/ivanmason/ra8876/
+  https://www.youtube.com/@youtuberaio972
+	
+	Tarefas:
+  
+    //Escrita de Memoria de Display com MPU 16 bits / color depth 24bpp modo 2
+    Estas funcoes com este padrao
+	void Panel_RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data)
+	remover as linhas: 
+	  ActiveWindow_XY(x, y);
+      ActiveWindow_WidhtHeight(w, h);
+    pois implica em formato diferente da janela afetando a janela ja pre existente.
+    Verificar o impacto desta funcoes
+    
+    A funcao void Panel_RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data)	
+	é de escrita de memoria, e logo isnere um pixel na memoria.
+	FAzer duas funcoes originario destas que detecta por macro mal mcu e color depth, colcaor dentro na nova funcao de escrita de memroia
+	void MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data_array)
+    e entao depois de adaptado inserir dentro de DrawPixel e DrawPixels
+	DrawPixels(x, y, w, h, *data); w e h não é da tela mas da area do pixel a transferir x, y vao incrementan do de acordo com w e h
+	fazendo a varredura em *data.
+	Outra funcao DrawPixels (x, y, count, *data) o controle tera que ser por x,y e count na posicao do buffer apra a posicao de tela que deseja os pixels.
+	
+Alteracoes #001:
+----------------
+
+void Panel_RA8889::setFontExternal(FontExternalParam param, bool enable = false)
+
+param.scs_select
+  Não precisa provavelmente o usuraio setar, pois deve ser fixo e na inicializacao do sistema
+  a ROM nao fica mudando toda hora. Para verificar isso, fazer o teste com esta funcao ja fun cionando e trocar 
+  o parametro param.scs_select=0 por param.scs_select=1 se funcionar nao entendi!!! agora se nao funcionar mais este valor é fixo apra a ROM da Fonte Genitop
+  
+  Assim se utilziar da variavel global _fnt_rom_genitor_scs para definir o scs da rom mda fonte genito.
+  esta variavel deve setar no moemnto das configuracoes basicas da fonte na inicializacao do display
+  
+  outros parametros precisam ser verificado se é so caso a aprte ou se é fixo pelo sistema
+  para o caso do seguinte:
+  
+  GTFont_CharacterParameter(_fnt_rom_genitor_scs,
+                            BIT_SPI_DIV4, 
+                            GTSERIAL_CGROM,
+                            static_cast<uint8_t>(param.charset_select),
+                            static_cast<uint8_t>(param.gt_width)                   
+                           );
+  
+  A variavel foi definida globalmente como
+  
+  uint8_t _fnt_rom_genitor_clk_div = BIT_SPI_DIV4;
+  
+  talvez nao precise disso basta deixar a cosntante sempre em BIT_SPI_DIV4... estudar
+ 
+Alteracoes #002:
+----------------
+
+tela manchada de pixels no power on:
+
+Alteracoes retirou o HardwareReset() no metodo bool Panel_RA8889::Begin(void)
+para tentar limapr a tela antes da incilizacao de qualqeur coisa.
+Desta forma esta funcao deverá ser a primeira coisa a ser executado no dispositivo
+verificando se isso surte efeito da tela com pixels aleatoris sempre quando dá power on
+
+Construção #002
+---------------
+Objetivo: Fazendo as funções:
+    
+    void Panel_RA8889::setFontUser(FontUserParam param, bool enable = false)    
+
+
+Construcao #003
+---------------
+
+Objetivo: Fonte de usuario
+
+https://forum.pjrc.com/index.php?threads/ra8876-parallel-display-library-testing.75345/page-9
+Baixar Arquivos: https://github.com/wwatson4506/TeensyRA8876Combined
+
+Verificar se isto esta funcionando... dica de forum
+
+Ok fixed userDefinedFont issue with this:
+Code:
+void RA8876_common::CGRAM_initial(uint32_t charAddr, const uint8_t *data, uint16_t count) {
+    uint16_t i;
+    uint16_t tmp = 0;
+    
+    graphicMode(true); // switch to graphic mode
+
+    lcdRegWrite(RA8876_AW_COLOR);                                                  // 5Eh
+    lcdDataWrite(RA8876_CANVAS_LINEAR_MODE << 2 | RA8876_CANVAS_COLOR_DEPTH_8BPP); // set memory to 8bpp and linear mode
+    linearAddressSet(charAddr);                                                    // Set linear address (32 bit)
+    // Set the start address for User Define Font, and write data.
+    ramAccessPrepare();
+    if(_bus_width == 8) {
+        for (i = 0; i < count; i++) {
+            checkWriteFifoNotFull();
+            lcdDataWrite(*data);
+            data++;
+        }
+    } else {
+        for (i = 0; i < count/2; i++) {
+            checkWriteFifoNotFull();
+            tmp = (*data++ & 0xff);
+            tmp |= (*data++ << 8);
+            lcdDataWrite16(tmp);
+        }
+    }
+    checkWriteFifoEmpty(); // If high speed mcu and without Xnwait check
+
+    lcdRegWrite(RA8876_AW_COLOR); // 5Eh
+    lcdDataWrite(RA8876_CANVAS_BLOCK_MODE << 2 | RA8876_CANVAS_COLOR_DEPTH_16BPP);
+}
+Works in 8-bit and 16-bit mode...
+
+
+Construção #004
+---------------
+
+Objetivo: Luz de Fundo
+
+
+Baseado no teese
+https://github.com/wwatson4506/TeensyRA8876Combined
+TeensyRA8876Combined-main
+RA8876_common.cpp
+
+//**************************************************************
+// Turn Backlight ON/Off (true = ON)
+//**************************************************************
+void RA8876_common::backlight(boolean on) {
+    if (on) {
+        // Enable_PWM0_Interrupt();
+        // Clear_PWM0_Interrupt_Flag();
+        // Mask_PWM0_Interrupt_Flag();
+        // Select_PWM0_Clock_Divided_By_2();
+        // Select_PWM0();
+        pwm_ClockMuxReg(0, RA8876_PWM_TIMER_DIV2, 0, RA8876_XPWM0_OUTPUT_PWM_TIMER0);
+        // Enable_PWM0_Dead_Zone();
+        // Auto_Reload_PWM0();
+        // Start_PWM0();
+        pwm_Configuration(RA8876_PWM_TIMER1_INVERTER_OFF, RA8876_PWM_TIMER1_AUTO_RELOAD, RA8876_PWM_TIMER1_STOP,
+                          RA8876_PWM_TIMER0_DEAD_ZONE_ENABLE, RA8876_PWM_TIMER1_INVERTER_OFF,
+                          RA8876_PWM_TIMER0_AUTO_RELOAD, RA8876_PWM_TIMER0_START);
+
+        pwm0_Duty(0xffff);
+
+    } else {
+        pwm_Configuration(RA8876_PWM_TIMER1_INVERTER_OFF, RA8876_PWM_TIMER1_AUTO_RELOAD, RA8876_PWM_TIMER1_STOP,
+                          RA8876_PWM_TIMER0_DEAD_ZONE_ENABLE, RA8876_PWM_TIMER1_INVERTER_OFF,
+                          RA8876_PWM_TIMER0_AUTO_RELOAD, RA8876_PWM_TIMER0_STOP);
+    }
+}
+
+
+Construção #005
+---------------
+Objetivo: Luz de Fundo
+
+Baseado no teese
+https://github.com/wwatson4506/TeensyRA8876Combined
+TeensyRA8876Combined-main
+TeensyRA8876Combined-main\Ra8876_t3\examples\gauges\gauges.ino
+
+#define BACKLITE 7 //External backlight control connected to this Arduino pin
+
+void setup() {
+  //I'm guessing most copies of this display are using external PWM
+  //backlight control instead of the internal RA8876 PWM.
+  //Connect a Teensy pin to pin 14 on the display.
+  //Can use analogWrite() but I suggest you increase the PWM frequency first so it doesn't sing.
+  pinMode(BACKLITE, OUTPUT);
+  digitalWrite(BACKLITE, HIGH);
+  
+
+Construção #006
+---------------
+Objetivo: Luz de Fundo
+
+Baseado no teese
+https://github.com/wwatson4506/TeensyRA8876Combined
+TeensyRA8876Combined-main
+TeensyRA8876Combined-main\Ra8876_t3\examples\ILI_Ada_FontTest4\ILI_Ada_FontTest4.ino
+
+#define BACKLITE 7 //External backlight control connected to this Arduino pin
+
+void setup() {
+  Serial.begin(38400);
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
+  Serial.println("Setup");
+  ...
+  tft.backlight(true);
+  pinMode(BACKLITE, OUTPUT);
+  digitalWrite(BACKLITE, HIGH);
+  ...
+  
+Construcao #007
+---------------
+Objetivo: Luz de fundo
+
+Baseado no teese
+https://github.com/wwatson4506/TeensyRA8876Combined
+TeensyRA8876Combined-main
+TeensyRA8876Combined-main\Ra8876_t3\examples\ILI_GFX_FontTest\ILI_GFX_FontTest.ino
+
+#define RA8876_CS 10
+#define RA8876_RESET 9
+#define BACKLITE 7 //External backlight control connected to this Arduino pin
+RA8876_t3 tft = RA8876_t3(RA8876_CS, RA8876_RESET); //Using standard SPI pins
+
+void setup() {
+#ifdef BACKLITE
+  pinMode(BACKLITE, OUTPUT);
+  digitalWrite(BACKLITE, HIGH);
+#endif
+  Serial.begin(38400);
+  long unsigned debug_start = millis ();
+  while (!Serial && ((millis () - debug_start) <= 5000)) ;
+  Serial.println("Setup");
+  tft.begin();
+
+#ifndef BACKLITE
+  tft.backlight(true);
+  tft.fillScreen(RED);
+  delay(2000);
+  tft.pwm0_Duty(0x0000);
+  delay(2000);
+  tft.pwm0_Duty(0x0ff0);
+  delay(2000);
+  tft.pwm0_Duty(0xffff);
+  delay(2000);
+#endif
+
+  //tft.setRotation(1);
+  tft.fillScreen(BLACK);
+
+...
+
+
+Construção #008
+---------------
+Objetivo: backlight
+Baseado no RA8876
+
+static esp_err_t panel_ra8876_tx_param(esp_lcd_panel_t *panel, int lcd_cmd, uint8_t param)
+{
+	ra8876_panel_t					*ra8876 = __containerof(panel, ra8876_panel_t, base);
+	esp_lcd_panel_io_handle_t		io = ra8876->io;
+
+ 	panel_ra8876_wait(panel);
+	return esp_lcd_panel_io_tx_param(io, lcd_cmd, (uint8_t[]) {	param }, 1);
+}
+
+#define RA8876_REG_TCMPB0L			0x88	// Timer 0 compare buffer register (TCMPB0L)
+#define RA8876_REG_TCMPB0H			0x89	// Timer 0 compare buffer register (TCMPB0H)
+esp_err_t esp_lcd_panel_set_backlight(esp_lcd_panel_t *panel, uint8_t level)
+{
+	esp_err_t						ret = ESP_OK;
+	ra8876_panel_t					*ra8876 = __containerof(panel, ra8876_panel_t, base);
+	uint16_t						raw_level;
+
+	raw_level = (0xff * level);
+	
+	if (raw_level == ra8876->backlight_level)
+		return ret;
+	
+	// set new backlight level
+	ra8876->backlight_level = raw_level;
+	panel_ra8876_tx_param(panel, RA8876_REG_TCMPB0L, raw_level & 0xff);
+	panel_ra8876_tx_param(panel, RA8876_REG_TCMPB0H, (raw_level >> 8) & 0xff);
+
+	return ret;
+}
+
+
+
+Construcao
+----------
+
+uint32_t Panel_RA8889::getPixel(uint16_t x, uint16_t y)
+
+
+
+*/
+
+
+
 // ---------- Detecta Arduino/ESP ----------
 #if defined(__has_include)
   #if __has_include(<Arduino.h>)
@@ -22,55 +324,17 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <SPI.h>
-
 #include <Panel_RA8889.hpp>
 #include <ascii_table_8x12.h>
 #include <ascii_table_16x24.h>
 #include <ascii_table_32x48.h>
 
-/*
-	Notas para Fazer:
-	- Determinar a autoconfiguracao das portas MISO, MOSI, CLK da micrcontroladora
-	- Determinar manual das portas MISO, MOSI, CLK da micrcontroladora
-	- tipo de comunciacao SPI MODO 0, 1, 2 dependedo da microcontroladora
-    - Sistema da porta de itnerrupção para a tela de toque do display
-	- Verificar a funcao DrawEnable_AA() deve ser do RA8876, pois no RA8889 deve ser zero
-	  
-	Links:
-	https://xod.io/libs/ivanmason/ra8876/
-	官方Youtube頻道RAiO 瑞佑科技
-    https://www.youtube.com/@youtuberaio972
-    
-	
-	
-	Tarefas:
-  
-    //Escrita de Memoria de Display com MPU 16 bits / color depth 24bpp modo 2
-    Estas funcoes com este padrao
-	void Panel_RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data)
-	remover as linhas: 
-	  ActiveWindow_XY(x, y);
-      ActiveWindow_WidhtHeight(w, h);
-    pois implica em formato diferente da janela afetando a janela ja pre existente.
-    Verificar o impacto desta funcoes
-    
-    A funcao void Panel_RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data)	
-	é de escrita de memoria, e logo isnere um pixel na memoria.
-	FAzer duas funcoes originario destas que detecta por macro mal mcu e color depth, colcaor dentro na nova funcao de escrita de memroia
-	void MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data_array)
-    e entao depois de adaptado inserir dentro de DrawPixel e DrawPixels
-	DrawPixels(x, y, w, h, *data); w e h não é da tela mas da area do pixel a transferir x, y vao incrementan do de acordo com w e h
-	fazendo a varredura em *data.
-	Outra funcao DrawPixels (x, y, count, *data) o controle tera que ser por x,y e count na posicao do buffer apra a posicao de tela que deseja os pixels.
-	  
-  Construção
 
-
-  Fazendo as funções:
-    
-    void Panel_RA8889::setFontUser(FontUserParam param, bool enable = false)    
-
-*/
+//================================================================================
+//
+// Declaração de Classe SPI
+//
+//================================================================================
 
 
 #ifdef USE_SPI_PORT
@@ -89,6 +353,7 @@
 // Seleção automática e segura de barramento SPI
 //
 // ============================================================================
+
 
 // --- ESP32 e derivados -------------------------------------------------------
 #if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
@@ -131,6 +396,34 @@
 
 //================================================================================
 //
+// Funções de testes
+//
+//================================================================================
+
+
+//nao funciona
+void Panel_RA8889::RA8876_brightness(uint16_t val)
+{
+	// Turn on PWM if not already active, map 8-bit to 16-bit PWM0 register
+  PWM0_SetCompareBuffer(val);
+	
+	RegisterWrite(REG_PMUXR, BIT_PWM0_TIMER_DIV1 | BIT_XPWM0_OUTPUT_PWM_TIMER0);
+	
+	uint8_t temp = RegisterRead(REG_PCFGR);
+	if (val)
+	{
+		temp = BIT_PWM0_DEAD_ZONE_ENABLE | BIT_PWM0_AUTO_RELOAD | BIT_PWM0_START;
+	}
+	else
+	{
+		temp = 0;
+	}
+	RegisterWrite(REG_PCFGR, temp);
+}
+
+
+//================================================================================
+//
 // Funções/Macros auxiliares
 //
 //================================================================================
@@ -163,7 +456,17 @@ void SerialPrint(String msg, uint32_t value, bool b, bool newline)
   }
 }
 
-
+/**
+ * @brief Depuracao do codigo com valor ponto flutuante
+ *
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
 void SerialPrintF(String msg, double value, uint8_t decimal, bool b, bool newline)
 {
   #ifdef SERIAL_DEBUG
@@ -176,6 +479,120 @@ void SerialPrintF(String msg, double value, uint8_t decimal, bool b, bool newlin
     if (newline) Serial.println("");
   }
 }
+
+
+void SerialPrintH(String msg, uint64_t value, bool b, bool newline) {
+  #ifdef SERIAL_DEBUG
+  if (!serialStarted) return;  // segurança extra
+  #endif
+
+  Serial.print(msg);
+
+  if (b) {
+    char buffer[19]; // "0x" + 16 dígitos + '\0'
+    #if defined(ARDUINO_ARCH_AVR)
+      // AVR tem apenas 32 bits
+      sprintf(buffer, "0x%lX", (unsigned long)value);
+    #else
+      // Plataformas com suporte 64 bits
+      sprintf(buffer, "0x%llX", (unsigned long long)value);
+    #endif
+
+    if (newline)
+      Serial.println(buffer);
+    else
+      Serial.print(buffer);
+  }
+  else {
+    if (newline)
+      Serial.println();
+  }
+}
+
+
+// --- 1. Para números (int, long, etc.) ---
+//void SerialPrintH(String msg, uint64_t value, bool b, bool newline) {
+//  #ifdef SERIAL_DEBUG
+//  if (!serialStarted) return;  // segurança extra
+//  #endif
+//  Serial.print(msg);
+//  if (b) {
+//	Serial.print(F("0x"));
+//    newline ? Serial.print(value, HEX) : Serial.println(value, HEX);
+//  } else {
+//    if (newline) Serial.println(F(""));
+//  }
+//}
+
+
+//void SerialPrintHex(uint64_t val, bool newline = true) {
+//  char buffer[17];  // 16 dígitos + terminador nulo
+//  sprintf(buffer, "%llX", (unsigned long long)val);
+//
+//  if (newline)
+//    Serial.println(buffer);
+//  else
+//    Serial.print(buffer);
+//}
+//
+//
+//// --- 2. Para strings (char*) ---
+//void SerialPrintH(String msg, const char* value, bool b, bool newline) {
+//  #ifdef SERIAL_DEBUG
+//  if (!serialStarted) return;  // segurança extra
+//  #endif
+//  Serial.print(msg);
+//  if (b) {
+//    uint64_t val = 0;
+//    if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X'))
+//      val = strtoul(value, nullptr, 16);
+//    else
+//      val = strtoul(value, nullptr, 10);
+//    Serial.print(F("0x"));
+//	newline ? Serial.println((uint64_t)val, HEX) : Serial.print((uint64_t)val, HEX);
+//  } else {
+//    if (newline) Serial.println(F(""));
+//  }
+//}
+//
+
+// --- 2. Para strings (char*) ---
+void SerialPrintH(String msg, const char* value, bool b, bool newline) {
+  #ifdef SERIAL_DEBUG
+  if (!serialStarted) return;  // segurança extra
+  #endif
+
+  Serial.print(msg);
+
+  if (b && value && *value) {
+    uint64_t val = 0;
+
+   // Detecta base automaticamente
+    int base = (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) ? 16 : 10;
+
+    #if defined(ARDUINO_ARCH_AVR)
+      // AVR não tem strtoull(), usa 32 bits
+      val = strtoul(value, nullptr, base);
+    #else
+      // ESP32, ARM, etc. — têm strtoull()
+      val = strtoull(value, nullptr, base);
+    #endif
+
+    // Converte e imprime em formato 0xHEX
+    char buffer[19];  // "0x" + 16 dígitos + '\0'
+    sprintf(buffer, "0x%llX", (unsigned long long)val);
+
+    if (newline)
+      Serial.println(buffer);
+    else
+      Serial.print(buffer);
+  }
+  else {
+    if (newline)
+      Serial.println();
+  }
+}
+
 #endif
 
 
@@ -214,7 +631,7 @@ uint8_t Bin_subtract(uint8_t maior, uint8_t menor) {
  *
  * @note None
  */
-#define MAPBREAKPOS 0x38    //posicao de quabra caso fore maior que 16 os valores (uso no mapa de fontes - tipos de fontes)
+#define MAPBREAKPOS 0x38    //posicao de quabra caso for maior que 16 os valores (uso no mapa de fontes - tipos de fontes)
 uint16_t conditional_subtract(uint8_t a, uint8_t b, uint8_t gt) {
   return (a > gt) ? Bin_subtract(a, b) : a;
 }
@@ -241,7 +658,6 @@ uint16_t conditional_subtract(uint8_t a, uint8_t b, uint8_t gt) {
 
   #endif
 #endif
-
 
 
 /**
@@ -297,7 +713,6 @@ inline char* dtostrf(double val, signed char width, unsigned char prec, char* bu
  * @param precision: casas decimais
  * @param *buffer: saída
  */
-
 void my_dtostrf(float val, int width, int precision, char* buffer) {
     char temp[32];
     int pos = 0;
@@ -746,16 +1161,18 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst)
 {
   _cs            = cs;
   _xnreset       = rst;
-  _width         = LCD_HW;
-  _height        = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
   _spi_clockmax  = SPI_CLOCK_SPEED_MAX;
   _spi_datamode  = SPI_MODE0;
   _spi_dataorder = MSBFIRST;
+  _spi_transaction = false;
   _bpp           = COLOR_DEPTH;
   _mcu           = MCU;
   _colorfmt      = static_cast<uint8_t>(ePDATAColorFmt::RGB); //iniciar com o formato de cor RGB
   _usedma        = false;
   _fntparam_source_select  = eFontSource::InternalCGROM;      //Default do display
+  _display_spi_clk_divider = BIT_SPI_DIV4;
 }
 
 
@@ -777,17 +1194,17 @@ Panel_RA8889::Panel_RA8889(uint8_t cs, uint8_t rst)
  */
 void Panel_RA8889::PanelResolution(ePanelResolution resolution)
 {
-  if (resolution == ePanelResolution::r320x240)  {_width=320;  _height=240;}
-  if (resolution == ePanelResolution::r480x272)  {_width=480;  _height=272;}
-  if (resolution == ePanelResolution::r640x480)  {_width=640;  _height=480;}
-  if (resolution == ePanelResolution::r800x480)  {_width=800;  _height=480;}
-  if (resolution == ePanelResolution::r800x600)  {_width=800;  _height=600;}
-  if (resolution == ePanelResolution::r960x540)  {_width=960;  _height=540;}
-  if (resolution == ePanelResolution::r1024x600) {_width=1024; _height=600;}
-  if (resolution == ePanelResolution::r1024x768) {_width=1024; _height=768;}
-  if (resolution == ePanelResolution::r1280x768) {_width=1280; _height=768;}
-  if (resolution == ePanelResolution::r1280x800) {_width=1280; _height=800;}
-  if (resolution == ePanelResolution::r1366x768) {_width=1366; _height=768;}
+  if (resolution == ePanelResolution::r320x240)  {_displaywidth=320;  _displayheight=240;}
+  if (resolution == ePanelResolution::r480x272)  {_displaywidth=480;  _displayheight=272;}
+  if (resolution == ePanelResolution::r640x480)  {_displaywidth=640;  _displayheight=480;}
+  if (resolution == ePanelResolution::r800x480)  {_displaywidth=800;  _displayheight=480;}
+  if (resolution == ePanelResolution::r800x600)  {_displaywidth=800;  _displayheight=600;}
+  if (resolution == ePanelResolution::r960x540)  {_displaywidth=960;  _displayheight=540;}
+  if (resolution == ePanelResolution::r1024x600) {_displaywidth=1024; _displayheight=600;}
+  if (resolution == ePanelResolution::r1024x768) {_displaywidth=1024; _displayheight=768;}
+  if (resolution == ePanelResolution::r1280x768) {_displaywidth=1280; _displayheight=768;}
+  if (resolution == ePanelResolution::r1280x800) {_displaywidth=1280; _displayheight=800;}
+  if (resolution == ePanelResolution::r1366x768) {_displaywidth=1366; _displayheight=768;}
 }
 
 
@@ -804,19 +1221,28 @@ void Panel_RA8889::PanelResolution(ePanelResolution resolution)
  */
 bool Panel_RA8889::Begin(void)
 {
+  HardwareReset();                     //Hardware Reset
+
   SPI_Init();                           //inicializa comunicação SPI
-  
-  HardwareReset();                      //Inicia o reset de hardware
 
   #ifdef CHECK_RAIOFAMILY
   //Verifica se é um RA8889
-  SERIAL_DEBUG("ID Code: ",ReadIDCode(),true,true);
   if (ReadIDCode() == 0x89) { DEBUG_PRINT("RA8889 connect pass!",0,false, true); }
   else { 
     DEBUG_PRINT("RA8889 not found!",0,false,true);
-    return false;
+    DEBUG_PRINT("ID Code: ",ReadIDCode(),true,true);
+  return false;
   }
   #endif
+  
+  PLL_InitilizeWaitReady();
+  
+  delay(100);
+
+  // Aguarda até que a inicialização interna do RA8889 termine
+  // Bit 1 do STSR (0x02) = 1 → inicialização em andamento
+  // Bit 1 do STSR (0x02) = 0 → inicialização concluída
+  while(StatusRead() & 0x02);
   
   //Inicializa as configurações basicas do display RA8889
   if (!Initialize()) {
@@ -834,8 +1260,17 @@ bool Panel_RA8889::Begin(void)
 }
 
 
-//https://gaotongfont.cn/zlxz/list_29.aspx?sjId=3&page=4
-//mapa de recursos de caracteres no CI ROM
+/**
+ * @brief mapa de recursos de caracteres no CI ROM
+ *
+ * @verbatim
+ * https://gaotongfont.cn/zlxz/list_29.aspx?sjId=3&page=4
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
 void Panel_RA8889::External_CGROM_CharSetResourceMap(void)
 {
 #if defined(CHIP_GT30L24T3Y)
@@ -880,6 +1315,24 @@ void Panel_RA8889::External_CGROM_CharSetResourceMap(void)
 }
 
 
+/**
+ * @brief Verifica se a determinada fonte existe no Genitop ROM
+ *
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ * 
+ * @return true a fonte existe
+ *
+ * @note None
+ */
+bool Panel_RA8889::CheckFontExternal(uint8_t font_model)
+{
+  return _charsetresourceMap & (1UL << conditional_subtract(font_model, MAPBREAKPOS, 0x88));
+}
+
 
 /**
  * @brief Inicializa a configurações básicas do display RA8889.
@@ -894,24 +1347,11 @@ void Panel_RA8889::External_CGROM_CharSetResourceMap(void)
  */
 bool Panel_RA8889::Initialize(void)
 {
-  uint8_t temp;
-  DEBUG_PRINT("Start PLL Wait for Ready...", 0, false, true);  //Debug
-  PLL_WaitReady();
-  DEBUG_PRINT("PLL Wait Ready: Pass", 0, false, true);         //Debug
-  delay(100);
-  
-  // Aguarda até que a inicialização interna do RA8889 termine
-  // Bit 1 do STSR (0x02) = 1 → inicialização em andamento
-  // Bit 1 do STSR (0x02) = 0 → inicialização concluída
-  while(StatusRead() & 0x02);
-  
   //Configura clock Pixel/SDRAM/Core PLL
   
-  PLL_Init();
-  DEBUG_PRINT("PLL Init: Pass", 0, false,true);     //Debug
+  PLL_Init();                                  //Prepare PLL circuit
 
   SDRAM_Init();                                //Inicializa a SDRAM
-  DEBUG_PRINT("SDRAM Init: Pass", 0, false,true);   //Debug
 
 //Chip Configuration Register (CCR) [01h]
 //Nota: Não é obrigatorio que o TFT seja o mesmo apdrão de dados da MCU. Por comodismo deixei o mesmo
@@ -924,7 +1364,6 @@ bool Panel_RA8889::Initialize(void)
 
 //Ref. RAIO RA8876 / RA8877 AP Note_ Source Code 001_How to initial RA8876,RA8877. 
 //If MCU I/F select SPI-3, SPI-4 or I2C, chip will only allow Host_Bus_8bit.
-  
 #ifdef COM_PARALLEL                            //Apenas para interface Paralela 8080/6800
   #ifdef MCU16
     HostDataBus_Select_16bit();                //MCU/MPU Host bus 16bit
@@ -938,15 +1377,13 @@ bool Panel_RA8889::Initialize(void)
 
 //Memory Access Control Register (MACR) [02h]
 
-  Select_MCU_ColorDepth();                     //Host MPU/MCU I/F 8/16 bits color depth 8/16/24 (mode1/mode2)
+  Select_MCU_ColorDepth();                       //MPU/MCU I/F 8/16 bits color depth 8/16/24 (mode1/mode2) to Host
   HostWriteMemoryDirection(MemoryDirection::LeftRight_TopBotom);
   
 //Input Control Register (ICR) [03h]
 
   GraphicMode();
-  DEBUG_PRINT("Graphic Mode: Pass",0,false,true);             //Debug
   MemorySelect_SDRAM();
-  DEBUG_PRINT("Memory Select SDRAM: Pass",0,false,true);      //Debug
 
 //Display Configuration Register (DPCR) [12h]
 //Panel scan Clock and Data Setting Register (PCSR) [13h]
@@ -963,50 +1400,55 @@ bool Panel_RA8889::Initialize(void)
 //VSYNC Pulse Width Register (VPWR) [0x1f]
 
   LCD_SetPanel();                              //Configuração do Panel Screen LCD, de acordo com o tipo do fabricante
-  DEBUG_PRINT("LCD Panel: Pass",0,false, true);      //Debug
 
 #ifdef COLOR_DEPTH_8
   Select_MainWindow_8bpp();
+  Memory_BlockMode();                          //Set Block mode (X-Y coordination addressing)
+  Memory_8bpp_BlockMode();                     //Set 16bpp Block mode
+  
   PIP1_Window_ColorDepth_8bpp();
   PIP2_Window_ColorDepth_8bpp();
   BTE_S0_ColorDeph_8bpp();
   BTE_S1_ColorDeph_8bpp();
-  BTE_Destination_ColorDeph(eColorDepthBPP::bpp8);
-  Memory_8bpp_BlockMode();                    //Set 16bpp Block mode
+  BTE_Destination_ColorDeph_8bpp());
 #endif
 
 #ifdef COLOR_DEPTH_16
   Select_MainWindow_16bpp();
+  Memory_BlockMode();                          //Set Block mode (X-Y coordination addressing)
+  Memory_16bpp_BlockMode();                    //Set 16bpp Block mode
+  Select_MainWindow_16bpp();
+
   PIP1_Window_ColorDepth_16bpp();
   PIP2_Window_ColorDepth_16bpp();
   BTE_S0_ColorDeph_16bpp();
   BTE_S1_ColorDeph_16bpp();
-  BTE_Destination_ColorDeph(eColorDepthBPP::bpp16);
-  Memory_16bpp_BlockMode();                    //Set 16bpp Block mode
+  BTE_Destination_ColorDeph_16bpp();
 #endif
 
 #ifdef COLOR_DEPTH_24
   Select_MainWindow_24bpp();
+  Memory_BlockMode();                          //Set Block mode (X-Y coordination addressing)
+  Memory_24bpp_BlockMode();                    //Set 16bpp Block mode
+  
   PIP1_Window_ColorDepth_24bpp();
   PIP2_Window_ColorDepth_24bpp();
   BTE_S0_ColorDeph_24bpp();
   BTE_S1_ColorDeph_24bpp();
   BTE_Destination_ColorDeph_24bpp();
-  Memory_24bpp_BlockMode();                    //Set 16bpp Block mode
 #endif
 
-  Memory_BlockMode();                          //Set Block mode (X-Y coordination addressing)
-  
 //Image buffer configure
 
   MainImage_StartAddress( LayerStartAddr(0) );
-  MainImage_Width(_width); 
+  MainImage_Width(_displaywidth); 
   MainWindow_StartXY(0,0);
   CanvasImage_StartAddr( LayerStartAddr(0) );
-  CanvasImage_Width(_width);
+  CanvasImage_Width(_displaywidth);
   ActiveWindow_XY(0,0);
-  ActiveWindow_WidhtHeight(_width, _height);  
-  
+  ActiveWindow_WidhtHeight(_displaywidth, _displayheight);  
+  CoreTask_WaitReady();
+
   return true;
 }
 
@@ -1020,7 +1462,7 @@ bool Panel_RA8889::Initialize(void)
  */
 uint16_t Panel_RA8889::Width(void)
 {
-  return _width;
+  return _displaywidth;
 }
 
 
@@ -1033,7 +1475,7 @@ uint16_t Panel_RA8889::Width(void)
  */
 uint16_t Panel_RA8889::Height(void)
 {
-  return _height;
+  return _displayheight;
 }
 
 
@@ -1057,18 +1499,16 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Display Configuration Register (DPCR) [12h]
   
-  PCLK_EdgeType(ePCLKEdge::Falling);           //LCD PCLK Falling
-
   HScanDirection_LeftToRight();                //HSCAN Left to Right
   VScanDirection_TopToBottom();                //VSCAN Top to Bottom
-
-  PDATA_ColorFmt(ePDATAColorFmt::RGB);         //Select RGB output
+  PCLK_Falling();                              //LCD PCLK Falling
+  PDATA_ColorRGB();                            //Select RGB output format
 
   //Panel scan Clock and Data Setting Register (PCSR) [13h]
 
-  HSYNC_Polarity(eHSYNCPolarity::Low);
-  VSYNC_Polarity(eVSYNCPolarity::Low);
-  DE_Polarity(eDEPolarity::High);
+  HSYNC_PolarityLow();
+  VSYNC_PolarityLow();
+  DE_PolarityHigh();
 
   //Horizontal Display Width Register (HDWR) [14h]
   //Horizontal Display Width Fine Tune Register (HDWFTR) [15h]
@@ -1079,8 +1519,8 @@ void Panel_RA8889::LCD_SetPanel(void)
   
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
 	
   //Minha notas:
   //Estas funcoes são de caracteristica da tela LCD (Screen) gerenciado pelo
@@ -1134,8 +1574,8 @@ void Panel_RA8889::LCD_SetPanel(void)
   
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
   
   //Horizontal Non-Display Period(HNDR) [16h]
   //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
@@ -1182,8 +1622,8 @@ void Panel_RA8889::LCD_SetPanel(void)
   
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
 
   //Horizontal Non-Display Period(HNDR) [16h]
   //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
@@ -1230,8 +1670,8 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
 
   //Horizontal Non-Display Period(HNDR) [16h]
   //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
@@ -1278,8 +1718,8 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
 
   //Horizontal Non-Display Period(HNDR) [16h]
   //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
@@ -1326,8 +1766,8 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
 
   //Horizontal Non-Display Period(HNDR) [16h]
   //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
@@ -1374,8 +1814,8 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = 350;                               //valor diferente de LCD_VH=342 
+  _displaywidth  = LCD_HW;
+  _displayheight = 350;                               //valor diferente de LCD_VH=342 
 
   //[16h][17h] : Figure 19-3 [HND]	Non Display or Back porch (pixels)		= (HNDR + 1) * 8 + HNDFTR  
   //[18h]      : Figure 19-3 [HST]	Start Position or Front porch (pixels)	= (HSTR + 1) * 8
@@ -1421,8 +1861,8 @@ void Panel_RA8889::LCD_SetPanel(void)
 
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
 
   //Horizontal Non-Display Period(HNDR) [16h]
   //Horizontal Non-Display Period Fine Tuning(HNDFT) [17h]
@@ -1467,8 +1907,8 @@ void Panel_RA8889::LCD_SetPanel(void)
   
   //Seta a resolução do display baseado no painel
   
-  _width  = LCD_HW;
-  _height = LCD_VH;
+  _displaywidth  = LCD_HW;
+  _displayheight = LCD_VH;
 
   //[16h][17h] : Figure 19-3 [HND]	Non Display or Back porch (pixels)		= (HNDR + 1) * 8 + HNDFTR  
   //[18h]      :	Figure 19-3 [HST]	Start Position or Front porch (pixels)	= (HSTR + 1) * 8
@@ -1504,6 +1944,7 @@ void Panel_RA8889::SPI_Init(void)
   pinMode(_cs, OUTPUT);
   spi.beginTransaction(SPISettings(_spi_clockmax, MSBFIRST, _spi_datamode));
   spi.begin();
+  _spi_transaction = true;
 }
 
 
@@ -1782,13 +2223,19 @@ uint8_t Panel_RA8889::RegisterRead(uint8_t reg)
 void Panel_RA8889::HardwareReset(void)
 {
   pinMode(_xnreset, OUTPUT);
-  digitalWrite(_xnreset, HIGH);
-  delay(1);
-  digitalWrite(_xnreset, LOW);
-  delay(1);
-  digitalWrite(_xnreset, HIGH);
-  delay(10);
   
+  //digitalWrite(_xnreset, HIGH);
+  //delay(10);
+  //digitalWrite(_xnreset, LOW);
+  //delay(10);
+  //digitalWrite(_xnreset, HIGH);
+  //delay(50);
+
+  digitalWrite(_xnreset, LOW);
+  delay(500);
+  digitalWrite(_xnreset, HIGH);
+  delay(500);
+
 }
 
 
@@ -1796,20 +2243,44 @@ void Panel_RA8889::HardwareReset(void)
  * @brief Executa um reset por software no RA8889
  *
  * @verbatim
- * None
+ * REG [0x00] 
+ * bit [0] Software Reset (write)
+ *     0: Normal operation.
+ *     1: Software Reset.
+ *     Software Reset only reset internal state machine. Configuration 
+ *     Registers value won’t be reset. So all read-only flag in the 
+ *     register will return to its initial value. User should have 
+ *     proper action to make sure flag is in desired state. 
+ *     Note: The bit will auto clear after reset.
+ * bit [0] Warning condition flag (read)
+ *     0: No warning operation occurred
+ *     1: Warning condition occurred.
+ *     Please check REG[E4h] bit 3 for more detail. (Read)
  * @endverbatim
  * 
  * @param None
- *
- * @return None 
+ * 
+ * @bug
+ *   Apos isso o display nao exibe mais nada, mesmo que seja a primeira coisa que executou no display
+ *   Correções para serem testados: colocou delayMicroseconds(100)
+ * @return  1: time out sem completar, 0: software reset efetivado 
  */
-void Panel_RA8889::SoftwareReset(void)
+uint8_t Panel_RA8889::SoftwareReset(void)
 {
   uint8_t temp;
-  RegisterWrite(REG_SRR, 0x01);
-  do {
-     temp = RegisterRead(REG_SRR);
-  } while (temp & 0x01);  
+  uint8_t res = 1;                             //timeout as default
+  RegisterWrite(REG_SRR, 0x01);                //0x00, Software Reset Register (SRR)
+  temp = SPI_DataRead();
+  temp |= 0x01;
+  SPI_DataWrite(temp);
+  delayMicroseconds(100);			           //it must wait 100us after Software_Reset.
+  for (uint16_t i=0; i<1000;i++){
+     if (RegisterRead(REG_SRR)&0x01 == 0x00) { //No Warning condition flag
+		 res = 0;
+		 break;
+     }
+  }
+  return res;
 }
 
 
@@ -1819,30 +2290,31 @@ void Panel_RA8889::SoftwareReset(void)
  *        economia de energia.
  *
  * @verbatim
- *        Status Register (STSR)
- *        bit [1] Operation mode status
- *                0b0 : Normal operation state  → inicialização concluída
- *                0b1 : Inhibit operation state → inicialização em andamento
- *                      Inhibit operation state means internal reset event 
- *                      keep running or initial display still running or chip 
- *                      enter power saving state.
- *
- *        Aplicação: Até que a inicialização do IC (Core) tenha terminado uma 
- *                   operação de inicialização (rest) ou um retorno de uma 
- *                   economia de energia.
+ * Status Register (STSR)
+ * bit [1] Operation mode status
+ *         0b0 : Normal operation state  → inicialização concluída
+ *         0b1 : Inhibit operation state → inicialização em andamento
+ *               Inhibit operation state means internal reset event 
+ *               keep running or initial display still running or chip 
+ *               enter power saving state.
+ * 
+ * Aplicação: Até que a inicialização do IC (Core) tenha terminado uma 
+ *            operação de inicialização (rest) ou um retorno de uma 
+ *            economia de energia.
  * @endverbatim
  *
  * @param true:  IC em modo operação normal e pronto,
  *        false: IC ainda não concluiu a inicializacao
  *
+ * @return true: sucesso, false: erro, tempo de espera muito longo (timeout)
+ *
  * @note None
  */
 bool Panel_RA8889::IC_WaitReady(void)
 {
-  uint8_t temp;
-  for(uint32_t i = 0; i < 1000000; i++) { //de acordo com o uso, altere o valor de i.
-    temp = StatusRead();
-    if( (temp & 0x02) == 0x00 ) {return true;}
+  static const uint32_t COUNTER = 1000000;     //de acordo com o uso, altere o valor de i.
+  for(uint32_t i = 0; i < COUNTER; i++) {
+    if( (StatusRead() & 0x02) == 0x00 ) return true;
 	delayMicroseconds(1);
   }
   return false;
@@ -1868,15 +2340,19 @@ bool Panel_RA8889::IC_WaitReady(void)
  * @endverbatim
  *
  * @param None
+ * 
+ * @return true: sucesso, false: erro, tempo de espera muito longo (timeout)
  *
  * @note None
  */
-void Panel_RA8889::CoreTask_WaitReady(void)
+bool Panel_RA8889::CoreTask_WaitReady(void)
 {
-  for(uint32_t i = 0; i < 1000000; i++) {  //Ajuste valor de i de acordo com a necessidade
-    if((StatusRead() & 0x08) == 0x00) {break;}
+  static const uint32_t COUNTER = 1000000;	//Ajuste valor de i de acordo com a necessidade
+  for(uint32_t i = 0; i < COUNTER; i++) {
+    if((StatusRead() & 0x08) == 0x00) return true;
     delayMicroseconds(1);
   } 
+  return false;
 }
 
 
@@ -1900,9 +2376,11 @@ void Panel_RA8889::CoreTask_WaitReady(void)
  *
  * @param None
  *
+ * @return true: sucesso, false: erro, tempo de espera muito longo (timeout)
+ *
  * @note None
  */
-void Panel_RA8889::Draw_WaitReady(void)  { CoreTask_WaitReady(); }
+bool Panel_RA8889::Draw_WaitReady(void)  { return CoreTask_WaitReady(); }
 
 
 /**
@@ -1923,15 +2401,17 @@ void Panel_RA8889::Draw_WaitReady(void)  { CoreTask_WaitReady(); }
  *
  * @param None
  *
+ * @return true: sucesso, false: erro, tempo de espera muito longo (timeout)
+ *
  * @note None
  */
-void Panel_RA8889::Wait_WriteFIFO_NotFull(void)
+bool Panel_RA8889::Wait_WriteFIFO_NotFull(void)
 {  
-  uint8_t temp = 0;
-  for(uint16_t i = 0; i < 10000; i++) {        //Ajuste valor de i de acordo com a necessidade
-    temp = StatusRead();
-    if( (temp & 0x80) == 0x00 ){break;}
+  static const uint32_t COUNTER = 10000;   //Ajuste valor de i de acordo com a necessidade
+  for(uint16_t i = 0; i < COUNTER; i++) {
+    if( (StatusRead() & 0x80) == 0x00 ) return true;
   }
+  return false;
 }
 
 
@@ -1950,15 +2430,17 @@ void Panel_RA8889::Wait_WriteFIFO_NotFull(void)
  *
  * @param None
  *
+ * @return true: sucesso, false: erro, tempo de espera muito longo (timeout)
+* 
  * @note None
  */
-void Panel_RA8889::Wait_WriteFIFO_Empty(void)
+bool Panel_RA8889::Wait_WriteFIFO_Empty(void)
 {
-  uint8_t temp = 0;
-  for(uint16_t i = 0; i < 10000; i++) {        //Ajuste valor de i de acordo com a necessidade
-    temp = StatusRead();    
-    if( (temp & 0x40) == 0x40 ) { break; }
+  static const uint32_t COUNTER = 10000;   //Ajuste valor de i de acordo com a necessidade
+  for(uint16_t i = 0; i < COUNTER; i++) {
+    if( (StatusRead() & 0x40) == 0x40 ) return true;
   }
+  return false;
 }
 
 
@@ -1980,15 +2462,17 @@ void Panel_RA8889::Wait_WriteFIFO_Empty(void)
  *
  * @param None
  *
+ * @return true: sucesso, false: erro, tempo de espera muito longo (timeout)
+ *
  * @note None
  */
-void Panel_RA8889::Wait_ReadFIFO_NotFull(void)
+bool Panel_RA8889::Wait_ReadFIFO_NotFull(void)
 {
-  uint8_t temp = 0;
-  for(uint16_t i = 0; i < 10000; i++) {        //Ajuste valor de i de acordo com a necessidade
-    temp = StatusRead();
-    if( (temp & 0x20) == 0x00 ){ break; }
+  static const uint32_t COUNTER = 10000;       //Ajuste valor de i de acordo com a necessidade
+  for(uint16_t i = 0; i < COUNTER; i++) {
+    if( (StatusRead() & 0x20) == 0x00 ) return true;
   }
+  return false;
 }
 
 
@@ -2007,15 +2491,17 @@ void Panel_RA8889::Wait_ReadFIFO_NotFull(void)
  *
  * @param None
  *
+ * @return true: sucesso, false: erro, tempo de espera muito longo (timeout)
+ *
  * @note None
  */
-void Panel_RA8889::Wait_ReadFIFO_NotEmpty(void)
+bool Panel_RA8889::Wait_ReadFIFO_NotEmpty(void)
 { 
-  uint8_t temp = 0;
-  for(uint16_t i = 0; i < 10000; i++) {        //Ajuste valor de i de acordo com a necessidade
-    temp = StatusRead();    
-    if( (temp & 0x10) == 0x00 ) { break; }
+  static const uint32_t COUNTER = 10000;       //Ajuste valor de i de acordo com a necessidade  
+  for(uint16_t i = 0; i < COUNTER; i++) {
+    if( (StatusRead() & 0x10) == 0x00 ) return true;
   }
+  return false;
 }
 
 
@@ -2084,42 +2570,44 @@ uint8_t Panel_RA8889::ReadIDCode(void)
  * A função só retorna quando o sistema está estável e pronto para operar.
  * @endverbatim
  */
-void Panel_RA8889::PLL_WaitReady(void)
+void Panel_RA8889::PLL_InitilizeWaitReady(void)
 {
+  static const uint8_t COUNT_TIMEOUT = 5;     //implementei talvez precise de ajuste
   uint8_t count_timeout = 0;
   uint8_t temp = 0;
   bool system_ok = false;
   
   do {
-    temp = StatusRead();                         //Read Status Register STSR
-	  if((temp & 0x02) == 0x00) {                  //Veja se o bit 1 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
-        delay(2);                                //MCU too fast, necessary
-        SPI_CmdWrite(REG_CCR);                   //0x01, Access register Chip Configuration Register (CCR)
-        delay(2);                                //MCU too fast, necessary
-        temp = SPI_DataRead();                   //Leia o CCR 
-        if((temp & 0x80) == 0x80) {              //Check CCR register's PLL is ready or not (bit 7 = 1) value=0x80
-          system_ok = true;                      //PLL pronto
-          count_timeout = 0;
-        } else {
-          delay(2);                              //MCU too fast, necessary
-          SPI_CmdWrite(REG_CCR);                 //0x01, Access register Chip Configuration Register (CCR)
-          delay(2);                              //MCU too fast, necessary
-          SPI_DataWrite(0x80);                   //Reconfigura a frequencia do PLL
-        }
+    temp = StatusRead();                       //Read Status Register STSR
+	if((temp & 0x02) == 0x00) {                //Veja se o bit 1 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
+
+      delay(2);                                //MCU too fast, necessary
+      SPI_CmdWrite(REG_CCR);                   //0x01, Access register Chip Configuration Register (CCR)
+      delay(2);                                //MCU too fast, necessary
+      temp = SPI_DataRead();                   //Leia o CCR 
+      if((temp & 0x80) == 0x80) {              //Check CCR register's PLL is ready or not (bit 7 = 1) value=0x80
+        system_ok = true;                      //PLL pronto
+        count_timeout = 0;
+      } else {
+        delay(2);                              //MCU too fast, necessary
+        SPI_CmdWrite(REG_CCR);                 //0x01, Access register Chip Configuration Register (CCR)
+        delay(2);                              //MCU too fast, necessary
+        SPI_DataWrite(0x80);                   //Reconfigura a frequencia do PLL
+      }
 	    
     } else {                          
         
-	    system_ok = false;                       //A inicialização interna ainda está sendo feita
-      count_timeout++;                         //fazer outra tentativa
+	  system_ok = false;                         //A inicialização interna ainda está sendo feita
+      count_timeout++;                           //fazer outra tentativa
 	    
     }
 	  
-    if(system_ok==false && count_timeout==5) { //Sistema ainda nao está pronto e houve timeout
-      HardwareReset();                         //*note1, envia um reset novamente
-      count_timeout = 0;                       //zera o cotnador de timeout 
+    if(system_ok==false && count_timeout==COUNT_TIMEOUT) {   //Sistema ainda nao está pronto e houve timeout
+      HardwareReset();                           //*note1, envia um reset novamente
+      count_timeout = 0;                         //zera o contador de timeout 
     }
 	
-  } while(system_ok==false);                   //faz enquanto não ficar pronto o sistema
+  } while(system_ok==false);                     //faz enquanto não ficar pronto o sistema
 }
 
 
@@ -2131,15 +2619,16 @@ void Panel_RA8889::PLL_Enable(void)
   uint16_t i;
 
   SPI_CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
-  SPI_CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
+  //removi isso nao faz sentido escrever comando REG_CCR e outro o SSR simultaneao sem enviar dados ou receber depois dele
+  //SPI_CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
   temp = SPI_DataRead();
   SETB(temp,7);                                //Habilita o PLL
   SPI_DataWrite(temp);
 
-  delayMicroseconds(100);                      // PLL lock time = 1024 T OSC clocks, if OSC=10MHz, PLL lock time = 100 us.  
+  delayMicroseconds(10);                       // PLL lock time = 1024 T OSC clocks, if OSC=10MHz, PLL lock time = 10 us.
 
   /*check PLL was ready ( Please according to your usage to modify. (Modifique de acordo com o uso)	*/
-  for(i=0;i<10000;i++) {
+  for(i=0;i<1000;i++) {
     SPI_CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
     temp = SPI_DataRead();                       //Leia o registrador
     if( (temp & 0x80)==0x80 ){break;}            //Veja se as configuracoes do PLL ficaram prontas para o uso
@@ -2152,9 +2641,10 @@ void Panel_RA8889::PLL_Enable(void)
 void Panel_RA8889::PLL_Disable(void)
 {
 /* 0: PLL disanable; can change PLL parameter.*/
-	uint8_t temp;
+  uint8_t temp;
   SPI_CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
-  SPI_CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
+  //removi isso nao faz sentido escrever comando REG_CCR e outro o SSR simultaneao sem enviar dados ou receber depois dele
+  //SPI_CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
   temp = SPI_DataRead();
   CLRB(temp,7);                                //Disable PLL
   SPI_DataWrite(temp);
@@ -2219,10 +2709,10 @@ void Panel_RA8889::PLL_ConfigClocks(uint8_t scanclk, uint8_t dramclk, uint8_t co
   }                                            
   if((scanclk>=32)&&(scanclk<=62))         
   {                                            
-	SPI_CmdWrite(REG_PPLLC1);                  //0x05    
-	SPI_DataWrite(0x06);                       //PLL Divided by 8
-	SPI_CmdWrite(REG_PPLLC2);                  //0x06
-	SPI_DataWrite((scanclk*8/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+    SPI_CmdWrite(REG_PPLLC1);                  //0x05    
+    SPI_DataWrite(0x06);                       //PLL Divided by 8
+    SPI_CmdWrite(REG_PPLLC2);                  //0x06
+    SPI_DataWrite((scanclk*8/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }                                            
   if((scanclk>=16)&&(scanclk<=31))         
   {                                            
@@ -2337,9 +2827,15 @@ void Panel_RA8889::PLL_ConfigClocks(uint8_t scanclk, uint8_t dramclk, uint8_t co
  */
 void Panel_RA8889::PLL_Init(void)
 {
-  PLL_Disable();  //O PLL so pode ser modificado com novos valores desligando antes
+  //PLL_Disable();  //O PLL so pode ser modificado com novos valores desligando antes
   PLL_ConfigClocks(SCAN_FREQ, DRAM_FREQ, CORE_FREQ, OSC_FREQ);
-  PLL_Enable();	
+  //PLL_Enable();	
+
+	SPI_CmdWrite(0x01);
+	SPI_CmdWrite(0x00);
+	delay(1);
+	SPI_CmdWrite(0x80);
+
   DEBUG_PRINT("PLL Initialized",0,false, true);
 }
 
@@ -2361,21 +2857,25 @@ void Panel_RA8889::PLL_Init(void)
  *
  * Uso típico: deve ser chamada após a inicialização da SDRAM ou 
  * antes de qualquer operação que dependa do acesso estável à memória.
- * 
+ *
+ * @verbatim 
  * Status Register (STSR) 
  * Bit [2] SDRAM ready for access
  *         0: SDRAM não está pronta para acesso.
  *         1: SDRAM pronta para acesso.
  * Before user check this bit staus , user must be set ”sdr_initdone” bit as 1
+ * @endverbatim
  *
+ * @param None
+ *
+ * @return true: sucesso, false: erro, tempo de espera muito longo (timeout)
  */
 bool Panel_RA8889::SDRAM_WaitReady(void)
 {
-  uint8_t temp = 0;
-  for (unsigned long i = 0; i < 1000000; i++) {
-	temp = StatusRead();
-	if ((temp & 0x04) == 0x04) return true;
+  static const uint32_t COUNTER = 1000000;
+  for (unsigned long i = 0; i < COUNTER; i++) {
     delayMicroseconds(1);
+    if ((StatusRead() & 0x04) == 0x04) return true;
   }
   return false;
 }
@@ -2400,8 +2900,9 @@ bool Panel_RA8889::SDRAM_WaitReady(void)
  */
 void Panel_RA8889::SDRAM_Init(void)
 {
-  uint16_t sdram_itv;  //autorefresh
-  
+  uint16_t Auto_Refresh;
+  uint8_t  CAS_Latency;
+	
   //0xe0, SDRAM attribute register (SDRAR)
   //Configura o modo da SDRAM
   //  0x29 = indica parâmetros como largura do barramento e o tipo de refresh.
@@ -2414,27 +2915,24 @@ void Panel_RA8889::SDRAM_Init(void)
   //Define a latência CAS (Column Address Strobe latency).
   //  0x03 = Define a latência CAS (Column Address Strobe latency)
   //  SDRAM CAS latency (sdr-caslat)    bit 2-0 CAS:2 010b=0x02 -> 2 ciclos CAS:3 011b=0x03 -> 3 ciclos  
-  RegisterWrite(REG_SDRMD, 0x03);
+  CAS_Latency = 0x03;
+  RegisterWrite(REG_SDRMD, CAS_Latency);
   
   //Set SDRAM refresh interval via SDRAM auto refresh interval registers
   
   //Calcula o intervalo de refresh da SDRAM.
-  // - A maioria das SDRAM precisa de 8192 ciclos de refresh em 64 ms.
-  // - Esse cálculo pega o clock de 64 MHz, divide pelo número de linhas (8192), e ajusta para a taxa de atualização (60 Hz).
+  // - A SDRAM precisa de 4096 ciclos de refresh em 64 ms.
+  // - Esse cálculo pega o clock de 64 MHz, divide pelo número de linhas (4096)
   // - O -2 é um ajuste de margem para não ficar no limite.
-  sdram_itv = (64000000 / 8192) / (1000/60);
-  sdram_itv-=2;
-  
-  //este faz sentido com a literatura de outros que usaram
-  //o sdram_itv acima, foi testado no Arduinio e funcionou
-  //sdram_itv = (64 * DRAM_FREQ * 1000) / (4096);  //valores em MHz
-  //sdram_itv-=2;
+  Auto_Refresh = (64 * DRAM_FREQ * 1000) / (4096);  //valores em MHz (foi testado no original e funciona bem)
+  //Auto_Refresh = (64000000 / 8192) / (1000/60);
+  Auto_Refresh-=2;                                  //Start [refresh] in advance to avoid just rachiong the limits
   
   //0xe2, SDRAM auto refresh interval (SDR_REF_ITVL0) - Byte low
-  RegisterWrite(REG_SDR_REF_ITVL0, sdram_itv); //envia byte menos significativo da palavra
+  RegisterWrite(REG_SDR_REF_ITVL0, Auto_Refresh); //envia byte menos significativo da palavra
   
   //0xe3, SDRAM auto refresh interval (SDR_REF_ITVL1) - Byte high
-  RegisterWrite(REG_SDR_REF_ITVL1, sdram_itv >> 8); //envia byte mais significativo da palavra
+  RegisterWrite(REG_SDR_REF_ITVL1, Auto_Refresh >> 8); //envia byte mais significativo da palavra
   
   //0xe4, SDRAM Control register (SDRCR)
   //  0x01 = Iniciar procedimento de inicialização da SDRAM (sdr_initdone)
@@ -2770,8 +3268,9 @@ void Panel_RA8889::HostDataBus_Select_16bit(void)
 //================================================================================
 
 
+//outro nome sugerido: MCUDataFormatSDRAM()
 /** OK
- * @brief MPU/MCU Read/Write data format when access memory data por
+ * @brief MPU/MCU Read/Write data format when access memory data
  *
  * @verbatim
  * REG [0x02] Memory Access Control Register (MACR)
@@ -2804,12 +3303,14 @@ void Panel_RA8889::HostColorDepthFormat(uint8_t type)
   uint8_t temp;
   SPI_CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
   temp = SPI_DataRead();
-  if (type == 0) CLRB(temp,7);                 //Reset bit 7
-  if (type == 1) {
+  
+  if (type == 0) {                             //0xb: Direct write (for all 8 bits MPU I/F, 16 bits MPU I/F with 8bpp data mode 1 & 2, 16 bits MPU I/F with 16/24-bpp data mode 1 & serial host interface)
+	  CLRB(temp,7);                            //Reset bit 7
+	  CLRB(temp,6);                            //Reset bit 6
+  } else if (type == 1) {                      //10b: Mask high byte of each data (ex. 16 bit MPU I/F with 8-bpp data mode 1)
 	  SETB(temp,7);                            //Set bit 7
 	  CLRB(temp,6);                            //Reset bit 6
-  }
-  if (type == 2) {
+  } else if (type == 2) {                      //11b: Mask high byte of even data (ex. 16 bit MPU I/F with 24-bpp data mode 2)
 	  SETB(temp,7);                            //Set bit 7
 	  SETB(temp,6);                            //Set bit 6
   }
@@ -2817,6 +3318,7 @@ void Panel_RA8889::HostColorDepthFormat(uint8_t type)
 }
 
 
+//outro nome sugerido: MCU_DataFormat_SDRAM
 /**
  * @brief Select a data format for MCU read/write SDRAM.
  *
@@ -2920,7 +3422,7 @@ void Panel_RA8889::HostWriteMemoryDirection(MemoryDirection direction)
   SPI_CmdWrite(REG_MACR);                             //0x02, Memory Access Control Register (MACR)
   temp = SPI_DataRead();
   temp &= ~(cSetb2 | cSetb1);                         //Reset bit 2 e 1
-  temp |= (static_cast<uint8_t>(direction) <<1);      //posiciona o valor para o bit 2 e 1
+  temp |= (static_cast<uint8_t>(direction) << 1);     //posiciona o valor para o bit 2 e 1
   SPI_DataWrite(temp);
 }
 
@@ -3075,18 +3577,33 @@ void Panel_RA8889::LVDS_DataFormat_JEIDA(void)
 /** OK
  * @brief Muda o display para modo grafico
  *
+ * @verbatim
+ * REG [0x03] Input Control Register (ICR)
+ * bit [2] Text Mode Enable
+ *     0 : Graphic mode.
+ *     1 : Text mode.
+ *     Before toggle this bit user must make sure core task busy bit 3 
+ *     (Status Register - STSR) in status register is done or idle.
+ *     This bit always 0 (in graphic mode) if canvas' address mode is linear 
+ *     mode.
+ * @endverbatim
+ *
  * @param None
+ *
+ * @return true se o display já estava em modo grafico
  *
  * @note None
  *
  */
-//
-void Panel_RA8889::GraphicMode(void){
+bool Panel_RA8889::GraphicMode(void){
   uint8_t temp;
+  bool res;
   SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
   temp = SPI_DataRead();                       //Lê valor atual do registrador
+  res = (temp & 0x4) == 0;                     //bit [2]=0, Graphic mode
   CLRB(temp,2);                                //Reset bit 2
   SPI_DataWrite(temp);                         //Ativa modo grafico
+  return res;
 }
 
 
@@ -3110,18 +3627,34 @@ bool Panel_RA8889::IsGraphicMode(void){
 /**
  * @brief Muda o display para modo texto
  *
+ * @verbatim
+ * REG [0x03] Input Control Register (ICR)
+ * bit [2] Text Mode Enable
+ *     0 : Graphic mode.
+ *     1 : Text mode.
+ *     Before toggle this bit user must make sure core task busy bit 3 
+ *     (Status Register - STSR) in status register is done or idle.
+ *     This bit always 0 (in graphic mode) if canvas' address mode is linear 
+ *     mode.
+ * @endverbatim
+ *
  * @param None
+ *
+ * @return true se o display já estava em modo texto
  *
  * @note None
  *        
  */
-void Panel_RA8889::TextMode(void)
+bool Panel_RA8889::TextMode(void)
 {
   uint8_t temp;
+  bool res;
   SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
   temp = SPI_DataRead();                       //Lê valor atual do registrador
+  res = (temp & 0x4);                          //bit [2]=1, Text mode
   SETB(temp,2);                                //Set bit 2
   SPI_DataWrite(temp);                         //Ativa o modo texto
+  return res;
 }
 
 
@@ -5540,6 +6073,7 @@ void Panel_RA8889::DisplayOn(bool on)
   temp = SPI_DataRead();                       //Lê valor atual do registrador
   on ? SETB(temp,6) : CLRB(temp,6);            //Set/Reset bit 6
   SPI_DataWrite(temp);
+  CoreTask_WaitReady();
 }
 
 /**
@@ -5712,6 +6246,36 @@ void Panel_RA8889::VerticalScanDirection(VSCANDir direction)
   CLRB(temp,3);                                //Reset bit 3
   temp |= static_cast<uint8_t>(direction);     //Define o destino
   SPI_DataWrite(temp);                         //Write VDIR
+}
+
+
+/**
+ * @brief Set the type of parallel data output sequence in Color RGB format
+ *
+ * @verbatim
+ * REG[0x12] Display Configuration Register (DPCR)
+ * Parallel XPDAT[23:0] Output Sequence:
+ * bit [2-0] 0b000 : RGB
+ *           0b001 : RBG
+ *           0b010 : GRB
+ *           0b011 : GBR
+ *           0b100 : BRG
+ *           0b101 : BGR
+ *           0b110 : Gray
+ *           0b111 : Send out idle state (all 0 or 1, black or white color).
+ * @endverbatim
+ *
+ * @param None
+ * 
+ * @note None
+ */
+void Panel_RA8889::PDATA_ColorRGB(void)
+{
+  uint8_t temp;
+  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  temp &= ~(cSetb2 | cSetb1 | cSetb0);         //Reset bit 2, 1 e 0, format RGB =0b000 
+  SPI_DataWrite(temp);
 }
 
 
@@ -6515,8 +7079,8 @@ void Panel_RA8889::VSYNC_PulseWidth(uint8_t vspw)
 uint32_t Panel_RA8889::LayerStartAddr(uint8_t layer)
 {
   if (layer > MAX_LAYER-1) return 0;
-  return _width * _height * (_bpp / 8) * layer;   //ex. 800x480 * (16 (16bpp)/8) * 1 = 768000 = 0xbb800
-  SERIAL_DEBUG("LayerStartAddr, _bpp: ",_bpp,true,true);    //Debug
+  return _displaywidth * _displayheight * (_bpp / 8) * layer;   //ex. 800x480 * (16 (16bpp)/8) * 1 = 768000 = 0xbb800
+  DEBUG_PRINT("LayerStartAddr, _bpp: ",_bpp,true,true);    //Debug
 }
 
 
@@ -7886,9 +8450,9 @@ void Panel_RA8889::ActiveWindow_WidhtHeight(uint16_t Wx, uint16_t Hy)
  *        
  * @verbatim
  * REG [0x5e] Color Depth of Canvas & Active Window (AW_COLOR)
- *            bit [2] Canvas addressing mode
- *                    0b0: Block mode (X-Y coordinates addressing)
- *                    0b1: Linear mode
+ * bit [2] Canvas addressing mode
+ *         0b0: Block mode (X-Y coordinates addressing)
+ *         0b1: Linear mode
  * @endverbatim
  *
  * @param None
@@ -9633,10 +10197,10 @@ void Panel_RA8889::PWM0_InverterOn(bool on)
  *
  * @verbatim
  * REG [0x86] PWM Configuration Register (PCFGR)
- *            bit [1] PWM Timer 0 auto reload on/off
- *            Determine auto reload on/off for Timer 0.        
- *                    0b0: One-shot
- *                    0b1: Interval mode(auto reload) (default)
+ * bit [1] PWM Timer 0 auto reload on/off
+ * Determine auto reload on/off for Timer 0.        
+ *         0b0: One-shot
+ *         0b1: Interval mode(auto reload) (default)
  * @endverbatim
  *
  * @param None
@@ -9657,10 +10221,10 @@ void Panel_RA8889::PWM0_Select_AutoReload(void)
  *
  * @verbatim
  * REG [0x86] PWM Configuration Register (PCFGR)
- *            bit [1] PWM Timer 0 auto reload on/off
- *            Determine auto reload on/off for Timer 0.
- *                    0b0: One-shot
- *                    0b1: Interval mode(auto reload) (default)
+ * bit [1] PWM Timer 0 auto reload on/off
+ * Determine auto reload on/off for Timer 0.
+ *         0b0: One-shot
+ *         0b1: Interval mode(auto reload) (default)
  * @endverbatim
  *
  * @param None
@@ -9791,18 +10355,18 @@ void Panel_RA8889::PWM0_DeadZoneLength(uint8_t len)
  *
  *@verbatim
  * REG [0x88] Timer 0 compare buffer register [TCMPB0L]
- *            bit [7-0] Timer 0 compare buffer register --- Low Byte
- *            Compare buffer register is 16 bits in total. When timer counter 
- *            is eqaual to or less than compare buffer register, PWM 0 will 
- *            output high level if PWM Timer 0 output inverter on/off bit is 
- *            off.
+ * bit [7-0] Timer 0 compare buffer register --- Low Byte
+ *     Compare buffer register is 16 bits in total. When timer counter 
+ *     is eqaual to or less than compare buffer register, PWM 0 will 
+ *     output high level if PWM Timer 0 output inverter on/off bit is 
+ *     off.
  *
  * REG [0x89] Timer 0 compare buffer register [TCMPB0H]
- *            bit [7-0] Timer 0 compare buffer register --- High Byte
- *            Compare buffer register is 16 bits in total. When timer counter 
- *            is eqaual to or less than compare buffer register, PWM 0 will 
- *            output high level if PWM Timer 0 output inverter on/off bit is 
- *            off.
+ * bit [7-0] Timer 0 compare buffer register --- High Byte
+ *     Compare buffer register is 16 bits in total. When timer counter 
+ *     is eqaual to or less than compare buffer register, PWM 0 will 
+ *     output high level if PWM Timer 0 output inverter on/off bit is 
+ *     off.
  *
  * Como o Timer funciona com ele:
  *
@@ -11602,7 +12166,7 @@ void Panel_RA8889::SFI_DMA_WaitReady(void)
 
 
 /**
- * @brief Select Serial Flash/ROM Access Font Mode
+ * @brief Select Serial Flash/ROM I/F Access Font Mode
  *        
  * @verbatim                  
  * REG [0xb7] Serial Flash/ROM Controller Register (SFL_CTRL)
@@ -11617,7 +12181,7 @@ void Panel_RA8889::SFI_DMA_WaitReady(void)
  *
  * @result None
  */
-void Panel_RA8889::Select_SFI_FontMode(void)
+void Panel_RA8889::SFI_Select_FontMode(void)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
@@ -11643,7 +12207,7 @@ void Panel_RA8889::Select_SFI_FontMode(void)
  *
  * @result None
  */
-void Panel_RA8889::Select_SFI_DMAMode(void)
+void Panel_RA8889::SFI_Select_DMAMode(void)
 {
   uint8_t temp;
   SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
@@ -13778,18 +14342,24 @@ void Panel_RA8889::EMTI_Clear_Flag(void)
  * @verbatim                  
  * REG [0xbb] SPI Clock period (SPI_DIVSOR)
  * bit [7-0] SPI Clock period (default Fsck=3)
- * According to system clock to set low & high period for SPI clock. 
- * SPI Master:
- *   Fsck = Fcore / (divisor * 2)
- * Serial Flash:
- *   Fsck = Fcore / (divisor * 2)
- * When SPI_DIVSOR = 0,
- *   Fsck = Fcore
+ *     According to system clock to set low & high period for SPI clock. 
+ *     SPI Master:
+ *       Fsck = Fcore / (divisor * 2)       //Provavelmente incorreto
+ *       Fsck = Fcore / ((divisor + 1)* 2)  //Provavelmente correto
+ *     Serial Flash:
+ *       Fsck = Fcore / (divisor * 2)
+ *     When SPI_DIVSOR = 0,
+ *       Fsck = Fcore
  * @endverbatim
  *
  * @param divisor: valor do divisor para o ajuste de frequencia do periodo de clock do SPI
  *
- * @note None
+ * @bug
+ * No datasheet indica a equação SPI master de frequencia de clock SPI Fsck = Fcore / (divisor * 2)
+ * que segundo alguns codigos produzidos pela propria RAIO, o correto é: Fsck = Fcore / ((divisor + 1) * 2)
+ *
+ * @note quando se fala em divisor é o resultado final do denominador (divdendo),
+ *       no caso ((divisor + 1)* 2), mas o valor do divisor é 0,1,2,3,4... e dividendo seria 2,4,6,8,10...
  *
  * @result None
  */
@@ -18286,7 +18856,7 @@ void Panel_RA8889::DMA_24bit_Block(uint8_t scs,         // scs: Select SPI : SCS
 
   Select_SFI_DualData_3Bh();                             //Dual mode 0
   Memory_XYMode();                     
-  Select_SFI_DMAMode();                                  // Select SPI DMA mode
+  SFI_Select_DMAMode();                                  // Select SPI DMA mode
   SPI_Clock_Period(Clk);                                 // Select SPI clock
 
   GotoPixel_XY(x1, y1);                                  // Setting the location of memory in the graphic mode
@@ -18326,7 +18896,7 @@ void Panel_RA8889::DMA_24bit(
   SPIM_ClockDivided_1();                       // SPI Clock = System Clock /{(Clk)*2}
   SPIM_RxLatchEdge_Falling();                  // SPIM latch
 
-  Select_SFI_DMAMode();                        // Set Serial Flash DMA Mode
+  SFI_Select_DMAMode();                        // Set Serial Flash DMA Mode
   SPI_Clock_Period(clk);
   
   // DMA
@@ -18365,7 +18935,7 @@ void Panel_RA8889::DMA_32bit(uint8_t clk,       // Clk : SPI Clock = System Cloc
                             )
 {
 
-  Select_SFI_DMAMode();                          // Set Serial Flash DMA Mode
+  SFI_Select_DMAMode();                          // Set Serial Flash DMA Mode
   SPI_Clock_Period(clk);
 
   SFI_Select_32bitAddress();                     // Set Serial Flash/ROM 32bits Address
@@ -18826,7 +19396,7 @@ void Panel_RA8889::PIP(bool On_Off,                   // 0 : disable PIP, 1 : en
 //================================================================================
 
 
-/**
+/** nao surtiu efeito aparente
  * @brief 
  *
  * @param bool on_off                 -> true ON pwm, false OFF pwm
@@ -18919,6 +19489,31 @@ void Panel_RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF 
 
   //0x86, PWM Configuration Register (PCFGR) 
   on_off ? PWM1_StartTimer() : PWM1_StopTimer();
+}
+
+
+/** Não surtiu efeito
+ * @brief  Turn Backlight On/Off
+ *
+ * @param bool on                  -> true backlight ON
+ * 
+ * @note None
+ */
+void Panel_RA8889::Backlight(bool on) {
+  if (on) {
+	  RegisterWrite(REG_PMUXR, 
+	                BIT_PWM1_TIMER_DIV1 | BIT_PWM0_TIMER_DIV1 | BIT_XPWM1_OUTPUT_ERROR_FLAG | 
+					BIT_XPWM0_OUTPUT_PWM_TIMER0);
+	  RegisterWrite(REG_PCFGR, 
+	                BIT_PWM1_INVERTER_OFF | BIT_PWM1_AUTO_RELOAD | BIT_PWM1_STOP | 
+	                BIT_PWM0_DEAD_ZONE_ENABLE | BIT_PWM0_INVERTER_OFF | BIT_PWM0_AUTO_RELOAD | BIT_PWM0_START);
+      PWM0_SetCompareBuffer(0xffff); //Duty Cycles
+  
+  } else {
+	  RegisterWrite(REG_PCFGR, 
+	                BIT_PWM1_INVERTER_OFF | BIT_PWM1_AUTO_RELOAD | BIT_PWM1_STOP | 
+	                BIT_PWM0_DEAD_ZONE_ENABLE | BIT_PWM0_INVERTER_OFF | BIT_PWM0_AUTO_RELOAD | BIT_PWM0_STOP);
+  }
 }
 
 
@@ -19161,8 +19756,29 @@ void Panel_RA8889::FillScreen(uint32_t color)
 {
   uint8_t mode = IsGraphicMode();   //Veja ese esta em modo grafico
   if (!mode) GraphicMode();         //Muda para modo grafico
-  DrawSquare(0, 0, _width-1, _height-1, color, true);
+  DrawSquare(0, 0, _displaywidth-1, _displayheight-1, color, true);
   if (!mode) {TextMode();}          //Restaura o modo anterior
+}
+
+
+//ajusta posicao do cursos
+void Panel_RA8889::setPosCursor(uint16_t x, uint16_t y)
+{
+  GotoText_XY(x, y);
+  _cursor_x = x;                               //Update global cursor position y variables
+  _cursor_y = y;                               //Update global cursor position y variables
+}
+
+
+//limpa a atual ativa tela para o ultimo padrão de cores e posiciona o cursos no inicio da tela
+void Panel_RA8889::ClearScreen()
+{
+  uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
+  if (!mode) GraphicMode();                    //Muda para modo grafico
+  DrawSquare(0, 0, _displaywidth-1, _displayheight-1, _bgcolor, true);
+  TextColor(_text_fgcolor, _text_bgcolor);
+  setPosCursor(_cursor_x,_cursor_y);
+  if (!mode) {TextMode();}                     //Restaura o modo anterior
 }
 
 
@@ -19271,9 +19887,9 @@ pospixel_t Panel_RA8889::GetPixelPosXY()
 void Panel_RA8889::SetPage(uint8_t page)
 {
   CanvasImage_StartAddr( LayerStartAddr(page) );
-  CanvasImage_Width(_width);
+  CanvasImage_Width(_displaywidth);
   ActiveWindow_XY(0,0);
-  ActiveWindow_WidhtHeight(_width, _height);
+  ActiveWindow_WidhtHeight(_displaywidth, _displayheight);
 }
 
 
@@ -19292,13 +19908,13 @@ void Panel_RA8889::ShowPage(uint8_t page)
 #endif
 
   MainImage_StartAddress( LayerStartAddr(page) );
-  MainImage_Width(_width);
+  MainImage_Width(_displaywidth);
   MainWindow_StartXY(0, 0);
 
   CanvasImage_StartAddr( LayerStartAddr(page) );
-  CanvasImage_Width(_width);
+  CanvasImage_Width(_displaywidth);
   ActiveWindow_XY(0, 0);
-  ActiveWindow_WidhtHeight(_width, _height);
+  ActiveWindow_WidhtHeight(_displaywidth, _displayheight);
 }
 
 
@@ -19307,9 +19923,9 @@ void Panel_RA8889::ClearCurrentPage(uint32_t color = 0x00000000)
 {
   ForegroundColor(color);                      //High level, Foreground color
   Point1_XY(0, 0);
-  Point2_XY(_width-1, _height-1);
+  Point2_XY(_displaywidth-1, _displayheight-1);
   SquareMode_Start(true);
-  CoreTask_WaitReady();
+  //CoreTask_WaitReady();
 }
 
 
@@ -19371,6 +19987,44 @@ void Panel_RA8889::PutPixel(uint16_t x,      // x of coordinate
   #if USE_XNWAIT
     Wait_WriteFIFO_NotFull();                  //Espera no final do pixel ou bloco
   #endif
+}
+
+
+/**
+ * @brief Pega a cor do pixel na determinada posição da tela da atual window
+ *        
+ * @param (x,y):   Posicao coordenada na tela
+ *        
+ * @return cor do pixel de acordo com o formato do color depth
+ * 
+ * @note A cor do pixel vai depender do Color Depth escolhido
+ *       8bpp:  RGB332
+ *       16bpp: RGB565
+ *       24bpp: RGB888
+ */
+uint32_t Panel_RA8889::getPixel(uint16_t x, uint16_t y)
+{
+  uint32_t color = 0;
+  GotoPixel_XY(x, y);                          //Posiciona o pixel na tela
+  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+	SPI_DataRead();	                             //dummy read is required somehow
+
+  Wait_WriteFIFO_NotFull();                    //Espera que a FIFO não esteja cheia de algum outro processamento anterior
+
+  #if defined(COLOR_DEPTH_8)
+    color = SPI_DataRead();
+  #elif defined(COLOR_DEPTH_16)
+    color = SPI_DataRead();                   //low byte color
+    color |= SPI_DataRead() << 8;             //high byte color
+  #elif defined(COLOR_DEPTH_24)
+    color = SPI_DataRead();                   //low byte color
+    color |= SPI_DataRead() << 8;             //middle byte color
+    color |= SPI_DataRead() << 16;            //high byte color
+  #else
+	  #error "COLOR_DEPTH não definido corretamente"
+  #endif
+
+  return color;
 }
 
 
@@ -19607,10 +20261,14 @@ void Panel_RA8889::DrawLine(uint16_t x1,
                             uint16_t y1,
                             uint16_t x2,
                             uint16_t y2,
-                            uint32_t forecolor
+                            uint32_t color
                            )
 {
-  ForegroundColor(forecolor);                 //High level, Foreground color
+  if ((x1 == x2 && y1 == y2)) {
+    DrawPixel(x1, y1, color);
+    return;
+  }
+  ForegroundColor(color);                      //High level, Foreground color
   Point1_XY(x1, y1);
   Point2_XY(x2, y2);
   LineMode_Start();
@@ -19647,7 +20305,7 @@ void Panel_RA8889::DrawSquare(uint16_t x1,
   Point1_XY(x1, y1);
   Point2_XY(x2, y2);
   SquareMode_Start(bfill);
-  CoreTask_WaitReady();
+  //CoreTask_WaitReady();
 }
 
 
@@ -19684,7 +20342,7 @@ void Panel_RA8889::DrawTriangle(uint16_t x1,
   Point2_XY(x2, y2);
   Point3_XY(x3, y3);
   TriangleMode_Start(bfill);
-  CoreTask_WaitReady();  
+  //CoreTask_WaitReady();  
 }
 
 
@@ -19715,7 +20373,7 @@ void Panel_RA8889::DrawCircle (uint16_t x1,
   Center_XY(x1,y1);
   Radius_RxRy(R, R);
   CircleMode_Start(bfill);
-  CoreTask_WaitReady();  
+  //CoreTask_WaitReady();  
 }
 
 
@@ -19748,7 +20406,7 @@ void Panel_RA8889::DrawEllipse (uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   EllipseMode_Start(bfill);
-  CoreTask_WaitReady();
+  //CoreTask_WaitReady();
 }
 
 
@@ -19781,7 +20439,7 @@ void Panel_RA8889::DrawCurveLeftUp(uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveLeftUpMode_Start(bfill);
-  CoreTask_WaitReady();  
+  //CoreTask_WaitReady();  
 }
 
 
@@ -19814,7 +20472,7 @@ void Panel_RA8889::DrawCurveRightDown(uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveRightDownMode_Start(bfill);
-  CoreTask_WaitReady();
+  //CoreTask_WaitReady();
 }
 
 
@@ -19849,7 +20507,7 @@ void Panel_RA8889::DrawCurveRightUp(uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveRightUpMode_Start(bfill);
-  CoreTask_WaitReady();
+  //CoreTask_WaitReady();
 }
 
 
@@ -19884,7 +20542,7 @@ void Panel_RA8889::DrawCurveLeftDown(uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveLeftDownMode_Start(bfill); 
-  CoreTask_WaitReady();
+  //CoreTask_WaitReady();
 }
 
 
@@ -19923,7 +20581,7 @@ void Panel_RA8889::DrawCircleSquare(uint16_t x1,
   Point2_XY(x2, y2);
   Radius_RxRy(Rx, Ry);
   CircleSquareMode_Start(bfill);
-  CoreTask_WaitReady();
+  //CoreTask_WaitReady();
 }
 
 
@@ -20011,7 +20669,7 @@ void Panel_RA8889::DrawPicturePgm(uint16_t Wx, uint16_t Hy, uint16_t width, uint
   ShowPicturePgm(size, *datap);
 
   ActiveWindow_XY(0,0);
-  ActiveWindow_WidhtHeight(_width, _height);
+  ActiveWindow_WidhtHeight(_displaywidth, _displayheight);
 }
 
 
@@ -20075,7 +20733,7 @@ void Panel_RA8889::DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16
   ShowPicture(pictureBpp, w*h, pixels);
 
   ActiveWindow_XY(0,0);
-  ActiveWindow_WidhtHeight(_width, _height);
+  ActiveWindow_WidhtHeight(_displaywidth, _displayheight);
 }
 
 
@@ -20136,19 +20794,24 @@ void Panel_RA8889::Font_Init(void)
  * None
  * @endverbatim
  *
- * @param foregcolor
- * @param backgcolor
+ * @param fgcolor
+ * @param bgcolor
  *
  * @note None
  *
  */
-void Panel_RA8889::TextColor(uint32_t foregcolor, uint32_t backgcolor)
+void Panel_RA8889::TextColor(uint32_t fgcolor, uint32_t bgcolor)
 { 
-  uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
-  if (mode) TextMode();                        //Modo texto
-  ForegroundColor(foregcolor);                 //High level, Foreground color
-  BackgroundColor(backgcolor);                 //High level, Background color
-  if (mode) {GraphicMode();}                   //Restaura o modo anterior
+  CoreTask_WaitReady();
+//  uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
+//  if (mode) TextMode();                        //Modo texto
+  uint8_t mode = TextMode();                   //Modo texto  
+  ForegroundColor(fgcolor);                    //High level, Foreground color
+  BackgroundColor(bgcolor);                    //High level, Background color
+  _text_bgcolor = bgcolor;
+  _text_fgcolor = fgcolor;
+  //if (mode) {GraphicMode();}                   //Restaura o modo anterior
+  if (!mode) {GraphicMode();}                   //Restaura se estava em modo grafico
 }
 
 
@@ -20175,7 +20838,7 @@ void Panel_RA8889::ShowText(char *str)
     Wait_WriteFIFO_NotFull();                  //
     ++str;                                     //proximo caracter para imprimir no display
   }
-  CoreTask_WaitReady();
+  CoreTask_WaitReady();                        //Precisa estar aqui!! Senão display bagunça
 }
 
 
@@ -20202,13 +20865,12 @@ void Panel_RA8889::ShowText(char *str)
  */
 void Panel_RA8889::Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, uint32_t backgcolor)
 {
-  uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
-  if (mode) TextMode();                        //Modo texto 
+  uint8_t mode = TextMode();                   //Modo texto 
   ForegroundColor(foregcolor);                 //High level, Foreground color
   BackgroundColor(backgcolor);                 //High level, Background color
   GotoText_XY(x, y);                           //posiciona o texto
   ShowText(str);                               //Envia caracterres para o portão de entrada da memoria
-  if (mode) {GraphicMode();}                   //Restaura o modo anterior
+  if (!mode) GraphicMode();                    //Restaura o modo anterior se for grafico
 }
 
 
@@ -20382,11 +21044,79 @@ void Panel_RA8889::setFontInternal(FontInternalParam param, bool enable = false)
  */
 void Panel_RA8889::PutString(uint16_t x, uint16_t y, char *str)
 {
-  uint8_t mode = IsGraphicMode();  //Veja ese esta em modo grafico
-  if (mode) TextMode();            //Modo texto 
+  uint8_t mode = TextMode();       //Modo texto 
   GotoText_XY(x, y);               //posiciona o texto
-  ShowText(str);                   //Envia caracterres para o portão de entrada da memoria
-  if (mode) {GraphicMode();}       //Restaura o modo anterior
+  ShowText(str);                   //Envia caracterres ASCII, 1 byte, para o portão de entrada da memoria
+  if (!mode) {GraphicMode();}      //Restaura o modo anterior se for grafico
+}
+
+
+//nao testado
+//imprime caractrer ASCII/UNICODE a partir da Genitop ROM Flash ROM #0
+//na atual janela ativa
+//*str Unicode Font String which you want print on LCD (L"string" in keil c is Unicode string)
+//     example: PutUnicodeString(0,0,clAquaGreen,clDenimDarkBlue,L"穝λ郡λカじ刁8腹6加ぇ5");
+//return
+//  true: fonte está presente na Genitop
+
+bool Panel_RA8889::PutUnicodeString(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, char *str)
+{
+  bool res = false;
+
+  //Olhe para o primeiro caracter e verificas o mapa de bits de presença de fonte
+  //ASCII imprimiveis 32 até 127
+  //ASCII extendido, padrao ISO 8859-1 de 128 até 255
+  if((*str)>=0x0020 && (*str)<0x0080) {
+    res = CheckFontExternal(BIT_ASCII);
+  } else {
+	res = CheckFontExternal(BIT_UNICODE);
+  }
+  if (!res) return false;
+  
+  SFI_Select_FontMode();
+  Font_SetSource(eFontSource::ExternalCGROM);
+  SPI_Clock_Period(_display_spi_clk_divider);
+  
+  SFI_Select_24bitAddress();
+  SFI_Select_WaveformMode3();
+  Select_SFI_SingleData_03h();
+  
+  //valor _font_rom_scs = 0 condigurado no sistema
+  if (_fnt_rom_scs == 0) SFI_SelectROM_CS0();
+  if (_fnt_rom_scs == 1) SFI_SelectROM_CS1();
+  if (_fnt_rom_scs == 2) SFI_SelectROM_CS2();  
+  if (_fnt_rom_scs == 3) SFI_SelectROM_CS3();
+
+  //valor _font_dma_bus = 0 condigurado no sistema
+  if (_fnt_dma_bus == 0) Font_DMA_Select_Bus0();
+  if (_fnt_dma_bus == 1) Font_DMA_Select_Bus1();
+
+  uint8_t mode = TextMode();                   //Modo texto
+  
+  ForegroundColor(fgcolor);                    //High level, Foreground color
+  BackgroundColor(bgcolor);                    //High level, Background color
+
+  while(*str != '\0')
+  {
+    if((*str)>=0x0020 && (*str)<0x0080) {
+	   /* ASCII Code*/
+       GTFont_SetDecoder(BIT_ASCII | BIT_GT_VARIABLE_WIDTH_ARIAL); 
+       SPI_CmdWrite(REG_MRWDP);                //Memory Data Read/Write Port (MRWDP) 
+       SPI_DataWrite(*str);
+       CoreTask_WaitReady();
+    } else {
+       /* Unicode */
+  	   GTFont_SetDecoder(BIT_UNICODE);         //
+       SPI_CmdWrite(REG_MRWDP);                //Memory Data Read/Write Port (MRWDP) 
+       SPI_DataWrite((*str)>>8); 
+       SPI_DataWrite(*str);
+       CoreTask_WaitReady();
+    }
+  	++str;
+  }  
+
+  if (!mode) GraphicMode();                    //Restaura o modo grafico
+  return true;
 }
 
 
@@ -20695,9 +21425,9 @@ void Panel_RA8889::PutFloat(uint16_t x, uint16_t y, double value, const char *fm
 {
   char buffer[32];
 
- #if defined(ARDUINO_ARCH_AVR)
+  #if defined(ARDUINO_ARCH_AVR)
     formatDoubleAdvanced(buffer, value, fmt);
- #elif defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ESP32) || defined(ESP8266)
+  #elif defined(ARDUINO_ARCH_SAM) || defined(ARDUINO_ARCH_SAMD) || defined(ESP32) || defined(ESP8266)
     // Arduino Due (SAM), Zero (SAMD), ESP32, ESP8266: têm suporte a float no sprintf
     sprintf(buffer, fmt, value);  // 2 casas decimais
   #else
@@ -20706,9 +21436,6 @@ void Panel_RA8889::PutFloat(uint16_t x, uint16_t y, double value, const char *fm
 
   PutString(x, y, buffer);
 }
-
-
-
 
 
 /**

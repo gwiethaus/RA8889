@@ -66,7 +66,9 @@
 
 
 //--------------------------------------------------------------------------------
+//
 // RA8889 Frequency Configuration PLL
+//
 //--------------------------------------------------------------------------------
 
 
@@ -85,7 +87,9 @@
 
 
 //--------------------------------------------------------------------------------
+//
 // Panel LCD
+//
 //--------------------------------------------------------------------------------
 
 
@@ -295,7 +299,9 @@
 
 
 //--------------------------------------------------------------------------------
+//
 // GT Serial Character ROM Select
+//
 //--------------------------------------------------------------------------------
 
 //Escolha o modelo de chip Flash ROM de Font
@@ -404,22 +410,30 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 //--------------------------------------------------------------------------------
 
 //Ativa a Depuração da porta serial
-#define SERIAL_DEBUG
+//#define SERIAL_DEBUG
 
 //Ativa funcao de existencia da familia Raio RA8875/RA8876/RA8877/RA8889
 #define CHECK_RAIOFAMILY
 
-
 //Antes de usar macro DEBUG_PRINT, use no Setup() a macro DEBUG_BEGIN para iniciar a comunicacao serial.
+
 #ifdef SERIAL_DEBUG
   extern bool serialStarted;
   #define DEBUG_BEGIN(baud) do { Serial.begin(baud); serialStarted = true; } while(0)
   #define DEBUG_PRINT(msg, val, b, newline) SerialPrint(msg, val, b, newline)
+  //Serial print para valroes hexadecimal
+  #define DEBUG_PRINTH(msg, hex, b, newline) SerialPrintH(msg, hex, b, newline)
+  //Serial Print com delay
+  #define DEBUG_PRINTD(msg, val, b, delayms, newline) do { SerialPrint(msg, val, b, newline); if (delayms>0) delay(delayms); } while(0)
+  //Serial Print com ponto flutuante
   #define DEBUG_PRINTF(msg, val, decimal, b, newline) SerialPrintF(msg, val, decimal, b, newline)
 #else
    // Se não houver debug, macros não fazem nada
   #define DEBUG_BEGIN(baud)
   #define DEBUG_PRINT(msg, val, b, newline)
+  #define DEBUG_PRINTH(msg, hex, b, newline)
+  #define DEBUG_PRINTD(msg, val, b, delayms, newline)
+  #define DEBUG_PRINTF(msg, val, decimal, b, newline)
 #endif
 
 
@@ -1641,7 +1655,7 @@ struct pospixel_t {
 //API de estrutura para configuração de fonte Interna
 struct FontInternalParam {
   eInternalCharSet charset_select;             //iso_select = 0 : iso8859-1, iso_select = 1 : iso8859-2, iso_select = 2 : iso8859-4, iso_select = 3 : iso8859-5
-  //eFontHeight size_select;                     //size_select = 0 : 8*16/16*16, size_select = 1 : 12*24/24*24, size_select = 2 : 16*32/32*32
+  //eFontHeight size_select;                   //size_select = 0 : 8*16/16*16, size_select = 1 : 12*24/24*24, size_select = 2 : 16*32/32*32
   bool full_align;                             //align = 0 : full alignment disable, align = 1 : full alignment enable 
   bool chroma_key;                             //chroma_key = 0 : text with chroma key disable, chroma_key = 1 : text with chroma key enable
   eFontEnlargFactor width_enlarge;             //width_enlarge can be set 0~3, (00b: X1) (01b : X2)  (10b : X3)  (11b : X4)
@@ -1659,8 +1673,15 @@ struct FontExternalParam {
 
 //API de estrutura para configuração de fonte Usuário
 struct FontUserParam {
+  char *font_table;	
 };
 
+#ifdef SERIAL_DEBUG
+void SerialPrint(String msg, uint32_t value, bool b, bool newline);
+void SerialPrintF(String msg, double value, uint8_t decimal, bool b, bool newline);
+void SerialPrintH(String msg, const char* value, bool b, bool newline);
+void SerialPrintH(String msg, uint64_t value, bool b, bool newline);
+#endif
 
 class Panel_RA8889 {
   private:
@@ -1677,16 +1698,19 @@ class Panel_RA8889 {
     uint8_t StatusRead(void);
     void RegisterWrite(uint8_t reg, uint8_t data);
     uint8_t RegisterRead(uint8_t reg);
-    void HardwareReset(void);
-    void SoftwareReset(void);
   public:
     Panel_RA8889(uint8_t cs, uint8_t rst);
+    void HardwareReset(void);
+    uint8_t SoftwareReset(void);
+    void RA8876_brightness(uint16_t val);
+
     bool Begin(void);
     void DisplayOn(bool on);
+    void Backlight(bool on);
     void DisplayTestBar(bool b);
-    void GraphicMode(void);     
+    bool GraphicMode(void);
     bool IsGraphicMode(void);   
-    void TextMode(void);
+    bool TextMode(void);
     uint16_t Width(void);
     uint16_t Height(void);
     uint8_t getColorDepth(void);
@@ -1702,6 +1726,7 @@ class Panel_RA8889 {
     void BackgroundColorRGB(uint8_t red, uint8_t green, uint8_t blue);
     void BackgroundColor(uint32_t color);
     void FillScreen(uint32_t color);
+    void ClearScreen();
     uint8_t Color16To8bpp(uint16_t color);
     uint16_t Color8To16bpp(uint8_t color8);
     uint16_t Color24To16bpp(uint32_t color24);
@@ -1721,9 +1746,10 @@ class Panel_RA8889 {
     void PutPixel(uint16_t x, uint16_t y, uint32_t color);
     void PushBlock(uint16_t x, uint16_t y, uint16_t num_pixels, const void* color_buffer);
     void WritePixels(const void* color_buffer, uint32_t num_pixels, bool auto_increment = true);
+    uint32_t getPixel(uint16_t x, uint16_t y);
     void DrawPixel(uint16_t x, uint16_t y, uint32_t color);
     void DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, uint16_t *data);
-    void DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t forecolor);
+    void DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t color);
     void DrawSquare (uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t forecolor, bool bfill = false);
     void DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint32_t forecolor, bool bfill = false);
     void DrawCircle (uint16_t x1, uint16_t y1, uint16_t R, uint32_t forecolor, bool bfill = false);
@@ -1735,15 +1761,18 @@ class Panel_RA8889 {
     void DrawCircleSquare(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t Rx, uint16_t Ry, uint32_t forecolor, bool bfill = false);
     void DrawPicturePgm(uint16_t Wx, uint16_t Hy, uint16_t width, uint16_t height, const uint8_t *datap);
     void DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16_t x, uint16_t y, uint16_t w, uint16_t h);
-    
+
+    bool CheckFontExternal(uint8_t font_model);
     void setFontSource(eFontSource source);
     void setFontUser(FontUserParam param, bool enable = false);
     void setFontInternal(FontInternalParam param, bool enable = false);
     void setFontExternal(FontExternalParam param, bool enable = false);
     void ShowText(char *str);
     void Text(uint16_t x, uint16_t y, char *str, uint32_t foregcolor, uint32_t backgcolor);
+    bool PutUnicodeString(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, char *str);
     void PutString(uint16_t x, uint16_t y, char *str);
-    void TextColor(uint32_t foregcolor, uint32_t backgcolor);
+    void setPosCursor(uint16_t x, uint16_t y);
+    void TextColor(uint32_t fgcolor, uint32_t bgcolor);
     void PutChar8x12(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, bool bgtransparent, uint8_t code);
     void PutString8x12(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, bool bgtransparent, char *ptr);
     void PutChar16x24(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t bgcolor, bool bgtransparent, uint8_t code);
@@ -1753,7 +1782,7 @@ class Panel_RA8889 {
     void PutFloat(uint16_t x, uint16_t y, double value, const char *fmt);
     void PutHexa(uint16_t x, uint16_t y, uint32_t value, const char *fmt);
     void PutDecimal(uint16_t x, uint16_t y, uint32_t value, const char *fmt);
-
+    
     void useDMA(bool b = true);	
     void DMA_24bit_Block (uint8_t SCS, uint8_t Clk, uint16_t X1, uint16_t Y1, uint16_t X_W, uint16_t Y_H, uint16_t P_W, uint32_t Addr);
     void DMA_24bit(uint8_t clk, uint16_t x1, uint16_t y1, uint16_t Wx, uint16_t Hy, uint16_t picwidth, uint32_t addr);
@@ -1942,27 +1971,38 @@ class Panel_RA8889 {
     void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
 
   protected:
-    uint8_t _cs;	                             //chip select pin
-    uint8_t _xnreset;	                         //chip reset pin
-    uint16_t _width;                           //lardura do display
-    uint16_t _height;                          //altura do display
-    uint8_t _bpp;                              //color depht 8/16/24 bit per pixel (bpp)
-    uint8_t _mcu;                              //tipo MCU/MPU 8 ou 16 bits 
-    uint8_t _colorfmt;                         //formato da cor RGB, RBG, GRB, GBR, ....
-    uint32_t _spi_clockmax;                    //velocidade de comunucacao de clock maximo do SPI
-    uint8_t _spi_datamode;                     //SPI_MODE0[1,2,3] de comunicacao
-    uint8_t _spi_dataorder;                    //ordem de dados spi MSBFIRST ou LSBFIRST
-    bool _usedma;                              //Uso de DMA para as funções que podem se utilziar deste recurso
-    //uint16_t _disp_spi_clk_divier;            //Divisor de clock do SPI do display
+    uint8_t _cs;	                               //chip select pin
+    uint8_t _xnreset;	                           //chip reset pin
+    uint16_t _displaywidth;                      //lardura do display
+    uint16_t _displayheight;                     //altura do display
+    uint8_t _bpp;                                //color depht 8/16/24 bit per pixel (bpp)
+    uint8_t _mcu;                                //tipo MCU/MPU 8 ou 16 bits 
+    uint8_t _colorfmt;                           //formato da cor RGB, RBG, GRB, GBR, ....
+    uint32_t _spi_clockmax;                      //velocidade de comunucacao de clock maximo do SPI
+    uint8_t _spi_datamode;                       //SPI_MODE0[1,2,3] de comunicacao
+    uint8_t _spi_dataorder;                      //ordem de dados spi MSBFIRST ou LSBFIRST
+    bool _spi_transaction;                       //A trasação rpincipal do barramento spi está ativo
+    bool _usedma;                                //Uso de DMA para as funções que podem se utilziar deste recurso
+    uint8_t _display_spi_clk_divider;            //spi master clock divisor for setup SPI Master Clock period, Fsck = Fcore / ((divisor + 1)* 2)
+    uint8_t _dispplay_sfi_clk_divider;           //serial flash i/f clock divisor for setup Clock period, Fsck = Fcore / (divisor* 2)
 
+    uint32_t _bgcolor;                          //cor de fundo 
+    uint32_t _fgcolor;                          //cor de frente
+    uint32_t _text_bgcolor;                     //cor do texto de fundo 
+    uint32_t _text_fgcolor;                     //cor do texto de frente
+    uint16_t _cursor_x = 0;                     //Global cursor position y variables
+    uint16_t _cursor_y = 0;                     //Global cursor position y variables
+	
     //Parametros da fonte
+    uint8_t _fnt_rom_scs = 0;                  //SCS
+    uint8_t _fnt_dma_bus = 0;                  //Font DMA Bus
     uint32_t _charsetresourceMap = 0;          //mapa de recurso de 32 bits do char set Chips Font Flash ROM
     eFontSource _fntparam_source_select;
     eFontHeight _fntparam_size_select;
     uint8_t _fntparam_height;
     eExternalCharSet _fntparam_extern_charset_select;
-	  eInternalCharSet _fntparam_intern_charset_select;
-	  eExternalCharWidthSet _fntparam_gt_width;
+    eInternalCharSet _fntparam_intern_charset_select;
+    eExternalCharWidthSet _fntparam_gt_width;
     bool _fntparam_full_align;
     bool _fntparam_chroma_key;
     eFontEnlargFactor _fntparam_width_enlarge;
@@ -1995,14 +2035,14 @@ class Panel_RA8889 {
 //   22     ISO8859_15_ASCII    0xE8         232
 //   23     ISO8859_16_ASCII    0xF0         240
 
-    void CoreTask_WaitReady(void);
-    void Draw_WaitReady(void);
+    bool CoreTask_WaitReady(void);
+    bool Draw_WaitReady(void);
     bool IC_WaitReady(void);
     bool Initialize(void);
-    void Wait_WriteFIFO_NotFull(void);
-    void Wait_WriteFIFO_Empty(void);
-    void Wait_ReadFIFO_NotFull(void);
-    void Wait_ReadFIFO_NotEmpty(void);
+    bool Wait_WriteFIFO_NotFull(void);
+    bool Wait_WriteFIFO_Empty(void);
+    bool Wait_ReadFIFO_NotFull(void);
+    bool Wait_ReadFIFO_NotEmpty(void);
     void GotoLinearAddr(uint32_t addr);
     void GotoPixel_Linear(uint32_t addr);
     void GotoPixel_XY(uint16_t Wx, uint16_t Hy);
@@ -2018,7 +2058,7 @@ class Panel_RA8889 {
     void SPI_Init(void);
     void SPI_Clock_Period(uint8_t divisor);
 
-    void PLL_WaitReady(void);
+    void PLL_InitilizeWaitReady(void);
     void PLL_Disable(void);
     void PLL_Enable(void);
     void PLL_ConfigClocks(uint8_t scanclk, uint8_t dramclk, uint8_t coreclk, uint8_t xtalclk);
@@ -2083,6 +2123,7 @@ class Panel_RA8889 {
     void VScanDirection_TopToBottom(void);
     void VScanDirection_BottomToTop(void);
     void VerticalScanDirection(VSCANDir direction);
+    void PDATA_ColorRGB(void);
     void PDATA_ColorFmt(ePDATAColorFmt fmt);
     void PCLK_Rising(void);
     void PCLK_Falling(void);
@@ -2333,8 +2374,8 @@ class Panel_RA8889 {
     void SFI_Select_ROM1(void);
     void SFI_DMA_WaitReady(void);
     void SFI_DMA_Start(void);
-    void Select_SFI_FontMode(void);
-    void Select_SFI_DMAMode(void);
+    void SFI_Select_FontMode(void);
+    void SFI_Select_DMAMode(void);
     void SFI_Select_24bitAddress(void);
     void SFI_Select_32bitAddress(void);
     void SFI_Select_WaveformMode0(void);              //Only RA8876/RA8887
