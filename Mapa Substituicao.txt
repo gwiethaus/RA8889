@@ -1,6 +1,14 @@
 Mapa de substituicao
 --------------------
 
+
+RAIO
+RA8889_API_V1.2\RA8889_API_Demo_V1.1\RA8889_01_Kernel\RA8889.c
+----------------------------------------------------------------
+
+void Select_RA8875_SPI_Mode0_and_Mode3(void)                         --> void Panel_RA8889::SFI_Select_WaveformMode3(void)
+
+
 (RA8889_arduino_reference_Ver_1.0) Ra8889_Lite.cpp
 --------------------------------------------------
 
@@ -651,13 +659,13 @@ void ER_TFTBasic::Active_Window_XY(unsigned short WX,unsigned short HY)       --
 void ER_TFTBasic::Active_Window_WH(unsigned short WX,unsigned short HY)       --> void ActiveWindow_WidhtHeight(uint16_t wx, uint16_t hy)
 void ER_TFTBasic::Foreground_color_65k(unsigned short temp)                   --> void ForegroundColor16bpp(uint16_t color)
 void ER_TFTBasic::Background_color_65k(unsigned short temp)                   --> void BackgroundColor16bpp(uint16_t color)
-void ER_TFTBasic::Check_Busy_Draw(void)                                       --> void Draw_WaitReady(void)
-void ER_TFTBasic::Check_Busy_Draw(void)                                       --> void CoreTask_WaitReady(void)
-void ER_TFTBasic::Check_2D_Busy(void)                                         --> void CoreTask_WaitReady(void)
-void ER_TFTBasic::Check_Mem_WR_FIFO_not_Full(void)                            --> void Wait_WriteFIFO_NotFull(void)
-void ER_TFTBasic::Check_Mem_WR_FIFO_Empty(void)                               --> void Wait_WriteFIFO_Empty(void)
-void ER_TFTBasic::Check_Mem_RD_FIFO_not_Full(void)                            --> void Wait_ReadFIFO_NotFull(void)
-void ER_TFTBasic::Check_Mem_RD_FIFO_not_Empty(void)                           --> void Wait_ReadFIFO_NotEmpty(void)
+void ER_TFTBasic::Check_Busy_Draw(void)                                       --> bool Draw_WaitReady(void)
+void ER_TFTBasic::Check_Busy_Draw(void)                                       --> bool CoreTask_WaitReady(void)
+void ER_TFTBasic::Check_2D_Busy(void)                                         --> bool CoreTask_WaitReady(void)
+void ER_TFTBasic::Check_Mem_WR_FIFO_not_Full(void)                            --> bool Wait_WriteFIFO_NotFull(void)
+void ER_TFTBasic::Check_Mem_WR_FIFO_Empty(void)                               --> bool Wait_WriteFIFO_Empty(void)
+void ER_TFTBasic::Check_Mem_RD_FIFO_not_Full(void)                            --> bool Wait_ReadFIFO_NotFull(void)
+void ER_TFTBasic::Check_Mem_RD_FIFO_not_Empty(void)                           --> bool Wait_ReadFIFO_NotEmpty(void)
 void ER_TFTBasic::DrawSquare_Fill(
  unsigned short X1                
 ,unsigned short Y1              
@@ -787,7 +795,7 @@ void ER_TFTBasic::Check_Busy_SFI_DMA(void)                                      
 void ER_TFTBasic::Select_SFI_0(void)                                                   --> void SFI_Select_ROM0(void)
 void ER_TFTBasic::Select_SFI_1(void)                                                   --> void SFI_Select_ROM1(void)
 void ER_TFTBasic::Select_SFI_Font_Mode(void)                                           --> void SFI_Select_FontMode(void)
-void ER_TFTBasic::Select_SFI_DMA_Mode(void)                                            --> void Select_SFI_DMAMode(void)
+void ER_TFTBasic::Select_SFI_DMA_Mode(void)                                            --> void SFI_Select_DMAMode(void)
 void ER_TFTBasic::Select_SFI_24bit_Address(void)                                       --> void SFI_Select_24bitAddress(void)
 void ER_TFTBasic::Select_SFI_32bit_Address(void)                                       --> void SFI_Select_32bitAddress(void)
 void ER_TFTBasic::Select_SFI_Waveform_Mode_0(void)                                     --> void SFI_Select_WaveformMode0(void)
@@ -864,7 +872,7 @@ void ER_TFTBasic::Font_Height_X4(void)                                          
 void ER_TFTBasic::Font_Line_Distance(unsigned char temp)                                     --> void Font_LineDistance(uint8_t gap)
 void ER_TFTBasic::Set_Font_to_Font_Width(unsigned char temp)                                 --> void Font_toFontWidthSetting(uint8_t temp)
 void ER_TFTBasic::MemWrite_Left_Right_Top_Down(void)                                         --> void HostWriteMemoryDirection(MemoryDirection direction)
-void ER_TFTBasic::System_Check_Temp(void)                                                    --> void PLL_WaitReady(void)
+void ER_TFTBasic::System_Check_Temp(void)                                                    --> void PLL_InitilizeWaitReady(void)
 void ER_TFTBasic::PLL_Initial(void)                                                          --> void PLL_ConfigClocks(void)
 void ER_TFTBasic::SDRAM_initail(void)                                                        --> //Incorporado ao void Panel_RA8889::SDRAM_Init(void)
 void ER_TFTBasic::HW_Reset(void)                                                             --> void HardwareReset(void)

@@ -48,7 +48,7 @@ Display ER-TFT070-2-6105
   Interface                         I2C, 3-wire SPI, 4-wire SPI, 6800 8-bit Parallel , 6800 16-bit Parallel , 8080 8-bit Parallel , 8080 16-bit Parallel
   IC or Equivalent                  RA8889
   Appearance                        RGB
-  Diagonal Size                     7.0“
+  Diagonal Size                     7.0"
   Connection                        Pin Header, Plug-in FFC
   Outline Dimension                 180.00(W)x100.20(H)mm
   Visual Area                       156.7x89.10mm
@@ -70,6 +70,7 @@ Display ER-TFT070-2-6105
   Operating Temperature             -20oC~70oC
   Storage Temperature               -30oC~80oC
   
+  Memory:                           Internal SDRAM 128Mbit (16Mbytes)
   Power Supply (Typ.):              VDD=5.0V
   Touch Panel(Attached by default): 7"Capacitive Touch Panel with Controller
   MicroSD Card Interface:           Pin Header Connection
@@ -87,7 +88,88 @@ Legendas
   MCU                         Microcontroller Unit
   MPU                         Microprocessor Unit
   PIP                         Picture-in-Picture
+  CGROM                       Character Generator ROM
+  GT                          Genitop's inc. CI de caracteres externos  
+  IDEC                        Image Display Engine Controller (possivelmente)
+  Host                        Hospediro MCU/MPU (master) que envia comandos ao RA8889
 
+
+A que se refere o Host no datasheet RA8889
+------------------------------------------
+
+  Quando o manual do RA8889 usa o termo “Host”, ele sempre se refere ao MCU/MPU, ou seja, ao processador que está controlando o RA8889.
+  
+  💡 Em outras palavras:
+  
+  - Host = o microcontrolador (MCU/MPU) que envia comandos, dados, e lê status do RA8889.
+  - RA8889 = o dispositivo escravo (controlador gráfico) que recebe essas instruções do host.
+  
+  🔍 Explicação mais técnica
+  
+  O RA8889 é um Display Controller IC, projetado para ser controlado por um host externo via interface como:
+  
+  - 8080/6800 Parallel,
+  - SPI,
+  - Serial RGB, etc.
+  
+  Em todos esses modos, o host é quem faz o papel de mestre de barramento (Master), e o RA8889 é o escravo (Slave).
+  
+  Portanto, quando o manual diz algo como:
+  
+    “The Host writes to Command Register...”
+  
+  ou
+  
+    “The Host can access the Graphic RAM through the system bus...”
+  
+  isso significa literalmente:
+  
+    “O seu microcontrolador (ESP32, STM32, etc.) grava no registrador de comando do RA8889...”
+
+  📄 Trecho relevante do datasheet
+  
+  No “Brief Datasheet” versão V12, seção 4.1 Parallel Host Interface (25 signals):
+  
+    “These are data buses for data transfer between parallel host and RA8889. 
+	… XA0 is used to select command / data cycle. … XNCS as Chip Select Input 
+	… When host I/F set as parallel host mode …” 
+  
+  Ou seja: existe uma interface paralela (“bus de dados”) entre o host e o 
+  RA8889. Esse host é quem comanda essa interface (ativa CS, define sinais de 
+  controle, etc.).
+  
+  No mesmo documento, eles definem pinos como XNWAIT, XNINTR, XNRD_EN, 
+  XNWR_RWN, XA0, etc. Todos esses estão no domínio da interface 
+  “host → RA8889”. 
+    
+  Também, logo no início, o documento fala:
+  
+    “RA8889 supports … 8080/6800 8/16-bit MCU interface … 3/4-wire SPI and IIC 
+	serial interface.” 
+    
+  Isso reforça que o RA8889 é um dispositivo periférico que oferece interfaces 
+  de host para ser controlado por uma MCU/MPU.
+  
+  🔍 Interpretação
+  
+  O “Host Interface” no manual refere-se ao interface entre o host (MCU/MPU) e 
+  o RA8889 — ou seja, o host deve “dirigir” comunicação de comandos, leitura 
+  de status, escrita de dados gráficos etc.
+  
+  Portanto, quando você ler “Host” no manual, esse termo se refere ao MCU/MPU 
+  (o mestre que controla o RA8889), e não ao próprio RA8889.
+
+  Desta forma, sempre que o documento mencionar “Host”, ele está falando do 
+  MCU/MPU que controla o RA8889, e não do próprio RA8889.
+
+  Essa distinção é essencial, especialmente quando você for configurar:
+  
+  - o barramento de comunicação (SPI, 8080, etc.),
+  - os sinais de controle (CS, WR, RD, A0...),
+  - e quando o manual disser “Host Write”, “Host Read”, “Host Command”, etc.
+  
+  Ou seja, tudo isso é visto do ponto de vista do microcontrolador, que é o 
+  “host” escrevendo ou lendo o RA8889.
 
 Serial Flash Interface e SPI Interface
 --------------------------------------
@@ -125,6 +207,159 @@ Serial Flash Interface e SPI Interface
   registradores, porque quando o RA8889 assume o barramento em modo SFI, o MCU 
   não deve estar tentando usar o mesmo SPI em paralelo.
 
+SPI Master do RA8889
+--------------------
+
+  O registrador PAGE0 REG[BBh] SPI Clock period (SPI_DIVSOR) do RA8889, quando 
+  se ajusta o divisor, é em relação a todo barramento SPI ou somente o SPI 
+  interno de comunicacao entre o RA8889 e os seus dispositivos conectados na 
+  placa PCB? O é tambem a comucanicao SPI com a MCU?
+
+  O RA8889 (como o RA8875 e outros da RAiO) tem duas camadas de comunicação 
+  SPI distintas no conceito de projeto:
+
+  - SPI externo, que é o barramento entre o MCU e o RA8889.
+  - SPI interno, usado dentro do próprio RA8889 para falar com periféricos 
+    internos (como a SRAM de frame buffer, controladores de LCD, etc).
+
+  ⚙️ Sobre o registrador PAGE0 REG[BBh] — SPI Clock period (SPI_DIVSOR)
+  ---------------------------------------------------------------------
+  
+  De acordo com o datasheet do RA8889, o registrador REG[0xBB] define o 
+  divisor do clock SPI interno, isto é:
+  
+    Ele controla a velocidade do clock SPI interno que o RA8889 usa para 
+	acessar seus dispositivos internos (como memórias de vídeo, buffers, 
+	controladores de imagem, etc).
+  
+  👉 Não afeta o clock do SPI externo, que é o barramento entre a MCU e o RA8889
+  ------------------------------------------------------------------------------
+  
+  Esse clock externo é totalmente determinado pelo MCU (ou seja, pela 
+  configuração de SPI no microcontrolador, como ESP32, STM32, etc).
+
+  🧩 Resumo claro:
+  
+  ---------------------------------------------------------------------------------------------------------------------
+  Tipo de SPI   Função                                Controlado por                            Registrador relacionado
+  ---------------------------------------------------------------------------------------------------------------------
+  SPI externo   Comunicação entre MCU ↔ RA8889        MCU (ex.: SPI Clock Frequency do ESP32)   —
+  SPI interno   Comunicação interna dentro do RA8889  RA8889 (por SPI_DIVSOR em REG[0xBB])     PAGE0 REG[BBh]
+  ---------------------------------------------------------------------------------------------------------------------
+
+  💡 Exemplo prático:
+  
+  Se você ajustar REG[0xBB] = 0x03, estará dizendo algo como:
+  
+    “O clock interno de SPI do RA8889 deve ser dividido por (3 + 1) = 4 em 
+	relação ao clock base interno.”
+  
+  Isso não muda em nada a frequência de SPI que o ESP32 usa para enviar 
+  comandos ao RA8889.
+  
+  O SPI externo continua sendo definido, por exemplo, como SPI clock = 40 MHz 
+  no driver da LovyanGFX.
+
+  🔍 Dica:
+
+  O motivo desse divisor existir é compatibilizar velocidades internas — por 
+  exemplo, o RA8889 pode precisar operar seu SPI interno mais devagar para 
+  sincronizar com memórias internas ou dispositivos de diferentes tempos de 
+  setup/hold.
+
+  SPI Master
+  ----------
+  
+  No datasheet do RA8889 chamar esse bloco de “SPI Master” ao descrever o 
+  registrador PAGE0 REG[BBh].
+  
+  🧠 Contexto interno do RA8889
+
+  O RA8889 é um chip complexo e autônomo — ele não é só um periférico SPI 
+  escravo (como um simples controlador de display).
+  
+  Ele tem um MCU interno (um microcontrolador dedicado dentro do chip), que:
+
+  - recebe comandos via SPI, I²C ou paralelo (vindo do seu MCU principal, 
+    ex.: ESP32),
+  - e depois executa operações internas (como desenhar, acessar memória 
+    gráfica, gerar sinais de LCD, etc).
+
+  Para realizar essas operações internas, o RA8889 atua como mestre (“master”) de seus barramentos internos.
+  
+  Esses barramentos internos podem ser:
+  
+  - SPI interno (para acessar memória SPI Flash externa ou SRAM conectada à 
+    placa),
+  - ou barramentos paralelos internos (para módulos internos como o gerador de 
+    vídeo, camada de texto, etc).
+
+  ⚙️ Então, o que quer dizer “SPI Master Clock Period (SPI_DIVSOR)”?
+
+    Significa que o registrador REG[0xBB] controla o clock do barramento SPI 
+	interno onde o RA8889 é o mestre. Ou seja, ele não se refere ao SPI 
+	externo (onde o RA8889 é o escravo do seu MCU).
+
+  📊 Analogias rápidas
+  
+  ----------------------------------------------------------------------------------------------------------------------
+  Nível                              Função                            Papel do RA8889    Quem controla o clock
+  ----------------------------------------------------------------------------------------------------------------------
+  SPI externo (MCU ↔ RA8889)         Comunicação de comandos e dados   Slave (escravo)    MCU externo (ex: ESP32)
+  SPI interno (RA8889 ↔ memória SPI) Comunicação interna do chip       Master (mestre)    RA8889 (via registrador 0xBB)
+  ----------------------------------------------------------------------------------------------------------------------
+  
+  💡 Conclusão
+  
+  ✅ O termo “SPI Master” no datasheet refere-se ao barramento interno, no qual o RA8889 atua como mestre para acessar outros dispositivos (como memórias SPI externas).
+  🧩 Portanto, o registrador 0xBB ajusta o clock desse barramento interno — não afeta o SPI entre a MCU e o RA8889.
+
+  Comunicação SPI Master com Registrador REG[BBh] do RA8889
+  ---------------------------------------------------------
+  
+  Aqui está o fluxo simplificado de comunicação mostrando onde atua o registrador REG[BBh] do RA8889:
+  
+  +------------------------------------------------------------+
+  |                        MCU Externo                         |
+  |   (ESP32, STM32, etc.)                                     |
+  |                                                            |
+  |   SPI MASTER                                               |
+  |   (define clock SPI externo)                               |
+  +-------------------------┬----------------------------------+
+                            |
+                            |  SPI Externo
+                            |  (RA8889 é SLAVE aqui)
+                            v
+  +------------------------------------------------------------+
+  |                        RA8889                              |
+  |                                                            |
+  |  ┌──────────────────────────────────────────────────────┐  |
+  |  │ SPI SLAVE Interface (MCU ↔ RA8889)                   │  |
+  |  │ Recebe comandos e dados do MCU                       │  |
+  |  └──────────────────────────────────────────────────────┘  |
+  |               │                                            |
+  |               │   Decodifica comandos, executa internamente|
+  |               v                                            |
+  |  ┌──────────────────────────────────────────────────────┐  |
+  |  │ SPI MASTER Controller (Interno)                      │  |
+  |  │ - Controla comunicação com periféricos SPI internos  │  |
+  |  │ - Clock definido pelo REG[0xBB] (SPI_DIVSOR)         │  |
+  |  └──────────────────────────────────────────────────────┘  |
+  |               │                                            |
+  |               │  SPI Interno (RA8889 é MASTER)             |
+  |               v                                            |
+  |  ┌────────────────────────────┐                            |
+  |  │ Memória externa SPI (SRAM) │                            |
+  |  │ Flash externa ou periférico│                            |
+  |  └────────────────────────────┘                            |
+  +------------------------------------------------------------+
+  
+  
+  
+  
+  
+  
+  
 
 o que é o Serial Flash or SPI Interface Enable/Disable
 ------------------------------------------------------
