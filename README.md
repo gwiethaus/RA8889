@@ -1,6 +1,6 @@
 # RA8889
 
-Desenvolvimento e Adaptação de Driver para uso de display com controladora RA8889 com tela de toque capacitivo baseado nos exemplos da BuyDisplay e RAIO.
+Desenvolvimento e Adaptação de Driver para uso de display com controladora RA8889 com tela de toque capacitivo baseado nos exemplos da BuyDisplay e RAIO. A comunicação entre o Mcirocontrolador Host e o Display se dá pela interface SPI.
 
 # Notas
 
@@ -15,8 +15,8 @@ Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no fo
 
 - Transferencia de DMA
 - Fontes de Usuário
-- Melhorias das fotnes de ROM
+- Melhorias das funções de uso fontes da CGROM
 - Melhoria das funções IDEC
-- Configuração Paralela
-- Configuração I2C
+- Comunicação Paralela entre MCU/MPU e Display
+- Configuração I2C entre MCU/MPU e Display
 - Melhoria do Driver FocalTech FT5xx6
