@@ -15,7 +15,7 @@ Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no fo
 
 # Hardware
 
-- Arduino
+- Arduino Uno/Mega
 - ESP32 / ESP32-S3 (iniciando)
 - Interface Comunicação SPI
 
