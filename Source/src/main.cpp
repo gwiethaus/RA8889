@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include "Panel_RA8889.hpp"
+#include "RA8889.hpp"
 #include "FT5316.hpp"
 #include "userconf.hpp"
 

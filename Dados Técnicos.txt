@@ -94,6 +94,66 @@ Legendas
   Host                        Hospediro MCU/MPU (master) que envia comandos ao RA8889
 
 
+SPI no ESP32-S3
+---------------
+
+  O ESP32-S3 não possui os nomes VSPI e HSPI como no ESP32 WROOM-32. Embora o 
+  ESP32 original usasse HSPI (SPI2) e VSPI (SPI3), o ESP32-S3 tem dois 
+  controladores SPI para o usuário: SPI2 (chamado de FSPI) e SPI3. Ambos os 
+  controladores podem ser usados ​​simultaneamente para se comunicar com outros 
+  dispositivos. 
+
+  - SPI2: É um dos controladores de SPI para o usuário no ESP32-S3. Ele pode 
+          ser acessado no código como SPIClass(0) ou SPIClass(FSPI).
+  - SPI3: É o outro controlador de SPI para o usuário no ESP32-S3. Ele pode 
+          ser acessado no código como SPIClass(1) ou SPIClass(HSPI).
+  - SPI0 e SPI1: Estes são usados internamente para comunicação com a memória 
+                 flash interna e não devem ser usados para outras tarefas.
+
+Configurar no Platformio ESP32-S3 Devkit 1 N16R8 com e Sem OTA
+--------------------------------------------------------------
+
+  Baixe o arquivo
+  https://github.com/platformio/platform-espressif32 da pasta  
+  platform-espressif32/boards/esp32-s3-devkitc-1-n16r8v.json
+  
+  Copie para a pasta onde esta ínstalado o platformio:
+  C:\Users\Wiethaus\.platformio\platforms\espressif32\boards
+  
+  I.e., copy this as boards/esp32-s3-devkitc-1-n16r8v.json file in your 
+  project and reference board = esp32-s3-devkitc-1-n16r8v in the 
+  platformio.ini. (The initial project can created with e.g. the standard 
+  ESP32-S3-DevKitC-1 board setting).
+
+Configurar o ESP32-S3
+---------------------
+  Para o ESP32-S3 DevKit-1 que tem 2 USB (com Covnersor UART e OTG/JATAG)
+  Conecte na USB-UART do ESP32-S3 (A que nao tem ponto azul marcado)  
+  conecte na Porta USB no PC (lador esquerdo, 2a porta)
+  Escolha a com port certa COM4 (Porta USB-UART)
+  Trasnfira os arquivos para o ESP32.
+
+Conexao Adaptador Cabo Flat 40 vias para pinos
+----------------------------------------------
+
+  Display ER-TFT070-2-6105 (5V external power supply 5V, Capacitive Display, Controller RA8889, Digital level 3.3V)
+  ESP32-S3 DevKit-1, 38 pins
+  
+  GPIO ESP32	Description      Color Wire     Pin Display  Description
+  -----------------------------------------------------------------------
+  3.3V        3.3V               RED             --          --
+  GND         GND                BLACK           --          --
+  5V          Power suppl ext.   BLACK           2           VSS=GND
+  GND         Power suppl ext.   RED             4           VDD=5V
+  CPIO10      FSPI_CS            ORANGE          5           SCS
+  GPIO19      FSPI_MISO          GREEN           6           SDO
+  GPIO23      FSPI_MOSI          BLUE            7           SDI
+  GPIO18      FSPI_CLK           YELLOW          8           SCLK
+  GPIO27                         VIOLET          9           WAIT
+  GPIO14                         WHITE           10          INT
+  GPIO16      RST                BROWN           11          RESET
+
+
 A que se refere o Host no datasheet RA8889
 ------------------------------------------
 
@@ -354,14 +414,8 @@ SPI Master do RA8889
   |  └────────────────────────────┘                            |
   +------------------------------------------------------------+
   
-  
-  
-  
-  
-  
-  
 
-o que é o Serial Flash or SPI Interface Enable/Disable
+O que é o Serial Flash or SPI Interface Enable/Disable
 ------------------------------------------------------
 
   "Serial Flash" refers to flash memory chips accessed via a Serial Peripheral Interface (SPI); "SPI Interface Enable/Disable" is a configuration option in microcontrollers and devices that allows users to activate or deactivate the SPI hardware, which controls the communication with external serial flash memories or other SPI-compatible peripherals. 
@@ -645,6 +699,7 @@ Horizontal Non-Display Period
   
   In essence, the Horizontal Non-Display Period is a technical term for the blanking interval that occurs after each horizontal line is drawn in older video display systems, enabling the electron beam to reset for the next line without displaying a visible line. 
 
+
 PIP (Picture-in-Picture)
 ------------------------
 
@@ -917,6 +972,7 @@ Mini-guia Doxygen
     @ingroup IDEC
     @brief Set IDEC source start address.
 
+
 IDEC
 ----
 
@@ -933,6 +989,7 @@ IDEC
   
   - Image Data Encoding/Decoding Component: considerando que o RA8889 tem 
     suporte a JPEG e AVI, pode ser parte do sistema de decodificação de mídia.
+
 
 Vsync Interrupt Status
 ----------------------
@@ -1466,6 +1523,7 @@ BTE - Block Transfer Engine
      basta configurar o BTE (origem, destino, tamanho, opcode, rop code) e 
 	 ele executa sozinho.
 
+
 ROP - Raster Operation ou Raster Operation Code
 -----------------------------------------------
 
@@ -1794,6 +1852,7 @@ Funções e Notas
      - Você pode trocar o Set dinamicamente para alterar o visual do cursor sem redesenhar nada manualmente.
      - Não interfere no conteúdo da tela, porque o cursor é “sobreposto” na saída gráfica pelo RA8889.
 
+
 RAIO RA8876/RA8877
 ------------------
 
@@ -1852,6 +1911,7 @@ RAIO RA8876/RA8877
    O DMA é setado o destino para a SDRAM em uma posicao dela (0,0) e então começa a transferencia de dados da MCU apra o RA8876 e dela para a memopria SDRAM sem a intereferencia da MCU. Antes de tudo o usuario deve ter armazenado a imagem no Serial flash memoria, atens da transferencia pois é dali que o DMa pega as informações de iamgem e figuras para transfeir. 
    
    ⚠️ Minha observação: Entao a LVGL que cosntroi as imagens em memoria da MCU, deve elvar o resultado finalç arpa a SPI Flash e de la usando a trasngerencia de DMA direto e muito mais rapido para a emmroia SDRAM e esta se encarrega de levar para a memoria do LCD>.
+
 
 Alinhamento de Pixel na Memória de acordo com Color Depth
 ---------------------------------------------------------
@@ -1987,6 +2047,7 @@ Alinhamento de Pixel na Memória de acordo com Color Depth
   Isso consumiria muito tempo de CPU e limitaria bastante a performance gráfica.
   
   👉 O RA8889 resolve isso com hardware dedicado, deixando a MCU só com o trabalho de enviar comandos de alto nível.
+
    
 Serial Peripheral Interface (SPI)
 ---------------------------------
@@ -2611,6 +2672,7 @@ Passos para implementar um callback em uma função de interrupção:
   - std::function: Em C++, para um código mais flexível, você pode usar std::function, que pode armazenar diferentes tipos de "chamáveis" (funções, ponteiros de função, lambdas, objetos com operador ()). 
   - Funções membro: Se a callback for um método de uma classe, você precisará usar ponteiros para funções membro e, possivelmente, a instância da classe. 
   - Contexto do hardware: A forma exata de implementar interrupções e callbacks depende muito do hardware e da arquitetura do sistema (por exemplo, microcontroladores, sistemas operacionais). 
+
 
 Função callback passado por uma variavel para o attachInterrupt()
 -----------------------------------------------------------------
@@ -4022,6 +4084,57 @@ Why is dtostrf() not working for this one value?
   dtostrf(pres,5,0,mqttPres);
 
 
+O que faz o auto em C++
+-----------------------
+
+  O auto faz o compilador "deduzir" automaticamente o tipo da variável a partir do valor que você está atribuindo.
+  
+  Exemplo simples:
+  
+  int x = 10;
+  auto y = x;   // o compilador deduz que y é int
+    
+  Aqui, y é do mesmo tipo que x, sem você precisar escrever explicitamente int y.
+  
+  2️⃣ No seu caso do bus
+  
+  auto cfg = spi.config();
+    
+  spi.config() retorna Bus_SPI::Config.
+  
+  Ao usar auto, você não precisa escrever:
+  
+  Bus_SPI::Config cfg = spi.config();
+    
+  O compilador deduz automaticamente que cfg é do tipo Bus_SPI::Config.
+  
+  3️⃣ Vantagens do auto
+  
+  Código mais limpo e curto, sem repetição de tipos longos.
+  
+  Evita erros de digitação de tipos complexos, por exemplo em iteradores STL:
+  
+  std::vector<int> v{1,2,3};
+  auto it = v.begin(); // em vez de std::vector<int>::iterator it = v.begin();
+    
+  Mantém flexibilidade se você mudar o tipo de retorno da função, o código que usa auto continua funcionando.
+  
+  4️⃣ Observações
+  
+  auto deduz o tipo exato, incluindo const ou referências se estiverem presentes.
+  
+  Por padrão, se você não colocar &, ele faz cópia do valor retornado.
+  
+  Exemplo:
+  
+  auto cfg = spi.config(); // cfg é uma cópia da configuração
+  auto& cfg_ref = spi.config(); // cfg_ref é referência para a configuração interna
+    
+  Usar auto& permite alterar diretamente a configuração interna sem precisar chamar spi.config(cfg) de novo.
+  
+  💡 Resumindo: auto simplifica a declaração de variáveis, deixa o código mais limpo e evita você ter que escrever tipos longos ou repetitivos.
+
+
 Links do LVGL
 -------------
 
@@ -4049,3 +4162,9 @@ https://blog.51cto.com/u_16099328/10150900
 ESP32 SPI Tutorial Master Slave Communication Example
 https://microcontrollerslab.com/esp32-spi-communication-tutorial-arduino/
 (Tenho no DataBook)
+
+Dicas GitHub
+------------
+
+https://docs.github.com/pt/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
+
