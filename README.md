@@ -13,6 +13,28 @@ Após alguns testes, destacou que de inicio após as configuraões do display us
 
 Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no formato Doxygen para gerar documentação.
 
+# Novas implementações
+
+Atravpés de uso de interface OOP podemos escolher facilmente o tipo de barramento de comunciação e configurar ele. Inicia-se este implementação que terá que sofrer mudança em todos os métodos onde se escreve ou lê o barrmaneto SPI que agora será via interface IBus. O usuário poderá escolher entre Bus I2C, SPI e Parallel para comunciaçlão do o display. Segue um exemplo modelo abaixo que já está pronto a estrutura basica para impelemtnar os métodos e classes:
+
+//Use esta forma, evita repeticoes
+
+   // pega a configuração padrão
+   auto cfg = spi.config(); 
+
+   cfg.spi_host = VSPI_HOST;
+   cfg.pin_mosi = 23;
+   cfg.pin_miso = 19;
+   cfg.pin_sclk = 18;
+   cfg.pin_dc   = 21;
+   cfg.freq_write = 40000000;
+
+   // aplica a configuração
+   spi.config(cfg);
+
+   RA8889 display;
+   display.setBus(spi);
+
 # Todo
 
 - Transferencia de DMA
