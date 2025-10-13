@@ -17,6 +17,7 @@ Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no fo
 
 Atravpés de uso de interface OOP podemos escolher facilmente o tipo de barramento de comunciação e configurar ele. Inicia-se este implementação que terá que sofrer mudança em todos os métodos onde se escreve ou lê o barrmaneto SPI que agora será via interface IBus. O usuário poderá escolher entre Bus I2C, SPI e Parallel para comunciaçlão do o display. Segue um exemplo modelo abaixo que já está pronto a estrutura basica para impelemtnar os métodos e classes:
 
+'''
 //Use esta forma, evita repeticoes
 
    // pega a configuração padrão
@@ -34,6 +35,7 @@ Atravpés de uso de interface OOP podemos escolher facilmente o tipo de barramen
 
    RA8889 display;
    display.setBus(spi);
+'''
 
 # Todo
 
