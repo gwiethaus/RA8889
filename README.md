@@ -13,6 +13,12 @@ Após alguns testes, destacou que de inicio após as configuraões do display us
 
 Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no formato Doxygen para gerar documentação.
 
+# Hardware
+
+- Arduino
+- ESP32 / ESP32-S3 (iniciando)
+- Interface Comunicação SPI
+
 # Novas implementações
 
 Atravpés de uso de interface OOP podemos escolher facilmente o tipo de barramento de comunciação e configurar ele. Inicia-se este implementação que terá que sofrer mudança em todos os métodos onde se escreve ou lê o barrmaneto SPI que agora será via interface IBus. O usuário poderá escolher entre Bus I2C, SPI e Parallel para comunciaçlão do o display. Segue um exemplo modelo abaixo que já está pronto a estrutura basica para impelemtnar os métodos e classes:
