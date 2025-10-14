@@ -13,10 +13,10 @@
 
 class Bus_Parallel : public IBus {
   public:
-    Bus_Parallel() = default;
+    Bus_I2C() = default;
     void Config(const IBusConfig_t* cfg)  override;
   protected:
-    ParallelBusConfig_t _cfg;                         //Config local específica de Parallel
+    I2CBusConfig_t _cfg;                         //Config local específica de I2C
 
     void Init() override;
     void CmdWrite(uint8_t cmd) override;

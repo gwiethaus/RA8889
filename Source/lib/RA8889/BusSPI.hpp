@@ -3,7 +3,7 @@
 #include <Config.hpp>
 
 #if defined(RA8875)
-  //#include <RA8875_Reg.hpp>
+  #include <RA8875_Reg.hpp>
 #elif defined(RA8876)
   #include <RA8876_Reg.hpp>
 #elif defined(RA8877)
@@ -49,9 +49,9 @@ enum SPIHostType {
   #define HAS_SPI 1
 #endif
 
-
+//issso deve sair, pois ja tem a possibildiade do usuario configurar a velocidade de escrita do esp32 ou qualeru outra MCU
 #if defined(CONFIG_IDF_TARGET_ESP32) 
-  #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32 Gnerico
+  #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32 Genérico
   #define HAS_SPI_TRANSACTION
 #elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C3)
   #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32-S2, ESP32-S3, ESP32-C3
@@ -67,11 +67,11 @@ enum SPIHostType {
 class Bus_SPI : public IBus {
   public:
     Bus_SPI() = default;
-    void Config(const config_t& cfg) override;
+    void Config(const IBusConfig_t* cfg)  override;
   protected:
     SPIClass spi;                                //Será ajustado no Init
     SPISettings _spisetting;
-    config_t _cfg;
+    SPIBusConfig_t _cfg;                         //Config local específica de SPI
     bool _spi_init = false;                      //inicializou o SPI
     uint32_t _spi_clockmax;                      //velocidade de comunucacao de clock maximo do SPI
     uint8_t _spi_datamode;                       //SPI_MODE0[1,2,3] de comunicacao

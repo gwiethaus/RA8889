@@ -2,9 +2,42 @@
 #include <BusSPI.hpp>
 
 
-void Bus_SPI::Config(const config_t& cfg) 
+/**
+ * @brief Configura o proctocolo de comunicação SPI para o display
+ *
+ * @verbatim
+ * Usa structs internas do IBus (proposta “genérica”)
+ * A área de código mostra exemplo de como usar o Config()
+ * @endverbatim
+ * 
+ * @code
+ * Bus_SPI spi;
+ * RA8889 gfx(PIN_CS, PIN_RESET);
+ * 
+ * void setup() {
+ *      
+ *   IBus::SPIBusConfig cfg;
+ *   cfg.spi_type = FSPI_HOST;
+ *   cfg.pin_mosi = 23;
+ *   cfg.pin_miso = 19;
+ *   cfg.pin_sclk = 18;
+ *   cfg.pin_cs   = 5;
+ *   cfg.freq_write = 40000000;
+ *   
+ *   spi.Config(&cfg);                         // Grava a configuração
+ *   gfx.setBus(spi);                          // Seta o Bus SPI
+ *   gfx.Begin();                              // inicializa o display 
+ * @endcode
+ *
+ * @param IBusConfig_t* cfg
+ *        
+ * @note None
+ */
+void Bus_SPI::Config(const IBusConfig_t* cfg) 
 {
-  _cfg = cfg;
+  // Cast seguro para SPIBusConfig
+  const SPIBusConfig_t* scfg = static_cast<const SPIBusConfig_t*>(cfg);
+  _cfg = *scfg;
 }
 
 
