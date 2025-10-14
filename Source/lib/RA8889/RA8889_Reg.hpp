@@ -489,7 +489,7 @@
 #define REG_AVI_STOP                           0xd4            //Page 1 AVI stop                        
 
 //SPI
-#define RA8889_SPI_CMDWRITE                    0x00            //Write Command for SPI
-#define RA8889_SPI_DATAWRITE                   0x80            //Write Data for SPI
-#define RA8889_SPI_DATAREAD                    0xc0            //Read Data from SPI 
-#define RA8889_SPI_STATUSREAD                  0x40            //Read Status from SPI
+#define SPI_CMDWRITE                           0x00            //Write Command for SPI
+#define SPI_DATAWRITE                          0x80            //Write Data for SPI
+#define SPI_DATAREAD                           0xc0            //Read Data from SPI 
+#define SPI_STATUSREAD                         0x40            //Read Status from SPI

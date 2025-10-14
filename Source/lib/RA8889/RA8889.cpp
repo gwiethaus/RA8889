@@ -308,6 +308,8 @@ Como usr o Bus
 
 //Use esta forma, evita repeticoes
 
+    Bus_SPI spi;
+	
    // pega a configuração padrão
    auto cfg = spi.config(); 
 
@@ -386,18 +388,18 @@ Como usr o Bus
 // --- ESP32 e derivados -------------------------------------------------------
 #if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
 
-  // ESP32 Clássico, ESP32-S2, ESP32-S3, ESP32-C3, etc.
-  #if defined(USE_HSPI_PORT)
-    SPIClass spi = SPIClass(HSPI);
-    #define SPI_PORT_NAME "HSPI"
-  #elif defined(USE_VSPI_PORT)
-    SPIClass spi = SPIClass(VSPI);
-    #define SPI_PORT_NAME "VSPI"
-  #else
-    // Padrão → VSPI (SPI3_HOST)
-    SPIClass spi = SPIClass(VSPI);
-    #define SPI_PORT_NAME "VSPI (default)"
-  #endif
+//  // ESP32 Clássico, ESP32-S2, ESP32-S3, ESP32-C3, etc.
+//  #if defined(USE_HSPI_PORT)
+//    SPIClass spi = SPIClass(HSPI);
+//    #define SPI_PORT_NAME "HSPI"
+//  #elif defined(USE_VSPI_PORT)
+//    SPIClass spi = SPIClass(VSPI);
+//    #define SPI_PORT_NAME "VSPI"
+//  #else
+//    // Padrão → VSPI (SPI3_HOST)
+//    SPIClass spi = SPIClass(VSPI);
+//    #define SPI_PORT_NAME "VSPI (default)"
+//  #endif
 
 // --- Placas AVR clássicas ----------------------------------------------------
 #elif defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_NANO)
@@ -435,9 +437,9 @@ void RA8889::RA8876_brightness(uint16_t val)
 	// Turn on PWM if not already active, map 8-bit to 16-bit PWM0 register
   PWM0_SetCompareBuffer(val);
 	
-	RegisterWrite(REG_PMUXR, BIT_PWM0_TIMER_DIV1 | BIT_XPWM0_OUTPUT_PWM_TIMER0);
+	_bus->RegisterWrite(REG_PMUXR, BIT_PWM0_TIMER_DIV1 | BIT_XPWM0_OUTPUT_PWM_TIMER0);
 	
-	uint8_t temp = RegisterRead(REG_PCFGR);
+	uint8_t temp = _bus->RegisterRead(REG_PCFGR);
 	if (val)
 	{
 		temp = BIT_PWM0_DEAD_ZONE_ENABLE | BIT_PWM0_AUTO_RELOAD | BIT_PWM0_START;
@@ -446,7 +448,7 @@ void RA8889::RA8876_brightness(uint16_t val)
 	{
 		temp = 0;
 	}
-	RegisterWrite(REG_PCFGR, temp);
+	_bus->RegisterWrite(REG_PCFGR, temp);
 }
 
 
@@ -1182,7 +1184,7 @@ static int intToStr(int val, char* buf, int minWidth)
 void RA8889::setBus(IBus& bus) 
 {
   _bus = &bus;
-  _bus->init();    //inicilaiza o baramento de comunicação SPI/Parallel/I2C
+  _bus->Init();    //inicilaiza o baramento de comunicação SPI/Parallel/I2C
 }
 
 
@@ -1202,14 +1204,14 @@ void RA8889::setBus(IBus& bus)
  */
 RA8889::RA8889(uint8_t cs, uint8_t rst)
 {
-  _cs            = cs;
+//  _cs            = cs;
   _xnreset       = rst;
   _displaywidth  = LCD_HW;
   _displayheight = LCD_VH;
-  _spi_clockmax  = SPI_CLOCK_SPEED_MAX;
-  _spi_datamode  = SPI_MODE0;
-  _spi_dataorder = MSBFIRST;
-  _spi_transaction = false;
+//  _spi_clockmax  = SPI_CLOCK_SPEED_MAX;
+//  _spi_datamode  = SPI_MODE0;
+//  _spi_dataorder = MSBFIRST;
+//  _spi_transaction = false;
   _bpp           = COLOR_DEPTH;
   _mcu           = MCU;
   _colorfmt      = static_cast<uint8_t>(ePDATAColorFmt::RGB); //iniciar com o formato de cor RGB
@@ -1255,8 +1257,29 @@ void RA8889::PanelResolution(ePanelResolution resolution)
  * @brief Inicializa configurações basicas do display RA8889
  *
  * @verbatim
- * None
+ * Antes de utilizar as funcoes de display, é necessário configurar e iniciar 
+ * o barramento Bus para trasnferencia de dados. Isso é realizado como exemplo no 
+ * código a seguir.
  * @endverbatim
+ *
+ * @code
+ * Bus_SPI spi;                                  //Classe Bus_SPI
+ * RA8889 gfx(PIN_CS, PIN_RESET);                // 
+ *
+ * void setup() {
+ *   auto cfg = spi.config();                    //Configuração SPI 
+ *   cfg.spi_host = FSPI_HOST;                   //VSPI
+ *   cfg.pin_mosi = 23;                          
+ *   cfg.pin_miso = 19;
+ *   cfg.pin_sclk = 18;
+ *   cfg.pin_dc   = 21;
+ *   cfg.freq_write = 40000000;                  //40MHz
+ *   spi.config(cfg);                            //Grava as configurações
+ *   
+ *   gfx.setBus(spi);                            //seta o bus SPI para o RA8889
+ *   gfx.Begin();                                // Aqui _Bus->Init() é chamado internamente
+ * }
+ * @endcode
  *
  * @param None
  *
@@ -1264,10 +1287,16 @@ void RA8889::PanelResolution(ePanelResolution resolution)
  */
 bool RA8889::Begin(void)
 {
+  if (!_bus) {
+     DEBUG_PRINT("Bus not set!", 0, false, true);
+     return false;
+  }
+  
   HardwareReset();                     //Hardware Reset
 
-  SPI_Init();                           //inicializa comunicação SPI
-
+  //SPI_Init();                           //inicializa comunicação SPI
+  _bus->Init();                        //inicializa comunicação SPI, I2C ou Parallel
+  
   #ifdef CHECK_RAIOFAMILY
   //Verifica se é um RA8889
   if (ReadIDCode() == 0x89) { DEBUG_PRINT("RA8889 connect pass!",0,false, true); }
@@ -1285,7 +1314,7 @@ bool RA8889::Begin(void)
   // Aguarda até que a inicialização interna do RA8889 termine
   // Bit 1 do STSR (0x02) = 1 → inicialização em andamento
   // Bit 1 do STSR (0x02) = 0 → inicialização concluída
-  while(StatusRead() & 0x02);
+  while(_bus->StatusRead() & 0x02);
   
   //Inicializa as configurações basicas do display RA8889
   if (!Initialize()) {
@@ -1982,13 +2011,13 @@ void RA8889::LCD_SetPanel(void)
 
 
 //Inicializa o SPI para a comunicacao com o Display RA8889
-void RA8889::SPI_Init(void)
-{
-  pinMode(_cs, OUTPUT);
-  spi.beginTransaction(SPISettings(_spi_clockmax, MSBFIRST, _spi_datamode));
-  spi.begin();
-  _spi_transaction = true;
-}
+//void RA8889::SPI_Init(void)
+//{
+//  pinMode(_cs, OUTPUT);
+//  spi.beginTransaction(SPISettings(_spi_clockmax, MSBFIRST, _spi_datamode));
+//  spi.begin();
+//  _spi_transaction = true;
+//}
 
 
 /**
@@ -2014,10 +2043,10 @@ void RA8889::SPI_Init(void)
  * (representado por 1) "libera" o barramento para que outros dispositivos
  * possam utilizá-lo.
  */
-void RA8889::SPISetCS(uint8_t level_cs)
-{
-  level_cs == 0 ? digitalWrite(_cs, LOW) : /*SS_RESET */  digitalWrite(_cs, HIGH); /*SS_SET*/
-}
+//void RA8889::SPISetCS(uint8_t level_cs)
+//{
+//  level_cs == 0 ? digitalWrite(_cs, LOW) : /*SS_RESET */  digitalWrite(_cs, HIGH); /*SS_SET*/
+//}
 
 
 /**
@@ -2031,12 +2060,12 @@ void RA8889::SPISetCS(uint8_t level_cs)
  *
  * @note Note
  */
-uint8_t RA8889::SPIRwByte(uint8_t value)
-{
-  uint8_t result;
-  result = spi.transfer(value);
-  return result;
-}
+//uint8_t RA8889::SPIRwByte(uint8_t value)
+//{
+//  uint8_t result;
+//  result = spi.transfer(value);
+//  return result;
+//}
 
 
 /**
@@ -2050,13 +2079,13 @@ uint8_t RA8889::SPIRwByte(uint8_t value)
  *
  * @note Note
  */
-void RA8889::SPI_CmdWrite(uint8_t cmd)
-{
-  SPISetCS(0);                                 //SS_RESET
-  SPIRwByte(RA8889_SPI_CMDWRITE);              //0x00, Avisa Display que será um comando
-  SPIRwByte(cmd);                              //Envia um comando de 1 byte para o Display
-  SPISetCS(1);                                 //SS_SET
-}
+//void RA8889::SPI_CmdWrite(uint8_t cmd)
+//{
+//  SPISetCS(0);                                 //SS_RESET
+//  SPIRwByte(RA8889_SPI_CMDWRITE);              //0x00, Avisa Display que será um comando
+//  SPIRwByte(cmd);                              //Envia um comando de 1 byte para o Display
+//  SPISetCS(1);                                 //SS_SET
+//}
 
 
 /**
@@ -2070,14 +2099,14 @@ void RA8889::SPI_CmdWrite(uint8_t cmd)
  *
  * @note Note
  */
-void RA8889::SPI_DataWrite(uint8_t data)
-{
-  SPISetCS(0);                                 //SS_RESET;
-  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
-  SPIRwByte(data);                             //Envia um byte de Dado para o SPI
-  SPISetCS(1);                                 //SS_SET;
-}
-void RA8889::SPI_DataWrite8(uint8_t data) {SPI_DataWrite(data);}
+//void RA8889::SPI_DataWrite(uint8_t data)
+//{
+//  SPISetCS(0);                                 //SS_RESET;
+//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
+//  SPIRwByte(data);                             //Envia um byte de Dado para o SPI
+//  SPISetCS(1);                                 //SS_SET;
+//}
+//void RA8889::SPI_DataWrite8(uint8_t data) {SPI_DataWrite(data);}
 
 
 /**
@@ -2091,14 +2120,14 @@ void RA8889::SPI_DataWrite8(uint8_t data) {SPI_DataWrite(data);}
  *
  * @note Note
  */
-void RA8889::SPI_DataWrite16(uint16_t data)
-{
-  SPISetCS(0);                                 //SS_RESET;
-  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
-  SPIRwByte(data);                             //Envia um byte menos significativo de Dado para o SPI
-  SPIRwByte(data >> 8);                        //Envia um byte mais significativo de Dado para o SPI
-  SPISetCS(1);                                 //SS_SET;
-}
+//void RA8889::SPI_DataWrite16(uint16_t data)
+//{
+//  SPISetCS(0);                                 //SS_RESET;
+//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
+//  SPIRwByte(data);                             //Envia um byte menos significativo de Dado para o SPI
+//  SPIRwByte(data >> 8);                        //Envia um byte mais significativo de Dado para o SPI
+//  SPISetCS(1);                                 //SS_SET;
+//}
 
 
 /**
@@ -2112,30 +2141,30 @@ void RA8889::SPI_DataWrite16(uint16_t data)
  *
  * @note None
  */
-void RA8889::SPI_DataWrite24(uint32_t data)
-{
-  SPISetCS(0);                                 //SS_RESET;
-  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever 
-  SPIRwByte(data);                             //Envia byte 1 de Dado para o SPI
-  SPIRwByte(data >> 8);                        //Envia byte 2 de Dado para o SPI
-  SPIRwByte(data >> 16);                       //Envia byte 3 de Dado para o SPI
-  SPISetCS(1);                                 //SS_SET;
-}
+//void RA8889::SPI_DataWrite24(uint32_t data)
+//{
+//  SPISetCS(0);                                 //SS_RESET;
+//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever 
+//  SPIRwByte(data);                             //Envia byte 1 de Dado para o SPI
+//  SPIRwByte(data >> 8);                        //Envia byte 2 de Dado para o SPI
+//  SPIRwByte(data >> 16);                       //Envia byte 3 de Dado para o SPI
+//  SPISetCS(1);                                 //SS_SET;
+//}
 
 
 //SPI_DataWritePixel
-void RA8889::SPI_DataWrite_Pixel(uint16_t data)
-{
-  SPISetCS(0);                                 //SS_RESET;
-  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
-  SPIRwByte(data);                             //Escreve a parte baixa da palavra
-  SPISetCS(1);                                 //SS_SET;
-											   
-  SPISetCS(0);                                 //SS_RESET;
-  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
-  SPIRwByte(data >> 8);                        //Escreve a parte alta da palavra
-  SPISetCS(1);                                 //SS_SET;
-}
+//void RA8889::SPI_DataWrite_Pixel(uint16_t data)
+//{
+//  SPISetCS(0);                                 //SS_RESET;
+//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
+//  SPIRwByte(data);                             //Escreve a parte baixa da palavra
+//  SPISetCS(1);                                 //SS_SET;
+//											   
+//  SPISetCS(0);                                 //SS_RESET;
+//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
+//  SPIRwByte(data >> 8);                        //Escreve a parte alta da palavra
+//  SPISetCS(1);                                 //SS_SET;
+//}
 
 
 /**
@@ -2149,28 +2178,28 @@ void RA8889::SPI_DataWrite_Pixel(uint16_t data)
  *
  * @note Note
  */
-uint8_t RA8889::SPI_DataRead(void)
-{
-  uint8_t temp;
-  SPISetCS(0);                             //SS_RESET
-  SPIRwByte(RA8889_SPI_DATAREAD);          //0xc0, Leitura de dados
-  temp = SPIRwByte(0x00);
-  SPISetCS(1);                             //SS_SET
-  return temp;
-}
+//uint8_t RA8889::SPI_DataRead(void)
+//{
+//  uint8_t temp;
+//  SPISetCS(0);                             //SS_RESET
+//  SPIRwByte(RA8889_SPI_DATAREAD);          //0xc0, Leitura de dados
+//  temp = SPIRwByte(0x00);                  //envia um dummy byte para receber dados
+//  SPISetCS(1);                             //SS_SET
+//  return temp;
+//}
 
 
-uint16_t RA8889::SPI_DataRead16(uint8_t address)
-{
-  uint16_t data;
-  SPISetCS(0);                             //SS_RESET
-  spi.transfer(address);
-  data = spi.transfer(0);                  //MSB
-  data <<= 8;                              //Shift 8 bits right
-  data |= SPI.transfer(0);                 //LSB
-  SPISetCS(1);                             //SS_SET
-  return data;
-}
+//uint16_t RA8889::DataRead16(uint8_t address)
+//{
+//  uint16_t data;
+//  SPISetCS(0);                             //SS_RESET
+//  spi.transfer(address);
+//  data = spi.transfer(0x00);               //MSB
+//  data <<= 8;                              //Shift 8 bits right
+//  data |= SPI.transfer(0x00);              //LSB
+//  SPISetCS(1);                             //SS_SET
+//  return data;
+//}
 
 
 //================================================================================
@@ -2191,15 +2220,15 @@ uint16_t RA8889::SPI_DataRead16(uint8_t address)
  *
  * @return valor de estadado do STSR
  */
-uint8_t RA8889::StatusRead(void)
-{
-  uint8_t temp = 0;
-  SPISetCS(0);                            //SS_RESET
-  SPIRwByte(RA8889_SPI_STATUSREAD);       //0x40, Read Status SPI
-  temp = SPIRwByte(REG_STSR);             //0x00, Read STSR Register
-  SPISetCS(1);                            //SS_SET
-  return temp;
-}
+//uint8_t RA8889::StatusRead(void)
+//{
+//  uint8_t temp = 0;
+//  SPISetCS(0);                            //SS_RESET
+//  SPIRwByte(RA8889_SPI_STATUSREAD);       //0x40, Read Status SPI
+//  temp = SPIRwByte(REG_STSR);             //0x00, Read STSR Register
+//  SPISetCS(1);                            //SS_SET
+//  return temp;
+//}
 
 
 /** 
@@ -2215,11 +2244,11 @@ uint8_t RA8889::StatusRead(void)
  *
  * @return None
  */
-void RA8889::RegisterWrite(uint8_t reg, uint8_t data)
-{
-  SPI_CmdWrite(reg);
-  SPI_DataWrite(data);
-}
+//void RA8889::RegisterWrite(uint8_t reg, uint8_t data)
+//{
+//  SPI_CmdWrite(reg);
+//  SPI_DataWrite(data);
+//}
 
 
 /** 
@@ -2235,13 +2264,13 @@ void RA8889::RegisterWrite(uint8_t reg, uint8_t data)
  *
  * @return dados do registrador
  */
-uint8_t RA8889::RegisterRead(uint8_t reg)
-{
-  uint8_t temp;
-  SPI_CmdWrite(reg);
-  temp = SPI_DataRead();
-  return temp;
-}
+//uint8_t RA8889::RegisterRead(uint8_t reg)
+//{
+//  uint8_t temp;
+//  SPI_CmdWrite(reg);
+//  temp = SPI_DataRead();
+//  return temp;
+//}
 
 
 /**
@@ -2312,13 +2341,13 @@ uint8_t RA8889::SoftwareReset(void)
 {
   uint8_t temp;
   uint8_t res = 1;                             //timeout as default
-  RegisterWrite(REG_SRR, 0x01);                //0x00, Software Reset Register (SRR)
-  temp = SPI_DataRead();
+  _bus->RegisterWrite(REG_SRR, 0x01);                //0x00, Software Reset Register (SRR)
+  temp = _bus->DataRead();
   temp |= 0x01;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   delayMicroseconds(100);			           //it must wait 100us after Software_Reset.
   for (uint16_t i=0; i<1000;i++){
-     if (RegisterRead(REG_SRR)&0x01 == 0x00) { //No Warning condition flag
+     if (_bus->RegisterRead(REG_SRR)&0x01 == 0x00) { //No Warning condition flag
 		 res = 0;
 		 break;
      }
@@ -2357,7 +2386,7 @@ bool RA8889::IC_WaitReady(void)
 {
   static const uint32_t COUNTER = 1000000;     //de acordo com o uso, altere o valor de i.
   for(uint32_t i = 0; i < COUNTER; i++) {
-    if( (StatusRead() & 0x02) == 0x00 ) return true;
+    if( (_bus->StatusRead() & 0x02) == 0x00 ) return true;
 	delayMicroseconds(1);
   }
   return false;
@@ -2392,7 +2421,7 @@ bool RA8889::CoreTask_WaitReady(void)
 {
   static const uint32_t COUNTER = 1000000;	//Ajuste valor de i de acordo com a necessidade
   for(uint32_t i = 0; i < COUNTER; i++) {
-    if((StatusRead() & 0x08) == 0x00) return true;
+    if((_bus->StatusRead() & 0x08) == 0x00) return true;
     delayMicroseconds(1);
   } 
   return false;
@@ -2452,7 +2481,7 @@ bool RA8889::Wait_WriteFIFO_NotFull(void)
 {  
   static const uint32_t COUNTER = 10000;   //Ajuste valor de i de acordo com a necessidade
   for(uint16_t i = 0; i < COUNTER; i++) {
-    if( (StatusRead() & 0x80) == 0x00 ) return true;
+    if( (_bus->StatusRead() & 0x80) == 0x00 ) return true;
   }
   return false;
 }
@@ -2481,7 +2510,7 @@ bool RA8889::Wait_WriteFIFO_Empty(void)
 {
   static const uint32_t COUNTER = 10000;   //Ajuste valor de i de acordo com a necessidade
   for(uint16_t i = 0; i < COUNTER; i++) {
-    if( (StatusRead() & 0x40) == 0x40 ) return true;
+    if( (_bus->StatusRead() & 0x40) == 0x40 ) return true;
   }
   return false;
 }
@@ -2513,7 +2542,7 @@ bool RA8889::Wait_ReadFIFO_NotFull(void)
 {
   static const uint32_t COUNTER = 10000;       //Ajuste valor de i de acordo com a necessidade
   for(uint16_t i = 0; i < COUNTER; i++) {
-    if( (StatusRead() & 0x20) == 0x00 ) return true;
+    if( (_bus->StatusRead() & 0x20) == 0x00 ) return true;
   }
   return false;
 }
@@ -2542,7 +2571,7 @@ bool RA8889::Wait_ReadFIFO_NotEmpty(void)
 { 
   static const uint32_t COUNTER = 10000;       //Ajuste valor de i de acordo com a necessidade  
   for(uint16_t i = 0; i < COUNTER; i++) {
-    if( (StatusRead() & 0x10) == 0x00 ) return true;
+    if( (_bus->StatusRead() & 0x10) == 0x00 ) return true;
   }
   return false;
 }
@@ -2579,16 +2608,16 @@ uint8_t RA8889::ReadIDCode(void)
  { 
   uint8_t datareg = 0;
   uint8_t temp;
-  temp = RegisterRead(REG_CCR);                  //Ler o registrador 0x01
+  temp = _bus->RegisterRead(REG_CCR);                  //Ler o registrador 0x01
   datareg = temp;                                //Salva o estado original do PLL
   CLRB(temp,7);                                  //Desligar o PLL momentaneamente
-  RegisterWrite(REG_CCR, temp);                  //0x01, Chip Configuration Register (CCR)
+  _bus->RegisterWrite(REG_CCR, temp);                  //0x01, Chip Configuration Register (CCR)
   delay(1);
   PageSwitch(ePageReg::Page1);                   //Muda para pagina de registradores 1
-  temp = RegisterRead(0xff);                     //Registrador não documentado, para ID do Chip
+  temp = _bus->RegisterRead(0xff);                     //Registrador não documentado, para ID do Chip
   PageSwitch(ePageReg::Page0);                   //Retorna para  pagina de registradores 1
   delay(1);
-  RegisterWrite(REG_CCR, datareg);               //Devolve o status original do 0x01, Chip Configuration Register (CCR)
+  _bus->RegisterWrite(REG_CCR, datareg);               //Devolve o status original do 0x01, Chip Configuration Register (CCR)
   return temp;                                   //O ID do RA8889, tem que retornar 0x89
  }
 
@@ -2621,21 +2650,21 @@ void RA8889::PLL_InitilizeWaitReady(void)
   bool system_ok = false;
   
   do {
-    temp = StatusRead();                       //Read Status Register STSR
+    temp = _bus->StatusRead();               //Read Status Register STSR
 	if((temp & 0x02) == 0x00) {                //Veja se o bit 1 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
 
       delay(2);                                //MCU too fast, necessary
-      SPI_CmdWrite(REG_CCR);                   //0x01, Access register Chip Configuration Register (CCR)
+      _bus->CmdWrite(REG_CCR);                   //0x01, Access register Chip Configuration Register (CCR)
       delay(2);                                //MCU too fast, necessary
-      temp = SPI_DataRead();                   //Leia o CCR 
+      temp = _bus->DataRead();                   //Leia o CCR 
       if((temp & 0x80) == 0x80) {              //Check CCR register's PLL is ready or not (bit 7 = 1) value=0x80
         system_ok = true;                      //PLL pronto
         count_timeout = 0;
       } else {
         delay(2);                              //MCU too fast, necessary
-        SPI_CmdWrite(REG_CCR);                 //0x01, Access register Chip Configuration Register (CCR)
+        _bus->CmdWrite(REG_CCR);                 //0x01, Access register Chip Configuration Register (CCR)
         delay(2);                              //MCU too fast, necessary
-        SPI_DataWrite(0x80);                   //Reconfigura a frequencia do PLL
+        _bus->DataWrite(0x80);                   //Reconfigura a frequencia do PLL
       }
 	    
     } else {                          
@@ -2661,19 +2690,19 @@ void RA8889::PLL_Enable(void)
   uint8_t temp;
   uint16_t i;
 
-  SPI_CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
+  _bus->CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
   //removi isso nao faz sentido escrever comando REG_CCR e outro o SSR simultaneao sem enviar dados ou receber depois dele
-  //SPI_CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
-  temp = SPI_DataRead();
+  //_bus->CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
+  temp = _bus->DataRead();
   SETB(temp,7);                                //Habilita o PLL
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   delayMicroseconds(10);                       // PLL lock time = 1024 T OSC clocks, if OSC=10MHz, PLL lock time = 10 us.
 
   /*check PLL was ready ( Please according to your usage to modify. (Modifique de acordo com o uso)	*/
   for(i=0;i<1000;i++) {
-    SPI_CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
-    temp = SPI_DataRead();                       //Leia o registrador
+    _bus->CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
+    temp = _bus->DataRead();                       //Leia o registrador
     if( (temp & 0x80)==0x80 ){break;}            //Veja se as configuracoes do PLL ficaram prontas para o uso
   }
 }
@@ -2685,12 +2714,12 @@ void RA8889::PLL_Disable(void)
 {
 /* 0: PLL disanable; can change PLL parameter.*/
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
+  _bus->CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
   //removi isso nao faz sentido escrever comando REG_CCR e outro o SSR simultaneao sem enviar dados ou receber depois dele
-  //SPI_CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
-  temp = SPI_DataRead();
+  //_bus->CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
+  temp = _bus->DataRead();
   CLRB(temp,7);                                //Disable PLL
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   delayMicroseconds(100);                      // PLL lock time = 1024 T OSC clocks, if OSC=10MHz, PLL lock time = 100 us.  
 }
 
@@ -2745,100 +2774,100 @@ void RA8889::PLL_ConfigClocks(uint8_t scanclk, uint8_t dramclk, uint8_t coreclk,
  
   if(scanclk>=63)
   {
-    SPI_CmdWrite(REG_PPLLC1);                  //0x05 
-    SPI_DataWrite(0x04);                       //PLL Divided by 4
-    SPI_CmdWrite(REG_PPLLC2);                  //0x06
-    SPI_DataWrite((scanclk*4/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+    _bus->CmdWrite(REG_PPLLC1);                  //0x05 
+    _bus->DataWrite(0x04);                       //PLL Divided by 4
+    _bus->CmdWrite(REG_PPLLC2);                  //0x06
+    _bus->DataWrite((scanclk*4/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }                                            
   if((scanclk>=32)&&(scanclk<=62))         
   {                                            
-    SPI_CmdWrite(REG_PPLLC1);                  //0x05    
-    SPI_DataWrite(0x06);                       //PLL Divided by 8
-    SPI_CmdWrite(REG_PPLLC2);                  //0x06
-    SPI_DataWrite((scanclk*8/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+    _bus->CmdWrite(REG_PPLLC1);                  //0x05    
+    _bus->DataWrite(0x06);                       //PLL Divided by 8
+    _bus->CmdWrite(REG_PPLLC2);                  //0x06
+    _bus->DataWrite((scanclk*8/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }                                            
   if((scanclk>=16)&&(scanclk<=31))         
   {                                            
-	SPI_CmdWrite(REG_PPLLC1);                  //0x05     
-	SPI_DataWrite(0x16);                       //PLL Divided by 16
-	SPI_CmdWrite(REG_PPLLC2);                  //0x06
-	SPI_DataWrite((scanclk*16/xtalclk)-1);     //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_PPLLC1);                  //0x05     
+	_bus->DataWrite(0x16);                       //PLL Divided by 16
+	_bus->CmdWrite(REG_PPLLC2);                  //0x06
+	_bus->DataWrite((scanclk*16/xtalclk)-1);     //Deve ser de 1~63, 0 é proibido
   }                                            
   if((scanclk>=8)&&(scanclk<=15))          
   {                                            
-	SPI_CmdWrite(REG_PPLLC1);                  //0x05    
-	SPI_DataWrite(0x26);                       //PLL Divided by 32
-	SPI_CmdWrite(REG_PPLLC2);                  //0x06
-	SPI_DataWrite((scanclk*32/xtalclk)-1);     //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_PPLLC1);                  //0x05    
+	_bus->DataWrite(0x26);                       //PLL Divided by 32
+	_bus->CmdWrite(REG_PPLLC2);                  //0x06
+	_bus->DataWrite((scanclk*32/xtalclk)-1);     //Deve ser de 1~63, 0 é proibido
   }                                            
   if((scanclk>0)&&(scanclk<=7))            
   {                                            
-	SPI_CmdWrite(REG_PPLLC1);                  //0x05    
-	SPI_DataWrite(0x36);                       //PLL Divided by 64
-	SPI_CmdWrite(REG_PPLLC2);                  //0x06
-	SPI_DataWrite((scanclk*64/xtalclk)-1);     //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_PPLLC1);                  //0x05    
+	_bus->DataWrite(0x36);                       //PLL Divided by 64
+	_bus->CmdWrite(REG_PPLLC2);                  //0x06
+	_bus->DataWrite((scanclk*64/xtalclk)-1);     //Deve ser de 1~63, 0 é proibido
   }            
   
   // ---------- Set SDRAM clock ----------
 
   if(dramclk>=125)
   {
-	SPI_CmdWrite(REG_MPLLC1);                  //0x07 
-	SPI_DataWrite(0x02);                       //PLL Divided by 2
-	SPI_CmdWrite(REG_MPLLC2);                  //0x08
-	SPI_DataWrite((dramclk*2/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_MPLLC1);                  //0x07 
+	_bus->DataWrite(0x02);                       //PLL Divided by 2
+	_bus->CmdWrite(REG_MPLLC2);                  //0x08
+	_bus->DataWrite((dramclk*2/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }
   if((dramclk>=63)&&(dramclk<=124))
   {
-	SPI_CmdWrite(REG_MPLLC1);                  //0x07     
-	SPI_DataWrite(0x04);                       //PLL Divided by 4
-	SPI_CmdWrite(REG_MPLLC2);                  //0x08
-	SPI_DataWrite((dramclk*4/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_MPLLC1);                  //0x07     
+	_bus->DataWrite(0x04);                       //PLL Divided by 4
+	_bus->CmdWrite(REG_MPLLC2);                  //0x08
+	_bus->DataWrite((dramclk*4/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }
   if((dramclk>=31)&&(dramclk<=62))
   {           
-	SPI_CmdWrite(REG_MPLLC1);                  //0x07     
-	SPI_DataWrite(0x06);                       //PLL Divided by 8
-	SPI_CmdWrite(REG_MPLLC2);                  //0x08
-	SPI_DataWrite((dramclk*8/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_MPLLC1);                  //0x07     
+	_bus->DataWrite(0x06);                       //PLL Divided by 8
+	_bus->CmdWrite(REG_MPLLC2);                  //0x08
+	_bus->DataWrite((dramclk*8/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }
   if(dramclk<=30)
   {
-	SPI_CmdWrite(REG_MPLLC1);                  //0x07   
-	SPI_DataWrite(0x06);                       //PLL Divided by 8
-	SPI_CmdWrite(REG_MPLLC2);                  //0x08
-	SPI_DataWrite((30*8/xtalclk)-1);           //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_MPLLC1);                  //0x07   
+	_bus->DataWrite(0x06);                       //PLL Divided by 8
+	_bus->CmdWrite(REG_MPLLC2);                  //0x08
+	_bus->DataWrite((30*8/xtalclk)-1);           //Deve ser de 1~63, 0 é proibido
   }
  
   // ---------- Set Core clock ----------
   
   if(coreclk>=125)
   {
-	SPI_CmdWrite(REG_SPLLC1);                  //0x09
-	SPI_DataWrite(0x02);                       //PLL Divided by 2
-	SPI_CmdWrite(REG_SPLLC2);                  //0x0A
-	SPI_DataWrite((coreclk*2/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_SPLLC1);                  //0x09
+	_bus->DataWrite(0x02);                       //PLL Divided by 2
+	_bus->CmdWrite(REG_SPLLC2);                  //0x0A
+	_bus->DataWrite((coreclk*2/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }
   if((coreclk>=63)&&(coreclk<=124))     
   {
-	SPI_CmdWrite(REG_SPLLC1);                  //0x09   
-	SPI_DataWrite(0x04);                       //PLL Divided by 4
-	SPI_CmdWrite(REG_SPLLC2);                  //0x0A
-	SPI_DataWrite((coreclk*4/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_SPLLC1);                  //0x09   
+	_bus->DataWrite(0x04);                       //PLL Divided by 4
+	_bus->CmdWrite(REG_SPLLC2);                  //0x0A
+	_bus->DataWrite((coreclk*4/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }
   if((coreclk>=31)&&(coreclk<=62))
   {           
-	SPI_CmdWrite(REG_SPLLC1);                  //0x09  
-	SPI_DataWrite(0x06);                       //PLL Divided by 8
-	SPI_CmdWrite(REG_SPLLC2);                  //0x0A
-	SPI_DataWrite((coreclk*8/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_SPLLC1);                  //0x09  
+	_bus->DataWrite(0x06);                       //PLL Divided by 8
+	_bus->CmdWrite(REG_SPLLC2);                  //0x0A
+	_bus->DataWrite((coreclk*8/xtalclk)-1);      //Deve ser de 1~63, 0 é proibido
   }
   if(coreclk<=30)
   {
-	SPI_CmdWrite(REG_SPLLC1);                  //0x09   
-	SPI_DataWrite(0x06);                       //PLL Divided by 8
-	SPI_CmdWrite(REG_SPLLC2);                  //0x0A
-	SPI_DataWrite((30*8/xtalclk)-1);           //Deve ser de 1~63, 0 é proibido
+	_bus->CmdWrite(REG_SPLLC1);                  //0x09   
+	_bus->DataWrite(0x06);                       //PLL Divided by 8
+	_bus->CmdWrite(REG_SPLLC2);                  //0x0A
+	_bus->DataWrite((30*8/xtalclk)-1);           //Deve ser de 1~63, 0 é proibido
   }
 
 }
@@ -2874,10 +2903,10 @@ void RA8889::PLL_Init(void)
   PLL_ConfigClocks(SCAN_FREQ, DRAM_FREQ, CORE_FREQ, OSC_FREQ);
   //PLL_Enable();	
 
-	SPI_CmdWrite(0x01);
-	SPI_CmdWrite(0x00);
+	_bus->CmdWrite(0x01);
+	_bus->CmdWrite(0x00);
 	delay(1);
-	SPI_CmdWrite(0x80);
+	_bus->CmdWrite(0x80);
 
   DEBUG_PRINT("PLL Initialized",0,false, true);
 }
@@ -2918,7 +2947,7 @@ bool RA8889::SDRAM_WaitReady(void)
   static const uint32_t COUNTER = 1000000;
   for (unsigned long i = 0; i < COUNTER; i++) {
     delayMicroseconds(1);
-    if ((StatusRead() & 0x04) == 0x04) return true;
+    if ((_bus->StatusRead() & 0x04) == 0x04) return true;
   }
   return false;
 }
@@ -2952,14 +2981,14 @@ void RA8889::SDRAM_Init(void)
   //  SDRAM Bank number (sdr_bank)      bit 5=1b     -> uso 4 bancos
   //  SDRAM Row addressing (sdr_row)    bit 4-3=01b  -> 4096 (A0-A11) 
   //  SDRAM Column addressing (sdr_col) bit 2-0=001b -> 512 (A0-A8)
-  RegisterWrite(REG_SDRAR, 0x29);            
+  _bus->RegisterWrite(REG_SDRAR, 0x29);            
     
   //0xe1, SDRAM mode register & extended mode register (SDRMD)
   //Define a latência CAS (Column Address Strobe latency).
   //  0x03 = Define a latência CAS (Column Address Strobe latency)
   //  SDRAM CAS latency (sdr-caslat)    bit 2-0 CAS:2 010b=0x02 -> 2 ciclos CAS:3 011b=0x03 -> 3 ciclos  
   CAS_Latency = 0x03;
-  RegisterWrite(REG_SDRMD, CAS_Latency);
+  _bus->RegisterWrite(REG_SDRMD, CAS_Latency);
   
   //Set SDRAM refresh interval via SDRAM auto refresh interval registers
   
@@ -2972,14 +3001,14 @@ void RA8889::SDRAM_Init(void)
   Auto_Refresh-=2;                                  //Start [refresh] in advance to avoid just rachiong the limits
   
   //0xe2, SDRAM auto refresh interval (SDR_REF_ITVL0) - Byte low
-  RegisterWrite(REG_SDR_REF_ITVL0, Auto_Refresh); //envia byte menos significativo da palavra
+  _bus->RegisterWrite(REG_SDR_REF_ITVL0, Auto_Refresh); //envia byte menos significativo da palavra
   
   //0xe3, SDRAM auto refresh interval (SDR_REF_ITVL1) - Byte high
-  RegisterWrite(REG_SDR_REF_ITVL1, Auto_Refresh >> 8); //envia byte mais significativo da palavra
+  _bus->RegisterWrite(REG_SDR_REF_ITVL1, Auto_Refresh >> 8); //envia byte mais significativo da palavra
   
   //0xe4, SDRAM Control register (SDRCR)
   //  0x01 = Iniciar procedimento de inicialização da SDRAM (sdr_initdone)
-  RegisterWrite(REG_SDRCR, 0x01);
+  _bus->RegisterWrite(REG_SDRCR, 0x01);
   
   //Espera até que a SDRAM esteja pronta
   SDRAM_WaitReady();
@@ -3033,10 +3062,10 @@ void RA8889::SDRAM_Init(void)
 void RA8889::XnWAIT_Mask(bool mask)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = _bus->DataRead();
   mask ? SETB(temp,6) : CLRB(temp,6);      //Set/reset bit 6
-  SPI_DataWrite(temp);	
+  _bus->DataWrite(temp);	
 }
 
 
@@ -3056,10 +3085,10 @@ void RA8889::XnWAIT_Mask(bool mask)
 void RA8889::KeyScan_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = _bus->DataRead();
   b ? SETB(temp,5) : CLRB(temp,5); 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3082,11 +3111,11 @@ void RA8889::KeyScan_Enable(bool b)
 void RA8889::TFT_24bit(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = _bus->DataRead();
   CLRB(temp,4);                                //Reset bit 4
   CLRB(temp,3);                                //Reset bit 3 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3109,11 +3138,11 @@ void RA8889::TFT_24bit(void)
 void RA8889::TFT_18bit(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = _bus->DataRead();
   CLRB(temp,4);                                //Reset bit 4
   SETB(temp,3);                                //Set bit 3 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3135,11 +3164,11 @@ void RA8889::TFT_18bit(void)
 void RA8889::TFT_16bit(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = _bus->DataRead();
   SETB(temp,4);                                //Set bit 4
   CLRB(temp,3);                                //Reset bit 3 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3163,11 +3192,11 @@ void RA8889::TFT_16bit(void)
 void RA8889::TFT_Without(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = _bus->DataRead();
   SETB(temp,4);                                //Set bit 4
   SETB(temp,3);                                //Set bit 3
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3190,12 +3219,12 @@ void RA8889::TFT_Without(void)
 void RA8889::TFT_Interface(TFTInterface mode)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
+  temp = _bus->DataRead();
   CLRB(temp,4);
   CLRB(temp,3);
   temp |= static_cast<uint8_t>(mode);          
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3216,10 +3245,10 @@ void RA8889::TFT_Interface(TFTInterface mode)
 void RA8889::I2CM_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = _bus->DataRead();
   b ? SETB(temp,2) : CLRB(temp,2); 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3242,13 +3271,13 @@ void RA8889::I2CM_Enable(bool b)
  *
  * @param None
  */
-void RA8889::SFlashSPI_Enable(bool b = true)
+void RA8889::SFlashSPI_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  temp = _bus->DataRead();
   b ? SETB(temp,1) : CLRB(temp,1); 
-  SPI_DataWrite(temp);                         //Escreve de volta no CCR
+  _bus->DataWrite(temp);                         //Escreve de volta no CCR
 }
 
 
@@ -3272,10 +3301,10 @@ void RA8889::SFlashSPI_Enable(bool b = true)
 void RA8889::HostDataBus_Select_8bit(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
+  temp = _bus->DataRead();
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3297,10 +3326,10 @@ void RA8889::HostDataBus_Select_8bit(void)
 void RA8889::HostDataBus_Select_16bit(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
+  temp = _bus->DataRead();
   SETB(temp,0);                                //Set bit 0, 16-bit data bus
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3344,8 +3373,8 @@ void RA8889::HostDataBus_Select_16bit(void)
 void RA8889::HostColorDepthFormat(uint8_t type)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
+  temp = _bus->DataRead();
   
   if (type == 0) {                             //0xb: Direct write (for all 8 bits MPU I/F, 16 bits MPU I/F with 8bpp data mode 1 & 2, 16 bits MPU I/F with 16/24-bpp data mode 1 & serial host interface)
 	  CLRB(temp,7);                            //Reset bit 7
@@ -3357,7 +3386,7 @@ void RA8889::HostColorDepthFormat(uint8_t type)
 	  SETB(temp,7);                            //Set bit 7
 	  SETB(temp,6);                            //Set bit 6
   }
-  SPI_DataWrite(temp);                         //Mask high byte of each data (ex. 16 bit MPU I/F with 8-bpp data mode 1)
+  _bus->DataWrite(temp);                         //Mask high byte of each data (ex. 16 bit MPU I/F with 8-bpp data mode 1)
 }
 
 
@@ -3431,11 +3460,11 @@ void RA8889::Select_MCU_ColorDepth(void)
 void RA8889::HostReadMemoryDirection(MemoryDirection direction)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
+  temp = _bus->DataRead();
   temp &= ~(cSetb5 | cSetb4);                  //Reset bit 5 e 4
   temp |= (static_cast<uint8_t>(direction) << 4); //posiciona o valor para o bit 5 e 4
-  SPI_DataWrite(temp);                         //Host Read Memory Direction
+  _bus->DataWrite(temp);                         //Host Read Memory Direction
 }
 
 
@@ -3462,11 +3491,11 @@ void RA8889::HostReadMemoryDirection(MemoryDirection direction)
 void RA8889::HostWriteMemoryDirection(MemoryDirection direction)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MACR);                             //0x02, Memory Access Control Register (MACR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MACR);                             //0x02, Memory Access Control Register (MACR)
+  temp = _bus->DataRead();
   temp &= ~(cSetb2 | cSetb1);                         //Reset bit 2 e 1
   temp |= (static_cast<uint8_t>(direction) << 1);     //posiciona o valor para o bit 2 e 1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3492,11 +3521,11 @@ void RA8889::HostWriteMemoryDirection(MemoryDirection direction)
 void RA8889::Interrupt_ActiveLevel(eInterruptLevel level)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       
   CLRB(temp,7);                                //Reset bit 7
   temp |= static_cast<uint8_t>(level);         //Define o nível
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3515,10 +3544,10 @@ void RA8889::Interrupt_ActiveLevel(eInterruptLevel level)
 void RA8889::ExtInterrupt_Debounce(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       
   SETB(temp,6);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3537,10 +3566,10 @@ void RA8889::ExtInterrupt_Debounce(void)
 void RA8889::ExtInterrupt_NoDebounce(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       
   CLRB(temp,6);                                //Reset bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3562,12 +3591,12 @@ void RA8889::ExtInterrupt_NoDebounce(void)
 void RA8889::ExtInterrupt_InputLevelTrigger(eInterrupLevelTrigger leveltrg)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();     
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();     
   CLRB(temp,5);                                //Reset bit 5
   CLRB(temp,4);                                //Reset bit 4
   temp |= (static_cast<uint8_t>(leveltrg) << 3); 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3587,10 +3616,10 @@ void RA8889::ExtInterrupt_InputLevelTrigger(eInterrupLevelTrigger leveltrg)
 void RA8889::LVDS_DataFormat_VESA(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       
   CLRB(temp,3);                                //Reset bit 3 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3610,10 +3639,10 @@ void RA8889::LVDS_DataFormat_VESA(void)
 void RA8889::LVDS_DataFormat_JEIDA(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       
   SETB(temp,3);                                //Set bit 3
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3641,11 +3670,11 @@ void RA8889::LVDS_DataFormat_JEIDA(void)
 bool RA8889::GraphicMode(void){
   uint8_t temp;
   bool res;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   res = (temp & 0x4) == 0;                     //bit [2]=0, Graphic mode
   CLRB(temp,2);                                //Reset bit 2
-  SPI_DataWrite(temp);                         //Ativa modo grafico
+  _bus->DataWrite(temp);                         //Ativa modo grafico
   return res;
 }
 
@@ -3661,8 +3690,8 @@ bool RA8889::GraphicMode(void){
  */
 bool RA8889::IsGraphicMode(void){
   uint8_t temp;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   return ((temp == cSetb2) == 0x00);           //Verificar bit 2 está desligado
 }
 
@@ -3692,11 +3721,11 @@ bool RA8889::TextMode(void)
 {
   uint8_t temp;
   bool res;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   res = (temp & 0x4);                          //bit [2]=1, Text mode
   SETB(temp,2);                                //Set bit 2
-  SPI_DataWrite(temp);                         //Ativa o modo texto
+  _bus->DataWrite(temp);                         //Ativa o modo texto
   return res;
 }
 
@@ -3714,11 +3743,11 @@ bool RA8889::TextMode(void)
 void RA8889::MemorySelect_SDRAM(void)
 {
   uint8_t temp = 0;
-  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();               //Lê valor atual do registrador
+  _bus->CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();               //Lê valor atual do registrador
   CLRB(temp,1);                        //Reset bit 1
   CLRB(temp,0);                        //Reset bit 0
-  SPI_DataWrite(temp);                 //Atualiza registrador
+  _bus->DataWrite(temp);                 //Atualiza registrador
 }
 
 
@@ -3735,11 +3764,11 @@ void RA8889::MemorySelect_SDRAM(void)
 void RA8889::MemorySelect_GammaTable(void)
 {
   uint8_t temp = 0;
-  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();               //Lê valor atual do registrador
+  _bus->CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();               //Lê valor atual do registrador
   CLRB(temp,1);                        //Reset bit 1
   SETB(temp,0);                        //Set bit 0
-  SPI_DataWrite(temp);                 //Atualiza registrador
+  _bus->DataWrite(temp);                 //Atualiza registrador
 }
 
 
@@ -3760,11 +3789,11 @@ void RA8889::MemorySelect_GammaTable(void)
 void RA8889::MemorySelect_GraphicCursorRAM(void)
 {
   uint8_t temp = 0;
-  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();               //Lê valor atual do registrador
+  _bus->CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();               //Lê valor atual do registrador
   SETB(temp,1);                        //Set bit 1  
   CLRB(temp,0);                        //Clear bit 0
-  SPI_DataWrite(temp);                 //Atualiza registrador
+  _bus->DataWrite(temp);                 //Atualiza registrador
 }
 
 
@@ -3785,11 +3814,11 @@ void RA8889::MemorySelect_GraphicCursorRAM(void)
 void RA8889::MemorySelect_ColorPaletteRAM(void)
 {
   uint8_t temp = 0;
-  SPI_CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();               //Lê valor atual do registrador
+  _bus->CmdWrite(REG_ICR);               //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();               //Lê valor atual do registrador
   SETB(temp,1);                        //Set bit 1
   SETB(temp,0);                        //Set bit 0
-  SPI_DataWrite(temp);                 //Atualiza registrador
+  _bus->DataWrite(temp);                 //Atualiza registrador
 }
 
 
@@ -3822,12 +3851,12 @@ void RA8889::MemorySelect_ColorPaletteRAM(void)
 void RA8889::MemoryPort_Select(MemoryPortDest dest)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,1);                                //Reset bit 1
   CLRB(temp,0);                                //Reset bit 0 
   temp |= static_cast<uint8_t>(dest);          //
-  SPI_DataWrite(temp);                         //Atualiza registrador
+  _bus->DataWrite(temp);                         //Atualiza registrador
 }
 
 
@@ -3855,10 +3884,10 @@ void RA8889::MemoryPort_Select(MemoryPortDest dest)
 void RA8889::Interrupt_Resume_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();
   b ? SETB(temp,7) : CLRB(temp,7);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3878,10 +3907,10 @@ void RA8889::Interrupt_Resume_Enable(bool b)
 void RA8889::ExtInterrupt_Input_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();
   b ? SETB(temp,6) : CLRB(temp,6);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3901,10 +3930,10 @@ void RA8889::ExtInterrupt_Input_Enable(bool b)
 void RA8889::Interrupt_I2CM_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();
   b ? SETB(temp,5) : CLRB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3924,10 +3953,10 @@ void RA8889::Interrupt_I2CM_Enable(bool b)
 void RA8889::Interrupt_VSync_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();
   b ? SETB(temp,4) : CLRB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3947,10 +3976,10 @@ void RA8889::Interrupt_VSync_Enable(bool b)
 void RA8889::Interrupt_KeyScan_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTEN);     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();
   b ? SETB(temp,3) : CLRB(temp,3);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3971,10 +4000,10 @@ void RA8889::Interrupt_KeyScan_Enable(bool b)
 void RA8889::Interrupt_ClearMultiEventTask_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();
   b ? SETB(temp,2) : CLRB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -3994,10 +4023,10 @@ void RA8889::Interrupt_ClearMultiEventTask_Enable(bool b)
 void RA8889::Interrupt_PWM1_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();
   b ? SETB(temp,1) : CLRB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4017,10 +4046,10 @@ void RA8889::Interrupt_PWM1_Enable(bool b)
 void RA8889::Interrupt_PWM0_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();
   b ? SETB(temp,0) : CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4049,10 +4078,10 @@ void RA8889::IDEC_InterruptEnable(bool b)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);                 //Troca para Pagina 1
-  SPI_CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
-  temp = SPI_DataRead();                       //
+  _bus->CmdWrite(REG_INTEN);                     //0x0b, Interrupt Enable Register (INTEN)
+  temp = _bus->DataRead();                       //
   b ? SETB(temp,0) : CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);                 //Troca para Pagina 1
 }
 
@@ -4105,8 +4134,8 @@ void RA8889::IDEC_InterruptEnable(bool b)
  */
 uint8_t RA8889::Interrupt_Status(void)
 {
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  return SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  return _bus->DataRead();
 }
 
 
@@ -4133,10 +4162,10 @@ uint8_t RA8889::Interrupt_Status(void)
 void RA8889::VSYNC_WaitReady(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  SPI_DataWrite(0x10);                         //Set bit 4, clear VSync interrupt status, solicita que verifique se o VSync está pronto
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  _bus->DataWrite(0x10);                         //Set bit 4, clear VSync interrupt status, solicita que verifique se o VSync está pronto
   do {
-    temp = SPI_DataRead();                     //Leia o status
+    temp = _bus->DataRead();                     //Leia o status
   } while ( (temp & 0x10) == 0x00);            //Aguarde ate que seja resetado o bit, terminou o retraço
 }
 
@@ -4164,10 +4193,10 @@ void RA8889::VSYNC_WaitReady(void)
 void RA8889::Interrupt_ClearResume_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,7);                                //Set bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4194,10 +4223,10 @@ void RA8889::Interrupt_ClearResume_Flag(void)
 void RA8889::ExtInterrupt_ClearInput_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,6);                                //Resetar interrupção
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4224,10 +4253,10 @@ void RA8889::ExtInterrupt_ClearInput_Flag(void)
 void RA8889::Interrupt_ClearI2CM_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,5);                                //Resetar interrupção
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -4253,10 +4282,10 @@ void RA8889::Interrupt_ClearI2CM_Flag(void)
 void RA8889::Interrupt_ClearVSync_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,4);                                //Resetar interrupção
-  SPI_DataWrite(temp);                         //Limpa status de interrupção VSync
+  _bus->DataWrite(temp);                         //Limpa status de interrupção VSync
 }
 
 
@@ -4283,10 +4312,10 @@ void RA8889::Interrupt_ClearVSync_Flag(void)
 void RA8889::Interrupt_ClearKeyScan_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,3);                                //Clear interrupt status
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4313,8 +4342,8 @@ void RA8889::Interrupt_ClearKeyScan_Flag(void)
 bool RA8889::Interrupt_IsKeyPressed(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   return (temp & 0x08);                        //Recebeu a interrupção
 }
 
@@ -4343,10 +4372,10 @@ bool RA8889::Interrupt_IsKeyPressed(void)
 void RA8889::Interrupt_ClearMultiEventTask_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4372,10 +4401,10 @@ void RA8889::Interrupt_ClearMultiEventTask_Flag(void)
 void RA8889::Interrupt_ClearPWM0_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4401,10 +4430,10 @@ void RA8889::Interrupt_ClearPWM0_Flag(void)
 void RA8889::Interrupt_ClearPWM1_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4439,10 +4468,10 @@ void RA8889::IDEC_ClearInterrupt_Flag(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
+  temp = _bus->DataRead();
   SETB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -4480,10 +4509,10 @@ void RA8889::IDEC_ClearInterrupt_Flag(void)
 void RA8889::XnINTR_ResumeInterrupt_Mask(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,7) : CLRB(temp,7);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4506,10 +4535,10 @@ void RA8889::XnINTR_ResumeInterrupt_Mask(bool b)
 void RA8889::XnINTR_ExtInterruptInput_Mask(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,6) : CLRB(temp,6);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4532,10 +4561,10 @@ void RA8889::XnINTR_ExtInterruptInput_Mask(bool b)
 void RA8889::XnINTR_I2CMInterrupt_Mask(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,5) : CLRB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4558,10 +4587,10 @@ void RA8889::XnINTR_I2CMInterrupt_Mask(bool b)
 void RA8889::XnINTR_VsyncInterrupt_Mask(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,4) : CLRB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4584,10 +4613,10 @@ void RA8889::XnINTR_VsyncInterrupt_Mask(bool b)
 void RA8889::XnINTR_KeyScanInterrupt_Mask(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,3) : CLRB(temp,3);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4612,10 +4641,10 @@ void RA8889::XnINTR_KeyScanInterrupt_Mask(bool b)
 void RA8889::XnINTR_GenericInterrupt_Mask(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,2) : CLRB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4638,10 +4667,10 @@ void RA8889::XnINTR_GenericInterrupt_Mask(bool b)
 void RA8889::XnINTR_PWM1Interrupt_Mask(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,1) : CLRB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4664,10 +4693,10 @@ void RA8889::XnINTR_PWM1Interrupt_Mask(bool b)
 void RA8889::XnINTR_PWM0Interrupt_Mask(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);                    //0x0d, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,0) : CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4697,10 +4726,10 @@ void RA8889::IDEC_Unmask_Interrupt(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_MINTFR);           //0x0d, page 1, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);           //0x0d, page 1, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -4723,10 +4752,10 @@ void RA8889::IDEC_Mask_Interrupt(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_MINTFR);           //0x0d, page 1, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);           //0x0d, page 1, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   SETB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -4749,10 +4778,10 @@ void RA8889::IDEC_Interrupt_Mask(bool b)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_MINTFR);           //0x0d, page 1, Mask Interrupt Flag Register (MINTFR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MINTFR);           //0x0d, page 1, Mask Interrupt Flag Register (MINTFR)
+  temp = _bus->DataRead();
   b ? SETB(temp,0) : CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -4782,10 +4811,10 @@ void RA8889::IDEC_Interrupt_Mask(bool b)
 void RA8889::GPIOF_PullUp_Enable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   SETB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4807,10 +4836,10 @@ void RA8889::GPIOF_PullUp_Enable(void)
 void RA8889::GPIOF_PullUp_Disable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   CLRB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4832,10 +4861,10 @@ void RA8889::GPIOF_PullUp_Disable(void)
 void RA8889::GPIOE_PullUp_Enable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   SETB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4857,10 +4886,10 @@ void RA8889::GPIOE_PullUp_Enable(void)
 void RA8889::GPIOE_PullUp_Disable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   CLRB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4882,10 +4911,10 @@ void RA8889::GPIOE_PullUp_Disable(void)
 void RA8889::GPIOD_PullUp_Enable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   SETB(temp,3);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4907,10 +4936,10 @@ void RA8889::GPIOD_PullUp_Enable(void)
 void RA8889::GPIOD_PullUp_Disable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   CLRB(temp,3);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4931,10 +4960,10 @@ void RA8889::GPIOD_PullUp_Disable(void)
 void RA8889::GPIOC_PullUp_Enable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   SETB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4955,10 +4984,10 @@ void RA8889::GPIOC_PullUp_Enable(void)
 void RA8889::GPIOC_PullUp_Disable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   CLRB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -4979,10 +5008,10 @@ void RA8889::GPIOC_PullUp_Disable(void)
 void RA8889::XDB15_8_PullUp_Enable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   SETB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5003,10 +5032,10 @@ void RA8889::XDB15_8_PullUp_Enable(void)
 void RA8889::XDB15_8_PullUp_Disable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   CLRB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5027,10 +5056,10 @@ void RA8889::XDB15_8_PullUp_Disable(void)
 void RA8889::XDB7_0_PullUp_Enable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   SETB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5051,10 +5080,10 @@ void RA8889::XDB7_0_PullUp_Enable(void)
 void RA8889::XDB7_0_PullUp_Disable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PUENR);                     //0x0e, Pull- high control Register (PUENR)
+  temp = _bus->DataRead();
   CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5120,10 +5149,10 @@ void RA8889::XDB7_0_PullUp_Disable(void)
 void RA8889::XPDAT18_GPIO_D7_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   CLRB(temp,7);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5156,10 +5185,10 @@ void RA8889::XPDAT18_GPIO_D7_Mode(void)
 void RA8889::XPDAT18_KOUT4_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   SETB(temp,7);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5197,10 +5226,10 @@ void RA8889::XPDAT17_GPIO_D5_Mode(void)
     1: KOUT[2]
     */
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   CLRB(temp,6);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5233,10 +5262,10 @@ void RA8889::XPDAT17_GPIO_D5_Mode(void)
 void RA8889::XPDAT17_KOUT2_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   SETB(temp,6);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5269,10 +5298,10 @@ void RA8889::XPDAT17_KOUT2_Mode(void)
 void RA8889::XPDAT16_GPIO_D4_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   CLRB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5305,10 +5334,10 @@ void RA8889::XPDAT16_GPIO_D4_Mode(void)
 void RA8889::XPDAT16_KOUT1_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   SETB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5341,10 +5370,10 @@ void RA8889::XPDAT16_KOUT1_Mode(void)
 void RA8889::XPDAT9_GPIO_D3_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   CLRB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5382,10 +5411,10 @@ void RA8889::XPDAT9_KOUT3_Mode(void)
     1: KOUT[3]
     */
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   SETB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5418,10 +5447,10 @@ void RA8889::XPDAT9_KOUT3_Mode(void)
 void RA8889::XPDAT8_GPIO_D2_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   CLRB(temp,3);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5455,10 +5484,10 @@ void RA8889::XPDAT8_GPIO_D2_Mode(void)
 void RA8889::XPDAT8_KIN3_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   SETB(temp,3);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5481,10 +5510,10 @@ void RA8889::XPDAT8_KIN3_Mode(void)
 void RA8889::XPDAT2_GPIO_D6_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   CLRB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5507,10 +5536,10 @@ void RA8889::XPDAT2_GPIO_D6_Mode(void)
 void RA8889::XPDAT2_KIN4_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   SETB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5529,10 +5558,10 @@ void RA8889::XPDAT2_KIN4_Mode(void)
 void RA8889::XPDAT1_GPIO_D1_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   CLRB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5551,10 +5580,10 @@ void RA8889::XPDAT1_GPIO_D1_Mode(void)
 void RA8889::XPDAT1_KIN2_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   SETB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5573,10 +5602,10 @@ void RA8889::XPDAT1_KIN2_Mode(void)
 void RA8889::XPDAT0_GPIO_D0_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5595,10 +5624,10 @@ void RA8889::XPDAT0_GPIO_D0_Mode(void)
 void RA8889::XPDAT0_KIN1_Mode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PSFSR);                     //0x0f, PDAT for PIO/Key Function Select Register (PSFSR)
+  temp = _bus->DataRead();
   SETB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5627,10 +5656,10 @@ void RA8889::XPDAT0_KIN1_Mode(void)
 void RA8889::PIP1_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = _bus->DataRead();
   b ? SETB(temp,7) : CLRB(temp,7);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5652,10 +5681,10 @@ void RA8889::PIP1_Enable(bool b)
 void RA8889::PIP2_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = _bus->DataRead();
   b ? SETB(temp,6) : CLRB(temp,6);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5680,11 +5709,11 @@ void RA8889::PIP2_Enable(bool b)
 void RA8889::PIP_Select_Parameter(ePIPSelect pip)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = _bus->DataRead();
   CLRB(temp,4);                                //Reset bit 4
   temp |= static_cast<uint8_t>(pip);           //Converte enum para uint8_t
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -5703,11 +5732,11 @@ void RA8889::PIP_Select_Parameter(ePIPSelect pip)
 void RA8889::Select_MainWindow_8bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = _bus->DataRead();
   CLRB(temp,3);                                //Reset bit 3
   CLRB(temp,2);                                //Reset bit 2
-  SPI_DataWrite(temp);                         //Set main windows image to 8bpp
+  _bus->DataWrite(temp);                         //Set main windows image to 8bpp
 }
 
 
@@ -5726,11 +5755,11 @@ void RA8889::Select_MainWindow_8bpp(void)
 void RA8889::Select_MainWindow_16bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = _bus->DataRead();
   CLRB(temp,3);                                //Reset bit 3
   SETB(temp,2);                                //Set bit 2
-  SPI_DataWrite(temp);                         //Set main windows image to 16bpp
+  _bus->DataWrite(temp);                         //Set main windows image to 16bpp
 }
 
 
@@ -5749,11 +5778,11 @@ void RA8889::Select_MainWindow_16bpp(void)
 void RA8889::Select_MainWindow_24bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = _bus->DataRead();
   SETB(temp,3);                                //Set bit 3
   CLRB(temp,2);                                //Reset bit 2
-  SPI_DataWrite(temp);                         //Set main windows image to 16bpp
+  _bus->DataWrite(temp);                         //Set main windows image to 16bpp
 }
 
 
@@ -5774,10 +5803,10 @@ void RA8889::Select_MainWindow_24bpp(void)
 void RA8889::Select_LCD_SyncMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = _bus->DataRead();
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);                         //Enable XVSYNC, XHSYNC, XDE
+  _bus->DataWrite(temp);                         //Enable XVSYNC, XHSYNC, XDE
 }
 
 
@@ -5796,10 +5825,10 @@ void RA8889::Select_LCD_SyncMode(void)
 void RA8889::Select_LCD_DEMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  temp = _bus->DataRead();
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);                         //Only XDE enable, XVSYNC & XHSYNC in idle state
+  _bus->DataWrite(temp);                         //Only XDE enable, XVSYNC & XHSYNC in idle state
 }
 
 
@@ -5828,14 +5857,14 @@ void RA8889::PIP1_Window_ColorDepth(eColorDepthBPP bpp)
 {
   uint8_t temp;
   uint8_t bit;
-  SPI_CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
+  temp = _bus->DataRead();
   temp &= ~(cSetb3 | cSetb2);                  //Reset bit 3 e 2
   bit = static_cast<uint8_t>(bpp);             //
   bit = (bit >> 3)-1;                          //transforma 8,16,24 em 0, 1, 2
   bit = bit << 2;                              //posiciona no bit 3 e 2
   temp |= bit;                                 //cobina os bits
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -5856,11 +5885,11 @@ void RA8889::PIP1_Window_ColorDepth(eColorDepthBPP bpp)
 void RA8889::PIP1_Window_ColorDepth_8bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
+  temp = _bus->DataRead();
   CLRB(temp,3);                                //Reset bit 
   CLRB(temp,2);                                //Reset bit 2
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -5881,11 +5910,11 @@ void RA8889::PIP1_Window_ColorDepth_8bpp(void)
 void RA8889::PIP1_Window_ColorDepth_16bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
+  temp = _bus->DataRead();
   CLRB(temp,3);                                //Reset bit 
   SETB(temp,2);                                //Set bit 2
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -5906,11 +5935,11 @@ void RA8889::PIP1_Window_ColorDepth_16bpp(void)
 void RA8889::PIP1_Window_ColorDepth_24bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
+  temp = _bus->DataRead();
   SETB(temp,3);                                //Set bit 3
   CLRB(temp,2);                                //Reset bit 2 
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -5932,12 +5961,12 @@ void RA8889::PIP2_Window_ColorDepth(eColorDepthBPP bpp)
 {
   uint8_t temp;
   uint8_t bit;
-  SPI_CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
+  temp = _bus->DataRead();
   temp &= ~(cSetb1 | cSetb0);                  //Reset bit 1 e 0
   bit = static_cast<uint8_t>(bpp);             //
   temp |= (bit >> 3)-1;                        //transforma 8,16,24 em 0, 1, 2
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -5958,11 +5987,11 @@ void RA8889::PIP2_Window_ColorDepth(eColorDepthBPP bpp)
 void RA8889::PIP2_Window_ColorDepth_8bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
+  temp = _bus->DataRead();
   CLRB(temp,1);                                //Reset bit 1
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -5983,11 +6012,11 @@ void RA8889::PIP2_Window_ColorDepth_8bpp(void)
 void RA8889::PIP2_Window_ColorDepth_16bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
+  temp = _bus->DataRead();
   CLRB(temp,1);                                //Reset bit 1
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -6008,11 +6037,11 @@ void RA8889::PIP2_Window_ColorDepth_16bpp(void)
 void RA8889::PIP2_Window_ColorDepth_24bpp(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PIPCDEP);                   //0x11, PIP Window Color Depth Setting (PIPCDEP)
+  temp = _bus->DataRead();
   SETB(temp,1);                                //Set bit 1
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -6039,10 +6068,10 @@ void RA8889::PIP2_Window_ColorDepth_24bpp(void)
 void RA8889::PCLK_Rising(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,7);                                //Reset bit 7 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6062,10 +6091,10 @@ void RA8889::PCLK_Rising(void)
 void RA8889::PCLK_Falling(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   SETB(temp,7);                                //Set bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6086,11 +6115,11 @@ void RA8889::PCLK_Falling(void)
 void RA8889::PCLK_EdgeType(ePCLKEdge edge)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,7);                                //Reset bit 7
   temp |= static_cast<uint8_t>(edge);          
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6112,10 +6141,10 @@ void RA8889::PCLK_EdgeType(ePCLKEdge edge)
 void RA8889::DisplayOn(bool on)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   on ? SETB(temp,6) : CLRB(temp,6);            //Set/Reset bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   CoreTask_WaitReady();
 }
 
@@ -6137,10 +6166,10 @@ void RA8889::DisplayOn(bool on)
 void RA8889::DisplayTestBar(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);             //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_DPCR);             //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();
   b ? SETB(temp,5) : CLRB(temp,5);    //Bit 5, set/reset
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6162,10 +6191,10 @@ void RA8889::DisplayTestBar(bool b)
 void RA8889::HScanDirection_LeftToRight (void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,4);                                //reset bit 4
-  SPI_DataWrite(temp);                         //Write HDIR
+  _bus->DataWrite(temp);                         //Write HDIR
 }
 
 
@@ -6187,10 +6216,10 @@ void RA8889::HScanDirection_LeftToRight (void)
 void RA8889::HScanDirection_RightToLeft (void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   SETB(temp,4);                                //Set bit 4
-  SPI_DataWrite(temp);                         //Write HDIR
+  _bus->DataWrite(temp);                         //Write HDIR
 }
 
 
@@ -6212,11 +6241,11 @@ void RA8889::HScanDirection_RightToLeft (void)
 void RA8889::HorizontalScanDirection (HSCANDir direction)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,4);                                //Reset bit 4
   temp |= static_cast<uint8_t>(direction);     //Define o destino
-  SPI_DataWrite(temp);                         //Write HDIR
+  _bus->DataWrite(temp);                         //Write HDIR
 }
 
 
@@ -6236,10 +6265,10 @@ void RA8889::HorizontalScanDirection (HSCANDir direction)
 void RA8889::VScanDirection_TopToBottom(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,3);                                //Reset bit 3
-  SPI_DataWrite(temp);                         //Write VDIR
+  _bus->DataWrite(temp);                         //Write VDIR
 }
 
 
@@ -6259,10 +6288,10 @@ void RA8889::VScanDirection_TopToBottom(void)
 void RA8889::VScanDirection_BottomToTop(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   SETB(temp,3);                                //Set bit 3
-  SPI_DataWrite(temp);                         //Write VDIR
+  _bus->DataWrite(temp);                         //Write VDIR
 }
 
 
@@ -6284,11 +6313,11 @@ void RA8889::VScanDirection_BottomToTop(void)
 void RA8889::VerticalScanDirection(VSCANDir direction)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,3);                                //Reset bit 3
   temp |= static_cast<uint8_t>(direction);     //Define o destino
-  SPI_DataWrite(temp);                         //Write VDIR
+  _bus->DataWrite(temp);                         //Write VDIR
 }
 
 
@@ -6315,10 +6344,10 @@ void RA8889::VerticalScanDirection(VSCANDir direction)
 void RA8889::PDATA_ColorRGB(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   temp &= ~(cSetb2 | cSetb1 | cSetb0);         //Reset bit 2, 1 e 0, format RGB =0b000 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6345,11 +6374,11 @@ void RA8889::PDATA_ColorRGB(void)
 void RA8889::PDATA_ColorFmt(ePDATAColorFmt fmt)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_DPCR);                      //0x12, Display Configuration Register (DPCR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   temp &= ~(cSetb2 | cSetb1 | cSetb0);         //Reset bit 2, 1 e 0 
   temp |= static_cast<uint8_t>(fmt);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6374,10 +6403,10 @@ void RA8889::PDATA_ColorFmt(ePDATAColorFmt fmt)
 void RA8889::HSYNC_PolarityLow(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,7);                                //Reset bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6395,10 +6424,10 @@ void RA8889::HSYNC_PolarityLow(void)
 void RA8889::HSYNC_PolarityHigh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   SETB(temp,7);                                //Set bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6417,11 +6446,11 @@ void RA8889::HSYNC_PolarityHigh(void)
 void RA8889::HSYNC_Polarity(eHSYNCPolarity val)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,7);                                //Reset bit 7
   temp |= static_cast<uint8_t>(val);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6439,10 +6468,10 @@ void RA8889::HSYNC_Polarity(eHSYNCPolarity val)
 void RA8889::VSYNC_PolarityLow(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,6);                                //Reset bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6460,10 +6489,10 @@ void RA8889::VSYNC_PolarityLow(void)
 void RA8889::VSYNC_PolarityHigh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   SETB(temp,6);                                //Set bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6482,11 +6511,11 @@ void RA8889::VSYNC_PolarityHigh(void)
 void RA8889::VSYNC_Polarity(eVSYNCPolarity val)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,6);                                //Reset bit 6
   temp |= static_cast<uint8_t>(val);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6504,10 +6533,10 @@ void RA8889::VSYNC_Polarity(eVSYNCPolarity val)
 void RA8889::DE_PolarityLow(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   SETB(temp,5);                                //Set bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6525,10 +6554,10 @@ void RA8889::DE_PolarityLow(void)
 void RA8889::DE_PolarityHigh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,5);                                //Reset bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6547,11 +6576,11 @@ void RA8889::DE_PolarityHigh(void)
 void RA8889::DE_Polarity(eDEPolarity val)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();                       //Lê valor atual do registrador
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();                       //Lê valor atual do registrador
   CLRB(temp,5);                                //Reset bit 5
   temp |= static_cast<uint8_t>(val);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6573,10 +6602,10 @@ void RA8889::DE_Polarity(eDEPolarity val)
 void RA8889::DE_IdleStateLow(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   CLRB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6598,10 +6627,10 @@ void RA8889::DE_IdleStateLow(void)
 void RA8889::DE_IdleStateHigh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   SETB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6623,10 +6652,10 @@ void RA8889::DE_IdleStateHigh(void)
 void RA8889::PCLK_IdleStateLow(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   CLRB(temp,3);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6648,10 +6677,10 @@ void RA8889::PCLK_IdleStateLow(void)
 void RA8889::PCLK_IdleStateHigh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   SETB(temp,3);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6673,10 +6702,10 @@ void RA8889::PCLK_IdleStateHigh(void)
 void RA8889::PDAT_IdleStateLow(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   CLRB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6698,10 +6727,10 @@ void RA8889::PDAT_IdleStateLow(void)
 void RA8889::PDAT_IdleStateHigh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   SETB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6723,10 +6752,10 @@ void RA8889::PDAT_IdleStateHigh(void)
 void RA8889::HSYNC_IdleStateLow(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   CLRB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6748,10 +6777,10 @@ void RA8889::HSYNC_IdleStateLow(void)
 void RA8889::HSYNC_IdleStateHigh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   SETB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6773,10 +6802,10 @@ void RA8889::HSYNC_IdleStateHigh(void)
 void RA8889::VSYNC_IdleStateLow(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6798,10 +6827,10 @@ void RA8889::VSYNC_IdleStateLow(void)
 void RA8889::VSYNC_IdleStateHigh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PCSR);                      //0x13, Panel scan Clock and Data Setting Register (PCSR)
+  temp = _bus->DataRead();
   SETB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -6843,35 +6872,35 @@ void RA8889::HorizontalWidth_VerticalHeight(uint16_t wx, uint16_t hy)
   uint8_t temp;
   
   if (wx < 8) {
-    SPI_CmdWrite(REG_HDWR);                    //0x14, Horizontal Display Width Register (HDWR)
-    SPI_DataWrite(0x00);                       //
+    _bus->CmdWrite(REG_HDWR);                    //0x14, Horizontal Display Width Register (HDWR)
+    _bus->DataWrite(0x00);                       //
     
-    SPI_CmdWrite(REG_HDWFTR);                  //0x15, Horizontal Display Width Fine Tune Register (HDWFTR)
-    SPI_DataWrite(wx);                         //
+    _bus->CmdWrite(REG_HDWFTR);                  //0x15, Horizontal Display Width Fine Tune Register (HDWFTR)
+    _bus->DataWrite(wx);                         //
     
     temp = hy - 1;
-    SPI_CmdWrite(REG_VDHR0);                   //0x1a, Vertical Display Height Register 0(VDHR0)
-    SPI_DataWrite(temp);                       //Store bit [7-0]
+    _bus->CmdWrite(REG_VDHR0);                   //0x1a, Vertical Display Height Register 0(VDHR0)
+    _bus->DataWrite(temp);                       //Store bit [7-0]
     
     temp = (hy - 1) >> 8;                      //
-    SPI_CmdWrite(REG_VDHR1);                   //0x1b, Vertical Display Height Register 1 (VDHR1)
-    SPI_DataWrite(temp);                       //Store bit [2-0]
+    _bus->CmdWrite(REG_VDHR1);                   //0x1b, Vertical Display Height Register 1 (VDHR1)
+    _bus->DataWrite(temp);                       //Store bit [2-0]
   } else {
     temp = (wx / 8) - 1;                       //exemplo: temp = (800/8)-1 = 99
-    SPI_CmdWrite(REG_HDWR);                    //0x14, Horizontal Display Width Register (HDWR)
-    SPI_DataWrite(temp);                       //
+    _bus->CmdWrite(REG_HDWR);                    //0x14, Horizontal Display Width Register (HDWR)
+    _bus->DataWrite(temp);                       //
     
     temp = wx % 8;                             //temp = 800 % 8 = 0
-    SPI_CmdWrite(REG_HDWFTR);                  //0x15, Horizontal Display Width Fine Tune Register (HDWFTR)
-    SPI_DataWrite(temp);                       //
+    _bus->CmdWrite(REG_HDWFTR);                  //0x15, Horizontal Display Width Fine Tune Register (HDWFTR)
+    _bus->DataWrite(temp);                       //
     
     temp = hy - 1;                             //temp = 480 - 1 = 479 = 0x01df -> low(0xdf) 
-    SPI_CmdWrite(REG_VDHR0);                   //0x1a, Vertical Display Height Register 0(VDHR0)
-    SPI_DataWrite(temp);                       //Store bit [7-0]
+    _bus->CmdWrite(REG_VDHR0);                   //0x1a, Vertical Display Height Register 0(VDHR0)
+    _bus->DataWrite(temp);                       //Store bit [7-0]
     
     temp = (hy - 1) >> 8;                      //temp = 480 - 1 = 479 = 0x01df -> high(0x01)
-    SPI_CmdWrite(REG_VDHR1);                   //0x1b, Vertical Display Height Register 1 (VDHR1)
-    SPI_DataWrite(temp);                       //Store bit [2-0]
+    _bus->CmdWrite(REG_VDHR1);                   //0x1b, Vertical Display Height Register 1 (VDHR1)
+    _bus->DataWrite(temp);                       //Store bit [2-0]
   }
 }
 
@@ -6907,19 +6936,19 @@ void RA8889::Horizontal_NonDisplay(uint16_t hbpd)
 {
   uint8_t temp;
   if (hbpd < 8) {
-    SPI_CmdWrite(REG_HNDR);                    //0x16, Horizontal Non-Display Period Register (HNDR)
-    SPI_DataWrite(0x00);                       //
+    _bus->CmdWrite(REG_HNDR);                    //0x16, Horizontal Non-Display Period Register (HNDR)
+    _bus->DataWrite(0x00);                       //
     
-    SPI_CmdWrite(REG_HNDFTR);                  //0x17, Horizontal Non-Display Period Fine Tune Register (HNDFTR)
-    SPI_DataWrite(hbpd);
+    _bus->CmdWrite(REG_HNDFTR);                  //0x17, Horizontal Non-Display Period Fine Tune Register (HNDFTR)
+    _bus->DataWrite(hbpd);
   } else {
     temp = (hbpd / 8) - 1;                     // 
-    SPI_CmdWrite(REG_HNDR);                    //0x16, Horizontal Non-Display Period Register (HNDR)
-    SPI_DataWrite(temp);
+    _bus->CmdWrite(REG_HNDR);                    //0x16, Horizontal Non-Display Period Register (HNDR)
+    _bus->DataWrite(temp);
     
     temp = hbpd % 8;                           //
-    SPI_CmdWrite(REG_HNDFTR);                  //0x17, Horizontal Non-Display Period Fine Tune Register (HNDFTR)
-    SPI_DataWrite(temp);
+    _bus->CmdWrite(REG_HNDFTR);                  //0x17, Horizontal Non-Display Period Fine Tune Register (HNDFTR)
+    _bus->DataWrite(temp);
   }
 }
 
@@ -6952,12 +6981,12 @@ void RA8889::HSYNC_StartPosition(uint16_t hfpd)
 {
   uint8_t temp;
   if (hfpd < 8) {
-    SPI_CmdWrite(REG_HSTR);                    //0x18, HSYNC Start Position Register (HSTR)
-    SPI_DataWrite(0x00);                       //
+    _bus->CmdWrite(REG_HSTR);                    //0x18, HSYNC Start Position Register (HSTR)
+    _bus->DataWrite(0x00);                       //
   } else {
     temp = (hfpd / 8) - 1;                     //
-    SPI_CmdWrite(REG_HSTR);                    //0x18, HSYNC Start Position Register (HSTR)
-    SPI_DataWrite(temp);                       //
+    _bus->CmdWrite(REG_HSTR);                    //0x18, HSYNC Start Position Register (HSTR)
+    _bus->DataWrite(temp);                       //
   }
 }
 
@@ -6980,12 +7009,12 @@ void RA8889::HSYNC_PulseWidth(uint16_t hspw)
 {
   uint16_t temp;
   if(hspw < 8) {
-    SPI_CmdWrite(REG_HPWR);                    //0x19, HSYNC Pulse Width Register (HPWR)
-    SPI_DataWrite(0x00);                       //
+    _bus->CmdWrite(REG_HPWR);                    //0x19, HSYNC Pulse Width Register (HPWR)
+    _bus->DataWrite(0x00);                       //
   } else {
     temp = (hspw / 8) - 1;
-    SPI_CmdWrite(REG_HPWR);                    //0x19, HSYNC Pulse Width Register (HPWR)
-    SPI_DataWrite(temp);                       //
+    _bus->CmdWrite(REG_HPWR);                    //0x19, HSYNC Pulse Width Register (HPWR)
+    _bus->DataWrite(temp);                       //
   }
 }
 
@@ -7017,10 +7046,10 @@ void RA8889::Vertical_NonDisplay(uint16_t vbpd)
 {
   uint16_t temp;
   temp = vbpd - 1;
-  SPI_CmdWrite(REG_VNDR0);                     //0x1c, Vertical Non-Display Period Register 0(VNDR0)       
-  SPI_DataWrite(temp);                         //
-  SPI_CmdWrite(REG_VNDR1);                     //0x1d, Vertical Non-Display Period Register 1(VNDR1)
-  SPI_DataWrite(temp >> 8);	                   //
+  _bus->CmdWrite(REG_VNDR0);                     //0x1c, Vertical Non-Display Period Register 0(VNDR0)       
+  _bus->DataWrite(temp);                         //
+  _bus->CmdWrite(REG_VNDR1);                     //0x1d, Vertical Non-Display Period Register 1(VNDR1)
+  _bus->DataWrite(temp >> 8);	                   //
 }
 
 
@@ -7050,8 +7079,8 @@ void RA8889::VSYNC_StartPosition(uint16_t vfpd)
 {
     uint8_t temp;
     temp = vfpd - 1;
-    SPI_CmdWrite(REG_VSTR);                    //0x1e, VSYNC Start Position Register (VSTR)
-    SPI_DataWrite(temp);
+    _bus->CmdWrite(REG_VSTR);                    //0x1e, VSYNC Start Position Register (VSTR)
+    _bus->DataWrite(temp);
 }
 
 
@@ -7079,8 +7108,8 @@ void RA8889::VSYNC_PulseWidth(uint8_t vspw)
 {
   uint8_t temp;
   temp = vspw - 1;
-  SPI_CmdWrite(REG_VPWR);                //0x1f, VSYNC Pulse Width Register (VPWR)
-  SPI_DataWrite(temp);
+  _bus->CmdWrite(REG_VPWR);                //0x1f, VSYNC Pulse Width Register (VPWR)
+  _bus->DataWrite(temp);
 }
 
 
@@ -7143,10 +7172,10 @@ uint32_t RA8889::LayerStartAddr(uint8_t layer)
  */
 void RA8889::MainImage_StartAddress(uint32_t addr)
 {
-  RegisterWrite(REG_MISA0, addr);              //0x20, Main Image Start Address 0 (MISA0)
-  RegisterWrite(REG_MISA1, addr >> 8);         //0x21, Main Image Start Address 1 (MISA1)
-  RegisterWrite(REG_MISA2, addr >> 16);        //0x22, Main Image Start Address 2 (MISA2)
-  RegisterWrite(REG_MISA3, addr >> 24);	       //0x23, Main Image Start Address 3 (MISA3)
+  _bus->RegisterWrite(REG_MISA0, addr);              //0x20, Main Image Start Address 0 (MISA0)
+  _bus->RegisterWrite(REG_MISA1, addr >> 8);         //0x21, Main Image Start Address 1 (MISA1)
+  _bus->RegisterWrite(REG_MISA2, addr >> 16);        //0x22, Main Image Start Address 2 (MISA2)
+  _bus->RegisterWrite(REG_MISA3, addr >> 24);	       //0x23, Main Image Start Address 3 (MISA3)
 }
 
 
@@ -7177,8 +7206,8 @@ void RA8889::MainImage_StartAddress(uint32_t addr)
  */
 void RA8889::MainImage_Width(uint16_t Wx)
 {
-  RegisterWrite(REG_MIW0, Wx);                 //0x24, Main Image Width 0 (MIW0) 
-  RegisterWrite(REG_MIW1, Wx >> 8);            //0x25, Main Image Width 1 (MIW1)
+  _bus->RegisterWrite(REG_MIW0, Wx);                 //0x24, Main Image Width 0 (MIW0) 
+  _bus->RegisterWrite(REG_MIW1, Wx >> 8);            //0x25, Main Image Width 1 (MIW1)
 }
 
 
@@ -7224,10 +7253,10 @@ void RA8889::MainImage_Width(uint16_t Wx)
  */
 void RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)  
 {
-  RegisterWrite(REG_MWULX0, wx);               //0x026, Main Window Upper-Left corner X-coordinates 0 (MWULX0)
-  RegisterWrite(REG_MWULX1, wx >> 8);          //0x027, Main Window Upper-Left corner X-coordinates 1 (MWULX1)
-  RegisterWrite(REG_MWULY0, hy);               //0x028, Main Window Upper-Left corner Y-coordinates 0 (MWULY0)
-  RegisterWrite(REG_MWULY1, hy >> 8);          //0x029, Main Window Upper-Left corner Y-coordinates 1 (MWULY1)
+  _bus->RegisterWrite(REG_MWULX0, wx);               //0x026, Main Window Upper-Left corner X-coordinates 0 (MWULX0)
+  _bus->RegisterWrite(REG_MWULX1, wx >> 8);          //0x027, Main Window Upper-Left corner X-coordinates 1 (MWULX1)
+  _bus->RegisterWrite(REG_MWULY0, hy);               //0x028, Main Window Upper-Left corner Y-coordinates 0 (MWULY0)
+  _bus->RegisterWrite(REG_MWULY1, hy >> 8);          //0x029, Main Window Upper-Left corner Y-coordinates 1 (MWULY1)
 }
 
 
@@ -7305,14 +7334,14 @@ void RA8889::MainWindow_StartXY(uint16_t wx, uint16_t hy)
  */
 void RA8889::PIP_Display_StartXY(uint16_t Wx, uint16_t Hy)
 {
-    SPI_CmdWrite(REG_PWDULX0);                 //0x2a, PIP 1 or 2 Window Display Upper-Left corner X-coordinates 0 (PWDULX0)
-    SPI_DataWrite(Wx);
-    SPI_CmdWrite(REG_PWDULX1);                 //0x2b, PIP 1 or 2 Window Display Upper-Left corner X-coordinates 1 (PWDULX1)
-    SPI_DataWrite(Wx >> 8);
-    SPI_CmdWrite(REG_PWDULY0);                 //0x2c, PIP 1 or 2 Window Display Upper-Left corner Y-coordinates 0 (PWDULY0)
-    SPI_DataWrite(Hy);
-    SPI_CmdWrite(REG_PWDULY1);                 //0x2d, PIP 1 or 2 Window Display Upper-Left corner Y-coordinates 1 (PWDULY1)
-    SPI_DataWrite(Hy >> 8);
+    _bus->CmdWrite(REG_PWDULX0);                 //0x2a, PIP 1 or 2 Window Display Upper-Left corner X-coordinates 0 (PWDULX0)
+    _bus->DataWrite(Wx);
+    _bus->CmdWrite(REG_PWDULX1);                 //0x2b, PIP 1 or 2 Window Display Upper-Left corner X-coordinates 1 (PWDULX1)
+    _bus->DataWrite(Wx >> 8);
+    _bus->CmdWrite(REG_PWDULY0);                 //0x2c, PIP 1 or 2 Window Display Upper-Left corner Y-coordinates 0 (PWDULY0)
+    _bus->DataWrite(Hy);
+    _bus->CmdWrite(REG_PWDULY1);                 //0x2d, PIP 1 or 2 Window Display Upper-Left corner Y-coordinates 1 (PWDULY1)
+    _bus->DataWrite(Hy >> 8);
 }
 
 
@@ -7365,14 +7394,14 @@ void RA8889::PIP_Display_StartXY(uint16_t Wx, uint16_t Hy)
   */
 void RA8889::PIP_Image_StartAddress(uint32_t addr)
 {
-  SPI_CmdWrite(REG_PISA0);             //0x2e, PIP 1 or 2 Image Start Address 0 (PISA0)
-  SPI_DataWrite(addr);
-  SPI_CmdWrite(REG_PISA1);             //0x2f, PIP 1 or 2 Image Start Address 1 (PISA1)
-  SPI_DataWrite(addr >> 8);
-  SPI_CmdWrite(REG_PISA2);             //0x30, PIP 1 or 2 Image Start Address 2 (PISA2)
-  SPI_DataWrite(addr >> 16);
-  SPI_CmdWrite(REG_PISA3);             //0x31, PIP 1 or 2 Image Start Address 3 (PISA3)
-  SPI_DataWrite(addr >> 24);
+  _bus->CmdWrite(REG_PISA0);             //0x2e, PIP 1 or 2 Image Start Address 0 (PISA0)
+  _bus->DataWrite(addr);
+  _bus->CmdWrite(REG_PISA1);             //0x2f, PIP 1 or 2 Image Start Address 1 (PISA1)
+  _bus->DataWrite(addr >> 8);
+  _bus->CmdWrite(REG_PISA2);             //0x30, PIP 1 or 2 Image Start Address 2 (PISA2)
+  _bus->DataWrite(addr >> 16);
+  _bus->CmdWrite(REG_PISA3);             //0x31, PIP 1 or 2 Image Start Address 3 (PISA3)
+  _bus->DataWrite(addr >> 24);
 }
 
 
@@ -7412,14 +7441,14 @@ void RA8889::PIP_Image_StartAddress(uint32_t addr)
 void RA8889::AVI_ShadowPIP_StartAddress(uint32_t addr)
 {
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_AVI_SPIP_SADR0);            //0x2e, page 1, AVI shadow pip start address 0 (avi_spip_sadr0)
-  SPI_DataWrite(addr);
-  SPI_CmdWrite(REG_AVI_SPIP_SADR1);            //0x2f, page 1, AVI shadow pip start address 1 (avi_spip_sadr1)
-  SPI_DataWrite(addr >> 8);
-  SPI_CmdWrite(REG_AVI_SPIP_SADR2);            //0x30, page 1, AVI shadow pip start address 2 (avi_spip_sadr2)
-  SPI_DataWrite(addr >> 16);
-  SPI_CmdWrite(REG_AVI_SPIP_SADR3);            //0x31, page 1, AVI shadow pip start address 3 (avi_spip_sadr3)
-  SPI_DataWrite(addr >> 24);
+  _bus->CmdWrite(REG_AVI_SPIP_SADR0);            //0x2e, page 1, AVI shadow pip start address 0 (avi_spip_sadr0)
+  _bus->DataWrite(addr);
+  _bus->CmdWrite(REG_AVI_SPIP_SADR1);            //0x2f, page 1, AVI shadow pip start address 1 (avi_spip_sadr1)
+  _bus->DataWrite(addr >> 8);
+  _bus->CmdWrite(REG_AVI_SPIP_SADR2);            //0x30, page 1, AVI shadow pip start address 2 (avi_spip_sadr2)
+  _bus->DataWrite(addr >> 16);
+  _bus->CmdWrite(REG_AVI_SPIP_SADR3);            //0x31, page 1, AVI shadow pip start address 3 (avi_spip_sadr3)
+  _bus->DataWrite(addr >> 24);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -7479,10 +7508,10 @@ void RA8889::AVI_ShadowPIP_StartAddress(uint32_t addr)
  */
 void RA8889::PIP_Image_Width(uint16_t Wx)
 {
-  SPI_CmdWrite(REG_PIW0);          //0x32, PIP 1 or 2 Image Width 0 (PIW0)
-  SPI_DataWrite(Wx);
-  SPI_CmdWrite(REG_PIW1);          //0x33, PIP 1 or 2 Image Width 1 (PIW1)
-  SPI_DataWrite(Wx >> 8);
+  _bus->CmdWrite(REG_PIW0);          //0x32, PIP 1 or 2 Image Width 0 (PIW0)
+  _bus->DataWrite(Wx);
+  _bus->CmdWrite(REG_PIW1);          //0x33, PIP 1 or 2 Image Width 1 (PIW1)
+  _bus->DataWrite(Wx >> 8);
 }
 
 
@@ -7557,14 +7586,14 @@ void RA8889::PIP_Image_Width(uint16_t Wx)
  */
 void RA8889::PIP_WindowImage_StartXY(uint16_t Wx, uint16_t Hy)
 {
-  SPI_CmdWrite(REG_PWIULX0);                   //0x34, PIP 1 or 2 Window Image Upper-Left corner X-coordinates 0 (PWIULX0)
-  SPI_DataWrite(Wx);
-  SPI_CmdWrite(REG_PWIULX1);                   //0x35, PIP 1 or 2 Window Image Upper-Left corner X-coordinates 1 (PWIULX1)
-  SPI_DataWrite(Wx >> 8);
-  SPI_CmdWrite(REG_PWIULY0);                   //0x36, PIP 1 or 2 Window Image Upper-Left corner Y-coordinates (PWIULY0)
-  SPI_DataWrite(Hy);
-  SPI_CmdWrite(REG_PWIULY1);                   //0x37, PIP 1 or 2 Window Image Upper-Left corner Y-coordinates 1 (PWIULY1)
-  SPI_DataWrite(Hy >> 8);
+  _bus->CmdWrite(REG_PWIULX0);                   //0x34, PIP 1 or 2 Window Image Upper-Left corner X-coordinates 0 (PWIULX0)
+  _bus->DataWrite(Wx);
+  _bus->CmdWrite(REG_PWIULX1);                   //0x35, PIP 1 or 2 Window Image Upper-Left corner X-coordinates 1 (PWIULX1)
+  _bus->DataWrite(Wx >> 8);
+  _bus->CmdWrite(REG_PWIULY0);                   //0x36, PIP 1 or 2 Window Image Upper-Left corner Y-coordinates (PWIULY0)
+  _bus->DataWrite(Hy);
+  _bus->CmdWrite(REG_PWIULY1);                   //0x37, PIP 1 or 2 Window Image Upper-Left corner Y-coordinates 1 (PWIULY1)
+  _bus->DataWrite(Hy >> 8);
 }
 
 
@@ -7636,14 +7665,14 @@ void RA8889::PIP_WindowImage_StartXY(uint16_t Wx, uint16_t Hy)
  */
 void RA8889::PIP_Window_WidthHeight(uint16_t Wx, uint16_t Hy)
 {
-  SPI_CmdWrite(REG_PWW0);                      //0x38, PIP 1 or 2 Window Width 0 (PWW0)
-  SPI_DataWrite(Wx);
-  SPI_CmdWrite(REG_PWW1);                      //0x39, PIP 1 or 2 Window Width 1 (PWW1)
-  SPI_DataWrite(Wx >> 8);
-  SPI_CmdWrite(REG_PWH0);                      //0x3a, PIP 1 or 2 Window Height 0 (PWH0)
-  SPI_DataWrite(Hy);
-  SPI_CmdWrite(REG_PWH1);                      //0x3b, PIP 1 or 2 Windows Height 1 (PWH1)
-  SPI_DataWrite(Hy >> 8);
+  _bus->CmdWrite(REG_PWW0);                      //0x38, PIP 1 or 2 Window Width 0 (PWW0)
+  _bus->DataWrite(Wx);
+  _bus->CmdWrite(REG_PWW1);                      //0x39, PIP 1 or 2 Window Width 1 (PWW1)
+  _bus->DataWrite(Wx >> 8);
+  _bus->CmdWrite(REG_PWH0);                      //0x3a, PIP 1 or 2 Window Height 0 (PWH0)
+  _bus->DataWrite(Hy);
+  _bus->CmdWrite(REG_PWH1);                      //0x3b, PIP 1 or 2 Windows Height 1 (PWH1)
+  _bus->DataWrite(Hy >> 8);
 }
 
 
@@ -7673,10 +7702,10 @@ void RA8889::PIP_Window_WidthHeight(uint16_t Wx, uint16_t Hy)
 void RA8889::GammaCorrection_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   b ? SETB(temp,7) : CLRB(temp,7);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7699,11 +7728,11 @@ void RA8889::GammaCorrection_Enable(bool b)
 void RA8889::GammaTableforBlue(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   CLRB(temp,6);
   CLRB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7726,11 +7755,11 @@ void RA8889::GammaTableforBlue(void)
 void RA8889::GammaTableforGreen(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   CLRB(temp,6);
   SETB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7753,11 +7782,11 @@ void RA8889::GammaTableforGreen(void)
 void RA8889::GammaTableforRed(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   SETB(temp,6);
   CLRB(temp,5);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7778,10 +7807,10 @@ void RA8889::GammaTableforRed(void)
 void RA8889::CursorGraphic_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   b ? SETB(temp,4) : CLRB(temp,4);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7805,11 +7834,11 @@ void RA8889::CursorGraphic_Enable(bool b)
 void RA8889::CursorGraphic_Set1(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   CLRB(temp,3);
   CLRB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7833,11 +7862,11 @@ void RA8889::CursorGraphic_Set1(void)
 void RA8889::CursorGraphic_Set2(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   CLRB(temp,3);
   SETB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7861,11 +7890,11 @@ void RA8889::CursorGraphic_Set2(void)
 void RA8889::CursorGraphic_Set3(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   SETB(temp,3);
   CLRB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7889,11 +7918,11 @@ void RA8889::CursorGraphic_Set3(void)
 void RA8889::CursorGraphic_Set4(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   SETB(temp,3);
   SETB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7916,10 +7945,10 @@ void RA8889::CursorGraphic_Set4(void)
 void RA8889::CursorText_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   b ? SETB(temp,1) : CLRB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7940,10 +7969,10 @@ void RA8889::CursorText_Enable(bool b)
 void RA8889::CursorText_Blinking_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GTCCR);                     //0x3c,  Graphic / Text Cursor Control Register (GTCCR)
+  temp = _bus->DataRead();
   SETB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -7974,8 +8003,8 @@ void RA8889::CursorText_Blinking_Enable(bool b)
  */
 void RA8889::CursorText_BlinkingTimeFrames(uint8_t frames)
 {
-  SPI_CmdWrite(REG_BTCR);                      //0x3d, Blink Time Control Register (BTCR)
-  SPI_DataWrite(frames);
+  _bus->CmdWrite(REG_BTCR);                      //0x3d, Blink Time Control Register (BTCR)
+  _bus->DataWrite(frames);
 }
 
 
@@ -8015,10 +8044,10 @@ void RA8889::CursorText_BlinkingTimeFrames(uint8_t frames)
  */
 void RA8889::CursorText_Dimensions(uint8_t Wx, uint8_t Hy)
 {
-  SPI_CmdWrite(REG_CURHS);      //0x3, Text Cursor Horizontal Size Register (CURHS)
-  SPI_DataWrite(Wx & 0x1f);     //Garante que só 5 bits são usados
-  SPI_CmdWrite(REG_CURVS);      //0x3, Text Cursor Vertical Size Register (CURVS)
-  SPI_DataWrite(Hy & 0x1f);     //Garante que só 5 bits são usados
+  _bus->CmdWrite(REG_CURHS);      //0x3, Text Cursor Horizontal Size Register (CURHS)
+  _bus->DataWrite(Wx & 0x1f);     //Garante que só 5 bits são usados
+  _bus->CmdWrite(REG_CURVS);      //0x3, Text Cursor Vertical Size Register (CURVS)
+  _bus->DataWrite(Hy & 0x1f);     //Garante que só 5 bits são usados
 }
 
 
@@ -8069,14 +8098,14 @@ void RA8889::CursorText_Dimensions(uint8_t Wx, uint8_t Hy)
  */
 void RA8889::CursorGraphic_Position(uint16_t Wx, uint16_t Hy)
 {
-  SPI_CmdWrite(REG_GCHP0);                     //0x40, Graphic Cursor Horizontal Position Register 0 (GCHP0)
-  SPI_DataWrite(Wx & 0xff);                    //byte baixo
-  SPI_CmdWrite(REG_GCHP1);                     //0x41, Graphic Cursor Horizontal Position Register 1 (GCHP1)
-  SPI_DataWrite((Wx >> 8) & 0x1f);             //byte alto (apenas 5 bits)
-  SPI_CmdWrite(REG_GCVP0);                     //0x42, Graphic Cursor Vertical Position Register 0 (GCVP0)
-  SPI_DataWrite(Hy & 0xff);                    //Byte baixo
-  SPI_CmdWrite(REG_GCVP1);                     //0x43, Graphic Cursor Vertical Position Register 1 (GCVP1)
-  SPI_DataWrite((Hy >> 8) & 0x1f);             //byte alto (apenas 5 bits)
+  _bus->CmdWrite(REG_GCHP0);                     //0x40, Graphic Cursor Horizontal Position Register 0 (GCHP0)
+  _bus->DataWrite(Wx & 0xff);                    //byte baixo
+  _bus->CmdWrite(REG_GCHP1);                     //0x41, Graphic Cursor Horizontal Position Register 1 (GCHP1)
+  _bus->DataWrite((Wx >> 8) & 0x1f);             //byte alto (apenas 5 bits)
+  _bus->CmdWrite(REG_GCVP0);                     //0x42, Graphic Cursor Vertical Position Register 0 (GCVP0)
+  _bus->DataWrite(Hy & 0xff);                    //Byte baixo
+  _bus->CmdWrite(REG_GCVP1);                     //0x43, Graphic Cursor Vertical Position Register 1 (GCVP1)
+  _bus->DataWrite((Hy >> 8) & 0x1f);             //byte alto (apenas 5 bits)
 }
 
 
@@ -8104,7 +8133,7 @@ void RA8889::CursorGraphic_Position(uint16_t Wx, uint16_t Hy)
  */
 void RA8889::CursorGraphic_Color0(uint8_t color)
 {
-    RegisterWrite(0x44, color);       //0x44, Graphic Cursor Color 0 (GCC0)
+    _bus->RegisterWrite(0x44, color);       //0x44, Graphic Cursor Color 0 (GCC0)
 }
 
 
@@ -8132,7 +8161,7 @@ void RA8889::CursorGraphic_Color0(uint8_t color)
  */
 void RA8889::CursorGraphic_Color1(uint8_t color)
 {
-  RegisterWrite(0x45, color);       //0x45, Graphic Cursor Color 1 (GCC1)
+  _bus->RegisterWrite(REG_GCC1, color);        //0x45, Graphic Cursor Color 1 (GCC1)
 }
 
 
@@ -8160,11 +8189,11 @@ void RA8889::CursorGraphic_Color1(uint8_t color)
 void RA8889::PageSwitch(ePageReg pr)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PAGE_SWITCH);              //0x46, PAGE Switch
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PAGE_SWITCH);              //0x46, PAGE Switch
+  temp = _bus->DataRead();
   CLRB(temp,0);                               //Reset bit 0
   temp |= static_cast<uint8_t>(pr);           //Converte enum para uint8_t  
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   delay(1);
 }
 
@@ -8188,10 +8217,10 @@ void RA8889::PageSwitch(ePageReg pr)
 void RA8889::SPIM_SelectableBusMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PAGE_SWITCH);               //0x46, Page 0, Page Switch
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PAGE_SWITCH);               //0x46, Page 0, Page Switch
+  temp = _bus->DataRead();
   CLRB(temp,1);                                //Reset bit 1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -8214,10 +8243,10 @@ void RA8889::SPIM_SelectableBusMode(void)
 void RA8889::SPIM_FixedBusMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PAGE_SWITCH); //0x46, Page 0, Page Switch
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PAGE_SWITCH); //0x46, Page 0, Page Switch
+  temp = _bus->DataRead();
   SETB(temp,1);                  //Set bit 1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -8266,10 +8295,10 @@ void RA8889::SPIM_ClockDivided_2(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_PAGE_SWITCH);               //0x46, Page 1, Page Switch
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PAGE_SWITCH);               //0x46, Page 1, Page Switch
+  temp = _bus->DataRead();
   CLRB(temp,2);                                //Seleciona Divisor 2 / modo compatível RA8876
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -8311,10 +8340,10 @@ void RA8889::SPIM_ClockDivided_1(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_PAGE_SWITCH);               //0x46, Page 1, Page Switch
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_PAGE_SWITCH);               //0x46, Page 1, Page Switch
+  temp = _bus->DataRead();
   SETB(temp,2);                                //Seleciona Divisor 1 / modo rápido
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -8349,10 +8378,10 @@ void RA8889::SPIM_ClockDivided_1(void)
  */
 void RA8889::CanvasImage_StartAddr(uint32_t addr)
 {
-  RegisterWrite(REG_CVSSA0, addr);             //0x50, Canvas Start address 0 (CVSSA0)
-  RegisterWrite(REG_CVSSA1, addr >> 8);        //0x51, Canvas Start address 1 (CVSSA1)
-  RegisterWrite(REG_CVSSA2, addr >> 16);       //0x52, Canvas Start address 2 (CVSSA2)
-  RegisterWrite(REG_CVSSA3, addr >> 24);       //0x53, Canvas Start address 3 (CVSSA3)
+  _bus->RegisterWrite(REG_CVSSA0, addr);             //0x50, Canvas Start address 0 (CVSSA0)
+  _bus->RegisterWrite(REG_CVSSA1, addr >> 8);        //0x51, Canvas Start address 1 (CVSSA1)
+  _bus->RegisterWrite(REG_CVSSA2, addr >> 16);       //0x52, Canvas Start address 2 (CVSSA2)
+  _bus->RegisterWrite(REG_CVSSA3, addr >> 24);       //0x53, Canvas Start address 3 (CVSSA3)
 }
 
 
@@ -8386,8 +8415,8 @@ void RA8889::CanvasImage_StartAddr(uint32_t addr)
  */
 void RA8889::CanvasImage_Width(uint16_t Wx)
 {
-  RegisterWrite(REG_CVS_IMWTH0, Wx);           //0x54, Canvas image width 0 (CVS_IMWTH0)
-  RegisterWrite(REG_CVS_IMWTH1, Wx >> 8);      //0x55, Canvas image width 1 (CVS_IMWTH1)
+  _bus->RegisterWrite(REG_CVS_IMWTH0, Wx);           //0x54, Canvas image width 0 (CVS_IMWTH0)
+  _bus->RegisterWrite(REG_CVS_IMWTH1, Wx >> 8);      //0x55, Canvas image width 1 (CVS_IMWTH1)
 }
 
 
@@ -8437,10 +8466,10 @@ void RA8889::CanvasImage_Width(uint16_t Wx)
  */
 void RA8889::ActiveWindow_XY(uint16_t Wx, uint16_t Hy)
 {
-  RegisterWrite(REG_AWUL_X0, Wx);              //0x56, Active Window Upper-Left corner X-coordinates 0 (AWUL_X0)
-  RegisterWrite(REG_AWUL_X1, Wx >> 8);         //0x57, Active Window Upper-Left corner X-coordinates 1 (AWUL_X1)
-  RegisterWrite(REG_AWUL_Y0, Hy);              //0x58, Active Window Upper-Left corner Y-coordinates 0 (AWUL_Y0)
-  RegisterWrite(REG_AWUL_Y1, Hy >> 8);         //0x59, Active Window Upper-Left corner Y-coordinates 1 (AWUL_Y1)
+  _bus->RegisterWrite(REG_AWUL_X0, Wx);              //0x56, Active Window Upper-Left corner X-coordinates 0 (AWUL_X0)
+  _bus->RegisterWrite(REG_AWUL_X1, Wx >> 8);         //0x57, Active Window Upper-Left corner X-coordinates 1 (AWUL_X1)
+  _bus->RegisterWrite(REG_AWUL_Y0, Hy);              //0x58, Active Window Upper-Left corner Y-coordinates 0 (AWUL_Y0)
+  _bus->RegisterWrite(REG_AWUL_Y1, Hy >> 8);         //0x59, Active Window Upper-Left corner Y-coordinates 1 (AWUL_Y1)
 }
 
 
@@ -8474,10 +8503,10 @@ void RA8889::ActiveWindow_XY(uint16_t Wx, uint16_t Hy)
  */
 void RA8889::ActiveWindow_WidhtHeight(uint16_t Wx, uint16_t Hy)
 {
-  RegisterWrite(REG_AW_WTH0, Wx);              //0x5a, Active Window Width 0 (AW_WTH0)
-  RegisterWrite(REG_AW_WTH1, Wx >> 8);         //0x5b, Active Window Width 1 (AW_WTH1)
-  RegisterWrite(REG_AW_HT0, Hy);               //0x5c, Active Window Height 0 (AW_HT0)
-  RegisterWrite(REG_AW_HT1, Hy >> 8);          //0x5d, Active Window Height 1 (AW_HT1)
+  _bus->RegisterWrite(REG_AW_WTH0, Wx);              //0x5a, Active Window Width 0 (AW_WTH0)
+  _bus->RegisterWrite(REG_AW_WTH1, Wx >> 8);         //0x5b, Active Window Width 1 (AW_WTH1)
+  _bus->RegisterWrite(REG_AW_HT0, Hy);               //0x5c, Active Window Height 0 (AW_HT0)
+  _bus->RegisterWrite(REG_AW_HT1, Hy >> 8);          //0x5d, Active Window Height 1 (AW_HT1)
 }
 
 
@@ -8505,10 +8534,10 @@ void RA8889::ActiveWindow_WidhtHeight(uint16_t Wx, uint16_t Hy)
 void RA8889::Memory_BlockMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = _bus->DataRead();
   CLRB(temp,2);                             //Reset bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 void RA8889::Memory_XYMode(void) { Memory_BlockMode(); }
 
@@ -8530,8 +8559,8 @@ void RA8889::Memory_XYMode(void) { Memory_BlockMode(); }
 bool RA8889::Memory_IsBlockMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = _bus->DataRead();
   return (temp &= 0x04) == 0x00;             //Test bit 2
 }
 bool RA8889::Memory_IsXYMode(void) { return Memory_IsBlockMode(); }
@@ -8554,10 +8583,10 @@ bool RA8889::Memory_IsXYMode(void) { return Memory_IsBlockMode(); }
 void RA8889::Memory_LinearMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = _bus->DataRead();
   SETB(temp,2);                              //Set bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -8578,8 +8607,8 @@ void RA8889::Memory_LinearMode(void)
 bool RA8889::Memory_IsLinearMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = _bus->DataRead();
   return (temp &= 0x04) == 0x04;             //Test bit 2
 }
 
@@ -8607,11 +8636,11 @@ bool RA8889::Memory_IsLinearMode(void)
 void RA8889::Memory_8bpp_BlockMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = _bus->DataRead();
   CLRB(temp,1);                              //Reset bit 1
   CLRB(temp,0);                              //Reset bit 2
-  SPI_DataWrite(temp);                       //Set block mode x-y 8bpp
+  _bus->DataWrite(temp);                       //Set block mode x-y 8bpp
 }
 
 
@@ -8638,11 +8667,11 @@ void RA8889::Memory_8bpp_BlockMode(void)
 void RA8889::Memory_16bpp_BlockMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = _bus->DataRead();
   CLRB(temp,1);                              //Reset bit 1
   SETB(temp,0);                              //Set bit 0
-  SPI_DataWrite(temp);                       //Set block mode x-y 16bpp
+  _bus->DataWrite(temp);                       //Set block mode x-y 16bpp
 }
 
 
@@ -8669,10 +8698,10 @@ void RA8889::Memory_16bpp_BlockMode(void)
 void RA8889::Memory_24bpp_BlockMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  temp = _bus->DataRead();
   SETB(temp,1);                              //Set bit 1
-  SPI_DataWrite(temp);                       //Set block mode x-y 24bpp
+  _bus->DataWrite(temp);                       //Set block mode x-y 24bpp
 }
 
 
@@ -8803,15 +8832,15 @@ void RA8889::Memory_ColorDepth_BlockMode(eColorDepthBPP colordepth)
  */
 void RA8889::GotoPixel_XY(uint16_t Wx, uint16_t Hy)
 {
-  SPI_CmdWrite(REG_CURH0);       //0x5f, Graphic Read/Write position Horizontal Position Register 0 (CURH0)
-  SPI_DataWrite(Wx);             //byte baixo de x
-  SPI_CmdWrite(REG_CURH1);       //0x60, Graphic Read/Write position Horizontal Position Register 1 (CURH1)
-  SPI_DataWrite(Wx >> 8);        //byte alto de x
+  _bus->CmdWrite(REG_CURH0);       //0x5f, Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+  _bus->DataWrite(Wx);             //byte baixo de x
+  _bus->CmdWrite(REG_CURH1);       //0x60, Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+  _bus->DataWrite(Wx >> 8);        //byte alto de x
 							     
-  SPI_CmdWrite(REG_CURV0);       //0x61, Graphic Read/Write position Vertical Position Register 0 (CURV0)
-  SPI_DataWrite(Hy);             //byte baixo de y
-  SPI_CmdWrite(REG_CURV1);       //0x62, raphic Read/Write position Vertical Position Register 1 (CURV1)
-  SPI_DataWrite(Hy >> 8);        //byte alto de y
+  _bus->CmdWrite(REG_CURV0);       //0x61, Graphic Read/Write position Vertical Position Register 0 (CURV0)
+  _bus->DataWrite(Hy);             //byte baixo de y
+  _bus->CmdWrite(REG_CURV1);       //0x62, raphic Read/Write position Vertical Position Register 1 (CURV1)
+  _bus->DataWrite(Hy >> 8);        //byte alto de y
 }
 
 
@@ -8902,14 +8931,14 @@ void RA8889::GotoPixel_XY(uint16_t Wx, uint16_t Hy)
  */
 void RA8889::GotoPixel_Linear(uint32_t addr)
 {
-  SPI_CmdWrite(REG_CURH0);       //0x5f, Graphic Read/Write position Horizontal Position Register 0 (CURH0)
-  SPI_DataWrite(addr);           //bit [7..0] do endreço
-  SPI_CmdWrite(REG_CURH1);       //0x60, Graphic Read/Write position Horizontal Position Register 1 (CURH1)
-  SPI_DataWrite(addr >> 8);      //bit [15..8] do endereço
-  SPI_CmdWrite(REG_CURV0);       //0x61, Graphic Read/Write position Vertical Position Register 0 (CURV0)
-  SPI_DataWrite(addr >> 16);     //bit [23..16] do endereço
-  SPI_CmdWrite(REG_CURV1);       //0x62, raphic Read/Write position Vertical Position Register 1 (CURV1)
-  SPI_DataWrite(addr >> 24);     //bit [31..24] do endereço
+  _bus->CmdWrite(REG_CURH0);       //0x5f, Graphic Read/Write position Horizontal Position Register 0 (CURH0)
+  _bus->DataWrite(addr);           //bit [7..0] do endreço
+  _bus->CmdWrite(REG_CURH1);       //0x60, Graphic Read/Write position Horizontal Position Register 1 (CURH1)
+  _bus->DataWrite(addr >> 8);      //bit [15..8] do endereço
+  _bus->CmdWrite(REG_CURV0);       //0x61, Graphic Read/Write position Vertical Position Register 0 (CURV0)
+  _bus->DataWrite(addr >> 16);     //bit [23..16] do endereço
+  _bus->CmdWrite(REG_CURV1);       //0x62, raphic Read/Write position Vertical Position Register 1 (CURV1)
+  _bus->DataWrite(addr >> 24);     //bit [31..24] do endereço
 }
 void RA8889::GotoLinearAddr(uint32_t addr) { GotoPixel_Linear(addr); }
 
@@ -8969,14 +8998,14 @@ void RA8889::GotoLinearAddr(uint32_t addr) { GotoPixel_Linear(addr); }
  */
 void RA8889::GotoText_XY(uint16_t Wx, uint16_t Hy)
 {
-  SPI_CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
-  SPI_DataWrite(Wx);                           //Text Write X-coordinate [7:0]
-  SPI_CmdWrite(REG_F_CURX1);                   //0x64, Text Write X-coordinates Register 1 (F_CURX1)
-  SPI_DataWrite(Wx >> 8);                      //Text Write X-coordinate [12:8]
-  SPI_CmdWrite(REG_F_CURY0);                   //0x65, Text Write Y-coordinates Register 0 (F_CURY0)
-  SPI_DataWrite(Hy);                           //Text Write Y-coordinate [7:0]
-  SPI_CmdWrite(REG_F_CURY1);                   //0x66, Text Write Y-coordinates Register 1 (F_CURY1)
-  SPI_DataWrite(Hy >> 8);                      //Text Write Y-coordinate [12:8]
+  _bus->CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
+  _bus->DataWrite(Wx);                           //Text Write X-coordinate [7:0]
+  _bus->CmdWrite(REG_F_CURX1);                   //0x64, Text Write X-coordinates Register 1 (F_CURX1)
+  _bus->DataWrite(Wx >> 8);                      //Text Write X-coordinate [12:8]
+  _bus->CmdWrite(REG_F_CURY0);                   //0x65, Text Write Y-coordinates Register 0 (F_CURY0)
+  _bus->DataWrite(Hy);                           //Text Write Y-coordinate [7:0]
+  _bus->CmdWrite(REG_F_CURY1);                   //0x66, Text Write Y-coordinates Register 1 (F_CURY1)
+  _bus->DataWrite(Hy >> 8);                      //Text Write Y-coordinate [12:8]
 }
 
 
@@ -9004,10 +9033,10 @@ void RA8889::GotoText_XY(uint16_t Wx, uint16_t Hy)
 void RA8889::DrawEnable_AA(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR0);           //0x67, Draw Line / Triangle Control Register 0 (DCR0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_DCR0);           //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = _bus->DataRead();
   b ? SETB(temp,0) : CLRB(temp,0);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -9038,11 +9067,11 @@ void RA8889::DrawEnable_AA(bool b)
 void RA8889::LineMode_Start(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                //Set bit 7, Start draw function
   CLRB(temp,1);                                //Reset bit 1, Select Draw Line
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 
@@ -9077,12 +9106,12 @@ void RA8889::LineMode_Start(void)
 void RA8889::TriangleMode_Start(bool fill)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DCR0);                      //0x67, Draw Line / Triangle Control Register 0 (DCR0)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                //Set bit 7, Draw Triangle
   fill ? SETB(temp,5) : CLRB(temp,5);          //Set bit 5, Com preenchimento do triangulo
   SETB(temp,1);                                //Set bit 1, Select Draw Triangle
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 
@@ -9131,14 +9160,14 @@ void RA8889::TriangleMode_Start(bool fill)
  */
 void RA8889::Point1_XY(uint16_t wx, uint16_t hy)
 {
-  SPI_CmdWrite(REG_DLHSR0);                    //0x68, Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
-  SPI_DataWrite(wx);                           
-  SPI_CmdWrite(REG_DLHSR1);                    //0x69, Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
-  SPI_DataWrite(wx >> 8);                      
-  SPI_CmdWrite(REG_DLVSR0);                    //0x6a, Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
-  SPI_DataWrite(hy);                           
-  SPI_CmdWrite(REG_DLVSR1);                    //0x6b, Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
-  SPI_DataWrite(hy >> 8);                      
+  _bus->CmdWrite(REG_DLHSR0);                    //0x68, Draw Line/Square/Triangle Point 1 X-coordinates Register0 (DLHSR0)
+  _bus->DataWrite(wx);                           
+  _bus->CmdWrite(REG_DLHSR1);                    //0x69, Draw Line/Square/Triangle Point 1 X-coordinates Register1 (DLHSR1)
+  _bus->DataWrite(wx >> 8);                      
+  _bus->CmdWrite(REG_DLVSR0);                    //0x6a, Draw Line/Square/Triangle Point 1 Y-coordinates Register0 (DLVSR0)
+  _bus->DataWrite(hy);                           
+  _bus->CmdWrite(REG_DLVSR1);                    //0x6b, Draw Line/Square/Triangle Point 1 Y-coordinates Register1 (DLVSR1)
+  _bus->DataWrite(hy >> 8);                      
 }
 void RA8889::Line_Point1XY(uint16_t wx, uint16_t hy) { Point1_XY(wx, hy); }
 
@@ -9169,14 +9198,14 @@ void RA8889::Line_Point1XY(uint16_t wx, uint16_t hy) { Point1_XY(wx, hy); }
  */
 void RA8889::Point2_XY(uint16_t wx, uint16_t hy)
 {
-  SPI_CmdWrite(REG_DLHER0);                    //0x6c, Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
-  SPI_DataWrite(wx);                           //
-  SPI_CmdWrite(REG_DLHER1);                    //0x6d, Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
-  SPI_DataWrite(wx >> 8);                      //
-  SPI_CmdWrite(REG_DLVER0);                    //0x6e, Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
-  SPI_DataWrite(hy);                           //
-  SPI_CmdWrite(REG_DLVER1);                    //0x6f, Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
-  SPI_DataWrite(hy >> 8);                      //
+  _bus->CmdWrite(REG_DLHER0);                    //0x6c, Draw Line/Square/Triangle Point 2 X-coordinates Register0 (DLHER0)
+  _bus->DataWrite(wx);                           //
+  _bus->CmdWrite(REG_DLHER1);                    //0x6d, Draw Line/Square/Triangle Point 2 X-coordinates Register1 (DLHER1)
+  _bus->DataWrite(wx >> 8);                      //
+  _bus->CmdWrite(REG_DLVER0);                    //0x6e, Draw Line/Square/Triangle Point 2 Y-coordinates Register0 (DLVER0)
+  _bus->DataWrite(hy);                           //
+  _bus->CmdWrite(REG_DLVER1);                    //0x6f, Draw Line/Square/Triangle Point 2 Y-coordinates Register1 (DLVER1)
+  _bus->DataWrite(hy >> 8);                      //
 }
 void RA8889::Line_Point2XY(uint16_t wx, uint16_t hy) { Point2_XY(wx, hy); }
 
@@ -9259,14 +9288,14 @@ void RA8889::Triangle_Point2XY(uint16_t wx, uint16_t hy)  { Point2_XY(wx, hy); }
  */ 
 void RA8889::Point3_XY(uint16_t wx, uint16_t hy)
 {
-  SPI_CmdWrite(REG_DTPH0);                     //0x70, Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
-  SPI_DataWrite(wx);                           
-  SPI_CmdWrite(REG_DTPH1);                     //0x71, Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
-  SPI_DataWrite(wx >> 8);                      
-  SPI_CmdWrite(REG_DTPV0);                     //0x72, Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
-  SPI_DataWrite(hy);                           
-  SPI_CmdWrite(REG_DTPV1);                     //0x73, Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
-  SPI_DataWrite(hy >> 8);                      
+  _bus->CmdWrite(REG_DTPH0);                     //0x70, Draw Triangle Point 3 X-coordinates Register 0 (DTPH0)
+  _bus->DataWrite(wx);                           
+  _bus->CmdWrite(REG_DTPH1);                     //0x71, Draw Triangle Point 3 X-coordinates Register 1 (DTPH1)
+  _bus->DataWrite(wx >> 8);                      
+  _bus->CmdWrite(REG_DTPV0);                     //0x72, Draw Triangle Point 3 Y-coordinates Register 0 (DTPV0)
+  _bus->DataWrite(hy);                           
+  _bus->CmdWrite(REG_DTPV1);                     //0x73, Draw Triangle Point 3 Y-coordinates Register 1 (DTPV1)
+  _bus->DataWrite(hy >> 8);                      
 }
 void RA8889::Triangle_Point3XY(uint16_t wx, uint16_t hy) { Point3_XY(wx, hy); }
 
@@ -9366,13 +9395,13 @@ void RA8889::Square_Point2XY(uint16_t wx, uint16_t hy) { Point2_XY(wx, hy); }
 void RA8889::CircleMode_Start(bool fill)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                //Set bit 7, Start the drawing function
   fill ? SETB(temp,6) : CLRB(temp,6);          //Set bit 6 = Fill, Reset bit 6 = Non-Fill
   temp &= ~(cSetb5 | cSetb4);                  //Reset bit 5-4, Draw Circle / Ellipse
   temp &= ~(cSetb1 | cSetb0);                  //Reset bit 1-0, bottom-left Ellipse Curve
-  SPI_DataWrite(temp);                         //0b1n00 xx00, n=0/1
+  _bus->DataWrite(temp);                         //0b1n00 xx00, n=0/1
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 void RA8889::EllipseMode_Start(bool fill) { CircleMode_Start(fill); }
@@ -9413,14 +9442,14 @@ void RA8889::EllipseMode_Start(bool fill) { CircleMode_Start(fill); }
 void RA8889::CurveLeftDownMode_Start(bool fill)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                //Set bit 7, Start the drawing function
   fill ? SETB(temp,6) : CLRB(temp,6);          //Set bit 6 = Fill, Reset bit 6 = Non-Fill
   CLRB(temp,5);                                //Reset bit 5, Draw Circle / Ellipse Curve   
   SETB(temp,4);                                //Set bit 4, Draw Circle / Ellipse Curve
   temp &= ~(cSetb1 | cSetb0);                  //Reset bit 1-0, bottom-left Ellipse Curve
-  SPI_DataWrite(temp);                         //0b1n01 xx00   n=1/0 
+  _bus->DataWrite(temp);                         //0b1n01 xx00   n=1/0 
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 
@@ -9460,15 +9489,15 @@ void RA8889::CurveLeftDownMode_Start(bool fill)
 void RA8889::CurveLeftUpMode_Start(bool fill)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                //Set bit 7, Start the drawing function
   fill ? SETB(temp,6) : CLRB(temp,6);          //Set bit 6 = Fill, Reset bit 6 = Non-Fill
   CLRB(temp,5);                                //Reset bit 5, Draw Circle / Ellipse Curve   
   SETB(temp,4);                                //Set bit 4, Draw Circle / Ellipse Curve
   CLRB(temp,1);                                //Reset bit 1, upper-left Ellipse Curve  
   SETB(temp,0);                                //Set bit 0, upper-left Ellipse Curve 
-  SPI_DataWrite(temp);                         //0b1n01 xx01   n=1/0
+  _bus->DataWrite(temp);                         //0b1n01 xx01   n=1/0
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 
@@ -9508,15 +9537,15 @@ void RA8889::CurveLeftUpMode_Start(bool fill)
 void RA8889::CurveRightUpMode_Start(bool fill)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead(); 
+  _bus->CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = _bus->DataRead(); 
   SETB(temp,7);                                //Set bit 7, Start the drawing function
   fill ? SETB(temp,6) : CLRB(temp,6);          //Set bit 6 = Fill, Reset bit 6 = Non-Fill
   CLRB(temp,5);                                //Reset bit 5, Draw Circle / Ellipse Curve   
   SETB(temp,4);                                //Set bit 4, Draw Circle / Ellipse Curve
   SETB(temp,1);                                //Set bit 1, upper-right Ellipse Curve
   CLRB(temp,0);                                //Reset bit 0, upper-right Ellipse Curve
-  SPI_DataWrite(temp);                         //0b1n01 xx10   n=1/0
+  _bus->DataWrite(temp);                         //0b1n01 xx10   n=1/0
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 
@@ -9556,15 +9585,15 @@ void RA8889::CurveRightUpMode_Start(bool fill)
 void RA8889::CurveRightDownMode_Start(bool fill)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();  
+  _bus->CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = _bus->DataRead();  
   SETB(temp,7);                                //Set bit 7, Start the drawing function
   fill ? SETB(temp,6) : CLRB(temp,6);          //Set bit 6 = Fill, Reset bit 6 = Non-Fill
   CLRB(temp,5);                                //Reset bit 5, Draw Circle / Ellipse Curve   
   SETB(temp,4);                                //Set bit 4, Draw Circle / Ellipse Curve
   SETB(temp,1);                                //Set bit 1, bottom-right Ellipse Curve
   SETB(temp,0);                                //Set bit 0, bottom-right Ellipse Curve
-  SPI_DataWrite(temp);                         //0b1n01 xx11   n=1/0
+  _bus->DataWrite(temp);                         //0b1n01 xx11   n=1/0
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 
@@ -9603,13 +9632,13 @@ void RA8889::CurveRightDownMode_Start(bool fill)
 void RA8889::SquareMode_Start(bool fill)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = _bus->DataRead();
   SETB(temp,7);                                //Set bit 7, Start the drawing function
   fill ? SETB(temp,6) : CLRB(temp,6);          //Set bit 6 = Fill, Reset bit 6 = Non-Fill
   SETB(temp,5);                                //Set bit 5, Draw Square.
   CLRB(temp,4);                                //Reset bit 4, Draw Square.
-  SPI_DataWrite(temp);                         //0b1n10 xxxx   n=1/0
+  _bus->DataWrite(temp);                         //0b1n10 xxxx   n=1/0
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 
@@ -9648,13 +9677,13 @@ void RA8889::SquareMode_Start(bool fill)
 void RA8889::CircleSquareMode_Start(bool fill)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
-  temp = SPI_DataRead();  
+  _bus->CmdWrite(REG_DCR1);                      //0x76, Draw Circle/Ellipse/Ellipse Curve/Circle Square Control Register 1 (DCR1)
+  temp = _bus->DataRead();  
   SETB(temp,7);                                //Set bit 7, Start the drawing function
   fill ? SETB(temp,6) : CLRB(temp,6);          //Set bit 6 = Fill, Reset bit 6 = Non-Fill
   SETB(temp,5);                                //Set bit 5, Draw Circle Square
   SETB(temp,4);                                //Set bit 4, Draw Circle Square
-  SPI_DataWrite(temp);                         //0b1n11 xxxx   n=1/0
+  _bus->DataWrite(temp);                         //0b1n11 xxxx   n=1/0
   CoreTask_WaitReady();                        //Espere ate ficar pronto
 }
 
@@ -9702,15 +9731,15 @@ void RA8889::CircleSquareMode_Start(bool fill)
  */
 void RA8889::Radius_RxRy(uint16_t Rx, uint16_t Ry)
 {
-  SPI_CmdWrite(REG_ELL_A0);                    //0x77, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
-  SPI_DataWrite(Rx);                           //
-  SPI_CmdWrite(REG_ELL_A1);                    //0x78, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
-  SPI_DataWrite(Rx >> 8);                      //
+  _bus->CmdWrite(REG_ELL_A0);                    //0x77, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A0)
+  _bus->DataWrite(Rx);                           //
+  _bus->CmdWrite(REG_ELL_A1);                    //0x78, Draw Circle/Ellipse/Circle Square Major radius Setting Register (ELL_A1)
+  _bus->DataWrite(Rx >> 8);                      //
   
-  SPI_CmdWrite(REG_ELL_B0);                    //0x79, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
-  SPI_DataWrite(Ry);                           //
-  SPI_CmdWrite(REG_ELL_B1);                    //0x7a, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
-  SPI_DataWrite(Ry >> 8);                      //
+  _bus->CmdWrite(REG_ELL_B0);                    //0x79, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B0)
+  _bus->DataWrite(Ry);                           //
+  _bus->CmdWrite(REG_ELL_B1);                    //0x7a, Draw Circle/Ellipse/Circle Square Minor radius Setting Register (ELL_B1)
+  _bus->DataWrite(Ry >> 8);                      //
 }
 void RA8889::CircleRadius_R(uint16_t R) { Radius_RxRy(R, R); }
 void RA8889::EllipseRadius_RxRy(uint16_t Rx, uint16_t Ry) { Radius_RxRy(Rx, Ry); }
@@ -9740,15 +9769,15 @@ void RA8889::CircleSquareRadius_RxRy(uint16_t Rx, uint16_t Ry) { Radius_RxRy(Rx,
  */
  void RA8889::Center_XY(uint16_t Wx, uint16_t Hy)
  {
-  SPI_CmdWrite(REG_DEHR0);      //0x7b, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
-  SPI_DataWrite(Wx);            //
-  SPI_CmdWrite(REG_DEHR1);      //0x7c, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR1)
-  SPI_DataWrite(Wx >> 8);       //
+  _bus->CmdWrite(REG_DEHR0);      //0x7b, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR0)
+  _bus->DataWrite(Wx);            //
+  _bus->CmdWrite(REG_DEHR1);      //0x7c, Draw Circle/Ellipse/Circle Square Center X-coordinates Register0 (DEHR1)
+  _bus->DataWrite(Wx >> 8);       //
 						   
-  SPI_CmdWrite(REG_DEVR0);      //0x7d, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
-  SPI_DataWrite(Hy);            //
-  SPI_CmdWrite(REG_DEVR1);      //0x7e, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR1)
-  SPI_DataWrite(Hy >> 8);       //
+  _bus->CmdWrite(REG_DEVR0);      //0x7d, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR0)
+  _bus->DataWrite(Hy);            //
+  _bus->CmdWrite(REG_DEVR1);      //0x7e, Draw Circle/Ellipse/Circle Square Center Y-coordinates Register0 (DEVR1)
+  _bus->DataWrite(Hy >> 8);       //
  }
 void RA8889::CircleCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
 void RA8889::EllipseCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
@@ -9779,8 +9808,8 @@ void RA8889::EllipseCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
  void RA8889::PWM_Prescaler(uint8_t prescaler)
 {
   prescaler = prescaler - 1;                   //0..255
-  SPI_CmdWrite(REG_PSCLR);                     //0x84, PWM Prescaler Register (PSCLR)
-  SPI_DataWrite(prescaler);
+  _bus->CmdWrite(REG_PSCLR);                     //0x84, PWM Prescaler Register (PSCLR)
+  _bus->DataWrite(prescaler);
 }
 
 
@@ -9813,11 +9842,11 @@ void RA8889::EllipseCenter_XY(uint16_t Wx, uint16_t Hy) {Center_XY(Wx, Hy);}
 void RA8889::PWM1_ClockDividedBy(eDividerClock divider)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb7 | cSetb6);                  //Rest bit 7 and 6
   temp |=  static_cast<uint8_t>(divider);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -9843,11 +9872,11 @@ void RA8889::PWM1_ClockDividedBy(eDividerClock divider)
 void RA8889::PWM0_ClockDividedBy(eDividerClock divider)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb5 | cSetb4);                  //Reset bit 5 and 4
   temp |=  static_cast<uint8_t>(divider);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -9879,10 +9908,10 @@ void RA8889::PWM0_ClockDividedBy(eDividerClock divider)
 void RA8889::PWM1_Select_ErrorFlag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = _bus->DataRead();                       
   CLRB(temp,3);                                //Reset bit 3
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -9905,11 +9934,11 @@ void RA8889::PWM1_Select_ErrorFlag(void)
 void RA8889::PWM1_Select(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = _bus->DataRead();                       
   SETB(temp,3);                                //Set bit 3 
   CLRB(temp,2);                                //Reset bit 2 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -9932,11 +9961,11 @@ void RA8889::PWM1_Select(void)
 void RA8889::PWM1_Select_OscillatorClock(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = _bus->DataRead();                       
   SETB(temp,3);                                //Set bit 3
   SETB(temp,2);                                //Set bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -9964,11 +9993,11 @@ void RA8889::PWM1_Select_OscillatorClock(void)
 void RA8889::PWM0_Select_GPIOC7(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = _bus->DataRead();                       
   CLRB(temp,1);                                //Reset bit 1
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -9990,11 +10019,11 @@ void RA8889::PWM0_Select_GPIOC7(void)
 void RA8889::PWM0_Select(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = _bus->DataRead();                       
   SETB(temp,1);                                //Set bit 1
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10023,11 +10052,11 @@ void RA8889::PWM0_Select(void)
 void RA8889::PWM0_Select_CoreClock(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PMUXR);                     //0x85, PWM clock Mux Register (PMUXR)
+  temp = _bus->DataRead();                       
   SETB(temp,1);                                //Set bit 1
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10061,10 +10090,10 @@ void RA8889::PWM0_Select_CoreClock(void)
 void RA8889::PWM1_InverterOn(boolean on)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   on ? SETB(temp,6) : CLRB(temp,6);            //Set/Reset bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10085,10 +10114,10 @@ void RA8889::PWM1_InverterOn(boolean on)
 void RA8889::PWM1_Select_AutoReload(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   SETB(temp,5);                                //Set bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10109,10 +10138,10 @@ void RA8889::PWM1_Select_AutoReload(void)
 void RA8889::PWM1_Select_OneShot(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   CLRB(temp,5);                                //Reset bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10140,10 +10169,10 @@ void RA8889::PWM1_Select_OneShot(void)
 void RA8889::PWM1_StartTimer(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   SETB(temp,4);                                //Set bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10171,10 +10200,10 @@ void RA8889::PWM1_StartTimer(void)
 void RA8889::PWM1_StopTimer(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   CLRB(temp,4);                                //Reset bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10199,10 +10228,10 @@ void RA8889::PWM1_StopTimer(void)
 void RA8889::PWM0_DeadZoneEnable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   b ? SETB(temp,3) : CLRB(temp,3);             //Set/Reset bit 3
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10228,10 +10257,10 @@ void RA8889::PWM0_DeadZoneEnable(bool b)
 void RA8889::PWM0_InverterOn(bool on)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   on ? SETB(temp,2) : CLRB(temp,2);            //Set/Reset bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10252,10 +10281,10 @@ void RA8889::PWM0_InverterOn(bool on)
 void RA8889::PWM0_Select_AutoReload(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   SETB(temp,1);                                //Set bit 1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10276,10 +10305,10 @@ void RA8889::PWM0_Select_AutoReload(void)
 void RA8889::PWM0_Select_OneShot(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   CLRB(temp,1);                                //Reset bit 1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10311,10 +10340,10 @@ void RA8889::PWM0_Select_OneShot(void)
 void RA8889::PWM0_StartTimer(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10346,10 +10375,10 @@ void RA8889::PWM0_StartTimer(void)
 void RA8889::PWM0_StopTimer(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_PCFGR);                     //0x86, PWM Configuration Register (PCFGR)
+  temp = _bus->DataRead();                       
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10380,8 +10409,8 @@ void RA8889::PWM0_StopTimer(void)
  */
 void RA8889::PWM0_DeadZoneLength(uint8_t len)
 {
-  SPI_CmdWrite(REG_DZ_LENGTH);                 //0x87, Timer 0 Dead zone length register [DZ_LENGTH]
-  SPI_DataWrite(len);
+  _bus->CmdWrite(REG_DZ_LENGTH);                 //0x87, Timer 0 Dead zone length register [DZ_LENGTH]
+  _bus->DataWrite(len);
 }
 
 
@@ -10441,10 +10470,10 @@ void RA8889::PWM0_DeadZoneLength(uint8_t len)
  */
 void RA8889::PWM0_SetCompareBuffer(uint16_t duty)   
 {   
-  SPI_CmdWrite(REG_TCMPB0L);                   //0x88, Timer 0 compare buffer register [TCMPB0L]
-  SPI_DataWrite(duty);                           
-  SPI_CmdWrite(REG_TCMPB0H);                   //0x89, Timer 0 compare buffer register [TCMPB0H]
-  SPI_DataWrite(duty >> 8);                      
+  _bus->CmdWrite(REG_TCMPB0L);                   //0x88, Timer 0 compare buffer register [TCMPB0L]
+  _bus->DataWrite(duty);                           
+  _bus->CmdWrite(REG_TCMPB0H);                   //0x89, Timer 0 compare buffer register [TCMPB0H]
+  _bus->DataWrite(duty >> 8);                      
 }
 
 
@@ -10485,10 +10514,10 @@ void RA8889::PWM0_SetCompareBuffer(uint16_t duty)
  */
 void RA8889::PWM0_SetCountBuffer(uint16_t clock_per_period)
 {
-  SPI_CmdWrite(REG_TCNTB0L);                   //0x8a, Timer 0 count buffer register [TCNTB0L]
-  SPI_DataWrite(clock_per_period);             
-  SPI_CmdWrite(REG_TCNTB0H);                   //0x8b, Timer 0 count buffer register [TCNTB0H]
-  SPI_DataWrite(clock_per_period >> 8);        
+  _bus->CmdWrite(REG_TCNTB0L);                   //0x8a, Timer 0 count buffer register [TCNTB0L]
+  _bus->DataWrite(clock_per_period);             
+  _bus->CmdWrite(REG_TCNTB0H);                   //0x8b, Timer 0 count buffer register [TCNTB0H]
+  _bus->DataWrite(clock_per_period >> 8);        
 }
 
 
@@ -10541,10 +10570,10 @@ void RA8889::PWM0_SetCountBuffer(uint16_t clock_per_period)
  */
 void RA8889::PWM1_SetCompareBuffer(uint16_t duty)
 {
-  SPI_CmdWrite(REG_TCMPB1L);                   //0x8c, Timer 1 compare buffer register [TCMPB1L]
-  SPI_DataWrite(duty);                         
-  SPI_CmdWrite(REG_TCMPB1H);                   //0x8d, Timer 1 compare buffer register [TCMPB1H]
-  SPI_DataWrite(duty >> 8);                    
+  _bus->CmdWrite(REG_TCMPB1L);                   //0x8c, Timer 1 compare buffer register [TCMPB1L]
+  _bus->DataWrite(duty);                         
+  _bus->CmdWrite(REG_TCMPB1H);                   //0x8d, Timer 1 compare buffer register [TCMPB1H]
+  _bus->DataWrite(duty >> 8);                    
 }
 
 
@@ -10584,10 +10613,10 @@ void RA8889::PWM1_SetCompareBuffer(uint16_t duty)
  */
 void RA8889::PWM1_SetCountBuffer(uint16_t clock_per_period)
 {
-  SPI_CmdWrite(REG_TCNTB1L);                   //0x8e, Timer 1 count buffer register [TCNTB1L]
-  SPI_DataWrite(clock_per_period);             
-  SPI_CmdWrite(REG_TCNTB1H);                   //0x8f, Timer 1 count buffer register [TCNTB1H]
-  SPI_DataWrite(clock_per_period >> 8);        
+  _bus->CmdWrite(REG_TCNTB1L);                   //0x8e, Timer 1 count buffer register [TCNTB1L]
+  _bus->DataWrite(clock_per_period);             
+  _bus->CmdWrite(REG_TCNTB1H);                   //0x8f, Timer 1 count buffer register [TCNTB1H]
+  _bus->DataWrite(clock_per_period >> 8);        
 }
 
 
@@ -10623,10 +10652,10 @@ void RA8889::PWM1_SetCountBuffer(uint16_t clock_per_period)
 void RA8889::BTE_Enable(bool b)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_CTRL0);                 //0x90, BTE Function Control Register 0 (BTE_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_CTRL0);                 //0x90, BTE Function Control Register 0 (BTE_CTRL0)
+  temp = _bus->DataRead();
   b ? SETB(temp,4) : CLRB(temp,4);             //Set/Reset bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10657,7 +10686,7 @@ void RA8889::BTE_Enable(bool b)
  */
 void RA8889::BTE_WaitReady(void) 
 {
-    while (StatusRead() & 0x08) delayMicroseconds(1);
+    while (_bus->StatusRead() & 0x08) delayMicroseconds(1);
 }
 
 
@@ -10706,15 +10735,15 @@ void RA8889::BTE_DualWaitReady(void)
   //Case1: using BTE Function Control Register
   
   do {
-    SPI_CmdWrite(REG_BTE_CTRL0);               //0x090, Seleciona o registro BTE Function Control
-    temp = SPI_DataRead();                     //
+    _bus->CmdWrite(REG_BTE_CTRL0);               //0x090, Seleciona o registro BTE Function Control
+    temp = _bus->DataRead();                     //
   	delayMicroseconds(1);                      //Libera CPU parcialmente
   } while (temp & 0x10);                       //Continua enquanto BTE estiver ocupado
   
   //Case2: using STSR Status Register
   
   do {
-    temp = StatusRead();                       //Ler STSR (status geral do core) 
+    temp = _bus->StatusRead();                 //Ler STSR (status geral do core) 
   	delayMicroseconds(1);                      //Libera CPU parcialmente
   } while (temp & 0x08);                       //Continua enquanto o core estiver ocupado
 }
@@ -10737,10 +10766,10 @@ void RA8889::BTE_DualWaitReady(void)
 void RA8889::BTE_PatternFormat8X8(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_CTRL0);          //0x90, BTE Function Control Register 0 (BTE_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_CTRL0);          //0x90, BTE Function Control Register 0 (BTE_CTRL0)
+  temp = _bus->DataRead();
   CLRB(temp,0);                         //Reset bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -10761,10 +10790,10 @@ void RA8889::BTE_PatternFormat8X8(void)
 void RA8889::BTE_PatternFormat16X16(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_CTRL0);          //0x90, BTE Function Control Register 0 (BTE_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_CTRL0);          //0x90, BTE Function Control Register 0 (BTE_CTRL0)
+  temp = _bus->DataRead();
   SETB(temp,0);                         //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -10819,11 +10848,11 @@ void RA8889::BTE_PatternFormat16X16(void)
 void RA8889::BTE_ROPCode(eROPCode code)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //BTE Function Control Register1 (BTE_CTRL1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //BTE Function Control Register1 (BTE_CTRL1)
+  temp = _bus->DataRead();                       
   temp &= 0x0f;                                //Limpar os bits [7-4]
   temp |= (static_cast<uint8_t>(code) << 4);   
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -10884,11 +10913,11 @@ void RA8889::BTE_ROPCode(eROPCode code)
 void RA8889::BTE_OperationCode(eBTEOpCode opcode)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //BTE Function Control Register1 (BTE_CTRL1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //BTE Function Control Register1 (BTE_CTRL1)
+  temp = _bus->DataRead();                       
   temp &= 0xf0;                                //Limpa os bits de 3-0
   temp |= static_cast<uint8_t>(opcode);        //Coloca opcode
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -10921,13 +10950,13 @@ void RA8889::BTE_S0_ColorDeph(eColorDepthBPP bpp)
 { 
   uint8_t temp;
   uint8_t bit;
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   temp &= ~(cSetb6 | cSetb5);                     //Reseta bits 6 e 5
   bit = static_cast<uint8_t>(bpp);
   bit = (bit >> 3)-1;                          //transforma 8,16,24 em 0, 1, 2
   temp |= bit << 5;                            //posiciona no bit 6 e 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -10949,11 +10978,11 @@ void RA8889::BTE_S0_ColorDeph(eColorDepthBPP bpp)
 void RA8889::BTE_S0_ColorDeph_8bpp(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   CLRB(temp,6);                                   //Reset bits 6
   CLRB(temp,5);                                   //Reset bits 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -10975,11 +11004,11 @@ void RA8889::BTE_S0_ColorDeph_8bpp(void)
 void RA8889::BTE_S0_ColorDeph_16bpp(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   CLRB(temp,6);                                   //Reset bits 6
   SETB(temp,5);                                   //Set bits 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -11001,11 +11030,11 @@ void RA8889::BTE_S0_ColorDeph_16bpp(void)
 void RA8889::BTE_S0_ColorDeph_24bpp(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   SETB(temp,6);                                   //Set bits 6
   CLRB(temp,5);                                   //Reset bits 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -11030,12 +11059,12 @@ void RA8889::BTE_S0_ColorDeph_24bpp(void)
 void RA8889::BTE_S1_ColorDeph_8bpp(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   CLRB(temp,4);                                //Reset bit 4
   CLRB(temp,3);                                //Reset bit 3
   CLRB(temp,2);                                //Reset bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -11060,12 +11089,12 @@ void RA8889::BTE_S1_ColorDeph_8bpp(void)
 void RA8889::BTE_S1_ColorDeph_16bpp(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   CLRB(temp,4);                                  //Reset bit 4
   CLRB(temp,3);                                  //Reset bit 3
   SETB(temp,2);                                  //Set bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -11090,12 +11119,12 @@ void RA8889::BTE_S1_ColorDeph_16bpp(void)
 void RA8889::BTE_S1_ColorDeph_24bpp(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   CLRB(temp,4);                                   //Reset bit 4
   SETB(temp,3);                                   //Set bit 3
   CLRB(temp,2);                                   //Reset bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -11120,12 +11149,12 @@ void RA8889::BTE_S1_ColorDeph_24bpp(void)
 void RA8889::BTE_S1_ColorDeph_Constant(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   CLRB(temp,4);                                   //Reset bit 4
   SETB(temp,3);                                   //Set bit 3
   SETB(temp,2);                                   //Set bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -11150,12 +11179,12 @@ void RA8889::BTE_S1_ColorDeph_Constant(void)
 void RA8889::BTE_S1_ColorDeph_8bitAlpha(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   SETB(temp,4);                                   //Set bit 4
   CLRB(temp,3);                                   //Reset bit 3
   CLRB(temp,2);                                   //Reset bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -11180,12 +11209,12 @@ void RA8889::BTE_S1_ColorDeph_8bitAlpha(void)
 void RA8889::BTE_S1_ColorDeph_16bitAlpha(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   SETB(temp,4);                                   //Set bit 4
   CLRB(temp,3);                                   //Reset bit 3
   SETB(temp,2);                                   //Set bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -11211,12 +11240,12 @@ void RA8889::BTE_Destination_ColorDeph(eColorDepthBPP bpp)
 { 
   uint8_t temp;
   uint8_t bit;
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb1 | cSetb0);                  //Reseta bits 1 e 0
   bit = static_cast<uint8_t>(bpp);             
   temp |= (bit >> 3)-1;                        //transforma 8,16,24 em 0, 1, 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -11238,11 +11267,11 @@ void RA8889::BTE_Destination_ColorDeph(eColorDepthBPP bpp)
 void RA8889::BTE_Destination_ColorDeph_16bpp(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   CLRB(temp,1);                                   //Reset bits 1
   SETB(temp,0);                                   //Set bits 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -11264,11 +11293,11 @@ void RA8889::BTE_Destination_ColorDeph_16bpp(void)
 void RA8889::BTE_Destination_ColorDeph_24bpp(void)
 { 
   uint8_t temp;
-  SPI_CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_BTE_COLR);                     //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  temp = _bus->DataRead();
   SETB(temp,1);                                   //Set bits 1
   CLRB(temp,0);                                   //Reset bits 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 } 
 
 
@@ -11306,10 +11335,10 @@ void RA8889::BTE_Destination_ColorDeph_24bpp(void)
  */
 void RA8889::BTE_S0_MemoryStartAddress(uint32_t addr)
 {
-  RegisterWrite(REG_S0_STR0, addr);            //0x93, Source 0 memory start address 0 (S0_STR0)
-  RegisterWrite(REG_S0_STR1, addr >> 8);       //0x94, Source 0 memory start address 1 (S0_STR1)
-  RegisterWrite(REG_S0_STR2, addr >> 16);      //0x95, Source 0 memory start address 2 (S0_STR2)
-  RegisterWrite(REG_S0_STR3, addr >> 24);      //0x96, Source 0 memory start address 3 (S0_STR3)
+  _bus->RegisterWrite(REG_S0_STR0, addr);            //0x93, Source 0 memory start address 0 (S0_STR0)
+  _bus->RegisterWrite(REG_S0_STR1, addr >> 8);       //0x94, Source 0 memory start address 1 (S0_STR1)
+  _bus->RegisterWrite(REG_S0_STR2, addr >> 16);      //0x95, Source 0 memory start address 2 (S0_STR2)
+  _bus->RegisterWrite(REG_S0_STR3, addr >> 24);      //0x96, Source 0 memory start address 3 (S0_STR3)
 }
 
 
@@ -11347,8 +11376,8 @@ void RA8889::BTE_S0_MemoryStartAddress(uint32_t addr)
  */
 void RA8889::BTE_S0_ImageWidth(uint16_t Wx)
 {
-  RegisterWrite(REG_S0_WTH0, Wx);              //0x97, Source 0 image width 0 (S0_WTH0)
-  RegisterWrite(REG_S0_WTH1, Wx >> 8);         //0x98, Source 0 image width 1 (S0_WTH1)
+  _bus->RegisterWrite(REG_S0_WTH0, Wx);              //0x97, Source 0 image width 0 (S0_WTH0)
+  _bus->RegisterWrite(REG_S0_WTH1, Wx >> 8);         //0x98, Source 0 image width 1 (S0_WTH1)
 }
 
 
@@ -11391,10 +11420,10 @@ void RA8889::BTE_S0_ImageWidth(uint16_t Wx)
  */
 void RA8889::BTE_S0_WindowStart_XY(uint16_t Wx, uint16_t Hy)
 {
-  RegisterWrite(REG_S0_X0, Wx);                //0x99, Source 0 Window Upper-Left corner X-coordinates 0 (S0_X0)
-  RegisterWrite(REG_S0_X1, Wx >> 8);           //0x9a, Source 0 Window Upper-Left corner X-coordinates 1 (S0_X1)
-  RegisterWrite(REG_S0_Y0, Hy);                //0x9b, Source 0 Window Upper-Left corner Y-coordinates 0 (S0_Y0)
-  RegisterWrite(REG_S0_Y1, Hy >> 8);           //0x9c, Source 0 Window Upper-Left corner Y-coordinates 1 (S0_Y1)
+  _bus->RegisterWrite(REG_S0_X0, Wx);                //0x99, Source 0 Window Upper-Left corner X-coordinates 0 (S0_X0)
+  _bus->RegisterWrite(REG_S0_X1, Wx >> 8);           //0x9a, Source 0 Window Upper-Left corner X-coordinates 1 (S0_X1)
+  _bus->RegisterWrite(REG_S0_Y0, Hy);                //0x9b, Source 0 Window Upper-Left corner Y-coordinates 0 (S0_Y0)
+  _bus->RegisterWrite(REG_S0_Y1, Hy >> 8);           //0x9c, Source 0 Window Upper-Left corner Y-coordinates 1 (S0_Y1)
 }
 
 
@@ -11435,10 +11464,10 @@ void RA8889::BTE_S0_WindowStart_XY(uint16_t Wx, uint16_t Hy)
  */
 void RA8889::BTE_S1_MemoryStartAddress(uint32_t addr)
 {
-  RegisterWrite(REG_S1_STR0_RED, addr);        //0x9d, Source 1 memory start address 0 (S1_STR0) / S1 constant color – Red element (S1_RED)
-  RegisterWrite(REG_S1_STR1_GREEN, addr >> 8); //0x9e, Source 1 memory start address 1 (S1_STR1) / S1 constant color – Green element (S1_GREEN)
-  RegisterWrite(REG_S1_STR2_BLUE, addr >> 16); //0x9f, Source 1 memory start address 2 (S1_STR2) / S1 constant color – Blue element (S1_BLUE)
-  RegisterWrite(REG_S1_STR3, addr >> 24);      //0xa0, Source 1 memory start address 3 (S1_STR3)
+  _bus->RegisterWrite(REG_S1_STR0_RED, addr);        //0x9d, Source 1 memory start address 0 (S1_STR0) / S1 constant color – Red element (S1_RED)
+  _bus->RegisterWrite(REG_S1_STR1_GREEN, addr >> 8); //0x9e, Source 1 memory start address 1 (S1_STR1) / S1 constant color – Green element (S1_GREEN)
+  _bus->RegisterWrite(REG_S1_STR2_BLUE, addr >> 16); //0x9f, Source 1 memory start address 2 (S1_STR2) / S1 constant color – Blue element (S1_BLUE)
+  _bus->RegisterWrite(REG_S1_STR3, addr >> 24);      //0xa0, Source 1 memory start address 3 (S1_STR3)
 }
 
 
@@ -11466,14 +11495,14 @@ void RA8889::BTE_S1_MemoryStartAddress(uint32_t addr)
  */
 void RA8889::S1_ConstantColor_256(uint8_t color)
 {
-  SPI_CmdWrite(REG_S1_STR0_RED);            //0x9d, Source 1 (S1) constant color – Red element (S1_RED)
-  SPI_DataWrite(color);                     //RRRGGGBB >> 0 = RRRgggbbb para colocar na posicao [7:5]
+  _bus->CmdWrite(REG_S1_STR0_RED);            //0x9d, Source 1 (S1) constant color – Red element (S1_RED)
+  _bus->DataWrite(color);                     //RRRGGGBB >> 0 = RRRgggbbb para colocar na posicao [7:5]
 
-  SPI_CmdWrite(REG_S1_STR1_GREEN);          //0x9e, Source 1 (S1) constant color – Green element (S1_GREEN)
-  SPI_DataWrite(color << 3);                //RRRGGGBB << 3 GGGbb000 para colocar na posicao [7:5]
+  _bus->CmdWrite(REG_S1_STR1_GREEN);          //0x9e, Source 1 (S1) constant color – Green element (S1_GREEN)
+  _bus->DataWrite(color << 3);                //RRRGGGBB << 3 GGGbb000 para colocar na posicao [7:5]
 
-  SPI_CmdWrite(REG_S1_STR2_BLUE);           //0x9f, Source 1 (S1) constant color – Blue element (S1_BLUE)
-  SPI_DataWrite(color << 6);                //RRRGGGBB << 6 gg000000 para colocar na posicao [7:5]
+  _bus->CmdWrite(REG_S1_STR2_BLUE);           //0x9f, Source 1 (S1) constant color – Blue element (S1_BLUE)
+  _bus->DataWrite(color << 6);                //RRRGGGBB << 6 gg000000 para colocar na posicao [7:5]
 }
 
 
@@ -11501,12 +11530,12 @@ void RA8889::S1_ConstantColor_256(uint8_t color)
  */
 void RA8889::S1_ConstantColor_65k(uint16_t color)
 {
-  SPI_CmdWrite(REG_S1_STR0_RED);            //0x9d, Source 1 (S1) constant color – Red element (S1_RED)
-  SPI_DataWrite(color >> 8);                //RRRRRGGGGGGBBBBB >> 8 = 00000000RRRRRggg para colocar na posicao [7:3]
-  SPI_CmdWrite(REG_S1_STR1_GREEN);          //0x9e, Source 1 (S1) constant color – Green element (S1_GREEN)
-  SPI_DataWrite(color >> 3);                //RRRRRGGGGGGBBBBB >> 3 = 000rrrrrGGGGGGbb para colocar na posicao [7:2]
-  SPI_CmdWrite(REG_S1_STR2_BLUE);           //0x9f, Source 1 (S1) constant color – Blue element (S1_BLUE)
-  SPI_DataWrite(color << 3);                //RRRRRGGGGGGBBBBB << 3 = rrggggggBBBBB000 para colocar na posicao [7:3]
+  _bus->CmdWrite(REG_S1_STR0_RED);            //0x9d, Source 1 (S1) constant color – Red element (S1_RED)
+  _bus->DataWrite(color >> 8);                //RRRRRGGGGGGBBBBB >> 8 = 00000000RRRRRggg para colocar na posicao [7:3]
+  _bus->CmdWrite(REG_S1_STR1_GREEN);          //0x9e, Source 1 (S1) constant color – Green element (S1_GREEN)
+  _bus->DataWrite(color >> 3);                //RRRRRGGGGGGBBBBB >> 3 = 000rrrrrGGGGGGbb para colocar na posicao [7:2]
+  _bus->CmdWrite(REG_S1_STR2_BLUE);           //0x9f, Source 1 (S1) constant color – Blue element (S1_BLUE)
+  _bus->DataWrite(color << 3);                //RRRRRGGGGGGBBBBB << 3 = rrggggggBBBBB000 para colocar na posicao [7:3]
 }
 
 
@@ -11534,12 +11563,12 @@ void RA8889::S1_ConstantColor_65k(uint16_t color)
  */
 void RA8889::S1_ConstantColor_16M(uint32_t color) 
 {
-  SPI_CmdWrite(REG_S1_STR0_RED);            //0x9d, Source 1 (S1) constant color – Red element (S1_RED)
-  SPI_DataWrite(color >> 16);               //RRRRRRRRGGGGGGGGBBBBBBBB >> 16 = 0000000000000000RRRRRRRR para colocar na posicao [7:0]
-  SPI_CmdWrite(REG_S1_STR1_GREEN);          //0x9e, Source 1 (S1) constant color – Green element (S1_GREEN)
-  SPI_DataWrite(color >> 8);                //00000000rrrrrrrrGGGGGGGG >> 8 = 00000000rrrrrrrrGGGGGGGG para colocar na posicao [7:0]
-  SPI_CmdWrite(REG_S1_STR2_BLUE);           //0x9f, Source 1 (S1) constant color – Blue element (S1_BLUE)
-  SPI_DataWrite(color);                     //RRRRRRRRGGGGGGGGBBBBBBBB >> 0 = rrrrrrrrggggggggBBBBBBBB para colocar na posicao [7:0]
+  _bus->CmdWrite(REG_S1_STR0_RED);            //0x9d, Source 1 (S1) constant color – Red element (S1_RED)
+  _bus->DataWrite(color >> 16);               //RRRRRRRRGGGGGGGGBBBBBBBB >> 16 = 0000000000000000RRRRRRRR para colocar na posicao [7:0]
+  _bus->CmdWrite(REG_S1_STR1_GREEN);          //0x9e, Source 1 (S1) constant color – Green element (S1_GREEN)
+  _bus->DataWrite(color >> 8);                //00000000rrrrrrrrGGGGGGGG >> 8 = 00000000rrrrrrrrGGGGGGGG para colocar na posicao [7:0]
+  _bus->CmdWrite(REG_S1_STR2_BLUE);           //0x9f, Source 1 (S1) constant color – Blue element (S1_BLUE)
+  _bus->DataWrite(color);                     //RRRRRRRRGGGGGGGGBBBBBBBB >> 0 = rrrrrrrrggggggggBBBBBBBB para colocar na posicao [7:0]
 }
 
 
@@ -11569,10 +11598,10 @@ uint8_t RA8889::Media_Error_Flag(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_VC1);                       //0xa0, page 1, Video Control (VC)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_VC1);                       //0xa0, page 1, Video Control (VC)
+  temp = _bus->DataRead();
   temp &= 0x80;                                //
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
   return temp;
 }
@@ -11597,9 +11626,9 @@ void RA8889::Media_DecodeBusy(void)
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
   //case4: check AVI
-  SPI_CmdWrite(REG_VC1);                       //0xa0, page 1, Video Control (VC)
+  _bus->CmdWrite(REG_VC1);                       //0xa0, page 1, Video Control (VC)
   do {                                         
-    temp = SPI_DataRead();                     
+    temp = _bus->DataRead();                     
   } while (temp & 0x40);                       //Aguarda enquanto estiver ocupado
   PageSwitch(ePageReg::Page1);
 }
@@ -11629,8 +11658,8 @@ uint8_t RA8889::MediaDecodeBusy(void)
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
   //case4: check AVI
-  SPI_CmdWrite(REG_VC1);                       //0xa0, page 1, Video Control (VC)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_VC1);                       //0xa0, page 1, Video Control (VC)
+  temp = _bus->DataRead();                       
   temp &= 0x40;                                //Veja se bit esta em bussy/idle
   PageSwitch(ePageReg::Page0);
   return temp;
@@ -11659,8 +11688,8 @@ uint8_t RA8889::Media_Fifo_Empty(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_VC1);                       //0xa0, page 1, Video Control (VC)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_VC1);                       //0xa0, page 1, Video Control (VC)
+  temp = _bus->DataRead();                       
   temp &= 0x20;                                //Verifica bit 5
   PageSwitch(ePageReg::Page0);
   return temp;
@@ -11702,8 +11731,8 @@ uint8_t RA8889::Media_Fifo_Empty(void)
  */
 void RA8889::BTE_S1_ImageWidth(uint16_t Wx)
 {
-  RegisterWrite(REG_S1_WTH0, Wx);              //0xa1, Source 1 image width 0 (S1_WTH0)
-  RegisterWrite(REG_S1_WTH1, Wx >> 8);         //0xa2, Source 1 image width 1 (S1_WTH1)
+  _bus->RegisterWrite(REG_S1_WTH0, Wx);              //0xa1, Source 1 image width 0 (S1_WTH0)
+  _bus->RegisterWrite(REG_S1_WTH1, Wx >> 8);         //0xa2, Source 1 image width 1 (S1_WTH1)
 }
 
 
@@ -11747,10 +11776,10 @@ void RA8889::BTE_S1_ImageWidth(uint16_t Wx)
  */
 void RA8889::BTE_S1_WindowStart_XY(uint16_t Wx, uint16_t Hy)
 {
-  RegisterWrite(REG_S1_X0, Wx);                //0xa3, Source 1 Window Upper-Left corner X-coordinates 0 (S1_X0)
-  RegisterWrite(REG_S1_X1, Wx >> 8);           //0xa4, Source 1 Window Upper-Left corner X-coordinates 1 (S1_X1)
-  RegisterWrite(REG_S1_Y0, Hy);                //0xa5, Source 1 Window Upper-Left corner Y-coordinates 0 (S1_Y0)
-  RegisterWrite(REG_S1_Y1, Hy >> 8);           //0xa6, Source 1 Window Upper-Left corner Y-coordinates 1 (S1_Y1)
+  _bus->RegisterWrite(REG_S1_X0, Wx);                //0xa3, Source 1 Window Upper-Left corner X-coordinates 0 (S1_X0)
+  _bus->RegisterWrite(REG_S1_X1, Wx >> 8);           //0xa4, Source 1 Window Upper-Left corner X-coordinates 1 (S1_X1)
+  _bus->RegisterWrite(REG_S1_Y0, Hy);                //0xa5, Source 1 Window Upper-Left corner Y-coordinates 0 (S1_Y0)
+  _bus->RegisterWrite(REG_S1_Y1, Hy >> 8);           //0xa6, Source 1 Window Upper-Left corner Y-coordinates 1 (S1_Y1)
 }
 
 
@@ -11791,10 +11820,10 @@ void RA8889::BTE_S1_WindowStart_XY(uint16_t Wx, uint16_t Hy)
  */
 void RA8889::BTE_Destination_MemoryStartAddress(uint32_t addr) 
 {
-  RegisterWrite(REG_DT_STR0, addr);       //0xa7, Destination memory start address 0 (DT_STR0)
-  RegisterWrite(REG_DT_STR1, addr >> 8);  //0xa8, Destination memory start address 0 (DT_STR1)
-  RegisterWrite(REG_DT_STR2, addr >> 16); //0xa9, Destination memory start address 0 (DT_STR2)
-  RegisterWrite(REG_DT_STR3, addr >> 24); //0xaa, Destination memory start address 0 (DT_STR3)
+  _bus->RegisterWrite(REG_DT_STR0, addr);       //0xa7, Destination memory start address 0 (DT_STR0)
+  _bus->RegisterWrite(REG_DT_STR1, addr >> 8);  //0xa8, Destination memory start address 0 (DT_STR1)
+  _bus->RegisterWrite(REG_DT_STR2, addr >> 16); //0xa9, Destination memory start address 0 (DT_STR2)
+  _bus->RegisterWrite(REG_DT_STR3, addr >> 24); //0xaa, Destination memory start address 0 (DT_STR3)
 }
 
 
@@ -11840,11 +11869,11 @@ uint16_t RA8889::Media_HeaderImageHeight(void)
 {
   uint16_t temp = 0;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_MIHH);                      //0xa1, page 1, Media Image Height High Byte (MIHH)
-  temp = (uint16_t)SPI_DataRead();             //Ler o byte da parte alta da palavra
+  _bus->CmdWrite(REG_MIHH);                      //0xa1, page 1, Media Image Height High Byte (MIHH)
+  temp = (uint16_t)_bus->DataRead();             //Ler o byte da parte alta da palavra
   temp <<= 8;                                  //Desloca valor na parte alta
-  SPI_CmdWrite(REG_MIHL);                      //0xa2, page 1, Media Image Height Low Byte (MIHL)
-  temp |= (uint16_t)SPI_DataRead();            //Junta aos valores da parte baixa
+  _bus->CmdWrite(REG_MIHL);                      //0xa2, page 1, Media Image Height Low Byte (MIHL)
+  temp |= (uint16_t)_bus->DataRead();            //Junta aos valores da parte baixa
   PageSwitch(ePageReg::Page0);                 
   return temp;                                 //Retorna valor de 16 bits do media image height
 }
@@ -11877,11 +11906,11 @@ uint16_t RA8889::Media_HeaderImageWidth(void)
 {
   uint16_t temp = 0;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_MIWH);                 //0xa3, page 1, Media Image Width High Byte (MIWH)
-  temp = (uint16_t)SPI_DataRead();        //Ler o byte da parte alta da palavra  
+  _bus->CmdWrite(REG_MIWH);                 //0xa3, page 1, Media Image Width High Byte (MIWH)
+  temp = (uint16_t)_bus->DataRead();        //Ler o byte da parte alta da palavra  
   temp <<= 8;                             //Desloca valor na parte alta
-  SPI_CmdWrite(REG_MIWL);                 //0xa4, page 1, Media Image Width Low Byte (MIWL)
-  temp |= (uint16_t)SPI_DataRead();       //Junta aos valores da parte baixa
+  _bus->CmdWrite(REG_MIWL);                 //0xa4, page 1, Media Image Width Low Byte (MIWL)
+  temp |= (uint16_t)_bus->DataRead();       //Junta aos valores da parte baixa
   PageSwitch(ePageReg::Page0);                 
   return temp;                            //Retorna valor de 16 bits do media image width
 }
@@ -11915,17 +11944,17 @@ uint32_t RA8889::AVI_HeaderFramePeriod(void)
   uint32_t temp = 0;
   PageSwitch(ePageReg::Page1);
 
-  SPI_CmdWrite(REG_VFPB3);                     //0xa5, page 1, Video Frame Period Byte3 (VFPB3)
-  temp = (uint32_t)SPI_DataRead() << 24;
+  _bus->CmdWrite(REG_VFPB3);                     //0xa5, page 1, Video Frame Period Byte3 (VFPB3)
+  temp = (uint32_t)_bus->DataRead() << 24;
 
-  SPI_CmdWrite(REG_VFPB2);                     //0xa6, page 1, Video Frame Period Byte2 (VFPB2)
-  temp |= (uint32_t)SPI_DataRead() << 16;
+  _bus->CmdWrite(REG_VFPB2);                     //0xa6, page 1, Video Frame Period Byte2 (VFPB2)
+  temp |= (uint32_t)_bus->DataRead() << 16;
 
-  SPI_CmdWrite(REG_VFPB1);                     //0xa7, page 1, Video Frame Period Byte1 (VFPB1)
-  temp |= (uint32_t)SPI_DataRead() << 8;
+  _bus->CmdWrite(REG_VFPB1);                     //0xa7, page 1, Video Frame Period Byte1 (VFPB1)
+  temp |= (uint32_t)_bus->DataRead() << 8;
   
-  SPI_CmdWrite(REG_VFPB0);                     //0xa8, page 1, Video Frame Period Byte0 (VFPB0)
-  temp |= (uint32_t)SPI_DataRead();
+  _bus->CmdWrite(REG_VFPB0);                     //0xa8, page 1, Video Frame Period Byte0 (VFPB0)
+  temp |= (uint32_t)_bus->DataRead();
 
   PageSwitch(ePageReg::Page0);
   return temp;                                 //retorna 32 bits AVI Video Frame Period
@@ -11961,8 +11990,8 @@ uint32_t RA8889::AVI_HeaderFramePeriod(void)
 void RA8889::IDEC_Reset(void)
 {
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_VC2);                  //0xa9, page 1, Video Control (VC)
-  SPI_DataWrite(0x02);                    //bit1=1 (fixo), bit0=0 (reset active)
+  _bus->CmdWrite(REG_VC2);                  //0xa9, page 1, Video Control (VC)
+  _bus->DataWrite(0x02);                    //bit1=1 (fixo), bit0=0 (reset active)
   PageSwitch(ePageReg::Page0);
 }
 
@@ -12002,8 +12031,8 @@ void RA8889::IDEC_Reset(void)
  */
 void RA8889::BTE_Destination_ImageWidth(uint16_t Wx)
 {
-  RegisterWrite(REG_DT_WTH0, Wx);              //0xab, Destination image width 0 (DT_WTH0)
-  RegisterWrite(REG_DT_WTH1, Wx >> 8);         //0xac, Destination image width 1 (DT_WTH1)
+  _bus->RegisterWrite(REG_DT_WTH0, Wx);              //0xab, Destination image width 0 (DT_WTH0)
+  _bus->RegisterWrite(REG_DT_WTH1, Wx >> 8);         //0xac, Destination image width 1 (DT_WTH1)
 }
 
 
@@ -12042,10 +12071,10 @@ void RA8889::BTE_Destination_ImageWidth(uint16_t Wx)
  */
 void RA8889::BTE_Destination_WindowStart_XY(uint16_t Wx, uint16_t Hy)
 {
-  RegisterWrite(REG_DT_X0, Wx);                //0xad, Destination Window Upper-Left corner X-coordinates 0 [7:0] (DT_X0)
-  RegisterWrite(REG_DT_X1, Wx >> 8);           //0xae, Destination Window Upper-Left corner X-coordinates 1 [12:8] (DT_X1)
-  RegisterWrite(REG_DT_Y0, Hy);                //0xaf, Destination Window Upper-Left corner Y-coordinates 0 [7:0] (DT_Y0)
-  RegisterWrite(REG_DT_Y1, Hy >> 8);           //0xb0, Destination Window Upper-Left corner Y-coordinates 1 12:8] (DT_Y1)
+  _bus->RegisterWrite(REG_DT_X0, Wx);                //0xad, Destination Window Upper-Left corner X-coordinates 0 [7:0] (DT_X0)
+  _bus->RegisterWrite(REG_DT_X1, Wx >> 8);           //0xae, Destination Window Upper-Left corner X-coordinates 1 [12:8] (DT_X1)
+  _bus->RegisterWrite(REG_DT_Y0, Hy);                //0xaf, Destination Window Upper-Left corner Y-coordinates 0 [7:0] (DT_Y0)
+  _bus->RegisterWrite(REG_DT_Y1, Hy >> 8);           //0xb0, Destination Window Upper-Left corner Y-coordinates 1 12:8] (DT_Y1)
 }
 
 
@@ -12092,10 +12121,10 @@ void RA8889::BTE_Destination_WindowStart_XY(uint16_t Wx, uint16_t Hy)
  */
 void RA8889::BTE_WindowSize(uint16_t Wx, uint16_t Hy)
 {
-  RegisterWrite(REG_BTE_WTH0, Wx);       //0xb1, BTE Window Width 0 [7:0] (BTE_WTH0)
-  RegisterWrite(REG_BTE_WTH1, Wx >> 8);  //0xb2, BTE Window Width 1 [12:8] (BTE_WTH1)
-  RegisterWrite(REG_BTE_HIG0, Hy);       //0xb3, BTE Window Height 0 [7:0] (BTE_HIG0)
-  RegisterWrite(REG_BTE_HIG1, Hy >> 8);  //0xb4, BTE Window Height 1 [12:8] (BTE_HIG1)
+  _bus->RegisterWrite(REG_BTE_WTH0, Wx);       //0xb1, BTE Window Width 0 [7:0] (BTE_WTH0)
+  _bus->RegisterWrite(REG_BTE_WTH1, Wx >> 8);  //0xb2, BTE Window Width 1 [12:8] (BTE_WTH1)
+  _bus->RegisterWrite(REG_BTE_HIG0, Hy);       //0xb3, BTE Window Height 0 [7:0] (BTE_HIG0)
+  _bus->RegisterWrite(REG_BTE_HIG1, Hy >> 8);  //0xb4, BTE Window Height 1 [12:8] (BTE_HIG1)
 }
 
 
@@ -12134,8 +12163,8 @@ void RA8889::BTE_WindowSize(uint16_t Wx, uint16_t Hy)
  */
 void RA8889::BTE_AlphaBlendingEffect(uint8_t value)
 { 
-  SPI_CmdWrite(REG_APB_CTRL);                  //0xb5, Alpha Blending (APB_CTRL)
-  SPI_DataWrite(value);  
+  _bus->CmdWrite(REG_APB_CTRL);                  //0xb5, Alpha Blending (APB_CTRL)
+  _bus->DataWrite(value);  
 }
 
 
@@ -12169,10 +12198,10 @@ void RA8889::BTE_AlphaBlendingEffect(uint8_t value)
 void RA8889::SFI_DMA_Start(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = _bus->DataRead();                       
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12201,9 +12230,9 @@ void RA8889::SFI_DMA_WaitReady(void)
 {
   uint8_t temp;
   //Case 1: Using DMA Function Control Register
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
   do {
-    temp = SPI_DataRead();
+    temp = _bus->DataRead();
   } while (temp & 0x01);                       //Enquanto estiver em Busy 
 }
 
@@ -12227,10 +12256,10 @@ void RA8889::SFI_DMA_WaitReady(void)
 void RA8889::SFI_Select_FontMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   CLRB(temp,6);                                //Reset bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12253,10 +12282,10 @@ void RA8889::SFI_Select_FontMode(void)
 void RA8889::SFI_Select_DMAMode(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   SETB(temp,6);                                //Set bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12283,10 +12312,10 @@ void RA8889::SFI_Select_DMAMode(void)
 void RA8889::SFI_Select_24bitAddress(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   CLRB(temp,5);                                //Reset bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12313,10 +12342,10 @@ void RA8889::SFI_Select_24bitAddress(void)
 void RA8889::SFI_Select_32bitAddress(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   SETB(temp,5);                                //Set bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12371,15 +12400,15 @@ void RA8889::Select_SFI_SingleData_03h(void)
 {
   uint8_t temp;
 
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb7 | cSetb6);                  //Reset bit 7 and 6, Use REG [0xb7] bit [3-0]
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   temp &= 0xF0;                                //Reset bit [3~0]
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -12434,16 +12463,16 @@ void RA8889::Select_SFI_SingleData_03h(void)
 {
   uint8_t temp;
 
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb7 | cSetb6);                  //Reset bit 7 and 6, Use REG [0xb7] bit [3-0]
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   temp &= 0xF0;                                //Reset bit [3~0]
   SETB(temp,2);                                //Set bit 2. Set x read command code = 0Bh. 8 dummy cycles inserted between address and data.
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -12502,16 +12531,16 @@ void RA8889::Select_SFI_SingleData_1Bh(void)
 {
   uint8_t temp;
 
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb7 | cSetb6);                  //Reset bit 7 and 6, Use REG [0xb7] bit [3-0]
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   temp &= 0xF0;                                //Reset bit [3~0]
   SETB(temp,3);                                //Set bit 3
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12566,16 +12595,16 @@ void RA8889::Select_SFI_DualData_3Bh(void)
 {
   uint8_t temp;
 
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb7 | cSetb6);                  //Reset bit 7 and 6, Use REG [0xb7] bit [3-0]
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   temp &= 0xF0;                                //Reset bit [3~0]
   SETB(temp,1);                                //Set bit 1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12630,17 +12659,17 @@ void RA8889::Select_SFI_DualData_BBh(void)
 {
   uint8_t temp;
 
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb7 | cSetb6);                  //Reset bit 7 and 6, Use REG [0xb7] bit [3-0]
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   temp &= 0xF0;                                //Reset bit [3~0]
   SETB(temp,1);                                //Set bit 1
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12671,11 +12700,11 @@ void RA8889::Select_SFI_DualData_BBh(void)
 void RA8889::Select_SFI_QuadData_6Bh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = _bus->DataRead();                       
   temp &= 0x3F;
   SETB(temp,6);                                //Set bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12706,11 +12735,11 @@ void RA8889::Select_SFI_QuadData_6Bh(void)
 void RA8889::Select_SFI_QuadData_EBh(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_DMA_CTRL);                  //0xb6, Serial flash DMA Controller REG (DMA_CTRL)
+  temp = _bus->DataRead();                       
   temp &= 0x3F;
   SETB(temp,7);                                //Set bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12745,10 +12774,10 @@ void RA8889::Select_SFI_QuadData_EBh(void)
 void RA8889::SFI_Select_ROM0(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   CLRB(temp,7);                                //Reset bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12783,10 +12812,10 @@ void RA8889::SFI_Select_ROM0(void)
 void RA8889::SFI_Select_ROM1(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   SETB(temp,7);                                //Set bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12817,10 +12846,10 @@ void RA8889::SFI_Select_ROM1(void)
 void RA8889::SFI_Select_WaveformMode0(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, RA8876/RA8877, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, RA8876/RA8877, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   CLRB(temp,4);                                //Reset bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12851,10 +12880,10 @@ void RA8889::SFI_Select_WaveformMode0(void)
 void RA8889::SFI_Select_WaveformMode3(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, RA8876/RA8877, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, RA8876/RA8877, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   SETB(temp,4);                                //Set bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -12896,11 +12925,11 @@ void RA8889::IDEC_SFI_Select_ROM(eSFIROM sfirom)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0x3E;                                  //if bit0=1, IDEC will start .
   temp |= static_cast<uint8_t>(sfirom) << 6;     //Shift to bit 7-6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -12933,10 +12962,10 @@ void RA8889::Font_DMA_Select_Bus0(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0xEE;                                  //if bit0=1, IDEC will start .
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -12969,11 +12998,11 @@ void RA8889::Font_DMA_Select_Bus1(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0xEE;                                  //if bit0=1, IDEC will start .
   SETB(temp,4);                                  //Set bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -13006,10 +13035,10 @@ void RA8889::IDEC_Select_Bus0(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0xF6;                                  //if bit0=1, IDEC will start
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -13042,11 +13071,11 @@ void RA8889::IDEC_Select_Bus1(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0xF6;                                  //if bit0=1, IDEC will start .
   SETB(temp,3);                                  //Set bit 3
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -13080,10 +13109,10 @@ void RA8889::IDEC_Destination_ColorDepth_8bpp(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0xF8;                                  //if bit0=1, IDEC will start
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -13117,11 +13146,11 @@ void RA8889::IDEC_Destination_ColorDepth_16bpp(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0xF8;                                  //if bit0=1, IDEC will start
   SETB(temp,1);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -13155,11 +13184,11 @@ void RA8889::IDEC_Destination_ColorDepth_24bpp(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0xF8;                                  //if bit0=1, IDEC will start
   SETB(temp,2);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -13194,13 +13223,13 @@ void RA8889::IDEC_Destination_ColorDepth(eColorDepthBPP bpp)
   uint8_t temp;
   uint8_t bit;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0xF8;                                  //if bit0=1, IDEC will start
   bit = static_cast<uint8_t>(bpp);             
   bit = (bit >> 3)-1;                            //transforma 8,16,24 em 0, 1, 2
   temp |= (bit << 1);                            //posiciona nos bits [2-1]
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -13230,10 +13259,10 @@ void RA8889::IDEC_Starts_Decoding(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   SETB(temp,0);                                  //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page1);
 }
 
@@ -13264,8 +13293,8 @@ void RA8889::IDEC_WaitReady(void)
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
   do {
-    SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-    temp = SPI_DataRead();
+    _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+    temp = _bus->DataRead();
   } while (temp & 0x01);
   PageSwitch(ePageReg::Page0);
 }
@@ -13299,8 +13328,8 @@ uint8_t RA8889::IDEC_Busy(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL0);                  //0xb6, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL0)
+  temp = _bus->DataRead();
   temp &= 0x01;                                  //Verifica apenas o Bit 0
   PageSwitch(ePageReg::Page1);
   return temp;
@@ -13353,16 +13382,16 @@ void RA8889::SFI_SelectROM_CS0 (void)
   uint8_t temp;
 
   PageSwitch(ePageReg::Page1);                 //Troca para a Pagina 1
-  SPI_CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
+  temp = _bus->DataRead();
   CLRB(temp,7);                                //Reset bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);                 //Troca para a Pagina 0
 
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   CLRB(temp,7);                                //Reset bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13404,16 +13433,16 @@ void RA8889::SFI_SelectROM_CS1 (void)
   uint8_t temp;
 
   PageSwitch(ePageReg::Page1);                 //Troca para a Pagina 1
-  SPI_CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
+  temp = _bus->DataRead();
   CLRB(temp,7);                                //Reset bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);                 //Troca para a Pagina 0
 
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   SETB(temp,7);                                //Set bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13455,16 +13484,16 @@ void RA8889::SFI_SelectROM_CS2(void)
   uint8_t temp;
 
   PageSwitch(ePageReg::Page1);                 //Troca para a Pagina 1
-  SPI_CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
+  temp = _bus->DataRead();
   SETB(temp,7);                                //Set bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);                 //Troca para a Pagina 0
 
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   CLRB(temp,7);                                //Reset bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13506,16 +13535,16 @@ void RA8889::SFI_SelectROM_CS3(void)
   uint8_t temp;
 
   PageSwitch(ePageReg::Page1);                 //Troca para a Pagina 1
-  SPI_CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
+  temp = _bus->DataRead();
   SETB(temp,7);                                //Set bit 7
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);                 //Troca para a Pagina 0
 
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
+  temp = _bus->DataRead();
   SETB(temp,7);                                //Set bit 7 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13534,13 +13563,13 @@ inline void RA8889::SFI_SelectROM_CS_Fast(uint8_t cs_num)
 
   // Page1:B7 → define par CS (0/1 ou 2/3)
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
-  SPI_DataWrite((cs_num >= 2) ? 0x80 : 0x00);  // bit7 = 1 para CS2/3, 0 para CS0/1
+  _bus->CmdWrite(REG_IDEC_CTRL1);                //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
+  _bus->DataWrite((cs_num >= 2) ? 0x80 : 0x00);  // bit7 = 1 para CS2/3, 0 para CS0/1
 
   // Page0:B7 → define dentro do par (0 = primeiro, 1 = segundo)
   PageSwitch(ePageReg::Page0);
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
-  SPI_DataWrite((cs_num % 2) ? 0x80 : 0x00);   // bit7 = 1 para segundo do par, 0 para primeiro
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, page 0, Serial Flash/ROM Controller Register (SFL_CTRL)
+  _bus->DataWrite((cs_num % 2) ? 0x80 : 0x00);   // bit7 = 1 para segundo do par, 0 para primeiro
 }
 
 
@@ -13577,10 +13606,10 @@ void RA8889::IDEC_SPI_Select_StandardMode0orMode3(void)
   PageSwitch(ePageReg::Page1);                  //0x46, Troca para a Pagina 1 de registradores do RA8889, mas não existe no RA8876/RA8877
                                        
   //Acessar o registrador SFL_CTRL do RA8876/RA8877
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL) do RA8876/RA8877
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL) do RA8876/RA8877
+  temp = _bus->DataRead();                       
   CLRB(temp,4);                                //Reset bit 4  
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 									           
   PageSwitch(ePageReg::Page0);                 //Retorna para a Pagina 0 de registradores
 }
@@ -13619,10 +13648,10 @@ void RA8889::IDEC_RA8875_SPI_Select_Mode0andMode3(void)
   PageSwitch(ePageReg::Page1);                  //Troca para a Pagina 1 de registradores do RA8889, mas não existe no RA8876/RA8877
 
   //Acessar o registrador SFL_CTRL do RA8876/RA8877
-  SPI_CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL) do RA8876/RA8877
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_SFL_CTRL);                  //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL) do RA8876/RA8877
+  temp = _bus->DataRead();                       
   SETB(temp,4);                                //Set bit 4
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 									           
   PageSwitch(ePageReg::Page0);                 //Retorna para a Pagina 0 de registradores
 }
@@ -13650,10 +13679,10 @@ void RA8889::IDEC_SFI_Select_24bitAddress(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL1);                    //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL1);                    //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
+  temp = _bus->DataRead();
   CLRB(temp,5);                                //Reset bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -13680,10 +13709,10 @@ void RA8889::IDEC_SFI_Select_32bitAddress(void)
 {
   uint8_t temp;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CTRL1);                    //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IDEC_CTRL1);                    //0xb7, page 1, Serial flash AVI/JPG/BMP (IDEC_CTRL1)
+  temp = _bus->DataRead();
   SETB(temp,5);                                //Set bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -13737,8 +13766,8 @@ uint8_t RA8889::SPIM_TxRxFIFOData_Get(void)
 {
   uint8_t temp;
   while (SPIM_RxFIFO_Empty() == 1);            //If it is not empty, execute it.
-  SPI_CmdWrite(REG_SPIDR);                     //0xb8, SPI master Tx /Rx FIFO Data Register (SPIDR)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_SPIDR);                     //0xb8, SPI master Tx /Rx FIFO Data Register (SPIDR)
+  temp = _bus->DataRead();                       
   // while(Rx_FIFO_full_flag());               //Required only when writing 16 records continuously
   return temp;
 }
@@ -13784,8 +13813,8 @@ uint8_t RA8889::SPIM_TxRxFIFOData_Get(void)
 uint8_t RA8889::SPIM_TxRxFIFOData_Put(uint8_t data)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIDR);                   //0xb8, SPI master Tx /Rx FIFO Data Register (SPIDR)
-  SPI_DataWrite(data);
+  _bus->CmdWrite(REG_SPIDR);                   //0xb8, SPI master Tx /Rx FIFO Data Register (SPIDR)
+  _bus->DataWrite(data);
   while (SPIM_TxFIFO_Empty() == 0);
   temp = SPIM_TxRxFIFOData_Get();
   return temp;
@@ -13825,13 +13854,13 @@ uint8_t RA8889::SPIM_TxRxFIFOData_Put(uint8_t data)
 void RA8889::nSS_Select_Channel(eNSS_Channel channel)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   MSKB(temp,1U<<7|1U<<5,0);                    //Reset bits 7 and 5
   // aplica valor do canal (2 bits: b7:b5)
   if (static_cast<uint8_t>(channel) & 0x02) SETB(temp,7);  // bit1 → b7
   if (static_cast<uint8_t>(channel) & 0x01) SETB(temp,5);  // bit0 → b5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13857,10 +13886,10 @@ void RA8889::nSS_Select_Channel(eNSS_Channel channel)
 void RA8889::Interrupt_SPIM_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   b ? SETB(temp,6) : CLRB(temp,6);            //Set/Reset bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13887,10 +13916,10 @@ void RA8889::Interrupt_SPIM_Enable(bool b)
 void RA8889::nSS_Inactive(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   CLRB(temp,4);                                //Reset bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13917,10 +13946,10 @@ void RA8889::nSS_Inactive(void)
 void RA8889::nSS_Active(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   SETB(temp,4);                                //Set bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13943,10 +13972,10 @@ void RA8889::nSS_Active(void)
 void RA8889::Interrupt_FIFOOverflow_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   b ? SETB(temp,3) : CLRB(temp,3);            //Set/Reset bit 3
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -13969,10 +13998,10 @@ void RA8889::Interrupt_FIFOOverflow_Enable(bool b)
 void RA8889::Interrupt_EMTIRQEN_Enable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   b ? SETB(temp,2) : CLRB(temp,2);             //Set/Reset bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14015,10 +14044,10 @@ void RA8889::Interrupt_EMTIRQEN_Enable(bool b)
 void RA8889::Reset_CPOL(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   CLRB(temp,1);                                //Reset bit 1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14061,10 +14090,10 @@ void RA8889::Reset_CPOL(void)
 void RA8889::Set_CPOL(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   SETB(temp,1);                                //Set bit 1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14108,10 +14137,10 @@ void RA8889::Set_CPOL(void)
 void RA8889::Reset_CPHA(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14154,10 +14183,10 @@ void RA8889::Reset_CPHA(void)
 void RA8889::Set_CPHA(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMCR2);                   //0xb9, SPI master Control Register (SPIMCR2)
+  temp = _bus->DataRead();
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14187,8 +14216,8 @@ void RA8889::Set_CPHA(void)
  */
 bool RA8889::SPIM_TxFIFO_Empty(void)
 {
-  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
-  return (SPI_DataRead() & 0x80);              //Check bit 7
+  _bus->CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (_bus->DataRead() & 0x80);              //Check bit 7
 }
 
 
@@ -14210,8 +14239,8 @@ bool RA8889::SPIM_TxFIFO_Empty(void)
  */
 bool RA8889::SPIM_TxFIFO_Full(void)
 {
-  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
-  return (SPI_DataRead() & 0x40);              //Check bit 6
+  _bus->CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (_bus->DataRead() & 0x40);              //Check bit 6
 } 
 
 
@@ -14233,8 +14262,8 @@ bool RA8889::SPIM_TxFIFO_Full(void)
  */
 bool RA8889::SPIM_RxFIFO_Empty(void)
 {
-  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
-  return (SPI_DataRead() & 0x20);              //Check bit 5
+  _bus->CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (_bus->DataRead() & 0x20);              //Check bit 5
 } 
 
 
@@ -14256,8 +14285,8 @@ bool RA8889::SPIM_RxFIFO_Empty(void)
  */
 bool RA8889::SPIM_RxFIFO_Full(void)
 {
-  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
-  return (SPI_DataRead() & 0x10);              //Check bit 4
+  _bus->CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (_bus->DataRead() & 0x10);              //Check bit 4
 } 
 
 
@@ -14282,8 +14311,8 @@ bool RA8889::SPIM_RxFIFO_Full(void)
  */
 bool RA8889::Interrupt_Overflow_Flag(void)
 {
-  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
-  return (SPI_DataRead() & 0x08);              //Occur Overflow Interrupt
+  _bus->CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (_bus->DataRead() & 0x08);              //Occur Overflow Interrupt
 }
 
 
@@ -14309,10 +14338,10 @@ bool RA8889::Interrupt_Overflow_Flag(void)
 void RA8889::Interrupt_ClearOverflow_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  temp = _bus->DataRead();
   SETB(temp,3);                                //Set bit 3
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14337,8 +14366,8 @@ void RA8889::Interrupt_ClearOverflow_Flag(void)
  */
 bool RA8889::EMTI_Flag(void)
 {
-  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
-  return (SPI_DataRead() & 0x04);              //occur Tx FIFO empty /FSM idle interrupt flag
+  _bus->CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  return (_bus->DataRead() & 0x04);              //occur Tx FIFO empty /FSM idle interrupt flag
 }
 
 
@@ -14364,10 +14393,10 @@ bool RA8889::EMTI_Flag(void)
 void RA8889::EMTI_Clear_Flag(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMSR);                    //0xba, SPI master Status Register (SPIMSR)
+  temp = _bus->DataRead();
   SETB(temp,2);                                //Set bit 2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14408,8 +14437,8 @@ void RA8889::EMTI_Clear_Flag(void)
  */
 void RA8889::SPI_Clock_Period(uint8_t divisor)
 {
-  SPI_CmdWrite(REG_SPI_DIVSOR);                //0xbb, SPI Clock period (SPI_DIVSOR)
-  SPI_DataWrite(divisor);
+  _bus->CmdWrite(REG_SPI_DIVSOR);                //0xbb, SPI Clock period (SPI_DIVSOR)
+  _bus->DataWrite(divisor);
 } 
 
 
@@ -14450,8 +14479,8 @@ void RA8889::IDEC_SPI_ClockDivide(uint8_t spiclockdivide)
 {
   uint32_t temp = 0;
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_CLKDIV);               //0xbb, page 1, IDEC Clock divide (IDEC_CLKDIV)
-  SPI_DataWrite(spiclockdivide);
+  _bus->CmdWrite(REG_IDEC_CLKDIV);               //0xbb, page 1, IDEC Clock divide (IDEC_CLKDIV)
+  _bus->DataWrite(spiclockdivide);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -14506,20 +14535,20 @@ void RA8889::IDEC_SPI_ClockDivide(uint8_t spiclockdivide)
  */
 void RA8889::SFI_DMA_SourceAddress(uint32_t addr)
 {
-//  SPI_CmdWrite(REG_DMA_SSTR0);      //0xbc, Serial flash DMA Source Starting Address 0 (DMA_SSTR0)
-//  SPI_DataWrite(addr);              //address [7:0]
-//  SPI_CmdWrite(REG_DMA_SSTR1);      //0xbd, Serial flash DMA Source Starting Address 1 (DMA_SSTR1)
-//  SPI_DataWrite(addr >> 8);         //address [15:8]
-//  SPI_CmdWrite(REG_DMA_SSTR2);      //0xbe, Serial flash DMA Source Starting Address 2 (DMA_SSTR2)
-//  SPI_DataWrite(addr >> 16);        //address [23:16]
-//  SPI_CmdWrite(REG_DMA_SSTR3);      //0xbf, Serial flash DMA Source Starting Address 3 (DMA_SSTR3)
-//  SPI_DataWrite(addr >> 24);        //address [31:24]
+//  _bus->CmdWrite(REG_DMA_SSTR0);      //0xbc, Serial flash DMA Source Starting Address 0 (DMA_SSTR0)
+//  _bus->DataWrite(addr);              //address [7:0]
+//  _bus->CmdWrite(REG_DMA_SSTR1);      //0xbd, Serial flash DMA Source Starting Address 1 (DMA_SSTR1)
+//  _bus->DataWrite(addr >> 8);         //address [15:8]
+//  _bus->CmdWrite(REG_DMA_SSTR2);      //0xbe, Serial flash DMA Source Starting Address 2 (DMA_SSTR2)
+//  _bus->DataWrite(addr >> 16);        //address [23:16]
+//  _bus->CmdWrite(REG_DMA_SSTR3);      //0xbf, Serial flash DMA Source Starting Address 3 (DMA_SSTR3)
+//  _bus->DataWrite(addr >> 24);        //address [31:24]
   
   // Array com os registradores consecutivos
   const uint8_t regs[4] = {REG_DMA_SSTR0, REG_DMA_SSTR1, REG_DMA_SSTR2, REG_DMA_SSTR3};
   for (int i = 0; i < 4; i++) {
-      SPI_CmdWrite(regs[i]);                   //envia cada 8 bits para os registradores de endereço
-      SPI_DataWrite((addr >> (8 * i)) & 0xFF); // envia cada byte do endereço
+      _bus->CmdWrite(regs[i]);                   //envia cada 8 bits para os registradores de endereço
+      _bus->DataWrite((addr >> (8 * i)) & 0xFF); // envia cada byte do endereço
   }
 }
 
@@ -14586,8 +14615,8 @@ void RA8889::IDEC_Source_StartAddress(uint32_t addr)
   // Array com os registradores consecutivos
   const uint8_t regs[4] = {REG_IDEC_SADR0, REG_IDEC_SADR1, REG_IDEC_SADR2, REG_IDEC_SADR3};
     for (int i = 0; i < 4; i++) {
-        SPI_CmdWrite(regs[i]);                            //envia cada 8 bits para os registradores de endereço
-        SPI_DataWrite((uint8_t)(addr >> (8 * i)) & 0xFF); // envia cada byte do endereço
+        _bus->CmdWrite(regs[i]);                            //envia cada 8 bits para os registradores de endereço
+        _bus->DataWrite((uint8_t)(addr >> (8 * i)) & 0xFF); // envia cada byte do endereço
     }
   PageSwitch(ePageReg::Page0);
 }
@@ -14649,8 +14678,8 @@ void RA8889::SFI_DMA_DestinationAddress(uint32_t addr)
     //Array com os registradores consecutivos
     const uint8_t regs[4] = {REG_DMA_DX0, REG_DMA_DX1, REG_DMA_DY0, REG_DMA_DY1};
     for (int i = 0; i < 4; i++) {
-        SPI_CmdWrite(regs[i]);                   //envia cada 8 bits para os registradores de endereço
-        SPI_DataWrite((addr >> (8 * i)) & 0xFF); //envia cada byte do endereço
+        _bus->CmdWrite(regs[i]);                   //envia cada 8 bits para os registradores de endereço
+        _bus->DataWrite((addr >> (8 * i)) & 0xFF); //envia cada byte do endereço
     }
 }
 
@@ -14706,15 +14735,15 @@ void RA8889::SFI_DMA_DestinationAddress(uint32_t addr)
  */
 void RA8889::SFI_DMA_DestinationUpperLeftCorner(uint16_t Wx, uint16_t Hy)
 {
-  SPI_CmdWrite(REG_DMA_DX0);                   //0xc0, DMA Destination Window Upper-Left corner X-coordinates 0 (DMA_DX0)
-  SPI_DataWrite(Wx);                           //byte baixo de Wx [7:0]  
-  SPI_CmdWrite(REG_DMA_DX1);                   //0xc1, DMA Destination Window Upper-Left corner X-coordinates 1 (DMA_DX1)
-  SPI_DataWrite(Wx >> 8);                      //byte alto de Wx [12:8] 
+  _bus->CmdWrite(REG_DMA_DX0);                   //0xc0, DMA Destination Window Upper-Left corner X-coordinates 0 (DMA_DX0)
+  _bus->DataWrite(Wx);                           //byte baixo de Wx [7:0]  
+  _bus->CmdWrite(REG_DMA_DX1);                   //0xc1, DMA Destination Window Upper-Left corner X-coordinates 1 (DMA_DX1)
+  _bus->DataWrite(Wx >> 8);                      //byte alto de Wx [12:8] 
 									           
-  SPI_CmdWrite(REG_DMA_DY0);                   //0xc2, DMA Destination Window Upper-Left corner Y-coordinates 0 (DMA_DY0)
-  SPI_DataWrite(Hy);                           //byte baixo de Hy [7:0]
-  SPI_CmdWrite(REG_DMA_DY1);                   //0xc3, DMA Destination Window Upper-Left corner Y-coordinates 1 (DMA_DY1)
-  SPI_DataWrite(Hy >> 8);                      //byte alto de Hy [12:8]
+  _bus->CmdWrite(REG_DMA_DY0);                   //0xc2, DMA Destination Window Upper-Left corner Y-coordinates 0 (DMA_DY0)
+  _bus->DataWrite(Hy);                           //byte baixo de Hy [7:0]
+  _bus->CmdWrite(REG_DMA_DY1);                   //0xc3, DMA Destination Window Upper-Left corner Y-coordinates 1 (DMA_DY1)
+  _bus->DataWrite(Hy >> 8);                      //byte alto de Hy [12:8]
 }
 
 
@@ -14746,10 +14775,10 @@ void RA8889::SFI_DMA_DestinationUpperLeftCorner(uint16_t Wx, uint16_t Hy)
 void RA8889::SPIM_Select_Bus0(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMBS);                  //0xc5, SPI Master Bus Select (SPIMBS)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMBS);                  //0xc5, SPI Master Bus Select (SPIMBS)
+  temp = _bus->DataRead();
   CLRB(temp,7);                               //bit 7=0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14772,10 +14801,10 @@ void RA8889::SPIM_Select_Bus0(void)
  void RA8889::SPIM_Select_Bus1(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMBS);                  //0xc5, SPI Master Bus Select (SPIMBS)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMBS);                  //0xc5, SPI Master Bus Select (SPIMBS)
+  temp = _bus->DataRead();
   SETB(temp,7);                              //bit 7=1
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14812,10 +14841,10 @@ void RA8889::SPIM_Select_Bus0(void)
 void RA8889::SPIM_RxLatchEdge_Rising(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMBS);                  //0xc5, SPI Master Bus Select (SPIMBS)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMBS);                  //0xc5, SPI Master Bus Select (SPIMBS)
+  temp = _bus->DataRead();
   CLRB(temp,5);                              //bit 5=0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14851,10 +14880,10 @@ void RA8889::SPIM_RxLatchEdge_Rising(void)
 void RA8889::SPIM_RxLatchEdge_Falling(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_SPIMBS);                  //0xc5, SPI Master Bus Select (SPIMBS)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_SPIMBS);                  //0xc5, SPI Master Bus Select (SPIMBS)
+  temp = _bus->DataRead();
   SETB(temp,5);                              //bit 5=1, B0010_0000
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -14910,15 +14939,15 @@ void RA8889::IDEC_Destination_UpperLeftCorner(uint16_t Wx, uint16_t Hy)
 {
   PageSwitch(ePageReg::Page1);
   
-  SPI_CmdWrite(REG_IDEC_DX0);             //0xc0, page 1, IDEC (JPG/BMP) Destination Window Upper-Left corner X-coordinates 0 (IDEC_DX0)
-  SPI_DataWrite(Wx);
-  SPI_CmdWrite(REG_IDEC_DX1);             //0xc1, page 1, IDEC (JPG/BMP) Destination Window Upper-Left corner X-coordinates 1 (IDEC_DX1)
-  SPI_DataWrite(Wx >> 8);
+  _bus->CmdWrite(REG_IDEC_DX0);             //0xc0, page 1, IDEC (JPG/BMP) Destination Window Upper-Left corner X-coordinates 0 (IDEC_DX0)
+  _bus->DataWrite(Wx);
+  _bus->CmdWrite(REG_IDEC_DX1);             //0xc1, page 1, IDEC (JPG/BMP) Destination Window Upper-Left corner X-coordinates 1 (IDEC_DX1)
+  _bus->DataWrite(Wx >> 8);
   
-  SPI_CmdWrite(REG_IDEC_DY0);             //0xc2, page 1, IDEC (JPG/BMP) Destination Window Upper-Left corner Y-coordinates 0 (IDEC_DY0)
-  SPI_DataWrite(Hy);
-  SPI_CmdWrite(REG_IDEC_DY1);             //0xc3, page 1, IDEC (JPG/BMP) Destination Window Upper-Left corner Y-coordinates 1 (IDEC_DY1)
-  SPI_DataWrite(Hy >> 8);
+  _bus->CmdWrite(REG_IDEC_DY0);             //0xc2, page 1, IDEC (JPG/BMP) Destination Window Upper-Left corner Y-coordinates 0 (IDEC_DY0)
+  _bus->DataWrite(Hy);
+  _bus->CmdWrite(REG_IDEC_DY1);             //0xc3, page 1, IDEC (JPG/BMP) Destination Window Upper-Left corner Y-coordinates 1 (IDEC_DY1)
+  _bus->DataWrite(Hy >> 8);
 
   PageSwitch(ePageReg::Page0);
 }
@@ -14955,8 +14984,8 @@ void RA8889::IDEC_Destination_UpperLeftCorner(uint16_t Wx, uint16_t Hy)
 void RA8889::IDEC_AVI_Decoding_PIP1_Shadow(void)
 {
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_PIP);                  //0xc5, page 1, IDEC AVI PIP controller (IDEC_PIP)
-  SPI_DataWrite(0x00);
+  _bus->CmdWrite(REG_IDEC_PIP);                  //0xc5, page 1, IDEC AVI PIP controller (IDEC_PIP)
+  _bus->DataWrite(0x00);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -14984,8 +15013,8 @@ void RA8889::IDEC_AVI_Decoding_PIP1_Shadow(void)
 void RA8889::IDEC_AVI_Decoding_PIP2_Shadow(void)
 {
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_PIP);                  //0xc5, page 1, IDEC AVI PIP controller (IDEC_PIP)
-  SPI_DataWrite(0x01);
+  _bus->CmdWrite(REG_IDEC_PIP);                  //0xc5, page 1, IDEC AVI PIP controller (IDEC_PIP)
+  _bus->DataWrite(0x01);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -15013,8 +15042,8 @@ void RA8889::IDEC_AVI_Decoding_PIP2_Shadow(void)
 void RA8889::IDEC_AVI_Decoding_PIP1_NoShadow(void)
 {
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_PIP);                  //0xc5, page 1, IDEC AVI PIP controller (IDEC_PIP)
-  SPI_DataWrite(0x02);
+  _bus->CmdWrite(REG_IDEC_PIP);                  //0xc5, page 1, IDEC AVI PIP controller (IDEC_PIP)
+  _bus->DataWrite(0x02);
   PageSwitch(ePageReg::Page0);
 }
 
@@ -15042,8 +15071,8 @@ void RA8889::IDEC_AVI_Decoding_PIP1_NoShadow(void)
 void RA8889::IDEC_AVI_SetMode(eAVIMode mode)
 {
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_PIP);                  //0xc5, page 1, IDEC AVI PIP controller (IDEC_PIP)
-  SPI_DataWrite(static_cast<uint8_t>(mode));
+  _bus->CmdWrite(REG_IDEC_PIP);                  //0xc5, page 1, IDEC AVI PIP controller (IDEC_PIP)
+  _bus->DataWrite(static_cast<uint8_t>(mode));
   PageSwitch(ePageReg::Page0);
 }
 
@@ -15107,14 +15136,14 @@ void RA8889::IDEC_AVI_SetMode(eAVIMode mode)
  */
 void RA8889::SFI_DMA_TransferNumber(uint32_t addr)
 {
-  SPI_CmdWrite(REG_DMAW_WTH0);                   //0xc6, DMA Block Width 0 (DMAW_WTH0)
-  SPI_DataWrite(addr);                           
-  SPI_CmdWrite(REG_DMAW_WTH1);                   //0xc7, DMA Block Width 1 (DMAW_WTH1)
-  SPI_DataWrite(addr >> 8);                      
-  SPI_CmdWrite(REG_DMAW_HIGH0);                  //0xc8, DMA Block Height 0 (DMAW_HIGH0)
-  SPI_DataWrite(addr >> 16);                     
-  SPI_CmdWrite(REG_DMAW_HIGH1);                  //0xc9, DMA Block Height 1 (DMAW_HIGH1)
-  SPI_DataWrite(addr >> 24);                     
+  _bus->CmdWrite(REG_DMAW_WTH0);                   //0xc6, DMA Block Width 0 (DMAW_WTH0)
+  _bus->DataWrite(addr);                           
+  _bus->CmdWrite(REG_DMAW_WTH1);                   //0xc7, DMA Block Width 1 (DMAW_WTH1)
+  _bus->DataWrite(addr >> 8);                      
+  _bus->CmdWrite(REG_DMAW_HIGH0);                  //0xc8, DMA Block Height 0 (DMAW_HIGH0)
+  _bus->DataWrite(addr >> 16);                     
+  _bus->CmdWrite(REG_DMAW_HIGH1);                  //0xc9, DMA Block Height 1 (DMAW_HIGH1)
+  _bus->DataWrite(addr >> 24);                     
 }
 
 
@@ -15166,15 +15195,15 @@ void RA8889::SFI_DMA_TransferNumber(uint32_t addr)
  */
 void RA8889::SFI_DMA_TransferWidthHeight(uint16_t Wx, uint16_t Hy)
 {
-  SPI_CmdWrite(REG_DMAW_WTH0);                 //0xc6, DMA Block Width 0 (DMAW_WTH0)
-  SPI_DataWrite(Wx);                           //byte baixo de Wx [7:0]
-  SPI_CmdWrite(REG_DMAW_WTH1);                 //0xc7, DMA Block Width 1 (DMAW_WTH1)
-  SPI_DataWrite(Wx >> 8);                      //byte alto de Wx [12:8]
+  _bus->CmdWrite(REG_DMAW_WTH0);                 //0xc6, DMA Block Width 0 (DMAW_WTH0)
+  _bus->DataWrite(Wx);                           //byte baixo de Wx [7:0]
+  _bus->CmdWrite(REG_DMAW_WTH1);                 //0xc7, DMA Block Width 1 (DMAW_WTH1)
+  _bus->DataWrite(Wx >> 8);                      //byte alto de Wx [12:8]
   
-  SPI_CmdWrite(REG_DMAW_HIGH0);                //0xc8, DMA Block Height 0 (DMAW_HIGH0)
-  SPI_DataWrite(Hy);                           //byte baixo de Hy [7:0]
-  SPI_CmdWrite(REG_DMAW_HIGH1);                //0xc9, DMA Block Height 1 (DMAW_HIGH1)
-  SPI_DataWrite(Hy >> 8);                      //byte alto de Hy [12:8]
+  _bus->CmdWrite(REG_DMAW_HIGH0);                //0xc8, DMA Block Height 0 (DMAW_HIGH0)
+  _bus->DataWrite(Hy);                           //byte baixo de Hy [7:0]
+  _bus->CmdWrite(REG_DMAW_HIGH1);                //0xc9, DMA Block Height 1 (DMAW_HIGH1)
+  _bus->DataWrite(Hy >> 8);                      //byte alto de Hy [12:8]
 }
 
 
@@ -15228,8 +15257,8 @@ void RA8889::IDEC_SetImageDMANumber(uint32_t num)
   // Array com os registradores consecutivos
   const uint8_t regs[4] = {REG_IDEC_TF0, REG_IDEC_TF1, REG_IDEC_TF2, REG_IDEC_TF3};
   for (int i = 0; i < 4; i++) {
-      SPI_CmdWrite(regs[i]);                   //envia cada 8 bits para os registradores de endereço
-      SPI_DataWrite((num >> (8 * i)) & 0xFF); // envia cada byte do endereço
+      _bus->CmdWrite(regs[i]);                   //envia cada 8 bits para os registradores de endereço
+      _bus->DataWrite((num >> (8 * i)) & 0xFF); // envia cada byte do endereço
   }
   PageSwitch(ePageReg::Page0);
 }
@@ -15264,10 +15293,10 @@ void RA8889::IDEC_SetImageDMANumber(uint32_t num)
  */
 void RA8889::SFI_DMA_SourceWidth(uint16_t Wx)
 {
-  SPI_CmdWrite(REG_DMA_SWTH0);       //0xca, DMA Source Picture Width 0 (DMA_SWTH0)
-  SPI_DataWrite(Wx);
-  SPI_CmdWrite(REG_DMA_SWTH1);       //0xcb, DMA Source Picture Width 0 (DMA_SWTH1)
-  SPI_DataWrite(Wx >> 8);
+  _bus->CmdWrite(REG_DMA_SWTH0);       //0xca, DMA Source Picture Width 0 (DMA_SWTH0)
+  _bus->DataWrite(Wx);
+  _bus->CmdWrite(REG_DMA_SWTH1);       //0xcb, DMA Source Picture Width 0 (DMA_SWTH1)
+  _bus->DataWrite(Wx >> 8);
 }
 
 
@@ -15298,11 +15327,11 @@ void RA8889::SFI_DMA_SourceWidth(uint16_t Wx)
 void RA8889::Font_UseUserDefined(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                //Set bit 7, Select user-defined Character
   CLRB(temp,6);                                //Reset bit 6, Select user-defined Character
-  SPI_DataWrite(temp);                         //Set selection user-defined Character
+  _bus->DataWrite(temp);                         //Set selection user-defined Character
 }
 
 
@@ -15326,11 +15355,11 @@ void RA8889::Font_UseUserDefined(void)
 void RA8889::Font_UseInternalCGROM(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   CLRB(temp,7);                                //Reset bit 7, Select internal CGROM Character
   CLRB(temp,6);                                //Reset bit 6, Select internal CGROM Character
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15354,11 +15383,11 @@ void RA8889::Font_UseInternalCGROM(void)
 void RA8889::Font_UseExternalCGROM(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   CLRB(temp,7);                                //Reset bit 7, Select external CGROM Character. (Genitop serial flash)
   SETB(temp,6);                                //Set bit 6, Select external CGROM Character. (Genitop serial flash)
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15384,11 +15413,11 @@ void RA8889::Font_UseExternalCGROM(void)
 void RA8889::Font_SetSource(eFontSource source)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   temp &= ~(cSetb7 | cSetb6);                  //Reset bits 7 e 6 de uma vez
   temp |= static_cast<uint8_t>(source);        //Converte enum para uint8_t
-  SPI_DataWrite(temp);                         //Set Character source selection
+  _bus->DataWrite(temp);                         //Set Character source selection
 }
 
 
@@ -15428,11 +15457,11 @@ void RA8889::Font_SetSource(eFontSource source)
 void RA8889::Font_SetHeight_16(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   CLRB(temp,5);                                //Reset bit 5
   CLRB(temp,4);                                //Reset bit 4 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15472,11 +15501,11 @@ void RA8889::Font_SetHeight_16(void)
 void RA8889::Font_SetHeight_24(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   CLRB(temp,5);                                //Reset bit 5
   SETB(temp,4);                                //Set bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15516,11 +15545,11 @@ void RA8889::Font_SetHeight_24(void)
 void RA8889::Font_SetHeight_32(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   SETB(temp,5);                               //Set bit 5
   CLRB(temp,4);                               //Reset bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15575,11 +15604,11 @@ void RA8889::Font_SetHeight(eFontHeight height)
           return; // nunca deve acontecer
   }
   
-  SPI_CmdWrite(REG_CCR0);       //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();        //Lê valor atual
+  _bus->CmdWrite(REG_CCR0);       //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();        //Lê valor atual
   temp &= ~(cSetb5 | cSetb4);   //Limpa bits 5:4
   temp |= bits;                 //Seta bits corretos
-  SPI_DataWrite(temp);          //Escreve de volta
+  _bus->DataWrite(temp);          //Escreve de volta
 }
 
 
@@ -15606,11 +15635,11 @@ void RA8889::Font_SetHeight(eFontHeight height)
 void RA8889::Select_Internal_CGROM_ISOIEC8859_1(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   CLRB(temp,1);                                //Reset bit 1
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15637,11 +15666,11 @@ void RA8889::Select_Internal_CGROM_ISOIEC8859_1(void)
 void RA8889::Select_Internal_CGROM_ISOIEC8859_2(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   CLRB(temp,1);                                //Reset bit 1
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15668,11 +15697,11 @@ void RA8889::Select_Internal_CGROM_ISOIEC8859_2(void)
 void RA8889::Select_Internal_CGROM_ISOIEC8859_4(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   SETB(temp,1);                                //Set bit 1
   CLRB(temp,0);                                //Reset bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15699,11 +15728,11 @@ void RA8889::Select_Internal_CGROM_ISOIEC8859_4(void)
 void RA8889::Select_Internal_CGROM_ISOIEC8859_5(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   SETB(temp,1);                                //Set bit 1
   SETB(temp,0);                                //Set bit 0
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15730,11 +15759,11 @@ void RA8889::Select_Internal_CGROM_ISOIEC8859_5(void)
 void RA8889::Select_Internal_CGROM_ISO8859(eInternalCharSet iso)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      // Seleciona o registrador CCR0
-  temp = SPI_DataRead();                       // Lê valor atual
+  _bus->CmdWrite(REG_CCR0);                      // Seleciona o registrador CCR0
+  temp = _bus->DataRead();                       // Lê valor atual
   temp &= ~(cSetb1 | cSetb0);                  // Limpa os bits B1:B0
   temp |= static_cast<uint8_t>(iso);           // Seta bits conforme enum
-  SPI_DataWrite(temp);                         // Escreve no registrador
+  _bus->DataWrite(temp);                         // Escreve no registrador
 }
 
 
@@ -15785,12 +15814,12 @@ void RA8889::Select_Internal_CGROM_ISO8859(eInternalCharSet iso)
 void RA8889::SetTextParameter0(uint8_t sourceselect, uint8_t sizeselect, uint8_t isoselect)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR0);                      //0xcc, Character Control Register 0 (CCR0)
+  temp = _bus->DataRead();                       
   temp |= (sourceselect << 6) & 0xC0;
   temp |= (sizeselect << 4) & 0x30;
   temp |= isoselect & 0x03;
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -15825,10 +15854,10 @@ void RA8889::SetTextParameter0(uint8_t sourceselect, uint8_t sizeselect, uint8_t
 void RA8889::Font_FullAlignmentEnable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                //Set full alignment
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -15856,10 +15885,10 @@ void RA8889::Font_FullAlignmentEnable(void)
 void RA8889::Font_FullAlignmentDisable(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();                       
   CLRB(temp,7);                                //Disable full alignment
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15880,10 +15909,10 @@ void RA8889::Font_FullAlignmentDisable(void)
 void RA8889::Font_UseBackgroundTransparency(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();                       
   SETB(temp,6);                                //Set bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15904,10 +15933,10 @@ void RA8889::Font_UseBackgroundTransparency(void)
 void RA8889::Font_UseBackgroundColor(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();                       
   CLRB(temp,6);                                //Reset bit 6, Set original canva's color 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15933,10 +15962,10 @@ void RA8889::Font_UseBackgroundColor(void)
 void RA8889::Font_0degree(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();                       
   CLRB(temp,4);                                //Reset bit 4
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15962,10 +15991,10 @@ void RA8889::Font_0degree(void)
 void RA8889::Font_90degree(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();                       
   SETB(temp,4);                                //Set bit 4 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -15988,12 +16017,12 @@ void RA8889::Font_90degree(void)
 void RA8889::Font_WidthEnlargFactor(eFontEnlargFactor factor)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();
   temp &= ~(cSetb3 | cSetb2);                  //Reset bits 3 e 2 de uma vez
   uint8_t f = static_cast<uint8_t>(factor);    //Converte para byte
   temp |= (f << 2);                            //Posiciona para o bit 3-2
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16016,11 +16045,11 @@ void RA8889::Font_WidthEnlargFactor(eFontEnlargFactor factor)
 void RA8889::Font_HeightEnlargFactor(eFontEnlargFactor factor)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();      
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();      
   temp &= ~(cSetb1 | cSetb0);                  //Reset bits 1 e 0 de uma vez
   temp |= static_cast<uint8_t>(factor);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16070,13 +16099,13 @@ void RA8889::Font_HeightEnlargFactor(eFontEnlargFactor factor)
 void RA8889::SetTextParameter1(uint8_t align, uint8_t chromakey, uint8_t widthenlarge, uint8_t heightenlarge)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_CCR1);                      //0xcd, Character Control Register 1 (CCR1)
+  temp = _bus->DataRead();                       
   temp |= (align << 7) & 0x80;
   temp |= (chromakey << 6) & 0x40;
   temp |= (widthenlarge << 2) & 0x0c;
   temp |= heightenlarge & 0x03;
-  SPI_DataWrite(temp);                         
+  _bus->DataWrite(temp);                         
 }
 
 
@@ -16127,8 +16156,8 @@ void RA8889::IDEC_Destination_StartAddress(uint32_t addr)
   // Array com os registradores consecutivos
   const uint8_t regs[4] = {REG_IDEC_DADR0, REG_IDEC_DADR1, REG_IDEC_DADR2, REG_IDEC_DADR3};
     for (int i = 0; i < 4; i++) {
-        SPI_CmdWrite(regs[i]);                            //envia cada 8 bits para os registradores de endereço
-        SPI_DataWrite((uint8_t)(addr >> (8 * i)) & 0xFF); // envia cada byte do endereço
+        _bus->CmdWrite(regs[i]);                            //envia cada 8 bits para os registradores de endereço
+        _bus->DataWrite((uint8_t)(addr >> (8 * i)) & 0xFF); // envia cada byte do endereço
     }
   PageSwitch(ePageReg::Page0);
 }
@@ -16163,12 +16192,12 @@ void RA8889::IDEC_Destination_StartAddress(uint32_t addr)
 void RA8889::GTFont_Select_GT21L16T1W(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = _bus->DataRead();                       
   CLRB(temp,7);                                     //Reset bit 7 
   CLRB(temp,6);                                     //Reset bit 6
   CLRB(temp,5);                                     //Reset bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16194,12 +16223,12 @@ void RA8889::GTFont_Select_GT21L16T1W(void)
 void RA8889::GTFont_Select_GT30L16U2W(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = _bus->DataRead();                       
   CLRB(temp,7);                                     //Reset bit 7
   CLRB(temp,6);                                     //Reset bit 6
   SETB(temp,5);                                     //Set bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16225,12 +16254,12 @@ void RA8889::GTFont_Select_GT30L16U2W(void)
 void RA8889::GTFont_Select_GT30L24T3Y(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = _bus->DataRead();                       
   CLRB(temp,7);                                     //Reset bit 7
   SETB(temp,6);                                     //Set bit 6
   CLRB(temp,5);                                     //Reset bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16256,12 +16285,12 @@ void RA8889::GTFont_Select_GT30L24T3Y(void)
 void RA8889::GTFont_Select_GT30L24M1Z(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = _bus->DataRead();                       
   CLRB(temp,7);                                     //Reset bit 7
   SETB(temp,6);                                     //Set bit 6
   SETB(temp,5);                                     //Set bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16285,12 +16314,12 @@ void RA8889::GTFont_Select_GT30L24M1Z(void)
 void RA8889::GTFont_Select_GT30L32S4W(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                     //Set bit 7
   CLRB(temp,6);                                     //Reset bit 6
   CLRB(temp,5);                                     //Reset bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16314,12 +16343,12 @@ void RA8889::GTFont_Select_GT30L32S4W(void)
 void RA8889::GTFont_Select_GT20L24F6Y(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                     //Set bit 7
   CLRB(temp,6);                                     //Reset bit 6
   SETB(temp,5);                                     //Set bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16345,12 +16374,12 @@ void RA8889::GTFont_Select_GT20L24F6Y(void)
 void RA8889::GTFont_Select_GT21L24S1W(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
-  temp = SPI_DataRead();                       
+  _bus->CmdWrite(REG_GTFNT_SEL);                      //0xce, Character Control Register 0 (GTFNT_SEL)
+  temp = _bus->DataRead();                       
   SETB(temp,7);                                     //Set bit 7
   SETB(temp,6);                                     //Set bit 6
   CLRB(temp,5);                                     //Reset bit 5
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -16491,17 +16520,17 @@ void RA8889::GTFont_CharacterParameter(uint8_t scs_select, uint8_t clk_div, uint
   
   //0xb7, Serial Flash/ROM Controller Register (SFL_CTRL)
   scs_select &= 0x01;
-  if(scs_select==0) RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0|BIT_SERIAL_FLASH_FONT_MODE|BIT_SERIAL_FLASH_ADDR_24BIT|BIT_FOLLOW_RA8875_MODE|BIT_SPI_FAST_READ_8DUMMY);
-  if(scs_select==1) RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1|BIT_SERIAL_FLASH_FONT_MODE|BIT_SERIAL_FLASH_ADDR_24BIT|BIT_FOLLOW_RA8875_MODE|BIT_SPI_FAST_READ_8DUMMY);
+  if(scs_select==0) _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0|BIT_SERIAL_FLASH_FONT_MODE|BIT_SERIAL_FLASH_ADDR_24BIT|BIT_FOLLOW_RA8875_MODE|BIT_SPI_FAST_READ_8DUMMY);
+  if(scs_select==1) _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1|BIT_SERIAL_FLASH_FONT_MODE|BIT_SERIAL_FLASH_ADDR_24BIT|BIT_FOLLOW_RA8875_MODE|BIT_SPI_FAST_READ_8DUMMY);
   
   //0xbb, SPI Clock period (SPI_DIVSOR)
-  RegisterWrite(REG_SPI_DIVSOR, clk_div);
+  _bus->RegisterWrite(REG_SPI_DIVSOR, clk_div);
   
   //0xce, Character Control Register 0 (GTFNT_SEL)
-  RegisterWrite(REG_GTFNT_SEL, rom_select);
+  _bus->RegisterWrite(REG_GTFNT_SEL, rom_select);
   
   //0xcf, GT Character ROM Control register (GTFNT_CR)
-  RegisterWrite(REG_GTFNT_CR, (character_select & 0xf8) | (gt_width & 0x03));
+  _bus->RegisterWrite(REG_GTFNT_CR, (character_select & 0xf8) | (gt_width & 0x03));
 
 }
 
@@ -16571,8 +16600,8 @@ void RA8889::GTFont_CharacterParameter(uint8_t scs_select, uint8_t clk_div, uint
  */
 void RA8889::GTFont_SetDecoder(uint8_t temp)
 {
-  SPI_CmdWrite(REG_GTFNT_CR);                  //0xcf, GT Character ROM Control register (GTFNT_CR)
-  SPI_DataWrite(temp);
+  _bus->CmdWrite(REG_GTFNT_CR);                  //0xcf, GT Character ROM Control register (GTFNT_CR)
+  _bus->DataWrite(temp);
 }
 
 
@@ -16607,10 +16636,10 @@ void RA8889::GTFont_SetDecoder(uint8_t temp)
 void RA8889::IDEC_Destination_ImageWidth(uint16_t Wx)
 {
   PageSwitch(ePageReg::Page1);
-  SPI_CmdWrite(REG_IDEC_DWTH0);                //0xce, page 1, IDEC (JPG/BMP) Destination Image Width 0 (IDEC_DWTH0)
-  SPI_DataWrite((uint8_t)(Wx & 0xFF));
-  SPI_CmdWrite(REG_IDEC_DWTH1);                //0xcf, page 1, IDEC (JPG/BMP) Destination Image Width 1 (IDEC_DWTH1)
-  SPI_DataWrite((uint8_t)(Wx >> 8));
+  _bus->CmdWrite(REG_IDEC_DWTH0);                //0xce, page 1, IDEC (JPG/BMP) Destination Image Width 0 (IDEC_DWTH0)
+  _bus->DataWrite((uint8_t)(Wx & 0xFF));
+  _bus->CmdWrite(REG_IDEC_DWTH1);                //0xcf, page 1, IDEC (JPG/BMP) Destination Image Width 1 (IDEC_DWTH1)
+  _bus->DataWrite((uint8_t)(Wx >> 8));
   PageSwitch(ePageReg::Page0);
 }
 
@@ -16640,8 +16669,8 @@ void RA8889::IDEC_Destination_ImageWidth(uint16_t Wx)
  */
 void RA8889::Font_LineDistance(uint8_t gap)
 {
-  SPI_CmdWrite(REG_FLDR);                      //0xd0, Character Line gap Setting Register (FLDR)
-  SPI_DataWrite(gap);
+  _bus->CmdWrite(REG_FLDR);                      //0xd0, Character Line gap Setting Register (FLDR)
+  _bus->DataWrite(gap);
 }
 
 
@@ -16671,8 +16700,8 @@ void RA8889::Font_LineDistance(uint8_t gap)
  */
 void RA8889::Font_toFontWidthSetting(uint8_t pixels)
 {
-  SPI_CmdWrite(REG_F2FSSR);          //0xd1,  Character to Character Space Setting Register (F2FSSR)
-  SPI_DataWrite(pixels);
+  _bus->CmdWrite(REG_F2FSSR);          //0xd1,  Character to Character Space Setting Register (F2FSSR)
+  _bus->DataWrite(pixels);
 }
 
 
@@ -16716,12 +16745,12 @@ void RA8889::Font_toFontWidthSetting(uint8_t pixels)
  */
 void RA8889::ForegroundColorRGB(uint8_t red, uint8_t green, uint8_t blue)
 {
-  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
-  SPI_DataWrite(red);                          //Escreve o formato da cor vermelha 
-  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
-  SPI_DataWrite(green);                        //Escreve o formato da cor verde
-  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
-  SPI_DataWrite(blue);                         //Escreve o formato da cor azul
+  _bus->CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  _bus->DataWrite(red);                          //Escreve o formato da cor vermelha 
+  _bus->CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  _bus->DataWrite(green);                        //Escreve o formato da cor verde
+  _bus->CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  _bus->DataWrite(blue);                         //Escreve o formato da cor azul
 }
 
 
@@ -16763,12 +16792,12 @@ void RA8889::ForegroundColorRGB(uint8_t red, uint8_t green, uint8_t blue)
  */
 void RA8889::ForegroundColor8bpp(uint8_t color)
 {
-  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
-  SPI_DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
-  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
-  SPI_DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
-  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
-  SPI_DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
+  _bus->CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  _bus->DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
+  _bus->CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  _bus->DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
+  _bus->CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  _bus->DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
 }
 
 
@@ -16809,12 +16838,12 @@ void RA8889::ForegroundColor8bpp(uint8_t color)
  */
 void RA8889::ForegroundColor16bpp(uint16_t color)
 {
-  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
-  SPI_DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
-  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
-  SPI_DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado
-  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
-  SPI_DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
+  _bus->CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  _bus->DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
+  _bus->CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  _bus->DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado
+  _bus->CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  _bus->DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
 }
 
 
@@ -16856,12 +16885,12 @@ void RA8889::ForegroundColor16bpp(uint16_t color)
  */ 
 void RA8889::ForegroundColor24bpp(uint32_t color)
 {
-  SPI_CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
-  SPI_DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
-  SPI_CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
-  SPI_DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
-  SPI_CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
-  SPI_DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
+  _bus->CmdWrite(REG_FGCR);                      //0xd2, Foreground Color Register - Red (FGCR)
+  _bus->DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
+  _bus->CmdWrite(REG_FGCG);                      //0xd3, Foreground Color Register - Green (FGCG)
+  _bus->DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
+  _bus->CmdWrite(REG_FGCB);                      //0xd4, Foreground Color Register - Blue (FGCB)
+  _bus->DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
 }
 
 
@@ -16895,8 +16924,8 @@ void RA8889::ForegroundColor24bpp(uint32_t color)
 void RA8889::AVI_Pause(void)
 {
     PageSwitch(ePageReg::Page1);
-    SPI_CmdWrite(REG_AVI_PAUSE);               //0xd3, page 1, AVI pause
-    SPI_DataWrite(0x01);                       //Pause Video
+    _bus->CmdWrite(REG_AVI_PAUSE);               //0xd3, page 1, AVI pause
+    _bus->DataWrite(0x01);                       //Pause Video
     PageSwitch(ePageReg::Page0);
 }
 
@@ -16925,8 +16954,8 @@ void RA8889::AVI_Pause(void)
 void RA8889::AVI_Stop(void)
 {
     PageSwitch(ePageReg::Page1);
-    SPI_CmdWrite(REG_AVI_STOP);                //0xd4, page 1, AVI stop
-    SPI_DataWrite(0x01);                       //Stop Video
+    _bus->CmdWrite(REG_AVI_STOP);                //0xd4, page 1, AVI stop
+    _bus->DataWrite(0x01);                       //Stop Video
     PageSwitch(ePageReg::Page0);
 }
 
@@ -16979,12 +17008,12 @@ void RA8889::AVI_Stop(void)
  */
 void RA8889::BackgroundColorRGB(uint8_t red, uint8_t green, uint8_t blue)
 {
-  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
-  SPI_DataWrite(red);                          //Escreve o formato da cor vermelha 
-  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
-  SPI_DataWrite(green);                        //Escreve o formato da cor verde
-  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
-  SPI_DataWrite(blue);                         //Escreve o formato da cor azul
+  _bus->CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  _bus->DataWrite(red);                          //Escreve o formato da cor vermelha 
+  _bus->CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  _bus->DataWrite(green);                        //Escreve o formato da cor verde
+  _bus->CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  _bus->DataWrite(blue);                         //Escreve o formato da cor azul
 }
 
 
@@ -17034,12 +17063,12 @@ void RA8889::BackgroundColorRGB(uint8_t red, uint8_t green, uint8_t blue)
  */
 void RA8889::BackgroundColor8bpp(uint8_t color)
 {
-  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
-  SPI_DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
-  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
-  SPI_DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
-  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
-  SPI_DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
+  _bus->CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  _bus->DataWrite(color);                        //Vermelho so usa o bit de [7~5], o resto ignorado
+  _bus->CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  _bus->DataWrite(color << 3);                   //Deslocar a posicao do verde para o bit [7~5], o resto ignorado
+  _bus->CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  _bus->DataWrite(color << 6);                   //Deslocar a posicao do azul para o bit [7~6], o resto ignorado
 }
 
 
@@ -17089,12 +17118,12 @@ void RA8889::BackgroundColor8bpp(uint8_t color)
  */
 void RA8889::BackgroundColor16bpp(uint16_t color)
 {
-  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
-  SPI_DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
-  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
-  SPI_DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado 
-  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
-  SPI_DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
+  _bus->CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  _bus->DataWrite(color >> 8);                   //Desloca os 5 bits do vermelho so usa o bit de [7~3], a sujeira ignorado
+  _bus->CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  _bus->DataWrite(color >> 3);                   //Deslocar os 6 bits do verde para o bit [7~2], a sujeira ignorado 
+  _bus->CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  _bus->DataWrite(color << 3);                   //Deslocar os 5 bits do azul para o bit [7~3], a sujeira ignorado
 }
 
 
@@ -17144,12 +17173,12 @@ void RA8889::BackgroundColor16bpp(uint16_t color)
  */ 
 void RA8889::BackgroundColor24bpp(uint32_t color)
 {
-  SPI_CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
-  SPI_DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
-  SPI_CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
-  SPI_DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
-  SPI_CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
-  SPI_DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
+  _bus->CmdWrite(REG_BGCR);                      //0xd5, Background Color Register - Red (BGCR)
+  _bus->DataWrite(color >> 16);                  //Desloca os 8 bits do vermelho, usa o bit de [7~0]
+  _bus->CmdWrite(REG_BGCG);                      //0xd6, Background Color Register - Green (BGCG)
+  _bus->DataWrite(color >> 8);                   //Deslocar os 8 bits do verde, usa os bits [7~0]
+  _bus->CmdWrite(REG_BGCB);                      //0xd7, Background Color Register - Blue (BGCB)
+  _bus->DataWrite(color);                        //Deslocar os 8 bits do azul, usa os bits [7~0]
 }
 
 
@@ -17203,14 +17232,14 @@ void RA8889::BackgroundColor24bpp(uint32_t color)
  */ 
 void RA8889::CGRAM_StartAddress(uint32_t addr)
 {
-  SPI_CmdWrite(REG_CGRAM_STR0);                //0xdb, CGRAM Start Address 0 (CGRAM_STR0)
-  SPI_DataWrite(addr);                         
-  SPI_CmdWrite(REG_CGRAM_STR1);                //0xdc, CGRAM Start Address 1 (CGRAM_STR1)
-  SPI_DataWrite(addr >> 8);                    
-  SPI_CmdWrite(REG_CGRAM_STR2);                //0xdd,  CGRAM Start Address 2 (CGRAM_STR2)
-  SPI_DataWrite(addr >> 16);                   
-  SPI_CmdWrite(REG_CGRAM_STR3);                //0xde, CGRAM Start Address 3 (CGRAM_STR3)
-  SPI_DataWrite(addr >> 24);                   
+  _bus->CmdWrite(REG_CGRAM_STR0);                //0xdb, CGRAM Start Address 0 (CGRAM_STR0)
+  _bus->DataWrite(addr);                         
+  _bus->CmdWrite(REG_CGRAM_STR1);                //0xdc, CGRAM Start Address 1 (CGRAM_STR1)
+  _bus->DataWrite(addr >> 8);                    
+  _bus->CmdWrite(REG_CGRAM_STR2);                //0xdd,  CGRAM Start Address 2 (CGRAM_STR2)
+  _bus->DataWrite(addr >> 16);                   
+  _bus->CmdWrite(REG_CGRAM_STR3);                //0xde, CGRAM Start Address 3 (CGRAM_STR3)
+  _bus->DataWrite(addr >> 24);                   
 }
 
 
@@ -17250,8 +17279,8 @@ void RA8889::CGRAM_StartAddress(uint32_t addr)
  */
 void RA8889::Power_NormalMode(void)
 {
-  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
-  SPI_DataWrite(0x00);                         //Limpa bits [7,1,0]
+  _bus->CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  _bus->DataWrite(0x00);                         //Limpa bits [7,1,0]
   IC_WaitReady();                              //Aguarda até está pronto
 }
 
@@ -17285,8 +17314,8 @@ void RA8889::Power_NormalMode(void)
  */
 void RA8889::Power_SavingStandbyMode(void)
 {
-  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
-  SPI_DataWrite(cSetb7 | cSetb0);              //bit 7 = 1 (power saving), bit [1-0] = 01 (standby)
+  _bus->CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  _bus->DataWrite(cSetb7 | cSetb0);              //bit 7 = 1 (power saving), bit [1-0] = 01 (standby)
 }
 
 
@@ -17319,8 +17348,8 @@ void RA8889::Power_SavingStandbyMode(void)
  */
 void RA8889::Power_SavingSuspendMode(void)
 {
-  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
-  SPI_DataWrite(0x82);                         //bit 7 = 1 (power saving), bit [1-0] = 10 (suspend)
+  _bus->CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  _bus->DataWrite(0x82);                         //bit 7 = 1 (power saving), bit [1-0] = 10 (suspend)
 }
 
 
@@ -17353,10 +17382,10 @@ void RA8889::Power_SavingSuspendMode(void)
  */
 void RA8889::Power_SavingSleepMode(void)
 {
-  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
-  SPI_DataWrite(0x03);                         //bit [1-0] = 11 (sleep)
-  SPI_CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
-  SPI_DataWrite(0x83);                         //bit 7 = 1 (power saving), bit [1-0] = 11 (sleep)
+  _bus->CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  _bus->DataWrite(0x03);                         //bit [1-0] = 11 (sleep)
+  _bus->CmdWrite(REG_PMU);                       //0xdf, Power Management register (PMU)
+  _bus->DataWrite(0x83);                         //bit 7 = 1 (power saving), bit [1-0] = 11 (sleep)
 }
 
 
@@ -17390,10 +17419,10 @@ void RA8889::Power_SavingSleepMode(void)
  */
 void RA8889::I2CM_ClockPrescale(uint16_t prescale)
 {
-  SPI_CmdWrite(REG_IICMCPR0);                  //0xe5, IIC Master Clock Pre-scale Register 0 (IICMCPR0)
-  SPI_DataWrite(prescale);                     //byte baixo de pre-scale
-  SPI_CmdWrite(REG_IICMCPR1);                  //0xe6, IIC Master Clock Pre-scale Register 1 (IICMCPR1)
-  SPI_DataWrite(prescale >> 8);                //byte alto de pre-scale
+  _bus->CmdWrite(REG_IICMCPR0);                  //0xe5, IIC Master Clock Pre-scale Register 0 (IICMCPR0)
+  _bus->DataWrite(prescale);                     //byte baixo de pre-scale
+  _bus->CmdWrite(REG_IICMCPR1);                  //0xe6, IIC Master Clock Pre-scale Register 1 (IICMCPR1)
+  _bus->DataWrite(prescale >> 8);                //byte alto de pre-scale
 }
 
 
@@ -17412,8 +17441,8 @@ void RA8889::I2CM_ClockPrescale(uint16_t prescale)
  */
 void RA8889::I2CM_TransmitData(uint8_t data)
 {
-  SPI_CmdWrite(REG_IICMTXR);       //0xe7, IIC Master Transmit Register (IICMTXR)
-  SPI_DataWrite(data);
+  _bus->CmdWrite(REG_IICMTXR);       //0xe7, IIC Master Transmit Register (IICMTXR)
+  _bus->DataWrite(data);
 }
 
 
@@ -17432,8 +17461,8 @@ void RA8889::I2CM_TransmitData(uint8_t data)
  */
 uint8_t RA8889::I2CM_Receiver_Data(void)
 {
-  SPI_CmdWrite(REG_IICMRXR);                   //0xe8, IIC Master Receiver Register (IICMRXR)
-  return SPI_DataRead();
+  _bus->CmdWrite(REG_IICMRXR);                   //0xe8, IIC Master Receiver Register (IICMRXR)
+  return _bus->DataRead();
 }
 
 
@@ -17509,7 +17538,7 @@ void RA8889::I2CM_SetFrequency(uint32_t xscl_hz, uint16_t coreclk_mhz)
  */
 void RA8889::I2CM_WriteWithStart(void)
 {
-  SPI_CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
+  _bus->CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
   uint8_t temp = 0x90;                //Set bit 7 and 4
   #ifdef Disable_I2CM_Noise_Filter
   CLRB(temp,0);                       //Reset bit 0
@@ -17517,7 +17546,7 @@ void RA8889::I2CM_WriteWithStart(void)
   #ifdef Enable_I2CM_Noise_Filter
   SETB(temp,0);                       //Set bit 0
   #endif
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -17555,7 +17584,7 @@ void RA8889::I2CM_WriteWithStart(void)
  */
 void RA8889::I2CM_Stop(void)
 {
-  SPI_CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
+  _bus->CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
   uint8_t temp = 0x40;                //Set bit 6
   #ifdef Disable_I2CM_Noise_Filter
   CLRB(temp,0);                       //Reset bit 0
@@ -17563,7 +17592,7 @@ void RA8889::I2CM_Stop(void)
   #ifdef Enable_I2CM_Noise_Filter
   SETB(temp,0);                       //Set bit 0
   #endif
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -17601,7 +17630,7 @@ void RA8889::I2CM_Stop(void)
  */
 void RA8889::I2CM_ReadWithAck(void)
 {
-  SPI_CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
+  _bus->CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
   uint8_t temp = 0x20;                //Set bit 5, Reset bit 3
   #ifdef Disable_I2CM_Noise_Filter
   CLRB(temp,0);                       //Reset bit 0
@@ -17609,7 +17638,7 @@ void RA8889::I2CM_ReadWithAck(void)
   #ifdef Enable_I2CM_Noise_Filter
   SETB(temp,0);                       //Set bit 0
   #endif
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -17647,7 +17676,7 @@ void RA8889::I2CM_ReadWithAck(void)
  */
 void RA8889::I2CM_ReadWithNack(void)
 {
-  SPI_CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
+  _bus->CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
   uint8_t temp = 0x60;                //Set bits 6-5, Set bit 3
   #ifdef Disable_I2CM_Noise_Filter
   CLRB(temp,0);                       //Reset bit 0
@@ -17655,7 +17684,7 @@ void RA8889::I2CM_ReadWithNack(void)
   #ifdef Enable_I2CM_Noise_Filter
   SETB(temp,0);                       //Set bit 0
   #endif
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -17693,7 +17722,7 @@ void RA8889::I2CM_ReadWithNack(void)
  */
 void RA8889::I2CM_Write(void)
 {
-  SPI_CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
+  _bus->CmdWrite(REG_IICMCMDR);         //0xe9, IIC Master Command Register (IICMCMDR)
   uint8_t temp = 0x10;                //Set bits 4
   #ifdef Disable_I2CM_Noise_Filter
   CLRB(temp,0);                       //Reset bit 0
@@ -17701,7 +17730,7 @@ void RA8889::I2CM_Write(void)
   #ifdef Enable_I2CM_Noise_Filter
   SETB(temp,0);                       //Set bit 0
   #endif
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -17732,8 +17761,8 @@ void RA8889::I2CM_Write(void)
 bool RA8889::I2CM_CheckSlaveACK(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_IICMCMDR);         //0xea, IIC Master Status Register (IICMSTUR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IICMCMDR);         //0xea, IIC Master Status Register (IICMSTUR)
+  temp = _bus->DataRead();
   return (temp & 0x80);               //check bit 7
 }
 
@@ -17758,8 +17787,8 @@ bool RA8889::I2CM_CheckSlaveACK(void)
 bool RA8889::I2CM_BusBusy(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_IICMCMDR);         //0xea, IIC Master Status Register (IICMSTUR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IICMCMDR);         //0xea, IIC Master Status Register (IICMSTUR)
+  temp = _bus->DataRead();
   return (temp & 0x40);               //Check bit 6
 }
 
@@ -17785,8 +17814,8 @@ bool RA8889::I2CM_BusBusy(void)
 uint8_t RA8889::I2CM_TransmitProgress(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_IICMCMDR);                  //0xea, IIC Master Status Register (IICMSTUR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IICMCMDR);                  //0xea, IIC Master Status Register (IICMSTUR)
+  temp = _bus->DataRead();
   return (temp & 0x02) ? 1 : 0;
 }
 
@@ -17812,8 +17841,8 @@ uint8_t RA8889::I2CM_TransmitProgress(void)
 uint8_t RA8889::I2CM_Arbitration(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_IICMCMDR);                  //0xea, IIC Master Status Register (IICMSTUR)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_IICMCMDR);                  //0xea, IIC Master Status Register (IICMSTUR)
+  temp = _bus->DataRead();
   CLRB(temp,0);                                //limpa o bit de arbitracao e...
   return temp;                                 //..e mostra qual foi perdido 
 }
@@ -17846,8 +17875,8 @@ uint8_t RA8889::I2CM_Arbitration(void)
  */
 void RA8889::GPIOA_InOut(uint8_t dir)
 {
-  SPI_CmdWrite(REG_GPIOAD);                    //0xf0, GPIO-A direction (GPIOAD)
-   SPI_DataWrite(dir);
+  _bus->CmdWrite(REG_GPIOAD);                    //0xf0, GPIO-A direction (GPIOAD)
+   _bus->DataWrite(dir);
 }
 
 
@@ -17870,8 +17899,8 @@ void RA8889::GPIOA_InOut(uint8_t dir)
  */
 void RA8889::GPIOA_Write(uint8_t value)
 {
-  SPI_CmdWrite(REG_GPIOA);                     //0xf1, GPIO-A (GPIOA)
-  SPI_DataWrite(value);
+  _bus->CmdWrite(REG_GPIOA);                     //0xf1, GPIO-A (GPIOA)
+  _bus->DataWrite(value);
 }
 
 
@@ -17896,8 +17925,8 @@ void RA8889::GPIOA_Write(uint8_t value)
 uint8_t RA8889::GPIOA_Read(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GPIOA);                     //0xf1, GPIO-A (GPIOA)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GPIOA);                     //0xf1, GPIO-A (GPIOA)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -17929,8 +17958,8 @@ uint8_t RA8889::GPIOA_Read(void)
  */
 void RA8889::GPIOB_Write(uint8_t value)
 {
-  SPI_CmdWrite(REG_GPIOB);                     //0xf2, GPIO-B (GPIOB)
-  SPI_DataWrite(value);
+  _bus->CmdWrite(REG_GPIOB);                     //0xf2, GPIO-B (GPIOB)
+  _bus->DataWrite(value);
 }
 
 
@@ -17956,8 +17985,8 @@ void RA8889::GPIOB_Write(uint8_t value)
 uint8_t RA8889::GPIOB_Read(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GPIOB);                     //0xf2, GPIO-B (GPIOB)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GPIOB);                     //0xf2, GPIO-B (GPIOB)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -17989,8 +18018,8 @@ uint8_t RA8889::GPIOB_Read(void)
  */
 void RA8889::GPIOC_InOut(uint8_t dir)
 {
-  SPI_CmdWrite(REG_GPIOCD);                    //0xf3, GPIO-C direction (GPIOCD)
-  SPI_DataWrite(dir);
+  _bus->CmdWrite(REG_GPIOCD);                    //0xf3, GPIO-C direction (GPIOCD)
+  _bus->DataWrite(dir);
 }
 
 
@@ -18014,8 +18043,8 @@ void RA8889::GPIOC_InOut(uint8_t dir)
  */
 void RA8889::GPIOC_Write(uint8_t value)
 {
-  SPI_CmdWrite(REG_GPIOC);                     //0xf4, GPIO-C (GPIOC)
-  SPI_DataWrite(value);
+  _bus->CmdWrite(REG_GPIOC);                     //0xf4, GPIO-C (GPIOC)
+  _bus->DataWrite(value);
 }
 
 
@@ -18039,8 +18068,8 @@ void RA8889::GPIOC_Write(uint8_t value)
 uint8_t RA8889::GPIOC_Read(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GPIOC);                     //0xf4, GPIO-C (GPIOC)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GPIOC);                     //0xf4, GPIO-C (GPIOC)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -18072,8 +18101,8 @@ uint8_t RA8889::GPIOC_Read(void)
  */
 void RA8889::GPIOD_InOut(uint8_t dir)
 {
-  SPI_CmdWrite(REG_GPIODD);                    //0xf5, GPIO-D direction (GPIODD)
-  SPI_DataWrite(dir);
+  _bus->CmdWrite(REG_GPIODD);                    //0xf5, GPIO-D direction (GPIODD)
+  _bus->DataWrite(dir);
 }
 
 
@@ -18093,8 +18122,8 @@ void RA8889::GPIOD_InOut(uint8_t dir)
  */
 void RA8889::GPIOD_Write(uint8_t value)
 {
-  SPI_CmdWrite(REG_GPIOD);                     //0xf6, GPIO-D (GPIOD)
-  SPI_DataWrite(value);
+  _bus->CmdWrite(REG_GPIOD);                     //0xf6, GPIO-D (GPIOD)
+  _bus->DataWrite(value);
 }
 
 
@@ -18115,8 +18144,8 @@ void RA8889::GPIOD_Write(uint8_t value)
 uint8_t RA8889::GPIOD_Read(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GPIOD);                     //0xf6, GPIO-D (GPIOD)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GPIOD);                     //0xf6, GPIO-D (GPIOD)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -18148,8 +18177,8 @@ uint8_t RA8889::GPIOD_Read(void)
  */
 void RA8889::GPIOE_InOut(uint8_t dir)
 {
-  SPI_CmdWrite(REG_GPIOED);                    //0xf7, GPIO-E direction (GPIOED)
-  SPI_DataWrite(dir);
+  _bus->CmdWrite(REG_GPIOED);                    //0xf7, GPIO-E direction (GPIOED)
+  _bus->DataWrite(dir);
 }
 
 
@@ -18169,8 +18198,8 @@ void RA8889::GPIOE_InOut(uint8_t dir)
  */
 void RA8889::GPIOE_Write(uint8_t value)
 {
-  SPI_CmdWrite(REG_GPIOE);                     //0xf8, GPIO-E (GPIOE)
-  SPI_DataWrite(value);
+  _bus->CmdWrite(REG_GPIOE);                     //0xf8, GPIO-E (GPIOE)
+  _bus->DataWrite(value);
 }
 
 
@@ -18191,8 +18220,8 @@ void RA8889::GPIOE_Write(uint8_t value)
 uint8_t RA8889::GPIOE_Read(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GPIOE);                     //0xf8, GPIO-E (GPIOE)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GPIOE);                     //0xf8, GPIO-E (GPIOE)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -18224,8 +18253,8 @@ uint8_t RA8889::GPIOE_Read(void)
  */
 void RA8889::GPIOF_InOut(uint8_t dir)
 {
-  SPI_CmdWrite(REG_GPIOFD);                    //0xf9, GPIO-F direction (GPIOFD)
-  SPI_DataWrite(dir);
+  _bus->CmdWrite(REG_GPIOFD);                    //0xf9, GPIO-F direction (GPIOFD)
+  _bus->DataWrite(dir);
 }
 
 
@@ -18245,8 +18274,8 @@ void RA8889::GPIOF_InOut(uint8_t dir)
  */
 void RA8889::GPIOF_Write(uint8_t value)
 {
-  SPI_CmdWrite(REG_GPIOF);                     //0xfa, GPIO-F (GPIOF)
-  SPI_DataWrite(value);
+  _bus->CmdWrite(REG_GPIOF);                     //0xfa, GPIO-F (GPIOF)
+  _bus->DataWrite(value);
 }
 
 
@@ -18267,8 +18296,8 @@ void RA8889::GPIOF_Write(uint8_t value)
 uint8_t RA8889::GPIOF_Read(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_GPIOF);                     //0xfa, GPIO-F (GPIOF)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_GPIOF);                     //0xfa, GPIO-F (GPIOF)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -18295,13 +18324,13 @@ uint8_t RA8889::GPIOF_Read(void)
  * @note This key pad controller supports 5x5 keys
  * 
  */
-void RA8889::KeyScan_LongKeyEnable(bool b = true)
+void RA8889::KeyScan_LongKeyEnable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_KSCR1);                     //0xfb, Key-Scan Control Register 1 (KSCR1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_KSCR1);                     //0xfb, Key-Scan Control Register 1 (KSCR1)
+  temp = _bus->DataRead();
   b ? SETB(temp,6) : CLRB(temp,6);             //Set bit 6
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -18343,11 +18372,11 @@ void RA8889::KeyScan_LongKeyEnable(bool b = true)
 void RA8889::KeyScan_Freguency(uint8_t setx)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_KSCR1);     //0xfb, Key-Scan Control Register 1 (KSCR1)
-  temp = SPI_DataRead();       //
+  _bus->CmdWrite(REG_KSCR1);     //0xfb, Key-Scan Control Register 1 (KSCR1)
+  temp = _bus->DataRead();       //
   temp &= 0xf0;                //Reset bits 3 to 0
   temp |= (setx & 0x07);       //Row scan time adjust only
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -18373,13 +18402,13 @@ void RA8889::KeyScan_Freguency(uint8_t setx)
  * @note 
  * 
  */
-void RA8889::KeyScan_WakeupFunctionEnable(bool b = true)
+void RA8889::KeyScan_WakeupFunctionEnable(bool b)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_KSCR2);            //0xfc, Key-Scan Controller Register 2 (KSCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_KSCR2);            //0xfc, Key-Scan Controller Register 2 (KSCR2)
+  temp = _bus->DataRead();
   b ? SETB(temp,7) : CLRB(temp,7);
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -18410,10 +18439,10 @@ void RA8889::KeyScan_WakeupFunctionEnable(bool b = true)
 void RA8889::KeyScan_LongKeyTimingAdjust(uint8_t setx)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_KSCR2);                //0xfc, Key-Scan Controller Register 2 (KSCR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_KSCR2);                //0xfc, Key-Scan Controller Register 2 (KSCR2)
+  temp = _bus->DataRead();
   temp |= setx & 0x1c;                    //Mask bit 4-2 only
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }
 
 
@@ -18450,8 +18479,8 @@ void RA8889::KeyScan_LongKeyTimingAdjust(uint8_t setx)
 uint8_t RA8889::KeyScan_KeyHits(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_KSCR2);              //0xfc, Key-Scan Controller Register 2 (KSCR2)
-  temp = SPI_DataRead();                //Read key touch number
+  _bus->CmdWrite(REG_KSCR2);              //0xfc, Key-Scan Controller Register 2 (KSCR2)
+  temp = _bus->DataRead();                //Read key touch number
   temp = temp & 0x03;                   //Check how many keys are pressed
   return temp;
 }
@@ -18493,8 +18522,8 @@ uint8_t RA8889::KeyScan_KeyHits(void)
 uint8_t RA8889::KeyScan_ReadKeyStrobeData0(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_KSDR0);                     //0xfd, Key-Scan Data Register (KSDR0)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_KSDR0);                     //0xfd, Key-Scan Data Register (KSDR0)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -18526,8 +18555,8 @@ uint8_t RA8889::KeyScan_ReadKeyStrobeData0(void)
 uint8_t RA8889::KeyScan_ReadKeyStrobeData1(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_KSDR1);                     //0xfe, Key-Scan Data Register (KSDR1)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_KSDR1);                     //0xfe, Key-Scan Data Register (KSDR1)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -18559,8 +18588,8 @@ uint8_t RA8889::KeyScan_ReadKeyStrobeData1(void)
 uint8_t RA8889::KeyScan_ReadKeyStrobeData2(void)
 {
   uint8_t temp;
-  SPI_CmdWrite(REG_KSDR2);                     //0xff, Key-Scan Data Register (KSDR2)
-  temp = SPI_DataRead();
+  _bus->CmdWrite(REG_KSDR2);                     //0xff, Key-Scan Data Register (KSDR2)
+  temp = _bus->DataRead();
   return temp;
 }
 
@@ -18611,12 +18640,12 @@ uint8_t RA8889::KeyScan_ReadKeyStrobeData(uint8_t index)
 {
     switch(index)
     {
-        case 0: SPI_CmdWrite(REG_KSDR0); break;
-        case 1: SPI_CmdWrite(REG_KSDR1); break;
-        case 2: SPI_CmdWrite(REG_KSDR2); break;
+        case 0: _bus->CmdWrite(REG_KSDR0); break;
+        case 1: _bus->CmdWrite(REG_KSDR1); break;
+        case 2: _bus->CmdWrite(REG_KSDR2); break;
         default: return 0xFF;  // Invalid index
     }
-    return SPI_DataRead();
+    return _bus->DataRead();
 }
 
 
@@ -18644,11 +18673,11 @@ void RA8889::MPU8_8bpp_MemoryWrite(
   //ActiveWindow_XY(x, y);
   //ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);                          //Posicao inicial de escrita da memoria
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {                    //Varredura da linha
     for (j = 0; j < w; j++) {                  //Varredura da coluna
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apontado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apontado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
   }
@@ -18671,14 +18700,14 @@ void RA8889::MPU8_16bpp_MemoryWrite(
   //ActiveWindow_XY(x, y);
   //ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);                          //Posicao inicial de escrita da memoria
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {
     for (j = 0; j < w; j++) {
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
   }
@@ -18701,17 +18730,17 @@ void RA8889::MPU8_24bpp_MemoryWrite(
   //ActiveWindow_XY(x, y);
   //ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);                          //Posicao inicial de escrita da memoria
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {
     for (j = 0; j < w; j++) {
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
   }
@@ -18734,11 +18763,11 @@ void RA8889::MPU16_16bpp_MemoryWrite(
   //ActiveWindow_XY(x, y);
   //ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {                    //y
     for (j = 0; j < w; j++) {                  //x
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apontado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apontado no array de dados
       data++;                                  //incrementa o potneiro para a poxima posição
     }
   }
@@ -18755,16 +18784,16 @@ void RA8889::MPU16_24bpp_Mode1_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , u
   ActiveWindow_XY(x, y);
   ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {
     for (j = 0; j < w/2; j++) {
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
       data++;                                  //incrementa o potneiro apra a poxima posição
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
       data++;                                  //incrementa o potneiro apra a poxima posição
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
@@ -18782,14 +18811,14 @@ void RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , u
   ActiveWindow_XY(x, y);
   ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {
     for (j = 0; j < w; j++) {
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      SPI_DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
   }
@@ -18804,15 +18833,15 @@ void RA8889::MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const 
 {
 
 #ifdef MCU_8bit_COLORDEPTH_8bpp
-  MPU8_8bpp_MemoryWrite(x, y, w , h , reinterpret_cast<const uint8_t*>(data)); 
+  MPU8_8bpp_MemoryWrite(x, y, w , h , data); 
 #endif
 
 #ifdef MCU_8bit_COLORDEPTH_16bpp
-  MPU8_16bpp_MemoryWrite(x, y, w , h , reinterpret_cast<const uint8_t*>(data); 
+  MPU8_16bpp_MemoryWrite(x, y, w , h , data; 
 #endif
 
 #ifdef MCU_8bit_COLORDEPTH_24bpp
-  MPU8_24bpp_MemoryWrite(x, y, w , h , reinterpret_cast<const uint8_t*>(data)); 
+  MPU8_24bpp_MemoryWrite(x, y, w , h , data); 
 #endif
 
 #ifdef MCU_16bit_COLORDEPTH_8bpp_Mode2
@@ -18820,11 +18849,11 @@ void RA8889::MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const 
 #endif
 
 #ifdef MCU_16bit_COLORDEPTH_16bpp
-  MPU16_16bpp_MemoryWrite(x, y, w , h , *data); 
+  MPU16_16bpp_MemoryWrite(x, y, w, h, reinterpret_cast<const uint16_t*>(data));
 #endif
 
 #ifdef MCU_16bit_COLORDEPTH_24bpp_Mode1
-  MPU16_24bpp_Mode1_MemoryWrite(x, y, w , h , data); 
+  MPU16_24bpp_Mode1_MemoryWrite(x, y, w , h , reinterpret_cast<const uint16_t*>(data)); 
 #endif
 
 #ifdef MCU_16bit_COLORDEPTH_8bpp_Mode1
@@ -18832,7 +18861,7 @@ void RA8889::MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const 
 #endif
 
 #ifdef MCU_16bit_COLORDEPTH_24bpp_Mode2
-  MPU16_24bpp_Mode2_MemoryWrite(x, y, w , h , data);
+  MPU16_24bpp_Mode2_MemoryWrite(x, y, w , h , reinterpret_cast<const uint16_t*>(data));
 #endif
 
 }
@@ -18861,7 +18890,7 @@ void RA8889::MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const 
  * 
  * @note None
  */
-void RA8889::useDMA(bool b = true)
+void RA8889::useDMA(bool b)
 {
   _usedma = b;
 }
@@ -19080,36 +19109,36 @@ void RA8889::DMA_24bitAddressBlockMode(uint8_t bus_select,
    
   if(scs_select==0) {
     SFI_SelectROM_CS0();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==1) {
     SFI_SelectROM_CS1();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==2) {
     SFI_SelectROM_CS2();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT2 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT2 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==3) {
     SFI_SelectROM_CS3();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT3 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT3 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   }
        
-  RegisterWrite(REG_SPI_DIVSOR,clk_div);//bbh  
+  _bus->RegisterWrite(REG_SPI_DIVSOR,clk_div);//bbh  
   
-  RegisterWrite(REG_DMA_DX0,x0);//c0h
-  RegisterWrite(REG_DMA_DX1,x0>>8);//c1h
-  RegisterWrite(REG_DMA_DY0,y0);//c2h
-  RegisterWrite(REG_DMA_DY1,y0>>8);//c3h 
-  RegisterWrite(REG_DMAW_WTH0,width);//c6h
-  RegisterWrite(REG_DMAW_WTH1,width>>8);//c7h
-  RegisterWrite(REG_DMAW_HIGH0,height);//c8h
-  RegisterWrite(REG_DMAW_HIGH1,height>>8);//c9h 
-  RegisterWrite(REG_DMA_SWTH0,picture_width);//cah
-  RegisterWrite(REG_DMA_SWTH1,picture_width>>8);//cbh 
-  RegisterWrite(REG_DMA_SSTR0,addr);//bch
-  RegisterWrite(REG_DMA_SSTR1,addr>>8);//bdh
-  RegisterWrite(REG_DMA_SSTR2,addr>>16);//beh
-  RegisterWrite(REG_DMA_SSTR3,addr>>24);//bfh 
+  _bus->RegisterWrite(REG_DMA_DX0,x0);//c0h
+  _bus->RegisterWrite(REG_DMA_DX1,x0>>8);//c1h
+  _bus->RegisterWrite(REG_DMA_DY0,y0);//c2h
+  _bus->RegisterWrite(REG_DMA_DY1,y0>>8);//c3h 
+  _bus->RegisterWrite(REG_DMAW_WTH0,width);//c6h
+  _bus->RegisterWrite(REG_DMAW_WTH1,width>>8);//c7h
+  _bus->RegisterWrite(REG_DMAW_HIGH0,height);//c8h
+  _bus->RegisterWrite(REG_DMAW_HIGH1,height>>8);//c9h 
+  _bus->RegisterWrite(REG_DMA_SWTH0,picture_width);//cah
+  _bus->RegisterWrite(REG_DMA_SWTH1,picture_width>>8);//cbh 
+  _bus->RegisterWrite(REG_DMA_SSTR0,addr);//bch
+  _bus->RegisterWrite(REG_DMA_SSTR1,addr>>8);//bdh
+  _bus->RegisterWrite(REG_DMA_SSTR2,addr>>16);//beh
+  _bus->RegisterWrite(REG_DMA_SSTR3,addr>>24);//bfh 
   
-  RegisterWrite(REG_DMA_CTRL, BIT_DMA_START);//b6h 
+  _bus->RegisterWrite(REG_DMA_CTRL, BIT_DMA_START);//b6h 
   CoreTask_WaitReady(); 
  }
 
@@ -19152,36 +19181,36 @@ void RA8889::DMA_24bitAddressBlockMode(uint8_t bus_select,
    
   if(scs_select==0) {
     SFI_SelectROM_CS0();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==1) {
     SFI_SelectROM_CS1();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==2) {
     SFI_SelectROM_CS2();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT2 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT2 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==3) {
     SFI_SelectROM_CS3();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT3 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT3 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   }   
   
-  RegisterWrite(REG_SPI_DIVSOR,clk_div);//bbh 
+  _bus->RegisterWrite(REG_SPI_DIVSOR,clk_div);//bbh 
   
-  RegisterWrite(REG_DMA_DX0,x0);//c0h
-  RegisterWrite(REG_DMA_DX1,x0>>8);//c1h
-  RegisterWrite(REG_DMA_DY0,y0);//c2h
-  RegisterWrite(REG_DMA_DY1,y0>>8);//c3h 
-  RegisterWrite(REG_DMAW_WTH0,width);//c6h
-  RegisterWrite(REG_DMAW_WTH1,width>>8);//c7h
-  RegisterWrite(REG_DMAW_HIGH0,height);//c8h
-  RegisterWrite(REG_DMAW_HIGH1,height>>8);//c9h 
-  RegisterWrite(REG_DMA_SWTH0,picture_width);//cah
-  RegisterWrite(REG_DMA_SWTH1,picture_width>>8);//cbh 
-  RegisterWrite(REG_DMA_SSTR0,addr);//bch
-  RegisterWrite(REG_DMA_SSTR1,addr>>8);//bdh
-  RegisterWrite(REG_DMA_SSTR2,addr>>16);//beh
-  RegisterWrite(REG_DMA_SSTR3,addr>>24);//bfh  
+  _bus->RegisterWrite(REG_DMA_DX0,x0);//c0h
+  _bus->RegisterWrite(REG_DMA_DX1,x0>>8);//c1h
+  _bus->RegisterWrite(REG_DMA_DY0,y0);//c2h
+  _bus->RegisterWrite(REG_DMA_DY1,y0>>8);//c3h 
+  _bus->RegisterWrite(REG_DMAW_WTH0,width);//c6h
+  _bus->RegisterWrite(REG_DMAW_WTH1,width>>8);//c7h
+  _bus->RegisterWrite(REG_DMAW_HIGH0,height);//c8h
+  _bus->RegisterWrite(REG_DMAW_HIGH1,height>>8);//c9h 
+  _bus->RegisterWrite(REG_DMA_SWTH0,picture_width);//cah
+  _bus->RegisterWrite(REG_DMA_SWTH1,picture_width>>8);//cbh 
+  _bus->RegisterWrite(REG_DMA_SSTR0,addr);//bch
+  _bus->RegisterWrite(REG_DMA_SSTR1,addr>>8);//bdh
+  _bus->RegisterWrite(REG_DMA_SSTR2,addr>>16);//beh
+  _bus->RegisterWrite(REG_DMA_SSTR3,addr>>24);//bfh  
   
-  RegisterWrite(REG_DMA_CTRL, BIT_DMA_START);//b6h 
+  _bus->RegisterWrite(REG_DMA_CTRL, BIT_DMA_START);//b6h 
   CoreTask_WaitReady(); 
  }
  
@@ -19216,77 +19245,77 @@ void RA8889::DMA_24bitAddressLinearMode(uint8_t bus_select,
   uint8_t temp = 0;
 
    //switch canvas to 8bpp format and canvas linear mode
-  SPI_CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  _bus->CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp |= BIT_CANVAS_LINEAR_MODE;
   temp |= BIT_CANVAS_COLOR_DEPTH_8BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   if(bus_select==0) Font_DMA_Select_Bus0();
   if(bus_select==1) Font_DMA_Select_Bus1();
    
   if(scs_select==0) { 
     SFI_SelectROM_CS0();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==1) {
     SFI_SelectROM_CS1(); 
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==2) {
     SFI_SelectROM_CS2();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT2 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT2 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==3) {
     SFI_SelectROM_CS3();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT3 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT3 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_24BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   }
     
-  RegisterWrite(REG_SPI_DIVSOR, clk_div);//bbh  
+  _bus->RegisterWrite(REG_SPI_DIVSOR, clk_div);//bbh  
   
-  RegisterWrite(REG_DMA_DX0, des_address);//c0h
-  RegisterWrite(REG_DMA_DX1, des_address>>8);//c1h
-  RegisterWrite(REG_DMA_DY0, des_address>>16);//c2h
-  RegisterWrite(REG_DMA_DY1, des_address>>24);//c3h 
+  _bus->RegisterWrite(REG_DMA_DX0, des_address);//c0h
+  _bus->RegisterWrite(REG_DMA_DX1, des_address>>8);//c1h
+  _bus->RegisterWrite(REG_DMA_DY0, des_address>>16);//c2h
+  _bus->RegisterWrite(REG_DMA_DY1, des_address>>24);//c3h 
 
-  RegisterWrite(REG_DMAW_WTH0, number);//c6
-  RegisterWrite(REG_DMAW_WTH1, number>>8);//c7
-  RegisterWrite(REG_DMAW_HIGH0, number>>16);//c8
-  RegisterWrite(REG_DMAW_HIGH1, number>>24);//c9
+  _bus->RegisterWrite(REG_DMAW_WTH0, number);//c6
+  _bus->RegisterWrite(REG_DMAW_WTH1, number>>8);//c7
+  _bus->RegisterWrite(REG_DMAW_HIGH0, number>>16);//c8
+  _bus->RegisterWrite(REG_DMAW_HIGH1, number>>24);//c9
 
-  RegisterWrite(REG_DMA_SSTR0, source_addr);//bch
-  RegisterWrite(REG_DMA_SSTR1, source_addr>>8);//bdh
-  RegisterWrite(REG_DMA_SSTR2, source_addr>>16);//beh
-  RegisterWrite(REG_DMA_SSTR3, source_addr>>24);//bfh 
+  _bus->RegisterWrite(REG_DMA_SSTR0, source_addr);//bch
+  _bus->RegisterWrite(REG_DMA_SSTR1, source_addr>>8);//bdh
+  _bus->RegisterWrite(REG_DMA_SSTR2, source_addr>>16);//beh
+  _bus->RegisterWrite(REG_DMA_SSTR3, source_addr>>24);//bfh 
   
-  RegisterWrite(REG_DMA_CTRL, BIT_DMA_START);//b6h 
+  _bus->RegisterWrite(REG_DMA_CTRL, BIT_DMA_START);//b6h 
   CoreTask_WaitReady(); 
 
 #if defined(COLOR_DEPTH_16)
   
-  SPI_CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  _bus->CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp = 0;
   temp |= BIT_CANVAS_BLOCK_MODE;
   temp |= BIT_CANVAS_COLOR_DEPTH_16BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
   temp = 0;
   temp |= BIT_S0_COLOR_DEPTH_16BPP;
   temp |= BIT_S1_COLOR_DEPTH_16BPP;
   temp |= BIT_DESTINATION_COLOR_DEPTH_16BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
 #elif defined(COLOR_DEPTH_24)
   
-  SPI_CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  _bus->CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp = 0;
   temp |= BIT_CANVAS_BLOCK_MODE;
   temp |= BIT_CANVAS_COLOR_DEPTH_24BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
   temp = 0;
   temp |= BIT_S0_COLOR_DEPTH_24BPP;
   temp |= BIT_S1_COLOR_DEPTH_24BPP;
   temp |= BIT_DESTINATION_COLOR_DEPTH_24BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
 #endif
 
@@ -19322,77 +19351,77 @@ void RA8889::DMA_24bitAddressLinearMode(uint8_t bus_select,
   uint8_t temp = 0;
 
    //switch canvas to 8bpp format and canvas linear mode
-  SPI_CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  _bus->CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp |= BIT_CANVAS_LINEAR_MODE;
   temp |= BIT_CANVAS_COLOR_DEPTH_8BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   if(bus_select==0) Font_DMA_Select_Bus0();
   if(bus_select==1) Font_DMA_Select_Bus1();
    
   if(scs_select==0) { 
     SFI_SelectROM_CS0();  
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT0 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==1) {
     SFI_SelectROM_CS1();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT1 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==2) {
     SFI_SelectROM_CS2();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT2 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT2 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   } else if(scs_select==3) {
     SFI_SelectROM_CS3();
-    RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT3 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
+    _bus->RegisterWrite(REG_SFL_CTRL, BIT_SERIAL_FLASH_SELECT3 | BIT_SERIAL_FLASH_DMA_MODE | BIT_SERIAL_FLASH_ADDR_32BIT | BIT_FOLLOW_RA8875_MODE | BIT_SPI_FAST_READ_8DUMMY);
   }
      
-  RegisterWrite(REG_SPI_DIVSOR,clk_div);//bbh 
+  _bus->RegisterWrite(REG_SPI_DIVSOR,clk_div);//bbh 
   
-  RegisterWrite(REG_DMA_DX0, des_address);//c0h
-  RegisterWrite(REG_DMA_DX1, des_address>>8);//c1h
-  RegisterWrite(REG_DMA_DY0, des_address>>16);//c2h
-  RegisterWrite(REG_DMA_DY1, des_address>>24);//c3h 
+  _bus->RegisterWrite(REG_DMA_DX0, des_address);//c0h
+  _bus->RegisterWrite(REG_DMA_DX1, des_address>>8);//c1h
+  _bus->RegisterWrite(REG_DMA_DY0, des_address>>16);//c2h
+  _bus->RegisterWrite(REG_DMA_DY1, des_address>>24);//c3h 
 
-  RegisterWrite(REG_DMAW_WTH0, number);//c6
-  RegisterWrite(REG_DMAW_WTH1, number>>8);//c7
-  RegisterWrite(REG_DMAW_HIGH0, number>>16);//c8
-  RegisterWrite(REG_DMAW_HIGH1, number>>24);//c9
+  _bus->RegisterWrite(REG_DMAW_WTH0, number);//c6
+  _bus->RegisterWrite(REG_DMAW_WTH1, number>>8);//c7
+  _bus->RegisterWrite(REG_DMAW_HIGH0, number>>16);//c8
+  _bus->RegisterWrite(REG_DMAW_HIGH1, number>>24);//c9
 
-  RegisterWrite(REG_DMA_SSTR0, source_addr);//bch
-  RegisterWrite(REG_DMA_SSTR1, source_addr>>8);//bdh
-  RegisterWrite(REG_DMA_SSTR2, source_addr>>16);//beh
-  RegisterWrite(REG_DMA_SSTR3, source_addr>>24);//bfh 
+  _bus->RegisterWrite(REG_DMA_SSTR0, source_addr);//bch
+  _bus->RegisterWrite(REG_DMA_SSTR1, source_addr>>8);//bdh
+  _bus->RegisterWrite(REG_DMA_SSTR2, source_addr>>16);//beh
+  _bus->RegisterWrite(REG_DMA_SSTR3, source_addr>>24);//bfh 
   
-  RegisterWrite(REG_DMA_CTRL, BIT_DMA_START);//b6h 
+  _bus->RegisterWrite(REG_DMA_CTRL, BIT_DMA_START);//b6h 
   CoreTask_WaitReady(); 
 
 #if defined(COLOR_DEPTH_16)
   
-  SPI_CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  _bus->CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp = 0;
   temp |= BIT_CANVAS_BLOCK_MODE;
   temp |= BIT_CANVAS_COLOR_DEPTH_16BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
   temp = 0;
   temp |= BIT_S0_COLOR_DEPTH_16BPP;
   temp |= BIT_S1_COLOR_DEPTH_16BPP;
   temp |= BIT_DESTINATION_COLOR_DEPTH_16BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
 #elif defined(COLOR_DEPTH_24)
   
-  SPI_CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  _bus->CmdWrite(REG_AW_COLOR);                  //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp = 0;
   temp |= BIT_CANVAS_BLOCK_MODE;
   temp |= BIT_CANVAS_COLOR_DEPTH_24BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
   temp = 0;
   temp |= BIT_S0_COLOR_DEPTH_24BPP;
   temp |= BIT_S1_COLOR_DEPTH_24BPP;
   temp |= BIT_DESTINATION_COLOR_DEPTH_24BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
 #endif
    
@@ -19535,6 +19564,42 @@ void RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
 }
 
 
+/** 
+ * @brief  Seta os pino da luz de fundo
+ *
+ * @verbatim
+ * Uso com Sheild ER-AS-5517
+ * -------------------------
+ * O módulo shield ER-AS-5517 para ser utilizado em Arduino UNO/Mega/Duo 
+ * não apresenta uma ligação de controle num dos pinos do arduino ao 
+ * pino 14 do módulo de display ER-TFT070-2-6105. Ao invés disso, o pino 14 
+ * do módulo de display é conectado ao pino 14 do shield e este ligado ao Vcc 
+ * de 3,3V. Desta forma, o display permanece sempre ligado, sem possibilidade
+ * de desligar a luz de fundo do display.  
+ *
+ * Sem uso do Shield
+ * -----------------
+ * Quando é utilziado um adaptador cabo flat para barra de pinos entre o MCU e 
+ * o módulo de display o controle de ligar/desligar a luz de fundo já se torna 
+ * possível.  Isso é feito utilziando um dos pinos do MCU disponível conectado 
+ * diretamente ao pino 14 (BL CONBTROL) do módulo de display ER-TFT070-2-6105.  
+ * No display ER-TFT070-2-6105 baseado no controlador da RAIO RA8889 o 
+ * controle de backlight precisa ser feito pelo usuário. 
+ * Para oturos módulos de display, por exemplo o ER-TFTM070-5 baseado no RA8875,
+ * o seu pino 14 é mantido geralmetne solto, sem conexão com nada.
+ * @endverbatim
+ * @param pin: Número do pino do Host que será conectado ao modulo de display
+ * 
+ * @note None
+ */
+void RA8889::setBacklight(uint8_t pin) {
+  if (pin == 0) return;
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);                      //por padrão é desligado
+  _pin_backlight = pin;
+}
+
+
 /** Não surtiu efeito
  * @brief  Turn Backlight On/Off
  *
@@ -19544,16 +19609,16 @@ void RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
  */
 void RA8889::Backlight(bool on) {
   if (on) {
-	  RegisterWrite(REG_PMUXR, 
+	  _bus->RegisterWrite(REG_PMUXR, 
 	                BIT_PWM1_TIMER_DIV1 | BIT_PWM0_TIMER_DIV1 | BIT_XPWM1_OUTPUT_ERROR_FLAG | 
 					BIT_XPWM0_OUTPUT_PWM_TIMER0);
-	  RegisterWrite(REG_PCFGR, 
+	  _bus->RegisterWrite(REG_PCFGR, 
 	                BIT_PWM1_INVERTER_OFF | BIT_PWM1_AUTO_RELOAD | BIT_PWM1_STOP | 
 	                BIT_PWM0_DEAD_ZONE_ENABLE | BIT_PWM0_INVERTER_OFF | BIT_PWM0_AUTO_RELOAD | BIT_PWM0_START);
       PWM0_SetCompareBuffer(0xffff); //Duty Cycles
   
   } else {
-	  RegisterWrite(REG_PCFGR, 
+	  _bus->RegisterWrite(REG_PCFGR, 
 	                BIT_PWM1_INVERTER_OFF | BIT_PWM1_AUTO_RELOAD | BIT_PWM1_STOP | 
 	                BIT_PWM0_DEAD_ZONE_ENABLE | BIT_PWM0_INVERTER_OFF | BIT_PWM0_AUTO_RELOAD | BIT_PWM0_STOP);
   }
@@ -19870,10 +19935,10 @@ void RA8889::SetPixelPos(pospixel_t pos)
 uint16_t RA8889::GetPixelPosX()
 {
   uint16_t pos;
-  SPI_CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
-  pos = SPI_DataRead();                        //Text Write X-coordinate [7:0]
-  SPI_CmdWrite(REG_F_CURX1);                   //0x64, Text Write X-coordinates Register 1 (F_CURX1)
-  pos |= (SPI_DataRead() >> 8);                //Text Write X-coordinate [12:8]
+  _bus->CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
+  pos = _bus->DataRead();                        //Text Write X-coordinate [7:0]
+  _bus->CmdWrite(REG_F_CURX1);                   //0x64, Text Write X-coordinates Register 1 (F_CURX1)
+  pos |= (_bus->DataRead() >> 8);                //Text Write X-coordinate [12:8]
   return pos;
 }
 
@@ -19891,10 +19956,10 @@ uint16_t RA8889::GetPixelPosX()
 uint16_t RA8889::GetPixelPosY()
 {
   uint16_t pos;
-  SPI_CmdWrite(REG_F_CURY0);                   //0x65, Text Write Y-coordinates Register 0 (F_CURY0)
-  pos = SPI_DataRead();                        //Text Write Y-coordinate [7:0]
-  SPI_CmdWrite(REG_F_CURY1);                   //0x66, Text Write Y-coordinates Register 1 (F_CURY1)
-  pos |= SPI_DataRead() >> 8;                  //Text Write Y-coordinate [12:8]
+  _bus->CmdWrite(REG_F_CURY0);                   //0x65, Text Write Y-coordinates Register 0 (F_CURY0)
+  pos = _bus->DataRead();                        //Text Write Y-coordinate [7:0]
+  _bus->CmdWrite(REG_F_CURY1);                   //0x66, Text Write Y-coordinates Register 1 (F_CURY1)
+  pos |= _bus->DataRead() >> 8;                  //Text Write Y-coordinate [12:8]
   return pos;
 }
 
@@ -19912,15 +19977,15 @@ uint16_t RA8889::GetPixelPosY()
 pospixel_t RA8889::GetPixelPosXY()
 {
   pospixel_t pos;
-  SPI_CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
-  pos.x = SPI_DataRead();                      //Text Write X-coordinate [7:0]
-  SPI_CmdWrite(REG_F_CURX1);                   //0x64, Text Write X-coordinates Register 1 (F_CURX1)
-  pos.x |= (SPI_DataRead() >> 8);              //Text Write X-coordinate [12:8]
+  _bus->CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
+  pos.x = _bus->DataRead();                      //Text Write X-coordinate [7:0]
+  _bus->CmdWrite(REG_F_CURX1);                   //0x64, Text Write X-coordinates Register 1 (F_CURX1)
+  pos.x |= (_bus->DataRead() >> 8);              //Text Write X-coordinate [12:8]
     
-  SPI_CmdWrite(REG_F_CURY0);                   //0x65, Text Write Y-coordinates Register 0 (F_CURY0)
-  pos.y = SPI_DataRead();                      //Text Write Y-coordinate [7:0]
-  SPI_CmdWrite(REG_F_CURY1);                   //0x66, Text Write Y-coordinates Register 1 (F_CURY1)
-  pos.y |= SPI_DataRead() >> 8;                //Text Write Y-coordinate [12:8]
+  _bus->CmdWrite(REG_F_CURY0);                   //0x65, Text Write Y-coordinates Register 0 (F_CURY0)
+  pos.y = _bus->DataRead();                      //Text Write Y-coordinate [7:0]
+  _bus->CmdWrite(REG_F_CURY1);                   //0x66, Text Write Y-coordinates Register 1 (F_CURY1)
+  pos.y |= _bus->DataRead() >> 8;                //Text Write Y-coordinate [12:8]
   
   return pos;
 }
@@ -19962,7 +20027,7 @@ void RA8889::ShowPage(uint8_t page)
 
 
 //limpa a tela com a cor desejada
-void RA8889::ClearCurrentPage(uint32_t color = 0x00000000)
+void RA8889::ClearCurrentPage(uint32_t color)
 {
   ForegroundColor(color);                      //High level, Foreground color
   Point1_XY(0, 0);
@@ -20014,15 +20079,15 @@ void RA8889::PutPixel(uint16_t x,      // x of coordinate
                            )
 {
   GotoPixel_XY(x, y);                          //Posiciona o pixel na tela
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   Wait_WriteFIFO_NotFull();                    //Espera que a FIFO não esteja cheia de algum outro processamento anterior
   
   #if defined(COLOR_DEPTH_8)
-    SPI_DataWrite8(color & 0xff);
+    _bus->DataWrite8(color & 0xff);
   #elif defined(COLOR_DEPTH_16)
-    SPI_DataWrite16(color & 0xffff);
+    _bus->DataWrite16(color & 0xffff);
   #elif defined(COLOR_DEPTH_24)
-    SPI_DataWrite24(color & 0xffffff);
+    _bus->DataWrite24(color & 0xffffff);
   #else
 	#error "COLOR_DEPTH não definido corretamente"
   #endif
@@ -20049,20 +20114,20 @@ uint32_t RA8889::getPixel(uint16_t x, uint16_t y)
 {
   uint32_t color = 0;
   GotoPixel_XY(x, y);                          //Posiciona o pixel na tela
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
-	SPI_DataRead();	                             //dummy read is required somehow
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->DataRead();	                             //dummy read is required somehow
 
   Wait_WriteFIFO_NotFull();                    //Espera que a FIFO não esteja cheia de algum outro processamento anterior
 
   #if defined(COLOR_DEPTH_8)
-    color = SPI_DataRead();
+    color = _bus->DataRead();
   #elif defined(COLOR_DEPTH_16)
-    color = SPI_DataRead();                   //low byte color
-    color |= SPI_DataRead() << 8;             //high byte color
+    color = _bus->DataRead();                   //low byte color
+    color |= _bus->DataRead() << 8;             //high byte color
   #elif defined(COLOR_DEPTH_24)
-    color = SPI_DataRead();                   //low byte color
-    color |= SPI_DataRead() << 8;             //middle byte color
-    color |= SPI_DataRead() << 16;            //high byte color
+    color = _bus->DataRead();                   //low byte color
+    color |= _bus->DataRead() << 8;             //middle byte color
+    color |= _bus->DataRead() << 16;            //high byte color
   #else
 	  #error "COLOR_DEPTH não definido corretamente"
   #endif
@@ -20082,20 +20147,20 @@ void RA8889::PushBlock(uint16_t x,
                           )
 {
     GotoPixel_XY(x, y);           // posição inicial
-    SPI_CmdWrite(REG_MRWDP);      // 0x04, Memory Data Read/Write Port
+    _bus->CmdWrite(REG_MRWDP);      // 0x04, Memory Data Read/Write Port
 
 #if defined(COLOR_DEPTH_8)
     const uint8_t* p = static_cast<const uint8_t*>(color_buffer);
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
-        SPI_DataWrite8(p[i]);
+        _bus->DataWrite8(p[i]);
     }
 
 #elif defined(COLOR_DEPTH_16)
     const uint16_t* p = static_cast<const uint16_t*>(color_buffer);
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
-        SPI_DataWrite16(p[i]);
+        _bus->DataWrite16(p[i]);
     }
 
 #elif defined(COLOR_DEPTH_24)
@@ -20103,7 +20168,7 @@ void RA8889::PushBlock(uint16_t x,
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
         // envia 3 bytes consecutivos
-        SPI_DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
+        _bus->DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
         p += 3;
     }
 
@@ -20143,18 +20208,18 @@ void RA8889::PushBlock(uint16_t x,
  */
 void RA8889::WritePixels(const void* color_buffer,
                                uint32_t num_pixels,
-                               bool auto_increment = true  // true = avança cursor, false = mantém posição (cursosr interno do display)
+                               bool auto_increment  // true = avança cursor, false = mantém posição (cursosr interno do display)
                               ) 
 {
     GotoPixel_XY(0, 0);           // posição inicial
 
-    SPI_CmdWrite(REG_MRWDP);      // Memory Data Read/Write Port
+    _bus->CmdWrite(REG_MRWDP);      // Memory Data Read/Write Port
 
 #if defined(COLOR_DEPTH_8)
     const uint8_t* p = static_cast<const uint8_t*>(color_buffer);
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
-        SPI_DataWrite8(p[i]);
+        _bus->DataWrite8(p[i]);
 
         // mantém o cursor no mesmo pixel
         // precisa resetar para 0,0 ou posição inicial
@@ -20165,7 +20230,7 @@ void RA8889::WritePixels(const void* color_buffer,
     const uint16_t* p = static_cast<const uint16_t*>(color_buffer);
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
-        SPI_DataWrite16(p[i]);
+        _bus->DataWrite16(p[i]);
         if(!auto_increment) GotoPixel_XY(0, 0);
     }
 
@@ -20173,7 +20238,7 @@ void RA8889::WritePixels(const void* color_buffer,
     const uint8_t* p = static_cast<const uint8_t*>(color_buffer); 
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
-        SPI_DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
+        _bus->DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
         if(!auto_increment) GotoPixel_XY(0, 0);
         p += 3;
     }
@@ -20256,12 +20321,12 @@ void RA8889::DrawPixel(uint16_t x, uint16_t y, uint32_t color)
 void RA8889::DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, uint16_t *data)
 {  
   GotoPixel_XY(x, y);
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   Wait_WriteFIFO_NotFull();                    //Espera que a FIFO não esteja cheia de algum outro processamento anterior
 
   #ifdef COLOR_DEPTH_16
     for (uint32_t i = 0; i < num_pixels; i++) {                    //y
-      SPI_DataWrite16((uint16_t)*data);
+      _bus->DataWrite16((uint16_t)*data);
       data++;                                       //incrementa o potneiro 2 bytes para a poxima posição 
     }
   #endif
@@ -20275,7 +20340,7 @@ void RA8889::DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, uint16_t *d
                          | (((uint32_t)data8[1]) << 8)  // byte 1 → bits 8-15
                          | (((uint32_t)data8[2]) << 16); // byte 2 → bits 16-23
       
-      SPI_DataWrite24(tmpcolor);
+      _bus->DataWrite24(tmpcolor);
 
       data8+= 3;                              //incrementa o potneiro 3 bytes para a poxima posição
     }
@@ -20341,7 +20406,7 @@ void RA8889::DrawSquare(uint16_t x1,
                               uint16_t x2,
                               uint16_t y2,
                               uint32_t forecolor,
-                              bool bfill = false
+                              bool bfill
                              )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20377,7 +20442,7 @@ void RA8889::DrawTriangle(uint16_t x1,
                                 uint16_t x3,
                                 uint16_t y3,
                                 uint32_t forecolor,
-                                bool bfill = false
+                                bool bfill
                                )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20409,7 +20474,7 @@ void RA8889::DrawCircle (uint16_t x1,
                                uint16_t y1,
                                uint16_t R,
                                uint32_t forecolor,
-                               bool bfill = false
+                               bool bfill
                               )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20442,7 +20507,7 @@ void RA8889::DrawEllipse (uint16_t x1,
                                 uint16_t Rx,
                                 uint16_t Ry,
                                 uint32_t forecolor,
-                                bool bfill = false
+                                bool bfill
                                )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20475,7 +20540,7 @@ void RA8889::DrawCurveLeftUp(uint16_t x1,
                                    uint16_t Rx,
                                    uint16_t Ry,
                                    uint32_t forecolor,
-                                   bool bfill = false
+                                   bool bfill
                                   )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20508,7 +20573,7 @@ void RA8889::DrawCurveRightDown(uint16_t x1,
                                       uint16_t Rx,
                                       uint16_t Ry,
                                       uint32_t forecolor,
-                                      bool bfill = false
+                                      bool bfill
                                      )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20543,7 +20608,7 @@ void RA8889::DrawCurveRightUp(uint16_t x1,
                                     uint16_t Rx,
                                     uint16_t Ry,
                                     uint32_t forecolor,
-                                    bool bfill = false
+                                    bool bfill
                                    )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20578,7 +20643,7 @@ void RA8889::DrawCurveLeftDown(uint16_t x1,
                                      uint16_t Rx,
                                      uint16_t Ry,
                                      uint32_t forecolor,
-                                     bool bfill = false
+                                     bool bfill
                                     )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20616,7 +20681,7 @@ void RA8889::DrawCircleSquare(uint16_t x1,
                                     uint16_t Rx,
                                     uint16_t Ry,
                                     uint32_t forecolor,
-                                    bool bfill = false
+                                    bool bfill
                                    )
 {
   ForegroundColor(forecolor);                  //High level, Foreground color
@@ -20657,27 +20722,27 @@ void RA8889::DrawCircleSquare(uint16_t x1,
 void RA8889::ShowPicturePgm(uint32_t size, const uint8_t *datap)
 {   
   uint32_t i;
-  SPI_CmdWrite(REG_MRWDP);                            //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                            //0x04, Memory Data Read/Write Port (MRWDP)
 #if defined(COLOR_DEPTH_8)
   while(i < size)
   {
-    SPI_DataWrite(pgm_read_byte(&datap[i++]));
-    SPI_DataWrite(pgm_read_byte(&datap[i++]));
+    _bus->DataWrite(pgm_read_byte(&datap[i++]));
+    _bus->DataWrite(pgm_read_byte(&datap[i++]));
     Wait_WriteFIFO_NotFull();
   }
 #elif defined(COLOR_DEPTH_16)
   for(i=0; i < size; i+=2) {                          //total_bytes = tamanho da image * (byte_per_pixel/8)
 	//declare Arduino.h, para usar a funcao pgm_read_byte()
-    SPI_DataWrite( pgm_read_byte(&datap[i+1]) );      //Envia cada byte declarados em PROGMEM byte posterior
-    SPI_DataWrite(pgm_read_byte(&datap[i]));          //Envia cada byte declarados em PROGMEM byte anterior
+    _bus->DataWrite( pgm_read_byte(&datap[i+1]) );      //Envia cada byte declarados em PROGMEM byte posterior
+    _bus->DataWrite(pgm_read_byte(&datap[i]));          //Envia cada byte declarados em PROGMEM byte anterior
     Wait_WriteFIFO_NotFull();
   }
 #elif defined(COLOR_DEPTH_24)
   for(i=0; i < size; i+=3) {                          //total_bytes = tamanho da image * (byte_per_pixel/8)
 	//declare Arduino.h, para usar a funcao pgm_read_byte()
-    SPI_DataWrite( pgm_read_byte(&datap[i+2]) );      //Envia cada byte declarados em PROGMEM byte posterior
-    SPI_DataWrite( pgm_read_byte(&datap[i+1]) );      //Envia cada byte declarados em PROGMEM byte posterior
-    SPI_DataWrite( pgm_read_byte(&datap[i])   );      //Envia cada byte declarados em PROGMEM byte anterior
+    _bus->DataWrite( pgm_read_byte(&datap[i+2]) );      //Envia cada byte declarados em PROGMEM byte posterior
+    _bus->DataWrite( pgm_read_byte(&datap[i+1]) );      //Envia cada byte declarados em PROGMEM byte posterior
+    _bus->DataWrite( pgm_read_byte(&datap[i])   );      //Envia cada byte declarados em PROGMEM byte anterior
     Wait_WriteFIFO_NotFull();
   }
 #else
@@ -20709,7 +20774,7 @@ void RA8889::DrawPicturePgm(uint16_t Wx, uint16_t Hy, uint16_t width, uint16_t h
   GotoPixel_XY(Wx, Hy);
 
   uint32_t size = width * height * (_bpp / 8);      //valor de _bpp é definido no sistema de acordo com o colordepth escolhido apra o display
-  ShowPicturePgm(size, *datap);
+  ShowPicturePgm(size, datap);
 
   ActiveWindow_XY(0,0);
   ActiveWindow_WidhtHeight(_displaywidth, _displayheight);
@@ -20739,25 +20804,25 @@ void RA8889::DrawPicturePgm(uint16_t Wx, uint16_t Hy, uint16_t width, uint16_t h
 void RA8889::ShowPicture(eColorDepthBPP pictureBpp, uint32_t numpixels, const uint8_t *datap)
 {   
   uint32_t i;
-  SPI_CmdWrite(REG_MRWDP);                            //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                            //0x04, Memory Data Read/Write Port (MRWDP)
   if (pictureBpp == eColorDepthBPP::bpp8) {
     while(i < numpixels)
     {
-      SPI_DataWrite(datap[i++]);
-      SPI_DataWrite(datap[i++]);
+      _bus->DataWrite(datap[i++]);
+      _bus->DataWrite(datap[i++]);
       Wait_WriteFIFO_NotFull();
     }
   } else if (pictureBpp == eColorDepthBPP::bpp16) {
     for(i=0; i < numpixels; i+=2) {                     //total_bytes = tamanho da image * (byte_per_pixel/8)
-      SPI_DataWrite(datap[i+1]);                        //Parte baixa no byte seguinte
-      SPI_DataWrite(datap[i]);                          //Parte alta no atual byte 
+      _bus->DataWrite(datap[i+1]);                        //Parte baixa no byte seguinte
+      _bus->DataWrite(datap[i]);                          //Parte alta no atual byte 
       Wait_WriteFIFO_NotFull();
     }
   } else if (pictureBpp == eColorDepthBPP::bpp24) {
     for(i=0; i < numpixels; i+=3) {                     //total_bytes = tamanho da image * (byte_per_pixel/8)
-      SPI_DataWrite(datap[i+2]);                        //Parte bits baixos [7:0] 
-      SPI_DataWrite(datap[i+1]);                        //Parte bits central [15:8]  
-      SPI_DataWrite(datap[i]);                          //Parte bits altos [23:16]
+      _bus->DataWrite(datap[i+2]);                        //Parte bits baixos [7:0] 
+      _bus->DataWrite(datap[i+1]);                        //Parte bits central [15:8]  
+      _bus->DataWrite(datap[i]);                          //Parte bits altos [23:16]
       Wait_WriteFIFO_NotFull();
     }
   }
@@ -20875,9 +20940,9 @@ void RA8889::TextColor(uint32_t fgcolor, uint32_t bgcolor)
  */
 void RA8889::ShowText(char *str)
 {  
-  SPI_CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
   while(*str != '\0') {                        //Até final de string
-    SPI_DataWrite(*str);                       //envia de um em um caracter
+    _bus->DataWrite(*str);                       //envia de um em um caracter
     Wait_WriteFIFO_NotFull();                  //
     ++str;                                     //proximo caracter para imprimir no display
   }
@@ -20950,7 +21015,7 @@ void RA8889::setFontSource(eFontSource source)
  * @note None
  *
  */
-void RA8889::setFontUser(FontUserParam param, bool enable = false)
+void RA8889::setFontUser(FontUserParam param, bool enable)
 {
 //compeltar... codigo aqui faltando
 
@@ -20984,7 +21049,7 @@ void RA8889::setFontUser(FontUserParam param, bool enable = false)
  *       configurada como tamanho 8x16, ISOIEC8859-1, com chromakey 
  *       desabilitado.
  */
-void RA8889::setFontExternal(FontExternalParam param, bool enable = false)
+void RA8889::setFontExternal(FontExternalParam param, bool enable)
 {
   
   GTFont_CharacterParameter(param.scs_select,
@@ -21019,7 +21084,7 @@ void RA8889::setFontExternal(FontExternalParam param, bool enable = false)
  *       ISOIEC8859-1, com chromakey desabilitado. Não suporta outros valores
  *       de height de fonte interna.
  */
-void RA8889::setFontInternal(FontInternalParam param, bool enable = false)
+void RA8889::setFontInternal(FontInternalParam param, bool enable)
 {
   uint8_t temp = 0;
 
@@ -21144,15 +21209,15 @@ bool RA8889::PutUnicodeString(uint16_t x, uint16_t y, uint32_t fgcolor, uint32_t
     if((*str)>=0x0020 && (*str)<0x0080) {
 	   /* ASCII Code*/
        GTFont_SetDecoder(BIT_ASCII | BIT_GT_VARIABLE_WIDTH_ARIAL); 
-       SPI_CmdWrite(REG_MRWDP);                //Memory Data Read/Write Port (MRWDP) 
-       SPI_DataWrite(*str);
+       _bus->CmdWrite(REG_MRWDP);                //Memory Data Read/Write Port (MRWDP) 
+       _bus->DataWrite(*str);
        CoreTask_WaitReady();
     } else {
        /* Unicode */
   	   GTFont_SetDecoder(BIT_UNICODE);         //
-       SPI_CmdWrite(REG_MRWDP);                //Memory Data Read/Write Port (MRWDP) 
-       SPI_DataWrite((*str)>>8); 
-       SPI_DataWrite(*str);
+       _bus->CmdWrite(REG_MRWDP);                //Memory Data Read/Write Port (MRWDP) 
+       _bus->DataWrite((*str)>>8); 
+       _bus->DataWrite(*str);
        CoreTask_WaitReady();
     }
   	++str;
@@ -21605,10 +21670,10 @@ void RA8889::BTE_MemoryCopy(uint32_t s0_addr,
   
   BTE_WindowSize(copy_width,copy_height); 
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_CODE_12;              //BTE ROP Code Bit[3:0] or Color expansion starting bit, S0
   temp |= BIT_BTE_MEMORY_COPY_WITH_ROP;     //Memory Copy with ROP, S0 or S1 comes from memory.
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
   BTE_Enable(true);
   
@@ -21675,11 +21740,11 @@ void RA8889::BTE_MemoryCopyWithROP(uint32_t s0_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(copy_width,copy_height);
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp &= 0x0f;                                //Clear bits 7-4
   temp |= (rop_code & 0x0f) << 4;              //BTE ROP Code
   temp |= BIT_BTE_MEMORY_COPY_WITH_ROP;        //Memory Copy with ROP, S0 or S1 comes from memory. 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   BTE_Enable(true);
   
@@ -21736,9 +21801,9 @@ void RA8889::BTE_MemoryCopyWithChromaKey(uint32_t s0_addr,
   
   BackgroundColor(chromakey_color);           //High level, Background color
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MEMORY_COPY_WITH_CHROMA;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
   BTE_Enable(true);
   
@@ -21798,20 +21863,20 @@ void RA8889::BTE_MPUWriteWithROP(uint32_t s1_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height);
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp &= 0x0f;                                //Clear bits 7-4
   temp |= (rop_code & 0x0f) << 4;              //BTE ROP Code
   temp |= BIT_BTE_MPU_WRITE_WITH_ROP;          //Memory Copy with ROP, S0 or S1 comes from memory. 
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
   BTE_Enable(true);
   
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
 #if defined(COLOR_DEPTH_16)
   for(i=0;i< height;i++) {	
     for(j=0;j< (width*2);j++) {
       Wait_WriteFIFO_NotFull();
-      SPI_DataWrite(*data);
+      _bus->DataWrite(*data);
       data++;
     }
   }
@@ -21885,19 +21950,19 @@ void RA8889::BTE_MPUWriteWithROP(uint32_t s1_addr,
   BTE_Destination_WindowStart_XY(des_x,des_y);
   BTE_WindowSize(width,height);
 
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp &= 0x0f;                                //Clear bits 7-4
   temp |= (rop_code & 0x0f) << 4;              //BTE ROP Code
   temp |= BIT_BTE_MPU_WRITE_WITH_ROP;          //MPU Write with ROP
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
   BTE_Enable(true);
   
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
   for(j=0;j<height;j++) {
     for(i=0;i<width;i++) {
       Wait_WriteFIFO_NotFull();                //if high speed mcu and without Xnwait check
-      SPI_DataWrite16(*data);
+      _bus->DataWrite16(*data);
       data++;
     }
   } 
@@ -21955,15 +22020,15 @@ void RA8889::BTE_MPUWriteWithROP(uint32_t s1_addr,
   BTE_Destination_WindowStart_XY(des_x, des_y);
   BTE_WindowSize(width,height);
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp &= 0x0f;                                //Clear bits 7-4
   temp |= (rop_code & 0x0f) << 4;              //BTE ROP Code
   temp |= BIT_BTE_MPU_WRITE_WITH_ROP;          //MPU Write with ROP
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
     
   BTE_Enable(true);
   
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
 }
 
 
@@ -22010,18 +22075,18 @@ void RA8889::BTE_MPUWriteWithChromaKey(uint32_t des_addr,
 
   BackgroundColor(chromakey_color);           //High level, Background color
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MPU_WRITE_WITH_CHROMA;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   BTE_Enable(true);
   
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
 #if defined(COLOR_DEPTH_16)
   for(i=0;i< height;i++) {
     for(j=0;j< (width*2);j++) {
       Wait_WriteFIFO_NotFull();
-      SPI_DataWrite(*data);
+      _bus->DataWrite(*data);
       data++;
     }
   }
@@ -22086,17 +22151,17 @@ void RA8889::BTE_MPUWriteWithChromaKey(uint32_t des_addr,
 
   BackgroundColor(chromakey_color);           //High level, Background color
 
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MPU_WRITE_WITH_CHROMA;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   BTE_Enable(true);
 
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
   for(j=0;j<height;j++) {
     for(i=0;i<width;i++) {
       Wait_WriteFIFO_NotFull();//if high speed mcu and without Xnwait check
-      SPI_DataWrite16(*data);
+      _bus->DataWrite16(*data);
       data++;
     }
   } 
@@ -22145,13 +22210,13 @@ void RA8889::BTE_MPUWriteWithChromaKey(uint32_t des_addr,
   
   BackgroundColor(chromakey_color);           //High level, Background color
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MPU_WRITE_WITH_CHROMA;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   BTE_Enable(true);
   
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
 }
 
 
@@ -22201,18 +22266,18 @@ void RA8889::BTE_MPUWriteColorExpansion(uint32_t des_addr,
   ForegroundColor(foreground_color);           //High level, Foreground color
   BackgroundColor(background_color);           //High level, Background color
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_BUS_WIDTH8;
   temp |= BIT_BTE_ROP_CODE_7;      
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   BTE_Enable(true);
     
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
   for(i=0;i< height;i++) {	
    for(j=0;j< (width/8);j++) {
      Wait_WriteFIFO_NotFull();
-     SPI_DataWrite(*data);
+     _bus->DataWrite(*data);
      data++;
    }
   }
@@ -22265,14 +22330,14 @@ void RA8889::BTE_MPUWriteColorExpansion(uint32_t des_addr,
   ForegroundColor(foreground_color);           //High level, Foreground color
   BackgroundColor(background_color);           //High level, Background color
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_BUS_WIDTH8;
   temp |= BIT_BTE_MPU_WRITE_COLOR_EXPANSION;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   BTE_Enable(true);
   
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
 }
 
 
@@ -22322,18 +22387,18 @@ void RA8889::BTE_MPUWriteColorExpansionWithChromaKey(uint32_t des_addr,
   ForegroundColor(foreground_color);           //High level, Foreground color
   BackgroundColor(background_color);           //High level, Background color
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_BUS_WIDTH8;
   temp |= BIT_BTE_MPU_WRITE_COLOR_EXPANSION_WITH_CHROMA;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
   BTE_Enable(true);
     
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
   for(i=0;i< height;i++) {
    for(j=0;j< (width/8);j++) {
      Wait_WriteFIFO_NotFull();
-     SPI_DataWrite(*data);
+     _bus->DataWrite(*data);
      data++;
    }
   }
@@ -22387,14 +22452,14 @@ void RA8889::BTE_MPUWriteColorExpansionWithChromaKey(uint32_t des_addr,
   ForegroundColor(foreground_color);           //High level, Foreground color
   BackgroundColor(background_color);           //High level, Background color
 
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_ROP_BUS_WIDTH8;
   temp |= BIT_BTE_MPU_WRITE_COLOR_EXPANSION_WITH_CHROMA;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 
   BTE_Enable(true);
 
-  SPI_CmdWrite(REG_MRWDP);
+  _bus->CmdWrite(REG_MRWDP);
 }
 
 
@@ -22433,17 +22498,17 @@ void RA8889::BTE_MemoryCopyWith_ARGB8888(uint32_t s1_addr,
 {
   uint8_t temp = 0;
   
-  SPI_CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
+  _bus->CmdWrite(REG_BTE_CTRL1);                 //0x91, BTE Function Control Register1 (BTE_CTRL1)
   temp |= BIT_BTE_MEMORY_COPY_WITH_OPACITY;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
   temp = 0;
  
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
   temp |= BIT_S0_COLOR_DEPTH_24BPP;
   temp |= BIT_S1_32BIT_ARGB_ALPHA_BLENDING;
   temp |= BIT_DESTINATION_COLOR_DEPTH_24BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
   
   BTE_S1_MemoryStartAddress(s1_addr);
   BTE_S1_ImageWidth(s1_image_width);
@@ -22465,9 +22530,9 @@ void RA8889::BTE_MemoryCopyWith_ARGB8888(uint32_t s1_addr,
 
   temp = 0;
 
-  SPI_CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
+  _bus->CmdWrite(REG_BTE_COLR);                  //0x92, Source 0/1 & Destination Color Depth (BTE_COLR)
   temp |= BIT_S0_COLOR_DEPTH_24BPP;
   temp |= BIT_S1_COLOR_DEPTH_24BPP;
   temp |= BIT_DESTINATION_COLOR_DEPTH_24BPP;
-  SPI_DataWrite(temp);
+  _bus->DataWrite(temp);
 }

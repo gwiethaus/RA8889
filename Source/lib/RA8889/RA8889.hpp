@@ -1685,21 +1685,21 @@ void SerialPrintH(String msg, uint64_t value, bool b, bool newline);
 #endif
 
 class RA8889 : public DisplayBase {   //herdado de DisplayBase
-  IBus* _bus = nullptr;
   private:
-    void SPISetCS(uint8_t level_cs);
-    uint8_t SPIRwByte(uint8_t value);
-    void SPI_CmdWrite(uint8_t cmd);
-    void SPI_DataWrite(uint8_t data);
-    void SPI_DataWrite8(uint8_t data);
-    void SPI_DataWrite16(uint16_t data);
-    void SPI_DataWrite24(uint32_t data);
-    void SPI_DataWrite_Pixel(uint16_t data);
-    uint8_t SPI_DataRead(void);
-    uint16_t SPI_DataRead16(uint8_t address);
-    uint8_t StatusRead(void);
-    void RegisterWrite(uint8_t reg, uint8_t data);
-    uint8_t RegisterRead(uint8_t reg);
+    IBus* _bus = nullptr;
+    //void SPISetCS(uint8_t level_cs);
+    //uint8_t SPIRwByte(uint8_t value);
+    //void SPI_CmdWrite(uint8_t cmd);
+    //void SPI_DataWrite(uint8_t data);
+    //void SPI_DataWrite8(uint8_t data);
+    //void SPI_DataWrite16(uint16_t data);
+    //void SPI_DataWrite24(uint32_t data);
+    //void SPI_DataWrite_Pixel(uint16_t data);
+    //uint8_t SPI_DataRead(void);
+    //uint16_t SPI_DataRead16(uint8_t address);
+    //uint8_t StatusRead(void);
+    //void RegisterWrite(uint8_t reg, uint8_t data);
+    //uint8_t RegisterRead(uint8_t reg);
   public:
     RA8889(uint8_t cs, uint8_t rst);
     void setBus(IBus& bus);
@@ -1710,10 +1710,11 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
 
     bool Begin(void);
     void DisplayOn(bool on);
+	void setBacklight(uint8_t pin);
     void Backlight(bool on);
     void DisplayTestBar(bool b);
     bool GraphicMode(void);
-    bool IsGraphicMode(void);   
+    bool IsGraphicMode(void);
     bool TextMode(void);
     uint16_t Width(void);
     uint16_t Height(void);
@@ -1975,32 +1976,32 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
     void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
 
   protected:
-    uint8_t _cs;	                               //chip select pin
-    uint8_t _xnreset;	                           //chip reset pin
+//    uint8_t _cs;	                               //chip select pin
+    uint8_t _xnreset;	                         //Chip reset pin
     uint16_t _displaywidth;                      //lardura do display
     uint16_t _displayheight;                     //altura do display
     uint8_t _bpp;                                //color depht 8/16/24 bit per pixel (bpp)
     uint8_t _mcu;                                //tipo MCU/MPU 8 ou 16 bits 
     uint8_t _colorfmt;                           //formato da cor RGB, RBG, GRB, GBR, ....
-    uint32_t _spi_clockmax;                      //velocidade de comunucacao de clock maximo do SPI
-    uint8_t _spi_datamode;                       //SPI_MODE0[1,2,3] de comunicacao
-    uint8_t _spi_dataorder;                      //ordem de dados spi MSBFIRST ou LSBFIRST
-    bool _spi_transaction;                       //A trasação rpincipal do barramento spi está ativo
+//    uint32_t _spi_clockmax;                      //velocidade de comunucacao de clock maximo do SPI
+//    uint8_t _spi_datamode;                       //SPI_MODE0[1,2,3] de comunicacao
+//    uint8_t _spi_dataorder;                      //ordem de dados spi MSBFIRST ou LSBFIRST
+//    bool _spi_transaction;                       //A trasação rpincipal do barramento spi está ativo
     bool _usedma;                                //Uso de DMA para as funções que podem se utilziar deste recurso
     uint8_t _display_spi_clk_divider;            //spi master clock divisor for setup SPI Master Clock period, Fsck = Fcore / ((divisor + 1)* 2)
     uint8_t _dispplay_sfi_clk_divider;           //serial flash i/f clock divisor for setup Clock period, Fsck = Fcore / (divisor* 2)
+    uint8_t _pin_backlight = 0;                  //Pino para controle de luz de fundo do display 
+    uint32_t _bgcolor;                           //cor de fundo 
+    uint32_t _fgcolor;                           //cor de frente
+    uint32_t _text_bgcolor;                      //cor do texto de fundo 
+    uint32_t _text_fgcolor;                      //cor do texto de frente
+    uint16_t _cursor_x = 0;                      //Global cursor position y variables
+    uint16_t _cursor_y = 0;                      //Global cursor position y variables
 
-    uint32_t _bgcolor;                          //cor de fundo 
-    uint32_t _fgcolor;                          //cor de frente
-    uint32_t _text_bgcolor;                     //cor do texto de fundo 
-    uint32_t _text_fgcolor;                     //cor do texto de frente
-    uint16_t _cursor_x = 0;                     //Global cursor position y variables
-    uint16_t _cursor_y = 0;                     //Global cursor position y variables
-	
     //Parametros da fonte
-    uint8_t _fnt_rom_scs = 0;                  //SCS
-    uint8_t _fnt_dma_bus = 0;                  //Font DMA Bus
-    uint32_t _charsetresourceMap = 0;          //mapa de recurso de 32 bits do char set Chips Font Flash ROM
+    uint8_t _fnt_rom_scs = 0;                    //SCS
+    uint8_t _fnt_dma_bus = 0;                    //Font DMA Bus
+    uint32_t _charsetresourceMap = 0;            //mapa de recurso de 32 bits do char set Chips Font Flash ROM
     eFontSource _fntparam_source_select;
     eFontHeight _fntparam_size_select;
     uint8_t _fntparam_height;
@@ -2059,7 +2060,7 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
     void SPIM_ClockDivided_2(void);
     void SPIM_ClockDivided_1(void);
 
-    void SPI_Init(void);
+    //void SPI_Init(void);
     void SPI_Clock_Period(uint8_t divisor);
 
     void PLL_InitilizeWaitReady(void);

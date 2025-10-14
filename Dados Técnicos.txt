@@ -2086,13 +2086,51 @@ Serial Peripheral Interface (SPI)
   SPITransaction Method
   ---------------------
 
-  SPI transaction example:
+  O que o SPI.beginTransaction() faz é permitir que cada dispositivo SPI tenha 
+  suas próprias configurações SPI exclusivas (por meio do objeto SPISettings) 
+  em vez de ter uma configuração em toda a rede, como a API anterior. 
+  SPI.beginTransaction() se comporta como um mecanismo de bloqueio para obter 
+  o uso exclusivo do barramento SPI e, portanto, requer que 
+  SPI.endTransaction() libere o barramento para que outros o acessem. 
+  SPI.beginTransaction() oferece melhor compatibilidade entre dispositivos e 
+  resolve conflitos de software, permitindo que vários dispositivos SPI 
+  compartilhem o barramento SPI corretamente. Portanto, você deve usar 
+  SPI.beginTransaction() em seu esboço SPI. Você também deve usar o objeto 
+  SPISettings para configurar sua interface de comunicação SPI e não usar 
+  métodos obsoletos como SPI.setBitOrder(), SPI.setClockDivider() e 
+  SPI.setDataMode() para definir a configuração SPI.
+
+  Embora raramente necessária hoje em dia, existe uma macro predefinida 
+  SPI_HAS_TRANSACTION na biblioteca SPI para verificar se o firmware da 
+  placa Arduino suporta SPI.beginTransaction(). Ela é útil para fornecer 
+  compatibilidade com versões anteriores se você estiver escrevendo uma 
+  biblioteca Arduino.
+
+  #ifdef SPI_HAS_TRANSACTION
+  SPI.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+  #elseif
+  // usar a sintaxe antiga da biblioteca SPI do Arduino
+  #endif
+
+  SPI transaction example
+  -----------------------
   
-  In this tutorial you will learn how to use the SPI transaction methods. For an explanation of SPI see the SPI EEPROM tutorial.
+  In this tutorial you will learn how to use the SPI transaction methods. 
+  For an explanation of SPI see the SPI EEPROM tutorial.
   
-  A common problem used to be that different SPI devices needed different, incompatible settings. Your sketch had to take care of saving and restoring the SPI settings before communicating with each SPI device. If any SPI device was accessed from an interrupt, this could result in data corruption if another SPI device was communicating at the time.
+  A common problem used to be that different SPI devices needed different, 
+  incompatible settings. Your sketch had to take care of saving and restoring 
+  the SPI settings before communicating with each SPI device. If any SPI 
+  device was accessed from an interrupt, this could result in data corruption 
+  if another SPI device was communicating at the time.
   
-  With the new SPI library, configure each SPI device once as an SPISettings object. Also, if that device will be called from an interrupt, say so with SPI.usingInterrupt(interruptNumber). To communicate with a specific SPI device, use SPI.beginTransaction which automatically uses the settings you declared for that device. In addition, it will disable any interrupts that use SPI for the duration of the transaction. Once you are finished, use SPI.endTransaction() which re-enables any SPI-using interrupts.
+  With the new SPI library, configure each SPI device once as an SPISettings 
+  object. Also, if that device will be called from an interrupt, say so with 
+  SPI.usingInterrupt(interruptNumber). To communicate with a specific SPI 
+  device, use SPI.beginTransaction which automatically uses the settings you 
+  declared for that device. In addition, it will disable any interrupts that 
+  use SPI for the duration of the transaction. Once you are finished, use 
+  SPI.endTransaction() which re-enables any SPI-using interrupts.
 
   #include <SPI.h>
 
@@ -2144,13 +2182,31 @@ Serial Peripheral Interface (SPI)
     SPI.endTransaction();
   }
 
-  Although this question has an accepted answer, I'd like to provide some background and historical reasons to OP's question.
+  Although this question has an accepted answer, I'd like to provide some 
+  background and historical reasons to OP's question.
 
-  Transactional SPI using SPI.beginTransaction() was introduced in 2014, it was not available in the early version of Arduino, or example code published before that. As a result, there is still a lot of code out there on the Internet that shows the old way of setting up the SPI configuration.
+  Transactional SPI using SPI.beginTransaction() was introduced in 2014, it 
+  was not available in the early version of Arduino, or example code p
+  ublished before that. As a result, there is still a lot of code out there 
+  on the Internet that shows the old way of setting up the SPI configuration.
 
-  What the SPI.beginTransaction() does is to allow each SPI device to have its own unique SPI settings (through SPISettings object) instead of having one setting across the entire network as the previous API does. SPI.beginTransaction() behaves like a locking mechanism to gain the exclusive use of the SPI bus, and therefore requires SPI.endTransaction() to release the bus for others to access it. SPI.beginTransaction() provides better cross-device compatibility and solves software conflicts, allowing multiple SPI devices to properly share the SPI bus. You should therefore use the SPI.beginTransaction() in your SPI sketch. You should also using the SPISettings object to configure your SPI communication interface, and not use deprecated methods such as SPI.setBitOrder(), SPI.setClockDivider() and SPI.setDataMode() for setting up the SPI configuration.
+  What the SPI.beginTransaction() does is to allow each SPI device to have 
+  its own unique SPI settings (through SPISettings object) instead of having 
+  one setting across the entire network as the previous API does. 
+  SPI.beginTransaction() behaves like a locking mechanism to gain the exclusive 
+  use of the SPI bus, and therefore requires SPI.endTransaction() to release 
+  the bus for others to access it. SPI.beginTransaction() provides better 
+  cross-device compatibility and solves software conflicts, allowing multiple 
+  SPI devices to properly share the SPI bus. You should therefore use the 
+  SPI.beginTransaction() in your SPI sketch. You should also using the 
+  SPISettings object to configure your SPI communication interface, and not 
+  use deprecated methods such as SPI.setBitOrder(), SPI.setClockDivider() and 
+  SPI.setDataMode() for setting up the SPI configuration.
 
-  Although rarely needed today, there is a pre-defined macro SPI_HAS_TRANSACTION in the SPI library to check whether the firmware of the Arduino board supports SPI.beginTransaction(). It is useful for providing backward compatibility if you are writing an Arduino library.
+  Although rarely needed today, there is a pre-defined macro 
+  SPI_HAS_TRANSACTION in the SPI library to check whether the firmware of the 
+  Arduino board supports SPI.beginTransaction(). It is useful for providing 
+  backward compatibility if you are writing an Arduino library.
 
   #if defined(SPI_HAS_TRANSACTION)
     SPISettings  spiSettings;

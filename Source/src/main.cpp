@@ -93,7 +93,7 @@ uint16_t fadePixel(uint16_t color, float factor) {
 }
 
 
-Panel_RA8889 gfx(PIN_CS, PIN_RESET);
+RA8889 gfx(PIN_CS, PIN_RESET);
 
 void setup() {
 
