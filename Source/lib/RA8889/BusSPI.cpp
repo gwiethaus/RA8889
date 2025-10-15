@@ -16,7 +16,7 @@
  * 
  * void setup() {
  *      
- *   IBus::SPIBusConfig cfg;
+ *   IBus::SPIBusConfig_t cfg;
  *   cfg.spi_type = FSPI_HOST;
  *   cfg.pin_mosi = 23;
  *   cfg.pin_miso = 19;
@@ -245,7 +245,7 @@ void Bus_SPI::DataWrite8(uint8_t data) {DataWrite(data);}
 void Bus_SPI::DataWrite16(uint16_t data)
 {
   SetCS(0);                                 //SS_RESET;
-  RwByte(SPI_DATAWRITE);             //0x80, Indica Dados para escrever
+  RwByte(SPI_DATAWRITE);                    //0x80, Indica Dados para escrever
   RwByte(data);                             //Envia um byte menos significativo de Dado para o SPI
   RwByte(data >> 8);                        //Envia um byte mais significativo de Dado para o SPI
   SetCS(1);                                 //SS_SET;
@@ -266,7 +266,7 @@ void Bus_SPI::DataWrite16(uint16_t data)
 void Bus_SPI::DataWrite24(uint32_t data)
 {
   SetCS(0);                                 //SS_RESET;
-  RwByte(SPI_DATAWRITE);             //0x80, Indica Dados para escrever 
+  RwByte(SPI_DATAWRITE);                    //0x80, Indica Dados para escrever 
   RwByte(data);                             //Envia byte 1 de Dado para o SPI
   RwByte(data >> 8);                        //Envia byte 2 de Dado para o SPI
   RwByte(data >> 16);                       //Envia byte 3 de Dado para o SPI
@@ -289,7 +289,7 @@ uint8_t Bus_SPI::DataRead(void)
 {
   uint8_t temp;
   SetCS(0);                             //SS_RESET
-  RwByte(SPI_DATAREAD);          //0xc0, Leitura de dados
+  RwByte(SPI_DATAREAD);                 //0xc0, Leitura de dados
   temp = RwByte(0x00);
   SetCS(1);                             //SS_SET
   return temp;
@@ -310,12 +310,12 @@ uint8_t Bus_SPI::DataRead(void)
 uint16_t Bus_SPI::DataRead16(uint8_t address)
 {
   uint16_t data;
-  SetCS(0);                             //SS_RESET
+  SetCS(0);                                //SS_RESET
   spi.transfer(address);
   data = spi.transfer(0x00);               //MSB
   data <<= 8;                              //Shift 8 bits right
   data |= spi.transfer(0x00);              //LSB
-  SetCS(1);                             //SS_SET
+  SetCS(1);                                //SS_SET
   return data;
 }
 
@@ -337,7 +337,7 @@ uint8_t Bus_SPI::StatusRead(void)
 {
   uint8_t temp = 0;
   SetCS(0);                            //SS_RESET
-  RwByte(SPI_STATUSREAD);       //0x40, Read Status SPI
+  RwByte(SPI_STATUSREAD);              //0x40, Read Status SPI
   temp = RwByte(REG_STSR);             //0x00, Read STSR Register
   SetCS(1);                            //SS_SET
   return temp;

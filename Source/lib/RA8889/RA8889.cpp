@@ -366,7 +366,8 @@ Como usr o Bus
 //
 //================================================================================
 
-
+//remover isso depois, o Init() do bus constroi isso
+/*
 #ifdef USE_SPI_PORT
   SPIClass& spi = SPI;
 #elif USE_HSPI_PORT
@@ -376,7 +377,7 @@ Como usr o Bus
 #else // use FSPI port
   SPIClass& spi = SPI;
 #endif
-
+*/
 
 // ============================================================================
 //
@@ -1204,14 +1205,9 @@ void RA8889::setBus(IBus& bus)
  */
 RA8889::RA8889(uint8_t cs, uint8_t rst)
 {
-//  _cs            = cs;
   _xnreset       = rst;
   _displaywidth  = LCD_HW;
   _displayheight = LCD_VH;
-//  _spi_clockmax  = SPI_CLOCK_SPEED_MAX;
-//  _spi_datamode  = SPI_MODE0;
-//  _spi_dataorder = MSBFIRST;
-//  _spi_transaction = false;
   _bpp           = COLOR_DEPTH;
   _mcu           = MCU;
   _colorfmt      = static_cast<uint8_t>(ePDATAColorFmt::RGB); //iniciar com o formato de cor RGB
@@ -19592,7 +19588,8 @@ void RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
  * 
  * @note None
  */
-void RA8889::setBacklight(uint8_t pin) {
+void RA8889::setBacklight(uint8_t pin)
+{
   if (pin == 0) return;
   pinMode(pin, OUTPUT);
   digitalWrite(pin, LOW);                      //por padrão é desligado

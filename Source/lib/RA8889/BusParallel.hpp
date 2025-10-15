@@ -1,3 +1,6 @@
+#ifndef BUSPARALLEL_HPP
+#define BUSPARALLEL_HPP
+#include <Arduino.h>
 #include <Bus.hpp>
 #include <Config.hpp>
 
@@ -30,3 +33,5 @@ class Bus_Parallel : public IBus {
     void RegisterWrite(uint8_t reg, uint8_t data) override;
     uint8_t RegisterRead(uint8_t reg) override;
 };
+
+#endif //fim do include guard BUSPARALLEL_HPP

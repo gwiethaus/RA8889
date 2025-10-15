@@ -1,10 +1,9 @@
 #ifndef RA8889_HPP
 #define RA8889_HPP
-
+#include <Arduino.h>
 #include <SPI.h>
 #include "DisplayBase.hpp"
 #include "RA8889_Reg.hpp"
-#include <stdint.h>
 
 
 //--------------------------------------------------------------------------------
@@ -1123,7 +1122,7 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 #define  clPlumVelvet              RGB(125,5,82)
 #define  clDarkRaspberry           RGB(135,38,87)
 #define  clVelvetMaroon            RGB(126,53,77)
-#define  clRosy-Finch              RGB(127,78,82)
+#define  clRosyFinch               RGB(127,78,82)
 #define  clDullPurple              RGB(127,82,93)
 #define  clPuce                    RGB(127,90,88)
 #define  clRoseDust                RGB(153,112,112)
@@ -1710,7 +1709,7 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
 
     bool Begin(void);
     void DisplayOn(bool on);
-	void setBacklight(uint8_t pin);
+    void setBacklight(uint8_t pin);
     void Backlight(bool on);
     void DisplayTestBar(bool b);
     bool GraphicMode(void);
@@ -2547,4 +2546,4 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
 
 };
 
-#endif    // fim de PANEL_RA8889_HPP
+#endif    // fim de include guard RA8889_HPP

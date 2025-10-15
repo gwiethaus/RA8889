@@ -1,4 +1,4 @@
-#include <BusParallel.hpp>
+#include <BusI2C.hpp>
 
 
 /**
@@ -63,37 +63,37 @@ void Bus_I2C::DataWrite16(uint16_t data)
 }
 
 
-void Bus_Parallel::DataWrite24(uint32_t data)
+void Bus_I2C::DataWrite24(uint32_t data)
 {
   return;
 }
 
 
-uint8_t Bus_Parallel::DataRead(void)
+uint8_t Bus_I2C::DataRead(void)
 {
   return 0;
 }
 
 
-uint16_t Bus_Parallel::DataRead16(uint8_t address)
+uint16_t Bus_I2C::DataRead16(uint8_t address)
 {
   return 0;
 }
 
 
-uint8_t Bus_Parallel::StatusRead(void)
+uint8_t Bus_I2C::StatusRead(void)
 {
   return 0;
 }
 
 
-void Bus_Parallel::RegisterWrite(uint8_t reg, uint8_t data)
+void Bus_I2C::RegisterWrite(uint8_t reg, uint8_t data)
 {
   return;
 }
 
 
-uint8_t Bus_Parallel::RegisterRead(uint8_t reg)
+uint8_t Bus_I2C::RegisterRead(uint8_t reg)
 {
   return 0;
 }

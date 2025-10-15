@@ -1,3 +1,6 @@
+#ifndef BUSI2C_HPP
+#define BUSI2C_HPP
+
 #include <Bus.hpp>
 #include <Config.hpp>
 
@@ -11,7 +14,7 @@
   #include <RA8889_Reg.hpp>
 #endif
 
-class Bus_Parallel : public IBus {
+class Bus_I2C : public IBus {
   public:
     Bus_I2C() = default;
     void Config(const IBusConfig_t* cfg)  override;
@@ -30,3 +33,5 @@ class Bus_Parallel : public IBus {
     void RegisterWrite(uint8_t reg, uint8_t data) override;
     uint8_t RegisterRead(uint8_t reg) override;
 };
+
+#endif    // fim de include guard BUSI2C_HPP

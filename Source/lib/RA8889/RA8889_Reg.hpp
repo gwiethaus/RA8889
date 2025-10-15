@@ -1,3 +1,6 @@
+#ifndef RA8889_REG_HPP
+#define RA8889_REG_HPP
+
 //Conjunto de registradores de Page0 e Page1
 //Para alternar o conjunto de registradores acessiveis entre Page0 e Page1 precisa escrever ou ler o registrador 0x46
 //este mesmo registrador esta presente dentro do page 0 e page 1. o bit 0 deste registrador 0x46 é o mesmo da page 0 e page 1 no entanto são diferentes os bits 1-7
@@ -493,3 +496,5 @@
 #define SPI_DATAWRITE                          0x80            //Write Data for SPI
 #define SPI_DATAREAD                           0xc0            //Read Data from SPI 
 #define SPI_STATUSREAD                         0x40            //Read Status from SPI
+
+#endif //fim do include guard RA8889_REG_HPP

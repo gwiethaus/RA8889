@@ -1,3 +1,6 @@
+#ifndef BUSSPI_HPP
+#define BUSSPI_HPP
+#include <Arduino.h>
 #include <SPI.h>
 #include <Bus.hpp>
 #include <Config.hpp>
@@ -25,28 +28,28 @@ enum SPIHostType {
   #define HAS_HSPI 1
   #define HAS_VSPI 1
   #define HAS_FSPI 0
-  #define HAS_SPI 0       // SPI padrão não é usado nesse caso
+  #define HAS_SPI  0       // SPI padrão não é usado nesse caso
 #elif CONFIG_IDF_TARGET_ESP32S3
   #define HAS_HSPI 1
   #define HAS_VSPI 0
   #define HAS_FSPI 1
-  #define HAS_SPI 0
+  #define HAS_SPI  0
 #elif CONFIG_IDF_TARGET_ESP32S2
   #define HAS_HSPI 0
   #define HAS_VSPI 0
   #define HAS_FSPI 1
-  #define HAS_SPI 0  
+  #define HAS_SPI  0  
 #elif CONFIG_IDF_TARGET_ESP32C3
   #define HAS_HSPI 0
   #define HAS_VSPI 0
   #define HAS_FSPI 1
-  #define HAS_SPI 0
+  #define HAS_SPI  0
 #else
  // Placas genéricas sem múltiplos SPI (Arduino, STM32, etc.)
   #define HAS_HSPI 0
   #define HAS_VSPI 0
   #define HAS_FSPI 0
-  #define HAS_SPI 1
+  #define HAS_SPI  1
 #endif
 
 //issso deve sair, pois ja tem a possibildiade do usuario configurar a velocidade de escrita do esp32 ou qualeru outra MCU
@@ -95,3 +98,5 @@ class Bus_SPI : public IBus {
     uint8_t RegisterRead(uint8_t reg) override;
 	
 };
+
+#endif    // fim de include guard BUSSPI_HPP
