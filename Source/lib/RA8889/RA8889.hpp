@@ -1975,17 +1975,12 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
     void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
 
   protected:
-//    uint8_t _cs;	                               //chip select pin
     uint8_t _xnreset;	                         //Chip reset pin
     uint16_t _displaywidth;                      //lardura do display
     uint16_t _displayheight;                     //altura do display
     uint8_t _bpp;                                //color depht 8/16/24 bit per pixel (bpp)
     uint8_t _mcu;                                //tipo MCU/MPU 8 ou 16 bits 
     uint8_t _colorfmt;                           //formato da cor RGB, RBG, GRB, GBR, ....
-//    uint32_t _spi_clockmax;                      //velocidade de comunucacao de clock maximo do SPI
-//    uint8_t _spi_datamode;                       //SPI_MODE0[1,2,3] de comunicacao
-//    uint8_t _spi_dataorder;                      //ordem de dados spi MSBFIRST ou LSBFIRST
-//    bool _spi_transaction;                       //A trasação rpincipal do barramento spi está ativo
     bool _usedma;                                //Uso de DMA para as funções que podem se utilziar deste recurso
     uint8_t _display_spi_clk_divider;            //spi master clock divisor for setup SPI Master Clock period, Fsck = Fcore / ((divisor + 1)* 2)
     uint8_t _dispplay_sfi_clk_divider;           //serial flash i/f clock divisor for setup Clock period, Fsck = Fcore / (divisor* 2)
