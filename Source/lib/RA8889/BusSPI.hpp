@@ -63,7 +63,6 @@ enum SPIHostType {
   #define SPI_CLOCK_SPEED_MAX  8000000       //Para Arduino Uno/Mega
 #else
    #warning "SPI não implementada para esta plataforma"
-   return;
 #endif
 
 

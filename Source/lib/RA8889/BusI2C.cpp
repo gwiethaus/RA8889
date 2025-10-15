@@ -56,7 +56,6 @@ void Bus_I2C::DataWrite(uint8_t data)
 void Bus_I2C::DataWrite8(uint8_t data) {DataWrite(data);}
 
 
-
 void Bus_I2C::DataWrite16(uint16_t data)
 {
   return;

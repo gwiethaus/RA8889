@@ -139,9 +139,9 @@ https://github.com/wwatson4506/TeensyRA8876Combined
 TeensyRA8876Combined-main
 RA8876_common.cpp
 
-//**************************************************************
+//
 // Turn Backlight ON/Off (true = ON)
-//**************************************************************
+//
 void RA8876_common::backlight(boolean on) {
     if (on) {
         // Enable_PWM0_Interrupt();
@@ -287,44 +287,9 @@ esp_err_t esp_lcd_panel_set_backlight(esp_lcd_panel_t *panel, uint8_t level)
 	return ret;
 }
 
-
-
 Construcao
 ----------
 
-uint32_t RA8889::getPixel(uint16_t x, uint16_t y)
-
-
-Como usr o Bus
---------------
-
-//ao invez de usar isto!
-
-    // Cria os barramentos
-    Bus_SPI spi;
-    IBus::Config cfg{23,19,18,40000000};
-    spi.config(cfg);
-    display.setBus(spi);
-
-//Use esta forma, evita repeticoes
-
-    Bus_SPI spi;
-	
-   // pega a configuração padrão
-   auto cfg = spi.config(); 
-
-   cfg.spi_host = VSPI_HOST;
-   cfg.pin_mosi = 23;
-   cfg.pin_miso = 19;
-   cfg.pin_sclk = 18;
-   cfg.pin_dc   = 21;
-   cfg.freq_write = 40000000;
-
-   // aplica a configuração
-   spi.config(cfg);
-
-   RA8889 display;
-   display.setBus(spi);
 
 */
 
@@ -358,71 +323,6 @@ Como usr o Bus
 #include <ascii_table_8x12.h>
 #include <ascii_table_16x24.h>
 #include <ascii_table_32x48.h>
-
-
-//================================================================================
-//
-// Declaração de Classe SPI
-//
-//================================================================================
-
-//remover isso depois, o Init() do bus constroi isso
-/*
-#ifdef USE_SPI_PORT
-  SPIClass& spi = SPI;
-#elif USE_HSPI_PORT
-  SPIClass spi = SPIClass(HSPI);
-#elif USE_FSPI_PORT
-  SPIClass spi = SPIClass(FSPI);
-#else // use FSPI port
-  SPIClass& spi = SPI;
-#endif
-*/
-
-// ============================================================================
-//
-// Seleção automática e segura de barramento SPI
-//
-// ============================================================================
-
-
-// --- ESP32 e derivados -------------------------------------------------------
-#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
-
-//  // ESP32 Clássico, ESP32-S2, ESP32-S3, ESP32-C3, etc.
-//  #if defined(USE_HSPI_PORT)
-//    SPIClass spi = SPIClass(HSPI);
-//    #define SPI_PORT_NAME "HSPI"
-//  #elif defined(USE_VSPI_PORT)
-//    SPIClass spi = SPIClass(VSPI);
-//    #define SPI_PORT_NAME "VSPI"
-//  #else
-//    // Padrão → VSPI (SPI3_HOST)
-//    SPIClass spi = SPIClass(VSPI);
-//    #define SPI_PORT_NAME "VSPI (default)"
-//  #endif
-
-// --- Placas AVR clássicas ----------------------------------------------------
-#elif defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_NANO)
-  // Arduino UNO / Nano
-  #define SPI_PORT_NAME "SPI (UNO/NANO)"
-  #define spi SPI
-
-#elif defined(ARDUINO_AVR_MEGA2560) || defined(ARDUINO_AVR_MEGA)
-  // Arduino MEGA 2560 / 1280
-  #define SPI_PORT_NAME "SPI (MEGA)"
-  #define spi SPI
-
-// --- Arduino Due -------------------------------------------------------------
-#elif defined(ARDUINO_SAM_DUE)
-  #define SPI_PORT_NAME "SPI (DUE)"
-  #define spi SPI
-
-// --- Fallback para outros micros ---------------------------------------------
-#else
-  #define SPI_PORT_NAME "SPI (default)"
-  #define spi SPI
-#endif
 
 
 //================================================================================
@@ -463,6 +363,7 @@ void RA8889::RA8876_brightness(uint16_t val)
 #ifdef SERIAL_DEBUG
   bool serialStarted = false;
 
+
 /**
  * @brief Depuracao do codigo
  *
@@ -486,6 +387,7 @@ void SerialPrint(String msg, uint32_t value, bool b, bool newline)
     if (newline) Serial.println("");
   }
 }
+
 
 /**
  * @brief Depuracao do codigo com valor ponto flutuante
@@ -512,7 +414,8 @@ void SerialPrintF(String msg, double value, uint8_t decimal, bool b, bool newlin
 }
 
 
-void SerialPrintH(String msg, uint64_t value, bool b, bool newline) {
+void SerialPrintH(String msg, uint64_t value, bool b, bool newline)
+{
   #ifdef SERIAL_DEBUG
   if (!serialStarted) return;  // segurança extra
   #endif
@@ -541,54 +444,9 @@ void SerialPrintH(String msg, uint64_t value, bool b, bool newline) {
 }
 
 
-// --- 1. Para números (int, long, etc.) ---
-//void SerialPrintH(String msg, uint64_t value, bool b, bool newline) {
-//  #ifdef SERIAL_DEBUG
-//  if (!serialStarted) return;  // segurança extra
-//  #endif
-//  Serial.print(msg);
-//  if (b) {
-//	Serial.print(F("0x"));
-//    newline ? Serial.print(value, HEX) : Serial.println(value, HEX);
-//  } else {
-//    if (newline) Serial.println(F(""));
-//  }
-//}
-
-
-//void SerialPrintHex(uint64_t val, bool newline = true) {
-//  char buffer[17];  // 16 dígitos + terminador nulo
-//  sprintf(buffer, "%llX", (unsigned long long)val);
-//
-//  if (newline)
-//    Serial.println(buffer);
-//  else
-//    Serial.print(buffer);
-//}
-//
-//
-//// --- 2. Para strings (char*) ---
-//void SerialPrintH(String msg, const char* value, bool b, bool newline) {
-//  #ifdef SERIAL_DEBUG
-//  if (!serialStarted) return;  // segurança extra
-//  #endif
-//  Serial.print(msg);
-//  if (b) {
-//    uint64_t val = 0;
-//    if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X'))
-//      val = strtoul(value, nullptr, 16);
-//    else
-//      val = strtoul(value, nullptr, 10);
-//    Serial.print(F("0x"));
-//	newline ? Serial.println((uint64_t)val, HEX) : Serial.print((uint64_t)val, HEX);
-//  } else {
-//    if (newline) Serial.println(F(""));
-//  }
-//}
-//
-
 // --- 2. Para strings (char*) ---
-void SerialPrintH(String msg, const char* value, bool b, bool newline) {
+void SerialPrintH(String msg, const char* value, bool b, bool newline)
+{
   #ifdef SERIAL_DEBUG
   if (!serialStarted) return;  // segurança extra
   #endif
@@ -1159,18 +1017,18 @@ void formatDoubleAdvanced2(char* buffer, double valor, const char* mascara)
  */
 static int intToStr(int val, char* buf, int minWidth) 
 {
-    char tmp[12]; // suporta até 32 bits
-    int i = 0;
-    if(val == 0) tmp[i++] = '0';
-    while(val > 0) {
-        tmp[i++] = '0' + (val % 10);
-        val /= 10;
-    }
-    while(i < minWidth) tmp[i++] = '0'; // zero padding
-    // inverte
-    for(int j = 0; j < i; j++) buf[j] = tmp[i - j - 1];
-    buf[i] = '\0';
-    return i;
+  char tmp[12]; // suporta até 32 bits
+  int i = 0;
+  if(val == 0) tmp[i++] = '0';
+  while(val > 0) {
+      tmp[i++] = '0' + (val % 10);
+      val /= 10;
+  }
+  while(i < minWidth) tmp[i++] = '0'; // zero padding
+  // inverte
+  for(int j = 0; j < i; j++) buf[j] = tmp[i - j - 1];
+  buf[i] = '\0';
+  return i;
 }
 
 
@@ -2704,7 +2562,6 @@ void RA8889::PLL_Enable(void)
 }
 
 
-//ATENCAO esta funcaoe stava errada, ver se tem impacto no display
 //Desabilita o PLL
 void RA8889::PLL_Disable(void)
 {

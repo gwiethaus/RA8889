@@ -340,8 +340,9 @@
 #elif defined(CHIP_GT21L24S1W)
   #define GTSERIAL_CGROM       BIT_CGROM_GT21L24S1W  //Genitop's IC GT21L24S1W Character Flash ROM
 #else 
-	
+  #warning "Genitop Chip não implementada para esta plataforma"
 #endif
+
 
 //--------------------------------------------------------------------------------
 // Page(image buffer) configure
@@ -467,6 +468,9 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 // Select MCU and Color Depth
 //--------------------------------------------------------------------------------
 
+//Descomente esta linha para selecionar escala convertida para tom de cinza 
+//#define USE_GRAYSCALE
+
 //	#define MCU_8bit_COLORDEPTH_8bpp			  
 //	#define MCU_8bit_COLORDEPTH_16bpp	
 //	#define MCU_8bit_COLORDEPTH_24bpp
@@ -475,62 +479,45 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 //  #define MCU_16bit_COLORDEPTH_24bpp_Mode1
 //	#define MCU_16bit_COLORDEPTH_24bpp_Mode2
 
-//Descomente esta linha para selecionar escala convertida para tom de cinza 
-//#define USE_GRAYSCALE
-
-#ifdef MCU_8bit_COLORDEPTH_8bpp
+#if defined(MCU_8bit_COLORDEPTH_8bpp)
   #define MCU8
   #define COLOR_DEPTH_8
   #define MCU              8
   #define COLOR_DEPTH      COLOR_DEPH_8BPP
-#endif
-
-#ifdef MCU_8bit_COLORDEPTH_16bpp
+#elif defined(MCU_8bit_COLORDEPTH_16bpp)
   #define MCU8
   #define COLOR_DEPTH_16
   #define MCU              8
   #define COLOR_DEPTH      COLOR_DEPH_16BPP  
-#endif
-
-#ifdef MCU_8bit_COLORDEPTH_24bpp
+#elif defined(MCU_8bit_COLORDEPTH_24bpp)
   #define MCU8
   #define COLOR_DEPTH_24
   #define MCU              8
   #define COLOR_DEPTH      COLOR_DEPH_24BPP
-#endif
-
-#ifdef MCU_16bit_COLORDEPTH_8bpp_Mode2
+#elif defined(MCU_16bit_COLORDEPTH_8bpp_Mode2)
   #define MCU16
   #define COLOR_DEPTH_8
   #define MCU              16
   #define COLOR_DEPTH      COLOR_DEPH_8BPP
   #define MODE2
-#endif
-
-#ifdef MCU_16bit_COLORDEPTH_16bpp
+#elif defined(MCU_16bit_COLORDEPTH_16bpp)
   #define MCU16
   #define COLOR_DEPTH_16
   #define MCU              16
   #define COLOR_DEPTH      COLOR_DEPH_16BPP
-#endif
-
-#ifdef MCU_16bit_COLORDEPTH_24bpp_Mode1
+#elif defined(MCU_16bit_COLORDEPTH_24bpp_Mode1)
   #define MCU16
   #define COLOR_DEPTH_24
   #define MCU              16
   #define COLOR_DEPTH      COLOR_DEPH_24BPP
   #define MODE1
-#endif
-
-#ifdef MCU_16bit_COLORDEPTH_8bpp_Mode1
+#elif defined(MCU_16bit_COLORDEPTH_8bpp_Mode1)
   #define MCU16
   #define COLOR_DEPTH_8
   #define MCU              16
   #define COLOR_DEPTH      COLOR_DEPH_8BPP
   #define MODE1
-#endif
-
-#ifdef MCU_16bit_COLORDEPTH_24bpp_Mode2
+#elif defined(MCU_16bit_COLORDEPTH_24bpp_Mode2)
   #define MCU16
   #define COLOR_DEPTH_24
   #define MCU              16
@@ -1686,19 +1673,6 @@ void SerialPrintH(String msg, uint64_t value, bool b, bool newline);
 class RA8889 : public DisplayBase {   //herdado de DisplayBase
   private:
     IBus* _bus = nullptr;
-    //void SPISetCS(uint8_t level_cs);
-    //uint8_t SPIRwByte(uint8_t value);
-    //void SPI_CmdWrite(uint8_t cmd);
-    //void SPI_DataWrite(uint8_t data);
-    //void SPI_DataWrite8(uint8_t data);
-    //void SPI_DataWrite16(uint16_t data);
-    //void SPI_DataWrite24(uint32_t data);
-    //void SPI_DataWrite_Pixel(uint16_t data);
-    //uint8_t SPI_DataRead(void);
-    //uint16_t SPI_DataRead16(uint8_t address);
-    //uint8_t StatusRead(void);
-    //void RegisterWrite(uint8_t reg, uint8_t data);
-    //uint8_t RegisterRead(uint8_t reg);
   public:
     RA8889(uint8_t cs, uint8_t rst);
     void setBus(IBus& bus);
@@ -2054,7 +2028,6 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
     void SPIM_ClockDivided_2(void);
     void SPIM_ClockDivided_1(void);
 
-    //void SPI_Init(void);
     void SPI_Clock_Period(uint8_t divisor);
 
     void PLL_InitilizeWaitReady(void);
@@ -2538,7 +2511,6 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
     uint32_t AVI_HeaderFramePeriod(void);
     void AVI_Pause(void);
     void AVI_Stop(void);
-
 };
 
 #endif    // fim de include guard RA8889_HPP

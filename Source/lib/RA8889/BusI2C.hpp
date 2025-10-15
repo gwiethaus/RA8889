@@ -17,7 +17,7 @@
 class Bus_I2C : public IBus {
   public:
     Bus_I2C() = default;
-    void Config(const IBusConfig_t* cfg)  override;
+    void Config(const IBusConfig_t* cfg) override;
   protected:
     I2CBusConfig_t _cfg;                         //Config local específica de I2C
 

@@ -61,7 +61,6 @@ void Bus_Parallel::DataWrite(uint8_t data)
 void Bus_Parallel::DataWrite8(uint8_t data) {DataWrite(data);}
 
 
-
 void Bus_Parallel::DataWrite16(uint16_t data)
 {
   return;
