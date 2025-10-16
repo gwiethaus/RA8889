@@ -56,8 +56,9 @@ RA8889 gfx(PIN_CS, PIN_RESET);
 void setup() {
      
   IBus::I2CBusConfig_t cfg;
-  cfg.pin_sda = 23;                         //
-  cfg.pin_scl = 18;                         //
+  cfg.pin_sda = 20;                         //Pino SDA
+  cfg.pin_scl = 21;                         //Pino SCL
+  cfg.addr    = 0x08                        //Endereço inicial do dispositivo slave
   cfg.pin_cs   = 5;                         //Pino Chip Select
   cfg.freq_write = 30000000;                //Frequencia de escrita de 30MHz
   
@@ -80,3 +81,4 @@ void setup() {
 - Comunicação Paralela entre MCU/MPU e Display
 - Configuração I2C entre MCU/MPU e Display
 - Melhoria do Driver FocalTech FT5xx6
+
