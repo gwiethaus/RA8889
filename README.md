@@ -24,24 +24,51 @@ Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no fo
 Atravpés de uso de interface OOP podemos escolher facilmente o tipo de barramento de comunciação e configurar ele. Inicia-se este implementação que terá que sofrer mudança em todos os métodos onde se escreve ou lê o barrmaneto SPI que agora será via interface IBus. O usuário poderá escolher entre Bus I2C, SPI e Parallel para comunciaçlão do o display. Segue um exemplo modelo abaixo que já está pronto a estrutura basica para impelemtnar os métodos e classes:
 
 ```
-    // Cria os barramentos
-    Bus_SPI spi;
+Bus_SPI spi;
+RA8889 gfx(PIN_CS, PIN_RESET);
 
-   // pega a configuração padrão
-   auto cfg = spi.config(); 
+void setup() {
+     
+  IBus::SPIBusConfig_t cfg;
+  cfg.spi_type = FSPI_HOST;                 //Usando barramento FSPI
+  cfg.pin_mosi = 23;                        //Pino MOSI - Master-Out, Slave-In
+  cfg.pin_miso = 19;                        //Pino MISO - Master-In, Slave-Out
+  cfg.pin_sclk = 18;                        //Pino Clock
+  cfg.pin_cs   = 5;                         //Pino Chip Select
+  cfg.freq_write = 40000000;                //Frequencia de escrita de 40MHz
+  
+  spi.Config(&cfg);                         //Grava a configuração
+  gfx.setBus(spi);                          //Seta o Bus SPI
+  gfx.Begin();                              //inicializa o display 
+  gfx.setBacklignt(BL_PIN);                 //Seta pino do controle de backlight
+  gfx.Backlight(true);                      //aciona o backlight
+  gfx.DisplayOn(true);                      //liga o dsiplay exibindo conteudo da memória
+  
+}
+```
 
-   cfg.spi_host = VSPI_HOST;
-   cfg.pin_mosi = 23;
-   cfg.pin_miso = 19;
-   cfg.pin_sclk = 18;
-   cfg.pin_dc   = 21;
-   cfg.freq_write = 40000000;
+Permitindo escolher o bus de uso do dsiplay, como SPI, I2C ou Paralelo bastando aepnas fazer isso:
 
-   // aplica a configuração
-   spi.config(cfg);
+```
+Bus_I2C i2c;
+RA8889 gfx(PIN_CS, PIN_RESET);
 
-   RA8889 display;
-   display.setBus(spi);
+void setup() {
+     
+  IBus::I2CBusConfig_t cfg;
+  cfg.pin_sda = 23;                         //
+  cfg.pin_scl = 18;                         //
+  cfg.pin_cs   = 5;                         //Pino Chip Select
+  cfg.freq_write = 30000000;                //Frequencia de escrita de 30MHz
+  
+  spi.Config(&cfg);                         //Grava a configuração
+  gfx.setBus(i2c);                          //Seta o Bus I2C
+  gfx.Begin();                              //inicializa o display 
+  gfx.setBacklignt(BL_PIN);                 //Seta pino do controle de backlight
+  gfx.Backlight(true);                      //aciona o backlight
+  gfx.DisplayOn(true);                      //liga o dsiplay exibindo conteudo da memória
+  
+}
 ```
 
 # Todo
