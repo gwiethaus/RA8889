@@ -1,6 +1,6 @@
 #ifndef BUS_HPP
 #define BUS_HPP
-#include <stdint.h>
+
 #include <Arduino.h>
 
 class DisplayBase; // classe base para todos os displays
@@ -40,10 +40,11 @@ class IBus {
     virtual void Config(const IBusConfig_t* cfg) = 0; // público: usuário pode configurar
 
     //Nota:
-	//Não utilizar diretamente estes métodos externamente. Apenas nas classees Descendentes de DisplayBase.
-	//Na atual arquitetura, não é possível fazer da classe Base DisplayBase 
-	//como uma classe amiga e fazer com que os metodos protegidos consgam ter visibilidade
-	//de todas as classes que herdam de DisplayBase
+	//Não utilizar diretamente estes métodos externamente. Apenas nas classees 
+	//Descendentes de DisplayBase. Na atual arquitetura, não é possível fazer 
+	//da classe Base DisplayBase como uma classe amiga e fazer com que os 
+	//metodos protegidos consigam ter visibilidade em todas as classes que 
+	//herdam de DisplayBase
     virtual void Init() = 0;
     virtual void CmdWrite(uint8_t cmd) = 0;
     virtual void DataWrite(uint8_t data) = 0;
@@ -57,7 +58,7 @@ class IBus {
     virtual uint8_t RegisterRead(uint8_t reg) = 0;  
     virtual ~IBus() {}
   protected:
-    friend class DisplayBase;  // agora todos os displays derivados de DisplayBase podem usar os metodos protegidos
+    friend class DisplayBase;  //Na classe DisplayBase podem usar os metodos protegidos desta classe.
 };
 
 #endif //fim do include guard BUS_HPP

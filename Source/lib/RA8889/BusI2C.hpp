@@ -1,6 +1,7 @@
 #ifndef BUSI2C_HPP
 #define BUSI2C_HPP
 
+#include <Arduino.h>
 #include <Bus.hpp>
 #include <Config.hpp>
 

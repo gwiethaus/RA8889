@@ -1,16 +1,12 @@
+#ifndef FT5316_HPP
+#define FT5316_HPP
+
 #include <stdbool.h>
 #include <Wire.h>
 #include <FT5316_reg.hpp>
 
 //Controle de depuração, descom ente apra mostrar os dados na porta serial
 #define DEBUG_TOUCH
-
-
-
-
-
-
-
 
 
 /*
@@ -137,3 +133,4 @@ class FT {
       static void isrRouter(void);     //
 };
 
+#endif //fim do include guard FT5316_HPP

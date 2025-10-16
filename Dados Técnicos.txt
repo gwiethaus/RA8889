@@ -100,7 +100,7 @@ SPI no ESP32-S3
   O ESP32-S3 não possui os nomes VSPI e HSPI como no ESP32 WROOM-32. Embora o 
   ESP32 original usasse HSPI (SPI2) e VSPI (SPI3), o ESP32-S3 tem dois 
   controladores SPI para o usuário: SPI2 (chamado de FSPI) e SPI3. Ambos os 
-  controladores podem ser usados ​​simultaneamente para se comunicar com outros 
+  controladores podem ser usados simultaneamente para se comunicar com outros 
   dispositivos. 
 
   - SPI2: É um dos controladores de SPI para o usuário no ESP32-S3. Ele pode 
@@ -109,6 +109,802 @@ SPI no ESP32-S3
           ser acessado no código como SPIClass(1) ou SPIClass(HSPI).
   - SPI0 e SPI1: Estes são usados internamente para comunicação com a memória 
                  flash interna e não devem ser usados para outras tarefas.
+
+
+SPIClass como objeto e ponteiro
+-------------------------------
+
+  Ao usar a classe SPIClass em C++ (principalmente em plataformas como Arduino 
+  e ESP32), a escolha entre usar um objeto e um ponteiro depende de como você 
+  precisa gerenciar a vida útil e o compartilhamento da instância do barramento 
+  SPI. 
+  
+  Class members that are objects - Pointers or not? C++ - Stack Overflow
+  https://stackoverflow.com/questions/3871429/class-members-that-are-objects-pointers-or-not-c
+  When to use an object in a vector and when to use a pointer ...
+  https://stackoverflow.com/questions/25885713/when-to-use-an-object-in-a-vector-and-when-to-use-a-pointer-to-an-object-in-a-ve
+  
+  Usando SPIClass como objeto
+  ---------------------------
+  
+  Você deve usar SPIClass como um objeto (sem ponteiro) quando a sua necessidade for simples e direta. 
+  
+  c++ - Why should I use a pointer rather than the object itself?
+  https://stackoverflow.com/questions/22146094/why-should-i-use-a-pointer-rather-than-the-object-itself
+  In C/C++, when should I use an object and a pointer to an object?
+  https://www.quora.com/In-C-C-when-should-I-use-an-object-and-a-pointer-to-an-object
+  
+    Vantagens
+    
+    - Simplicidade: É a forma mais fácil de usar e mais segura, sem a 
+	  complexidade da alocação de memória dinâmica.
+    - Gerenciamento automático de memória: A memória do objeto é alocada e 
+	  desalocada automaticamente no escopo em que ele foi declarado (na pilha).
+    - Cópia de dados (ou semântica de valor): Quando você passa o objeto para 
+	  uma função, uma cópia completa do objeto é criada, se a classe permitir. 
+	  No caso de SPIClass, que geralmente é um singleton (uma única instância 
+	  por barramento), essa cópia não é feita na maioria das plataformas. 
+      
+	  When should I use pointers instead of references in API-design?
+	  https://stackoverflow.com/questions/7058339/when-should-i-use-pointers-instead-of-references-in-api-design
+	  [C++] Por que você passaria um ponteiro de objeto em vez de apenas passar o próprio objeto? Ambos não resultam no próprio objeto sendo trabalhado?
+	  https://www.reddit.com/r/learnprogramming/comments/xg12j3/cwhy_would_you_pass_an_object_pointer_instead_of/?tl=pt-br
+	  
+    Desvantagens
+	
+    - Não pode ser nulo: Um objeto não pode ser nulo, o que significa que ele 
+	  deve ser inicializado. Isso garante que você está sempre trabalhando com 
+	  uma instância válida.
+    - Limitação de escopo: A vida útil do objeto está ligada ao seu escopo. Se 
+	  ele for criado dentro de uma função, será destruído quando a função 
+	  terminar. 
+
+      Introdução aos Objectos
+	  https://web.tecnico.ulisboa.pt/~david.matos/w/pt/index.php/Introdu%C3%A7%C3%A3o_aos_Objectos
+	  
+  #include <SPI.h>
+  
+  // Objeto SPI para o barramento padrão
+  SPIClass objetoSPI;
+  
+  void setup() {
+    objetoSPI.begin(); // Usa o ponto para acessar os membros
+  }
+  
+  void loop() {
+    // Código que usa o objeto SPI
+  }
+
+  Usando SPIClass como ponteiro
+  -----------------------------
+  
+  Você deve usar um ponteiro para SPIClass quando precisar de mais 
+  flexibilidade no gerenciamento da instância do barramento SPI.
+  
+  Vantagens
+  
+  - Alocação dinâmica de memória: Você pode criar o objeto na heap usando 
+    new, permitindo que ele "viva" por mais tempo do que o escopo onde foi 
+	criado.
+  - Compartilhamento de instância: Você pode ter vários ponteiros em 
+    diferentes partes do seu código, todos apontando para a mesma instância 
+	do SPIClass. Isso é útil para bibliotecas que precisam de acesso ao mesmo 
+	barramento SPI.
+  - Controle explícito de vida útil: Você controla explicitamente quando o 
+    objeto é criado (new) e destruído (delete). Isso é fundamental para 
+	gerenciar múltiplos barramentos SPI (como em plataformas com mais de um).
+  - Permite valor nulo (nullptr): Um ponteiro pode ser nullptr, o que pode ser 
+    útil para indicar a ausência de um objeto. 
+
+    SPI
+	https://docs.espressif.com/projects/arduino-esp32/en/latest/api/spi.html
+    When to use a pointer rather than the object itself in C++?
+	https://www.educative.io/answers/when-to-use-a-pointer-rather-than-the-object-itself-in-cpp
+    Pointers (C++)
+	https://learn.microsoft.com/en-us/cpp/cpp/pointers-cpp?view=msvc-170
+	
+  Desvantagens
+  
+  - Gerenciamento manual de memória: A responsabilidade de desalocar a memória 
+    (usando delete) é sua. Se você não fizer isso, pode causar vazamentos de 
+	memória.
+  - Complexidade: O código fica mais complexo, exigindo o uso do operador seta 
+    (->) para acessar os membros.
+  - Risco de erro: Se você tentar usar um ponteiro nulo, o programa pode falhar.
+  
+    Usar Ponto ou Seta? Registros e Ponteiros
+    https://www.youtube.com/watch?v=apaWJ0qyKu8
+    Injeção manual de dependência
+	https://developer.android.com/training/dependency-injection/manual?hl=pt-br
+	Programando Dispositivos Embarcados com Orientação a Objetos em C++
+	https://embarcados.com.br/programando-dispositivos-embarcados-com-orientacao-a-objetos-em-c/
+
+  Exemplo
+  
+  #include <SPI.h>
+  
+  // Ponteiro para o objeto SPI do barramento HSPI do ESP32
+  SPIClass* ponteiroSPI;
+  
+  void setup() {
+    // Cria uma nova instância de SPIClass na heap
+    ponteiroSPI = new SPIClass(HSPI); 
+    ponteiroSPI->begin(); // Usa a seta para acessar os membros
+  }
+  
+  void loop() {
+    // Código que usa o ponteiro SPI
+  }
+  
+  void cleanup() {
+    // Não se esqueça de desalocar a memória
+    delete ponteiroSPI;
+    ponteiroSPI = nullptr; 
+  }
+
+  Cenário prático: Múltiplos barramentos SPI em ESP32
+  ---------------------------------------------------
+  
+  Em plataformas como o ESP32, que possuem múltiplos barramentos SPI (por exemplo, VSPI e HSPI), você precisa de ponteiros para criar e gerenciar diferentes instâncias do SPIClass, uma para cada barramento físico. Isso permite que você use periféricos em barramentos SPI distintos, cada um com sua própria configuração. 
+  Resumo das recomendações
+  
+  Multiple SPIClass objects cause failure in version 3.0.2 #9939
+  https://github.com/espressif/arduino-esp32/issues/9939
+  
+  ------------------------------------------------------------------------------------------------------------------------------------------------------
+  Característica                  Usar SPIClass como Objeto                            Usar SPIClass como Ponteiro
+  ------------------------------------------------------------------------------------------------------------------------------------------------------
+  Simplicidade                    Sempre preferível para uso direto e fácil.           Evitar a menos que seja necessário.
+  Gerenciamento de memória        Automático (pilha).                                  Manual (heap).
+  Compartilhamento de instância   Não é ideal; cada função lida com uma cópia.         Ideal para múltiplas partes do código usarem a mesma instância.
+  Vida útil                       Limitada ao escopo de declaração.                    Flexível; pode existir por toda a vida do programa.
+  Múltiplos barramentos           Inviável para gerenciar mais de uma interface SPI.   Essencial para plataformas com mais de um barramento SPI físico.
+  ------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  ESP32 Reinicia ao usar SPIClass(FSPI) como objeto
+  -------------------------------------------------
+  
+  O relato sobre o ESP32 reiniciar quando se utiliza SPIClass(FSPI), por 
+  exemplo, como objeto, mas funcionar com new SPIClass(FSPI) (ponteiro), é um 
+  comportamento conhecido e bem documentado em certas versões do framework 
+  Arduino para ESP32. A raiz do problema está na forma como o framework e a 
+  biblioteca SPI.h gerenciam as instâncias de SPI. 
+  
+  Global SPIClass instance crashes Freenove WROVER
+  https://forum.arduino.cc/t/global-spiclass-instance-crashes-freenove-wrover/1406646/4
+  ESP32-S3 “SPIClass spi(HSPI)” but with pin definitions? #9588
+  https://github.com/espressif/arduino-esp32/issues/9588
+  GPIO & RTC GPIO
+  https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/peripherals/gpio.html
+  
+  As principais razões para este comportamento são:
+  
+  1. Conflitos na inicialização: O framework Arduino para ESP32 já inicializa 
+    instâncias de SPIClass para os barramentos padrão, como VSPI. Criar uma 
+	segunda instância como um objeto local (na pilha) pode levar a conflitos 
+	de recursos. Quando você faz spi = SPIClass(FSPI), o construtor da classe 
+	é chamado e tenta alocar e configurar os recursos do SPI, mesmo que já 
+	exista uma instância global que possa ser a causa do conflito. Em algumas 
+	versões, essa chamada repetida para begin() no mesmo barramento pode 
+	causar falha ou reboot.
+	
+  2. Gerenciamento da vida útil (lifetime) do objeto: A instância que você 
+     cria com SPIClass(FSPI) é um objeto local. Se a sua classe a armazena 
+	 diretamente, você está, na verdade, fazendo uma cópia (ou usando a 
+	 semântica de movimento), e o objeto original é destruído no final do 
+	 escopo onde ele foi criado. O ESP32 pode ter problemas com a desalocação 
+	 e alocação de recursos de hardware de maneira não gerenciada, o que leva 
+	 a reinícios inesperados.
+  3. Uso de recursos internos: O barramento FSPI (que em alguns modelos de 
+     ESP32 se refere ao SPI da Flash) tem limitações e é usado internamente 
+	 para acesso à memória flash. Tentar inicializar uma instância local em 
+	 cima de um barramento já usado internamente pelo sistema pode causar 
+	 instabilidade. O uso de new e ponteiros (alocando na heap) pode ser uma 
+	 maneira de contornar problemas específicos de lifetime da pilha ou de 
+	 conflitos de inicialização de recursos.
+  4. Alocação de memória: Embora menos comum, problemas de alocação de 
+     memória dinâmica (new) também podem levar a reinícios, mas de forma 
+	 diferente. No seu caso, o problema parece ser o contrário: a alocação 
+	 dinâmica resolveu a questão, provavelmente porque a inicialização e a 
+	 vida útil do objeto na heap não interferem com a lógica do framework da 
+	 mesma forma que um objeto na pilha. 
+
+     ESP32 SPI Communication: Set Pins, Multiple SPI Bus Interfaces, and Peripherals (Arduino IDE)
+	 https://randomnerdtutorials.com/esp32-spi-communication-arduino/
+	 ESP32 fails to execute when using free() on a pointer with malloc
+     https://forum.arduino.cc/t/esp32-fails-to-execute-when-using-free-on-a-pointer-with-malloc/999609
+	 SPI Master driver
+	 https://docs.espressif.com/projects/esp-idf/en/v3.1.6/api-reference/peripherals/spi_master.html
+	 is there a difference between esp_restart() and pressing the reset button?
+	 https://www.reddit.com/r/esp32/comments/1gwmt1a/is_there_a_difference_between_esp_restart_and/
+
+  Resumo do porquê o ponteiro funciona
+  ------------------------------------
+  
+  Ao usar um ponteiro (new SPIClass(FSPI)):
+  
+  - Você cria a instância do SPIClass na memória heap, e a gerencia 
+    explicitamente.
+  - Você evita a semântica de cópia e destruição de objetos na pilha, 
+    que pode entrar em conflito com o framework do ESP32.
+  - A instância existe até que você a destrua (com delete), mantendo o 
+    recurso de hardware consistente durante todo o tempo de vida do seu 
+	objeto.
+  
+  A melhor prática para ESP32
+  ---------------------------
+  
+  Se você precisar usar barramentos SPI que não sejam o padrão SPI global, a 
+  maneira mais segura e recomendada é justamente a que você descobriu: usar 
+  ponteiros e alocação dinâmica.
+  
+  #include <SPI.h>
+  
+  class MinhaClasseSPI {
+  public:
+      SPIClass* spi; // Declare o ponteiro como membro da classe
+  
+      // Construtor
+      MinhaClasseSPI(int bus) {
+          spi = new SPIClass((spi_host_device_t)bus); // Aloca a instância na heap
+      }
+  
+      // Inicialização
+      void begin() {
+          if (spi) {
+              spi->begin();
+          }
+      }
+  
+      // Método para transferir dados
+      void transfer(uint8_t data) {
+          if (spi) {
+              spi->beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+              digitalWrite(spi->pinSS(), LOW);
+              spi->transfer(data);
+              digitalWrite(spi->pinSS(), HIGH);
+              spi->endTransaction();
+          }
+      }
+  
+      // Destrutor
+      ~MinhaClasseSPI() {
+          if (spi) {
+              delete spi; // Libera a memória alocada
+              spi = nullptr;
+          }
+      }
+  };
+  
+  MinhaClasseSPI minhaInstancia(FSPI);
+  
+  void setup() {
+      minhaInstancia.begin();
+      // Configure os pinos SS para o dispositivo FSPI
+      pinMode(minhaInstancia.spi->pinSS(), OUTPUT);
+  }
+  
+  void loop() {
+      minhaInstancia.transfer(0x55);
+      delay(1000);
+  }
+  
+  Usar ponteiros e alocação dinâmica em situações como esta é uma solução 
+  robusta e que respeita o gerenciamento de recursos internos do framework 
+  ESP32, evitando o comportamento de reinício que você observou.
+
+  Evitando Conflitos com SPI
+  --------------------------
+
+    "O esp32 tem 2 spi que podem ser usados, mas no Visual Studio Code quando 
+	inclui SPI.h seu código itenrno inicia por padrão o FSPI, a seus 
+	determinados pinos. Posso usar tambem o HSPI (cada um deles tem um pino 
+	MISO e MOSI especifica. Teria como encerrar esse objeto e recriar ele 
+	novamente para evitar conflito, tanto no esp32 como para AVR assim 
+	evitaria estes conflitos?"
+  
+  É muito importante destacar uma diferença crucial no gerenciamento de 
+  hardware entre microcontroladores mais simples (como AVR, usado no Arduino 
+  UNO) e os mais complexos (como o ESP32).
+  
+  O problema descrito que o ESP32 reinicia ao tentar criar um objeto 
+  SPIClass na pilha é um resultado da forma como o framework do ESP32 trata a 
+  inicialização e o gerenciamento dos barramentos SPI.
+
+  Por que o conflito ocorre no ESP32
+  ----------------------------------
+  
+  1. Inicialização Global e Padrão: O framework do ESP32, por padrão, já 
+    inicializa a instância global SPI (que corresponde ao VSPI) e, dependendo 
+	da configuração e do uso interno, pode estar interagindo com outros 
+	barramentos, como o FSPI. O FSPI é frequentemente usado para a comunicação 
+	com a memória flash e pode ser um recurso de sistema protegido.
+  2. Problemas na Pilha (Stack): Criar um objeto de forma direta (SPIClass 
+     objeto(FSPI);) na pilha (stack) é problemático no ESP32, pois pode levar 
+	 a alocações de recursos em conflito com o sistema ou a desalocações 
+	 prematuras. O ESP-IDF (o framework subjacente) gerencia o hardware de 
+	 forma mais complexa do que o AVR, e a destruição de um objeto SPIClass 
+	 criado na pilha pode interferir no funcionamento do sistema.
+  3. Vida Útil (Lifetime) do Objeto: Ao usar a alocação dinâmica (new), você 
+     controla a vida útil do objeto, mantendo-o na memória heap pelo tempo que 
+	 precisar. Isso evita que o objeto seja destruído ao sair do escopo, o que 
+	 pode causar falhas em um sistema que espera que o recurso de hardware 
+	 permaneça inicializado. 
+
+  Problema de inicialização do flash SPI
+  https://www.reddit.com/r/esp32/comments/125mdrw/spi_flash_boot_problem/?tl=pt-br
+  Estou confuso com as portas ESP32 SPI0/1. Como evito essas portas no design de PCB personalizado?
+  https://www.reddit.com/r/esp32/comments/1h96r9o/im_confused_on_the_esp32_spi01_ports_how_do_i/?tl=pt-br
+  
+  Encerrar e recriar o SPI para evitar conflitos?
+  -----------------------------------------------
+  
+  Em teoria, sim, seria possível. A classe SPIClass possui métodos como 
+  begin() e end() para inicializar e desinicializar o barramento, 
+  respectivamente. No entanto, na prática, essa abordagem é arriscada e não 
+  recomendada, especialmente no ESP32. 
+  
+  How to Use SPI Communication on the Arduino
+  https://www.circuitbasics.com/how-to-set-up-spi-communication-for-arduino/
+  
+  Cenário de begin() e end()
+  --------------------------
+  
+  No mundo do Arduino, SPI.begin() e SPI.end() são usados para ativar e 
+  desativar o barramento SPI. Você poderia, em tese, desinicializar um 
+  barramento e reiniciá-lo com novas configurações.
+  
+  Problemas com essa abordagem:
+  
+  - ESP32: Desinicializar um barramento que o sistema já está usando (como o 
+    FSPI) para acessar a memória flash pode levar a um crash ou reboot. O FSPI 
+	não é um barramento de uso geral no mesmo sentido que o VSPI ou HSPI.
+  - AVR: Em plataformas AVR, o método end() apenas desabilita o SPI, mas os 
+    pinos podem ser controlados como GPIOs normais. Não há um gerenciamento 
+	complexo de recursos de sistema como no ESP32.
+  - Gerenciamento de Recursos: A forma mais segura de lidar com múltiplos 
+    dispositivos ou barramentos é não desinicializar o barramento por 
+	completo, mas sim gerenciar as transações com os métodos 
+	beginTransaction() e endTransaction().
+	
+  A solução recomendada: Gerenciar Transações
+  -------------------------------------------
+  
+  Em vez de encerrar e recriar o objeto SPI, a forma correta e mais robusta de 
+  lidar com múltiplos dispositivos (mesmo com diferentes barramentos) é usar 
+  as funções de transação.
+  
+  As funções SPI.beginTransaction() e SPI.endTransaction() são projetadas para 
+  esse propósito. Elas configuram os parâmetros de comunicação (velocidade, 
+  ordem de bits, modo) para um dispositivo específico antes de começar a 
+  comunicação, e os restauram ao final. 
+  
+  Intro to Arduino: SPI Serial Communication: Transactions with a Unique 
+  SPI Configuration
+  https://nightshade.net/knowledge-base/electronics-tutorials/arduino/intro-to-arduino-spi-serial-communication-links/
+    
+  Exemplo prático com ESP32 (usando ponteiro)
+  -------------------------------------------
+  
+  #include <SPI.h>
+
+  // Ponteiros para os barramentos HSPI e VSPI
+  SPIClass* hspi = nullptr;
+  SPIClass* vspi = nullptr;
+  
+  void setup() {
+    Serial.begin(115200);
+  
+    // Use ponteiros para criar e gerenciar múltiplas instâncias
+    hspi = new SPIClass(HSPI);
+    hspi->begin();
+  
+    vspi = new SPIClass(VSPI);
+    vspi->begin();
+  
+    // Configure os pinos SS para seus dispositivos
+    pinMode(5, OUTPUT);  // Exemplo de SS para HSPI
+    pinMode(15, OUTPUT); // Exemplo de SS para VSPI
+  }
+  
+  void loop() {
+    // Transação para o dispositivo no barramento HSPI
+    hspi->beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+    digitalWrite(5, LOW);
+    hspi->transfer(0xAA);
+    digitalWrite(5, HIGH);
+    hspi->endTransaction();
+  
+    delay(10);
+  
+    // Transação para o dispositivo no barramento VSPI
+    vspi->beginTransaction(SPISettings(1000000, LSBFIRST, SPI_MODE1));
+    digitalWrite(15, LOW);
+    vspi->transfer(0x55);
+    digitalWrite(15, HIGH);
+    vspi->endTransaction();
+  
+    delay(10);
+  }
+    
+  Conclusão
+  
+  - ESP32: Evite a prática de tentar "encerrar" e "recriar" objetos SPIClass, 
+    especialmente os que são usados internamente pelo sistema. Use ponteiros 
+	para gerenciar as instâncias de múltiplos barramentos de forma segura e 
+	use beginTransaction()/endTransaction() para lidar com configurações 
+	diferentes para cada dispositivo.
+	
+  - AVR: A manipulação dos objetos SPI na pilha é menos problemática, mas a 
+    abordagem com beginTransaction()/endTransaction() ainda é a melhor prática 
+	para alternar configurações de dispositivos em um mesmo barramento.
+	
+  - O seu problema com o reboot no ESP32 é uma prova de que a alocação 
+    dinâmica com ponteiros é a abordagem correta para evitar conflitos, pois 
+	ela permite que você controle de forma explícita a vida útil dos objetos, 
+	mantendo os recursos de hardware consistentes.
+
+  Escolhendo o Barramento SPI
+  ---------------------------
+  
+  As convenções de uso dos barramentos SPI mudaram no ESP32-S3 em relação ao 
+  ESP32 e que, teoricamente, o FSPI e o HSPI podem estar livres para uso. A 
+  confusão e a instabilidade ocorrem devido a uma incompatibilidade entre o 
+  comportamento padrão do framework do Arduino para ESP32 e a forma como o 
+  hardware e o framework de baixo nível do ESP-IDF (no qual o Arduino se 
+  baseia) gerenciam esses recursos. 
+  
+  Tech Note 064 - ESP32 How to Connect SPI Devices and Get Them Working
+  https://www.youtube.com/watch?v=w3VIxtLPuRE
+  Second "User SPI" port on the ESP32S3?
+  https://www.reddit.com/r/esp32/comments/wi3ltb/second_user_spi_port_on_the_esp32s3/
+  ESP32-S3 “SPIClass spi(HSPI)” but with pin definitions? #9588
+  https://github.com/espressif/arduino-esp32/issues/9588
+  
+  A maneira de permitir que o usuário escolha qual barramento usar, mantendo a 
+  estabilidade, é justamente com a abordagem de ponteiros que já discutimos, 
+  mas estruturada de forma que a sua biblioteca possa aceitar a escolha do 
+  usuário de maneira segura. 
+  
+  Estratégia para criar uma biblioteca flexível
+  ---------------------------------------------
+  
+  Para que o usuário possa escolher entre FSPI e HSPI (ou qualquer outro 
+  barramento disponível) e você não tenha os problemas de reinício, a melhor 
+  prática é criar sua classe de forma que ela aceite o barramento como um 
+  parâmetro no construtor.
+  
+  1. Use ponteiros como membros da classe: Sua classe não deve conter um 
+     objeto SPIClass diretamente, mas sim um ponteiro para ele. Isso evita os 
+	 problemas de alocação e gerenciamento de vida útil na pilha.
+  
+  2. Permita que o usuário passe a instância SPI: O construtor da sua classe 
+     deve aceitar um ponteiro para SPIClass. Dessa forma, o usuário final tem 
+	 total controle sobre qual barramento inicializar e passar para a sua 
+	 biblioteca.
+  
+  3. Encapsule a inicialização: Sua classe deve encapsular a lógica de 
+     comunicação, usando o ponteiro fornecido pelo usuário.
+    
+  Exemplo de implementação
+  
+  #include <SPI.h>
+  
+  // A sua biblioteca para um dispositivo SPI, por exemplo, um sensor
+  class MeuSensorSPI {
+  private:
+      SPIClass* _spi;
+      uint8_t _pinCS;
+  
+  public:
+      // Construtor que recebe um ponteiro para SPIClass e o pino CS
+      MeuSensorSPI(SPIClass* spi, uint8_t pinCS) : _spi(spi), _pinCS(pinCS) {
+          // Nada a inicializar aqui ainda, apenas armazena os valores
+      }
+  
+      void begin() {
+          if (_spi) {
+              // Configura o pino CS como saída
+              pinMode(_pinCS, OUTPUT);
+              digitalWrite(_pinCS, HIGH);
+          }
+      }
+  
+      void lerDados() {
+          if (_spi) {
+              // Inicia a transação, usando as configurações do barramento
+              _spi->beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+              digitalWrite(_pinCS, LOW);
+              
+              // ... (código para ler/escrever dados)
+              _spi->transfer(0x00);
+              
+              digitalWrite(_pinCS, HIGH);
+              _spi->endTransaction();
+          }
+      }
+  };
+  
+  // ============================================
+  // No código do usuário
+  // ============================================
+  
+  // Cria instâncias dos barramentos SPI usando ponteiros
+  SPIClass* fspi = nullptr;
+  SPIClass* hspi = nullptr;
+  
+  // Instância da sua biblioteca
+  MeuSensorSPI meuSensor(nullptr, 0);
+  
+  // Pino Chip Select
+  const int SENSOR_CS_PIN = 10;
+  
+  void setup() {
+      Serial.begin(115200);
+  
+      // O usuário escolhe qual barramento usar
+      char escolha = 'F'; // 'F' para FSPI, 'H' para HSPI
+  
+      if (escolha == 'F') {
+          Serial.println("Usando FSPI");
+          fspi = new SPIClass(FSPI);
+          fspi->begin();
+          meuSensor = MeuSensorSPI(fspi, SENSOR_CS_PIN);
+      } else {
+          Serial.println("Usando HSPI");
+          hspi = new SPIClass(HSPI);
+          hspi->begin();
+          meuSensor = MeuSensorSPI(hspi, SENSOR_CS_PIN);
+      }
+  
+      meuSensor.begin();
+  }
+  
+  void loop() {
+      meuSensor.lerDados();
+      delay(1000);
+  }
+  
+  Por que esta abordagem resolve o problema?
+  ------------------------------------------
+  
+  1. Evita conflitos de inicialização: Em vez de a sua biblioteca tentar 
+     inicializar um barramento que pode já ter sido inicializado pelo 
+	 framework ou por outra parte do código, ela apenas aceita uma instância 
+	 já inicializada.
+  
+  2. Controle explícito do usuário: O usuário é quem decide, no setup(), qual 
+     barramento quer utilizar. O objeto é criado na heap (new) no momento da 
+	 escolha, evitando a instabilidade de criar objetos na pilha.
+  
+  3. Encapsulamento seguro: Sua classe não precisa saber dos detalhes da 
+     alocação de memória ou da vida útil da instância SPIClass. Ela apenas usa 
+	 o ponteiro fornecido, garantindo que o barramento esteja sempre 
+	 disponível e configurado corretamente.
+  
+  4. Flexibilidade: Se o usuário quiser usar um terceiro barramento, ou passar 
+     a instância SPI global (&SPI), ele pode fazer isso facilmente, sem 
+	 alterar o código da sua biblioteca.
+  
+  Em resumo, a alocação dinâmica com ponteiros, combinada com uma boa 
+  estrutura de classes que recebe essa instância por parâmetro, é a chave 
+  para criar bibliotecas SPI robustas e flexíveis para plataformas como o 
+  ESP32, permitindo ao usuário escolher o barramento sem causar reinícios. 
+
+  Escolha do Barramento (FSPI, HSPI, VSPI,...)
+  --------------------------------------------
+
+  A principal fonte de confusão ao migrar do AVR para o ESP32, especialmente 
+  para as versões mais recentes como o ESP32-S3, é a relação entre os pinos 
+  usados na comunicação SPI e o tipo de barramento. A diferença fundamental 
+  está na flexibilidade do hardware. 
+
+  AVR (Arduino Uno, por exemplo)
+  ------------------------------
+  
+  - Pinos fixos: O microcontrolador AVR tem pinos SPI dedicados e fixos. O 
+    MISO, MOSI e SCK estão sempre ligados a pinos específicos (por exemplo, 
+	digital 11, 12 e 13 no Uno).
+  - begin() sem parâmetros: Como os pinos são fixos, a função SPI.begin() não 
+    precisa de parâmetros para o MISO, MOSI e SCK. Ela simplesmente ativa o 
+	periférico SPI e mapeia automaticamente os pinos fixos. O pino Chip Select 
+	(CS) ainda precisa ser gerenciado manualmente. 
+
+  Protocolo SPI (Hélio Sousa Mendonça)
+  https://paginas.fe.up.pt/~hsm/docencia/edm/edm-2022-23/serial/
+  Obtaining SPI pin designations for a ESP32 S3
+  https://forum.arduino.cc/t/obtaining-spi-pin-designations-for-a-esp32-s3/1296651
+  
+  ESP32-S3 (e a maioria dos ESP32)
+  --------------------------------
+  
+  - Matriz de E/S (GPIO Matrix): O ESP32 possui uma matriz de E/S flexível. 
+    Isso significa que a maioria dos pinos GPIO pode ser configurada para se 
+	conectar a quase qualquer periférico interno, incluindo os barramentos SPI.
+  - Barramentos SPI distintos: O ESP32-S3 tem barramentos SPI distintos 
+    (geralmente SPI2 e SPI3, que são os que o framework do Arduino mapeia para 
+	HSPI e FSPI, respectivamente).
+  - Sem pinos padrão fixos: Como os pinos são remapeáveis, não há um conjunto 
+    de pinos "padrão" fixos para cada barramento SPI como acontece no AVR.
+  - begin() com parâmetros: A flexibilidade exige que você informe ao SPIClass 
+    quais pinos usar. Por isso, a função begin() no ESP32 aceita parâmetros 
+	para o SCK, MISO, MOSI e até mesmo um pino CS padrão, se desejar. 
+
+  ESP32-S3 - Which Pins Are Safe To Use?
+  https://www.youtube.com/watch?v=tC-DLeI6hjQ
+  ESP32-S3 Pin Reference
+  http://wiki.fluidnc.com/en/hardware/ESP32-S3_Pin_Reference
+  ESP32S3 FSPI & HSPI Help
+  https://forum.arduino.cc/t/esp32s3-fspi-hspi-help/1368669
+  
+  A confusão e a solução
+  ----------------------
+  
+    "Se eu escolho FSPI e HSPI passando para a classe 
+	spi = new SPIClass(FSPI), ele não usaria de forma automática os pinos 
+	MISO, MOSI e SCLK do ESP32 padrão para cada um deles?"
+	
+  Simplesmente criar uma instância SPIClass para FSPI ou HSPI não define os 
+  pinos. A definição de pinos deve ser feita explicitamente na chamada de 
+  begin(). Isso ocorre tanto arpa Arduino como para ESP32.
+
+  Exemplo de código no ESP32-S3
+  
+  #include <SPI.h>
+  
+  // Ponteiro para a instância do SPI
+  SPIClass* meuSpi;
+  
+  // Pinos customizados para o barramento FSPI
+  const int FSPI_SCK = 10;
+  const int FSPI_MISO = 11;
+  const int FSPI_MOSI = 12;
+  const int FSPI_CS = 9;
+  
+  // Pinos customizados para o barramento HSPI
+  const int HSPI_SCK = 17;
+  const int HSPI_MISO = 18;
+  const int HSPI_MOSI = 19;
+  const int HSPI_CS = 16;
+    
+  void setup() {
+    Serial.begin(115200);
+  
+    // Exemplo: Criando uma instância para o barramento FSPI na heap
+    meuSpi = new SPIClass(FSPI); 
+  
+    // Inicializa o barramento FSPI com os pinos que você ESCOLHEU
+    meuSpi->begin(FSPI_SCK, FSPI_MISO, FSPI_MOSI, -1); // -1 para CS, pois você gerenciará manualmente
+    
+    pinMode(FSPI_CS, OUTPUT);
+    digitalWrite(FSPI_CS, HIGH);
+  }
+  
+  void loop() {
+    // Transação usando o barramento FSPI
+    meuSpi->beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+    digitalWrite(FSPI_CS, LOW);
+    meuSpi->transfer(0xAA);
+    digitalWrite(FSPI_CS, HIGH);
+    meuSpi->endTransaction();
+  
+    delay(1000);
+  }
+  
+  O papel do FSPI e HSPI no construtor
+  ------------------------------------
+  
+  Ao chamar new SPIClass(FSPI), você está dizendo ao framework para usar o 
+  controlador de hardware associado ao FSPI (que é o SPI3 no ESP32-S3). Isso 
+  prepara a estrutura para usar aquele barramento, mas não define os pinos. 
+  
+  É na chamada meuSpi->begin(pinos...) que o framework, usando a matriz de 
+  E/S, conecta os pinos GPIO que você especificou ao barramento de hardware 
+  correspondente.
+  
+  Por que o uso do ponteiro resolve?
+  ----------------------------------
+  
+  A razão pela qual usar new funcionou para você é que ele evita a 
+  inicialização automática e o gerenciamento de objetos de SPI pelo framework 
+  na pilha, que pode entrar em conflito com as rotinas de inicialização 
+  internas do ESP32, especialmente em barramentos que podem ter uso interno 
+  (como o FSPI em alguns modelos). Com new, você tem controle total sobre 
+  quando a instância é criada e configurada, evitando esses conflitos.
+  
+  ESP32S3 FSPI & HSPI Help
+  https://forum.arduino.cc/t/esp32s3-fspi-hspi-help/1368669
+
+  Barramento Versus Pinos SPI
+  ---------------------------
+  
+  Graças à Matriz de E/S (GPIO Matrix) do ESP32-S3, você pode escolher 
+  qualquer pino GPIO disponível para funcionar como MISO, MOSI e SCK para 
+  qualquer barramento SPI (FSPI ou HSPI). A flexibilidade é um dos grandes 
+  diferenciais do ESP32 em relação a microcontroladores com pinos fixos, como 
+  o AVR. 
+  
+  A confusão surge porque a combinação de new SPIClass(FSPI) e meuSpi->begin() 
+  parece contraditória, mas na verdade, eles têm funções diferentes:
+  
+  - new SPIClass(FSPI): Esta parte apenas seleciona o controlador de hardware 
+    SPI (FSPI, no caso) que você vai usar. O nome FSPI é um identificador que 
+	o framework do Arduino mapeia para um dos controladores SPI do ESP32-S3 
+	(geralmente o SPI3).
+	
+  - meuSpi->begin(SCK, MISO, MOSI, CS): Esta é a parte que realmente configura 
+    os pinos. Ao chamar begin() com os parâmetros de pino, você está 
+	instruindo a Matriz de E/S do ESP32 a rotear os sinais do controlador de 
+	hardware selecionado (FSPI, no exemplo) para os pinos GPIO que você 
+	especificou. 
+
+  A liberdade de escolha dos pinos
+  --------------------------------
+  
+  É possível definir os pinos como quiser, desde que não sejam pinos 
+  "protegidos" ou já em uso, como: 
+  
+  - Pinos usados para a memória flash ou PSRAM.
+  - Pinos de bootstrapping (que definem o modo de inicialização). 
+
+  GPIO Matrix and Pin Mux
+  https://docs.espressif.com/projects/arduino-esp32/en/latest/tutorials/io_mux.html
+  GPIO & RTC GPIO
+  https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/gpio.html
+
+  Se você tivesse um segundo dispositivo no mesmo barramento FSPI, poderia 
+  usar os mesmos pinos SCK, MISO e MOSI, mas com um pino CS diferente. 
+  
+  Exemplo prático da liberdade de mapeamento
+  ------------------------------------------
+  
+  Vamos supor que seja necessário usar o barramento FSPI, mas com pinos 
+  completamente diferentes do exemplo anterior. É possível fazer isso sem 
+  problemas:
+
+  #include <SPI.h>
+  
+  // Ponteiro para a instância do SPI
+  SPIClass* meuSpi;
+  
+  // NOVOS pinos customizados para o barramento FSPI
+  const int FSPI_SCK_NOVO = 20;
+  const int FSPI_MISO_NOVO = 19;
+  const int FSPI_MOSI_NOVO = 18;
+  const int FSPI_CS_NOVO = 17;
+  
+  void setup() {
+    Serial.begin(115200);
+  
+    // Cria uma instância para o barramento FSPI na heap
+    meuSpi = new SPIClass(FSPI); 
+  
+    // Inicializa o barramento FSPI, roteando para os novos pinos escolhidos
+    meuSpi->begin(FSPI_SCK_NOVO, FSPI_MISO_NOVO, FSPI_MOSI_NOVO, -1);
+    
+    pinMode(FSPI_CS_NOVO, OUTPUT);
+    digitalWrite(FSPI_CS_NOVO, HIGH);
+  
+    Serial.println("FSPI configurado com pinos personalizados.");
+  }
+  
+  void loop() {
+    // Transação usando o barramento FSPI com os novos pinos
+    meuSpi->beginTransaction(SPISettings(1000000, MSBFIRST, SPI_MODE0));
+    digitalWrite(FSPI_CS_NOVO, LOW);
+    meuSpi->transfer(0xBB);
+    digitalWrite(FSPI_CS_NOVO, HIGH);
+    meuSpi->endTransaction();
+  
+    delay(1000);
+  }
+
+  O begin() é a chave para o ESP32, pois é ele quem usa a Matriz de E/S para 
+  fazer a conexão física entre o periférico de hardware (FSPI/HSPI) e os pinos 
+  GPIO que você escolheu. O uso de ponteiros garante que a instância do 
+  controlador de hardware seja gerenciada de forma segura, evitando os 
+  problemas de reinício como foi observado.
+
 
 Configurar no Platformio ESP32-S3 Devkit 1 N16R8 com e Sem OTA
 --------------------------------------------------------------
@@ -4616,6 +5412,99 @@ Usando Instacia da Classe / Criação do Objeto
      objeto, ou ele some da face do programa. Nos programas baseado em 
 	 Arduino, normalmente isso não é problema, porque o programa roda 
 	 indefinidamente até o própoximo reset de hardware.
+
+
+Cuidado com Mesmo Nomes Classes com Macros ou Constantes #define
+-----------------------------------------------------------------
+
+  Recentemente passei por um certo inferno na terra por causa de algo que eu 
+  achava que era um bug e na realidade um erro de programação. No entanto esse 
+  erro me custou muitas horas de sono.
+  
+  Então preparem-se para o temível erro: 
+  "error: abstract declarator '<unnamed class>' used as declaration"
+  
+  A principal motivo disso era um erro na hora da compilação aparecia o seguinte:
+  
+  In file included from src/main.cpp:6:
+  lib/RA8889/RA8889.hpp:1704:19: error: expected ')' before 'cs'
+       RA8889(uint8_t cs, uint8_t rst);
+             ~       ^~~
+                     )
+  lib/RA8889/RA8889.hpp:2548:2: error: abstract declarator '<unnamed class>' used as declaration
+   };
+    ^
+  
+  O erro indicando na "uint8_t cs" sobre o construtor da minha classe. Alêm 
+  disso, havia outro erro tambem estranho no main.cpp:
+    
+  src/main.cpp:120:11: error: expected constructor, destructor, or type conversion before '(' token
+   RA8889 gfx(PIN_CS, PIN_RESET);
+             ^
+  src/main.cpp: In function 'void setup()':
+  src/main.cpp:143:3: error: 'gfx' was not declared in this scope
+     gfx.setBus(spi);                          // Seta o Bus SPI
+     ^~~
+  src/main.cpp: In function 'void loop()':
+  src/main.cpp:175:3: error: 'gfx' was not declared in this scope
+     gfx.GraphicMode();
+     ^~~
+  
+  Claro que o erro sobre gfx era consequencia de erros anteriores.
+  
+  A primeira coisa que me veio a cabeça era que como o erro indicava "};" ou 
+  ")" me parecia que algo estava aberto antes deste trecho e não foi fechado, 
+  como uma macro, condicional if(), for(), while... Resolví fazer a busca 
+  frenética olhando linha a linha, código a código e no final para minha 
+  surpresa: nada! absolutamente nada de errado! Tudo cetinho e bem alinhado.
+  
+  Então, partí para a ignorância. Quando resolvi remover o cosntrutor da 
+  classe, e aí começou a aparecer uma luz no fim do túnel me dando outro tipo 
+  de erro:
+  
+  lib/RA8889/RA8889.hpp:1674:14: error: member 'DisplayBase <unnamed class>::<anonymous>' with constructor not allowed in anonymous aggregate
+   class RA8889 : public DisplayBase {   //herdado de DisplayBase
+                ^
+  lib/RA8889/RA8889.hpp:2521:2: error: abstract declarator '<unnamed class>' used as declaration
+   };
+    ^
+  
+  Agora realmente estava indicando sobre o nome da Classe. Ora é o mesmo nome 
+  do construtor, o que fazaia sentido sobre algo que tinha o mesmo nome. Mas 
+  então quem tem o mesmo nome, senão os promprios metodos que referenciam a 
+  classe? Comecei uma busca por todos os módulos e arquivos.
+  
+  class RA8889 : public DisplayBase {
+    private:
+      IBus* _bus = nullptr;
+    public:
+      RA8889(uint8_t cs, uint8_t rst);
+      void setBus(IBus& bus);
+  
+  Para minha surpresa dei de cara no arquivo Config.hpp e lá estava problema 
+  a qual eu não havia me dado conta. Um erro simples. Agora sim! Eu poderia 
+  me auto denominar BIOS (Bicho Ignorante Operando Sistema), ou no meu caso 
+  mais especifico seria BIPS (Bicho Ignorante Programando Sistema) risos.
+  
+  #ifndef CONFIG_HPP
+  #define CONFIG_HPP
+  //#define RA8875
+  //#define RA8876
+  //#define RA8877
+  #define RA8889       //<-um erro simples!
+  #endif
+  
+  Um erro típico para um marujo de primeira viagem em C++ que já navegou muito 
+  nas águas do Delphi. Mas em fim, o que não é a experiência de navegar sobre 
+  águas nunca antes exploradas. Vale mais que um quadro negro explicando isso.
+  
+  Mas uma coisa é certa e eu já tinha em mente. O erro só pode ser 
+  ridiculamente pequeno. Isso, já com muitas experiência com outras linguagens 
+  de programação. Aprendi que quase 90% dos problemas de bug e erros está 
+  relacionado a falta de atenção ou coisas banais do dia a dia.
+  
+  Fica a dica ai, buscar nas coisas simples os problemas difíceis e volte ao 
+  básico semrpe que for preciso.
 
 
 Links do LVGL

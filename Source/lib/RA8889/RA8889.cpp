@@ -323,7 +323,7 @@ Construcao
 #include <ascii_table_8x12.h>
 #include <ascii_table_16x24.h>
 #include <ascii_table_32x48.h>
-
+#include <Debug.hpp>
 
 //================================================================================
 //
@@ -360,7 +360,7 @@ void RA8889::RA8876_brightness(uint16_t val)
 //================================================================================
 
 
-#ifdef SERIAL_DEBUG
+#ifdef SERIAL_DEBUG_2
   bool serialStarted = false;
 
 
@@ -1063,6 +1063,7 @@ void RA8889::setBus(IBus& bus)
  */
 RA8889::RA8889(uint8_t cs, uint8_t rst)
 {
+  _bus           = nullptr;
   _xnreset       = rst;
   _displaywidth  = LCD_HW;
   _displayheight = LCD_VH;
@@ -1073,7 +1074,6 @@ RA8889::RA8889(uint8_t cs, uint8_t rst)
   _fntparam_source_select  = eFontSource::InternalCGROM;      //Default do display
   _display_spi_clk_divider = BIT_SPI_DIV4;
 }
-
 
 
 //ESTUDAR A IMPLEMENTACAO
@@ -1150,8 +1150,9 @@ bool RA8889::Begin(void)
 
   //SPI_Init();                           //inicializa comunicação SPI
   _bus->Init();                        //inicializa comunicação SPI, I2C ou Parallel
-  
-  #ifdef CHECK_RAIOFAMILY
+  DEBUG_PRINT("_bus->Init() Sucesso", 0,false,true);
+
+  #ifdef CHECK_RAIO_FAMILY
   //Verifica se é um RA8889
   if (ReadIDCode() == 0x89) { DEBUG_PRINT("RA8889 connect pass!",0,false, true); }
   else { 
@@ -1162,7 +1163,8 @@ bool RA8889::Begin(void)
   #endif
   
   PLL_InitilizeWaitReady();
-  
+  DEBUG_PRINT("PLL_InitilizeWaitReady() Sucesso", 0,false,true);
+
   delay(100);
 
   // Aguarda até que a inicialização interna do RA8889 termine
@@ -1170,6 +1172,8 @@ bool RA8889::Begin(void)
   // Bit 1 do STSR (0x02) = 0 → inicialização concluída
   while(_bus->StatusRead() & 0x02);
   
+  DEBUG_PRINT("_bus->StatusRead() Sucesso", 0,false,true);
+
   //Inicializa as configurações basicas do display RA8889
   if (!Initialize()) {
     DEBUG_PRINT("RA8889 initial fail!",0,false,true);
@@ -2505,6 +2509,7 @@ void RA8889::PLL_InitilizeWaitReady(void)
   
   do {
     temp = _bus->StatusRead();               //Read Status Register STSR
+    DEBUG_PRINT("_bus->StatusRead()", temp,true,true);
 	if((temp & 0x02) == 0x00) {                //Veja se o bit 1 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
 
       delay(2);                                //MCU too fast, necessary

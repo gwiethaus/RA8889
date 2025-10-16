@@ -1,26 +1,19 @@
 #ifndef BUSSPI_HPP
 #define BUSSPI_HPP
+
 #include <Arduino.h>
 #include <SPI.h>
 #include <Bus.hpp>
 #include <Config.hpp>
+#include <Registers.hpp>
 
-#if defined(RA8875)
-  #include <RA8875_Reg.hpp>
-#elif defined(RA8876)
-  #include <RA8876_Reg.hpp>
-#elif defined(RA8877)
-  #include <RA8877_Reg.hpp>
-#elif defined(RA8889)
-  #include <RA8889_Reg.hpp>
-#endif
 
 enum SPIHostType {
     HOST_AUTO = 0,   // Deixa a biblioteca decidir automaticamente o SPI (fallback seguro)
     HOST_SPI,        // SPI padrão (Arduino Uno, Mega, Due, STM32, etc.)
-    HOST_HSPI,       // SPI secundário (ESP32 e ESP32-S3)
+    HOST_HSPI,       // High-Speed SPI secundário (ESP32 e ESP32-S3)
     HOST_VSPI,       // SPI terciário (apenas ESP32 clássico)
-    HOST_FSPI        // SPI rápido (ESP32-S2 / S3 / C3)
+    HOST_FSPI        // Flash SPI rápido (ESP32-S2 / S3 / C3)
 };
 
 //Quais SPI existem nas diversas plataformas
@@ -68,10 +61,11 @@ enum SPIHostType {
 
 class Bus_SPI : public IBus {
   public:
-    Bus_SPI() = default;
+    Bus_SPI() = default;                         //gera um construtor padrão para a classe
     void Config(const IBusConfig_t* cfg)  override;
   protected:
-    SPIClass spi;                                //Será ajustado no Init
+    //SPIClass spi;                                //Será ajustado no Init (isso causa crach pois estou tntado efinir um objeto ja defindio)
+    SPIClass* spi = nullptr;                     // ponteiro
     SPISettings _spisetting;
     SPIBusConfig_t _cfg;                         //Config local específica de SPI
     bool _spi_init = false;                      //inicializou o SPI
@@ -95,7 +89,6 @@ class Bus_SPI : public IBus {
     uint8_t StatusRead(void) override;
     void RegisterWrite(uint8_t reg, uint8_t data) override;
     uint8_t RegisterRead(uint8_t reg) override;
-	
 };
 
 #endif    // fim de include guard BUSSPI_HPP

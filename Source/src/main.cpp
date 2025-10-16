@@ -1,8 +1,10 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include "RA8889.hpp"
+#include <BusSPI.hpp>
 #include "FT5316.hpp"
 #include "userconf.hpp"
+#include "RA8889.hpp"
+#include "Debug.hpp"
 
 #include <ascii_table_8x12.h>
 #include <ascii_table_16x24.h>
@@ -15,11 +17,34 @@
 //#define  PIN_RESET  16
 //#define  PIN_CS     5
 
-//ARDUINO
+//ESP_32
 #define  PIN_RESET      9
 #define  PIN_CS         10
 #define  PIN_INT        00
-#define  PIN_BLCONTROL  14 //External backlight control connected to this Arduino pin (quando nao estiver usando modulo display shield)
+#define  PIN_BLCONTROL  46 //External backlight control connected to this Arduino pin (quando nao estiver usando modulo display shield)
+
+/*
+  ==TFT Hardware SPI to ESP32  WROOM 32, 38 pin ==
+    TFT           =>    ESP32
+  1,2. GND        ->    GND
+  3,4. VCC        ->    5V      3.3V OR 5V is optional, depending on the voltage of the module purchased 
+  5. CS           ->    GPIO05   vspi_cs
+  6. MISO         ->    GPIO1919 vspi_miso
+  7. MOSI         ->    GPIO23   vspi_mosi
+  8. SCK          ->    GPIO18   vspi_clk
+  11. RES         ->    GPIO16 
+
+  ==TFT Hardware SPI to ESP32-S3 ==
+    TFT           =>    ESP32-S3
+  1,2. GND        ->    GND
+  3,4. VCC        ->    5V      3.3V OR 5V is optional, depending on the voltage of the module purchased 
+  5. CS           ->    GPIO10   vspi_cs
+  6. MISO         ->    GPIO19   vspi_miso
+  7. MOSI         ->    GPIO23   vspi_mosi
+  8. SCK          ->    GPIO18   vspi_clk
+  11. RES         ->    GPIO9    reset
+  14. BL CONTROL  ->    GPIO46   
+*/
 
 uint16_t myColors[30] = {
     0xF800,
@@ -92,7 +117,7 @@ uint16_t fadePixel(uint16_t color, float factor) {
   return (r << 11) | (g << 5) | b;
 }
 
-
+Bus_SPI bus_spi;
 RA8889 gfx(PIN_CS, PIN_RESET);
 
 void setup() {
@@ -106,7 +131,21 @@ void setup() {
   pinMode(2, OUTPUT);                        
   digitalWrite(2, HIGH);                       //Disable  RTP
   DEBUG_PRINT("Disable SD and RTP pin", 0,false,true);  
-  bool b = gfx.Begin();
+
+  IBus::SPIBusConfig_t cfg;
+  cfg.spi_type = HOST_FSPI;
+  cfg.pin_mosi = 11;
+  cfg.pin_miso = 13;
+  cfg.pin_sclk = 12;
+  cfg.pin_cs   = 10;
+  cfg.freq_write = 20000000;
+  
+  bus_spi.Config(&cfg);                         // Grava a configuração
+  gfx.setBus(bus_spi);                          // Seta o Bus SPI
+  DEBUG_PRINT("Bus SPI configurado", 0,false,true);
+  bool b = gfx.Begin();                     // inicializa o display 
+  gfx.setBacklight(PIN_BLCONTROL);          //Controle de luz de fundo
+
   DEBUG_PRINTD("Begin Sucessfull", 0, false, 4000, true);         //Debug
   DEBUG_PRINTD("",0,false,0,true);  
 

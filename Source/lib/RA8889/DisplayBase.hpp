@@ -1,5 +1,6 @@
 #ifndef DISPLAYBASE_HPP
 #define DISPLAYBASE_HPP
+
 #include <Arduino.h>
 #include <Bus.hpp>
 
@@ -8,9 +9,10 @@
 //por exemplo tenha que decalrar e alterar a classe IBUs. Desta forma evita de se tocar na classe IBus sem o usuario se precoupar com 
 //essa declaração ou conhecer a classe IBus.
 class DisplayBase { 
-  protected:
-    IBus* _bus;
+  private:
+    IBus* _bus = nullptr;     // inicialização padrão
+  public:
+    DisplayBase() = default;  // construtor padrão explícito (adicionado)
 };
-
 
 #endif //fim do include guard DISPLAYBASE_HPP

@@ -1,5 +1,6 @@
 #ifndef RA8889_HPP
 #define RA8889_HPP
+
 #include <Arduino.h>
 #include <SPI.h>
 #include "DisplayBase.hpp"
@@ -414,10 +415,10 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 //#define SERIAL_DEBUG
 
 //Ativa funcao de existencia da familia Raio RA8875/RA8876/RA8877/RA8889
-#define CHECK_RAIOFAMILY
+#define CHECK_RAIO_FAMILY
 
 //Antes de usar macro DEBUG_PRINT, use no Setup() a macro DEBUG_BEGIN para iniciar a comunicacao serial.
-
+/*
 #ifdef SERIAL_DEBUG
   extern bool serialStarted;
   #define DEBUG_BEGIN(baud) do { Serial.begin(baud); serialStarted = true; } while(0)
@@ -436,7 +437,7 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
   #define DEBUG_PRINTD(msg, val, b, delayms, newline)
   #define DEBUG_PRINTF(msg, val, decimal, b, newline)
 #endif
-
+*/
 
 //--------------------------------------------------------------------------------
 // System
@@ -1663,20 +1664,14 @@ struct FontUserParam {
   char *font_table;	
 };
 
-#ifdef SERIAL_DEBUG
-void SerialPrint(String msg, uint32_t value, bool b, bool newline);
-void SerialPrintF(String msg, double value, uint8_t decimal, bool b, bool newline);
-void SerialPrintH(String msg, const char* value, bool b, bool newline);
-void SerialPrintH(String msg, uint64_t value, bool b, bool newline);
-#endif
 
-class RA8889 : public DisplayBase {   //herdado de DisplayBase
+class RA8889 : public DisplayBase {            //Herdado de DisplayBase
   private:
     IBus* _bus = nullptr;
   public:
     RA8889(uint8_t cs, uint8_t rst);
     void setBus(IBus& bus);
-
+    
     void HardwareReset(void);
     uint8_t SoftwareReset(void);
     void RA8876_brightness(uint16_t val);
@@ -1693,6 +1688,7 @@ class RA8889 : public DisplayBase {   //herdado de DisplayBase
     uint16_t Height(void);
     uint8_t getColorDepth(void);
     uint32_t LayerStartAddr(uint8_t layer);
+    
     void MainImage_StartAddress(uint32_t addr);
     void MainImage_Width(uint16_t Wx);
     void MainWindow_StartXY(uint16_t wx, uint16_t hy);

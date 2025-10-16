@@ -1,5 +1,6 @@
 #ifndef BUSPARALLEL_HPP
 #define BUSPARALLEL_HPP
+
 #include <Arduino.h>
 #include <Bus.hpp>
 #include <Config.hpp>

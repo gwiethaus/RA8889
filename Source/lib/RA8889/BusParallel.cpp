@@ -15,7 +15,7 @@
  * 
  * void setup() {
  *      
- *   IBus::ParallelBusConfig_t cfg;
+ *   IBus::ParallelBusConfig_t cfg;            //typedef structure
  *   cfg.data_pins[0] = 29;
  *   cfg.data_pins[1] = 23;
  *   cfg.data_pins[2] = 19;
