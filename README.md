@@ -73,7 +73,138 @@ void setup() {
 ```
 
 # Futura versão
+
 ## Controle de Barramento SPI com transação Ativa e Controlada 
+
+Será possível fazaer o controle quando se deseja que o barramento SPI fique sempre bloqueado apra oturos dispositivos deixando exclusivo par ao display ou permite que a cada processo de envio de dados ou leitura o barramento fica retido e depois liberado para oturos dispositivos. A segunda opção é útil quandos e deeja comaprtilhar o barramento a varios dispostiivos e ainda evitar overhead de transação causando sobrecarga no tempo de transmissao de dados e leitura. Esta técnica minimiza este risco. Muito usado para enviar principalmetne blocos de dados inteiros que o barramento precisa ficar retido ao dispositivo e depois liberado quando for necessário. Esta téncia é frequenctemente usada por algumas biblitoecas graficas como o LovyanGFX e TFT_eSPI, no entnado esta apresenta uma característica extra de poder escolher quando e como se deseja isso.
+
+Demostrado abaixo, para melhor entendimento como é feito esta técnica de design através dos trechos de código abaixo que serão futuramente implemntados.
+
+### Código da Classe RA8889:
+
+```
+void RA8889::StartSender() {
+  _bus->startWrite();
+}
+
+void RA8889::EndtSender() {
+  _bus->endWrite();
+}
+```
+
+### Código da Clase Bus_SPI:
+
+```
+void Bus_SPI::Init(void) 
+{
+  if (_spi_init) return;
+
+  pinMode(_cfg.pin_cs, OUTPUT);
+  digitalWrite(_cfg.pin_cs, HIGH);
+
+  createSPI(static_cast<SPIHostType>(_cfg.spi_type));
+
+  _spi_clockmax = (_cfg.freq_write > 0) ? _cfg.freq_write : SPI_CLOCK_SPEED_MAX;
+  _spi_datamode  = SPI_MODE0;
+  _spi_dataorder = MSBFIRST;
+
+  spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
+  _spi_transaction = true;
+
+// Determina qual SPI usar
+#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C3)
+  spi->begin(_cfg.pin_sclk, _cfg.pin_miso, _cfg.pin_mosi, _cfg.pin_cs);
+#elif defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_MEGA2560)
+  spi->begin();
+#else
+  #warning "SPI não implementada para esta plataforma"
+  return;
+#endif
+  _spi_init = true;
+}
+
+voi Bus_SPI::setTransaction(void) {
+  /Se a transacao está ja ativa nao faça nada
+  if (!_spi_transaction ) {                                                              
+    spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
+    _spi_ransaction = true;             //assume transacao ativa
+  }
+}
+
+void Bus_SPI::CmdWrite(uint8_t cmd)
+{ 
+  //Se executou comando de finalziacao de transação e não tem nenhuma ativa, 
+  //execute esta funcao para prevenir efeitos indesejados
+  setTransaction();                           
+
+  //se nao tiver controle de transcao, apenas uma transacao esta ativa 
+  //precisando selecionar o barramento
+  if (!_cfg.ctrl_trans) SetCS(0);              //SS_RESET
+  RwByte(SPI_CMDWRITE);                        //0x00, Avisa Display que será um comando
+  RwByte(cmd);                                 //Envia um comando de 1 byte para o Display
+  if (!_cfg.ctrl_trans) SetCS(1);              //SS_SET
+}
+
+void Bus_SPI::startSender() {
+  if (!_cfg.ctrl_trans) return;
+  setTransaction(void)
+  SetCS(0); 
+}
+   
+void Bus_SPI::endSender() {
+  if (!_cfg.ctrl_trans) return;
+  if (_spi_ransaction) {
+    spi->endTransaction();
+   _spi_ransaction = false;
+    SetCS(1);
+  }
+}
+``` 
+
+### Quando cfg.ctrl_trans = true:
+
+Avisa que o controle será sempre por transacao. Ela inicia e finalzia sempre quando tem uma operaçãoo de escrita no barramento spi. Alem disso, StartSender() e EndSender() serão necessários sempre que há uma escrita ou leitura do barramento.
+
+### Quando usa cfg.ctrl_trans = false:
+
+A transação fica ativa sempre no inicio e nunca finaliza durante todo tempo de vida do software. Alem disso, StartSender() e EndSender() não terão efeito algum.
+
+### Como usar
+
+```
+Bus_SPI bus_spi;
+RA8889 gfx(PIN_CS, PIN_RESET);
+...
+void setup() {
+...
+...
+  IBus::SPIBusConfig_t cfg;
+  cfg.spi_type = HOST_FSPI;
+  cfg.pin_mosi = 11;
+  cfg.pin_miso = 13;
+  cfg.pin_sclk = 12;
+  cfg.pin_cs   = 10;
+  cfg.ctrl_trans = true;
+  cfg.freq_write = 20000000;
+  bus_spi.Config(&cfg);                        // Grava a configuração
+  gfx.setBus(bus_spi);                         // Seta o Bus SPI
+...
+...
+
+//Trecho de uso sobre o LVGL, callback
+
+void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
+    int32_t w = lv_area_get_width(area);
+    int32_t h = lv_area_get_height(area);
+
+    gfx.StartSender();                            // <--- bloqueia o barramento
+    gfx.setAddrWindow(area->x1, area->y1, w, h);
+    gfx.WritePixels(px_map, w * h);               // envia os pixels
+    gfx.EndSender();                              // <--- libera o barramento
+
+    lv_display_flush_ready(disp);
+}
+``` 
 
 
 # Todo
