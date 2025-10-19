@@ -3,9 +3,6 @@
 #include <Registers.hpp>
 #include <Debug.hpp>
 
-
-//SPIClass spi(FSPI);
-
 /**
  * @brief Configura o proctocolo de comunicação SPI para o display
  *
@@ -66,7 +63,6 @@ void Bus_SPI::Config(const IBusConfig_t* cfg)
  */
 void Bus_SPI::createSPI(SPIHostType hostType)
 {
-
   //Se já existia um ponteiro de uma instância do objeto no heap, destrói
   if(spi) {
     delete spi;
@@ -95,7 +91,6 @@ void Bus_SPI::createSPI(SPIHostType hostType)
   #if HAS_FSPI
      case HOST_FSPI:
           spi = new SPIClass(FSPI);
-          //spi = new SPIClass(3);  //testando estes valores 3 e 2
           DEBUG_PRINT("Selecionou Objeto FSPI criado (valor): ", FSPI,true,true);
           break;
   #endif
@@ -110,7 +105,6 @@ void Bus_SPI::createSPI(SPIHostType hostType)
   // Outros MCUs (Arduino, STM32, etc.)
   spi = new SPIClass();
 #endif
-
 }
 
 
@@ -143,10 +137,12 @@ void Bus_SPI::Init(void)
   DEBUG_PRINT("Entrou em Bus_SPI::Init", 0,false,true);
 
   pinMode(_cfg.pin_cs, OUTPUT);
-  digitalWrite(_cfg.pin_cs, HIGH);
+  //digitalWrite(_cfg.pin_cs, HIGH);
+  DEBUG_PRINT("Valor do pin CS: ", _cfg.pin_cs,true,true);
 
   createSPI(static_cast<SPIHostType>(_cfg.spi_type));
 
+#ifdef HAS_SPI_TRANSACTION
   _spi_clockmax = (_cfg.freq_write > 0) ? _cfg.freq_write : SPI_CLOCK_SPEED_MAX;
   _spi_datamode  = SPI_MODE0;
   _spi_dataorder = MSBFIRST;
@@ -157,18 +153,19 @@ void Bus_SPI::Init(void)
   DEBUG_PRINT("Valor do spi clock max: ", _spi_clockmax,true,true);
   DEBUG_PRINT("Valor do spi data order: ", _spi_dataorder,true,true);
   DEBUG_PRINT("Valor do spi data mode: ", _spi_datamode,true,true);
+#endif
 
 // Determina qual SPI usar
 #if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C3)
  
   spi->begin(_cfg.pin_sclk, _cfg.pin_miso, _cfg.pin_mosi, _cfg.pin_cs);
-
-  DEBUG_PRINT("-----------------------------", 0,false,true);
+  //spi->begin();
   DEBUG_PRINT("Valor do Freq. write: ", _spi_clockmax,true,true);
-  DEBUG_PRINT("Valor do SCLK:        ", _cfg.pin_sclk,true,true);
-  DEBUG_PRINT("Valor do MISO:        ", _cfg.pin_miso,true,true);
-  DEBUG_PRINT("Valor do MOSI:        ", _cfg.pin_mosi,true,true);
-  DEBUG_PRINT("Valor do CS:          ", _cfg.pin_cs,true,true);
+  DEBUG_PRINT("Valor do SCLK: ", _cfg.pin_sclk,true,true);
+  DEBUG_PRINT("Valor do MISO: ", _cfg.pin_miso,true,true);
+  DEBUG_PRINT("Valor do MISO Padrao: ", MISO,true,true);
+  DEBUG_PRINT("Valor do MOSI: ", _cfg.pin_mosi,true,true);
+  DEBUG_PRINT("Valor do CS: ", _cfg.pin_cs,true,true);
 #elif defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_MEGA2560)
 
   spi->begin();

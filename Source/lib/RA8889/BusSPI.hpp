@@ -16,46 +16,42 @@ enum SPIHostType {
     HOST_FSPI        // Flash SPI rápido (ESP32-S2 / S3 / C3)
 };
 
+
 //Quais SPI existem nas diversas plataformas
 #if CONFIG_IDF_TARGET_ESP32
   #define HAS_HSPI 1
   #define HAS_VSPI 1
   #define HAS_FSPI 0
-  #define HAS_SPI  0       // SPI padrão não é usado nesse caso
+  #define HAS_SPI  0                           //SPI padrão não é usado nesse caso
+  #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32 Genérico
 #elif CONFIG_IDF_TARGET_ESP32S3
   #define HAS_HSPI 1
   #define HAS_VSPI 0
   #define HAS_FSPI 1
   #define HAS_SPI  0
+  #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32-S2, ESP32-S3, ESP32-C3
 #elif CONFIG_IDF_TARGET_ESP32S2
   #define HAS_HSPI 0
   #define HAS_VSPI 0
   #define HAS_FSPI 1
-  #define HAS_SPI  0  
+  #define HAS_SPI  0
+  #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32-S2, ESP32-S3, ESP32-C3
 #elif CONFIG_IDF_TARGET_ESP32C3
   #define HAS_HSPI 0
   #define HAS_VSPI 0
   #define HAS_FSPI 1
   #define HAS_SPI  0
-#else
- // Placas genéricas sem múltiplos SPI (Arduino, STM32, etc.)
+  #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32-S2, ESP32-S3, ESP32-C3
+#elif defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_MEGA2560)
+  //Placas genéricas sem múltiplos SPI (Arduino Uno, Mega, Duo, etc.)
   #define HAS_HSPI 0
   #define HAS_VSPI 0
   #define HAS_FSPI 0
   #define HAS_SPI  1
-#endif
-
-//issso deve sair, pois ja tem a possibildiade do usuario configurar a velocidade de escrita do esp32 ou qualeru outra MCU
-#if defined(CONFIG_IDF_TARGET_ESP32) 
-  #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32 Genérico
-  #define HAS_SPI_TRANSACTION
-#elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32C3)
-  #define SPI_CLOCK_SPEED_MAX  20000000        //Para ESP32-S2, ESP32-S3, ESP32-C3
-  #define HAS_SPI_TRANSACTION
-#elif defined(ARDUINO_AVR_UNO) || defined(ARDUINO_AVR_MEGA2560)
-  #define SPI_CLOCK_SPEED_MAX  8000000       //Para Arduino Uno/Mega
+  #define SPI_CLOCK_SPEED_MAX  8000000
 #else
-   #warning "SPI não implementada para esta plataforma"
+  //Placas genéricas não implementadas
+  #warning "SPI não implementada para esta plataforma"
 #endif
 
 
@@ -64,8 +60,8 @@ class Bus_SPI : public IBus {
     Bus_SPI() = default;                         //gera um construtor padrão para a classe
     void Config(const IBusConfig_t* cfg)  override;
   protected:
-    //SPIClass spi;                                //Será ajustado no Init (isso causa crach pois estou tntado efinir um objeto ja defindio)
-    SPIClass* spi = nullptr;                     // ponteiro
+    //SPIClass spi;                                //Manter por motivo histórico: Será ajustado no Init (isso causa crach quando tenta definir objeto ja existente)
+    SPIClass* spi = nullptr;                     //Ponteiro para spi inicializado
     SPISettings _spisetting;
     SPIBusConfig_t _cfg;                         //Config local específica de SPI
     bool _spi_init = false;                      //inicializou o SPI

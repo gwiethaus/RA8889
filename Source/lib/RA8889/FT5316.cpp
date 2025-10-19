@@ -220,13 +220,14 @@ uint8_t FT::ReadTouchRegister(uint8_t reg)
  */
 bool FT::WriteTouchRegister(uint8_t reg, uint8_t data)
 {
+  uint8_t retVal = 0xff;
   if (_addr != 0) {
     Wire.beginTransmission(_addr);
     Wire.write(reg);                  // register 0
     Wire.write(data);                 // value
-    uint8_t retVal = Wire.endTransmission();
-	  return retVal == 0;              // true se transmissão OK
+    retVal = Wire.endTransmission();
   }
+  return retVal == 0;                 // true se transmissão OK
 }
 
 

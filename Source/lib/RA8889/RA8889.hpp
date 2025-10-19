@@ -1674,11 +1674,12 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     
     void HardwareReset(void);
     uint8_t SoftwareReset(void);
-    void RA8876_brightness(uint16_t val);
+    void Brightness(uint16_t level);
 
     bool Begin(void);
     void DisplayOn(bool on);
     void setBacklight(uint8_t pin);
+    void BacklightOn(bool on);
     void Backlight(bool on);
     void DisplayTestBar(bool b);
     bool GraphicMode(void);
@@ -1794,8 +1795,8 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
                                     uint32_t des_address,
                                     uint32_t number);
 
-    void PWM0(bool on_off, eDividerClock clock_divided, uint8_t prescalar, uint16_t clock_per_period, uint16_t duty);
-    void PWM1(bool on_off, eDividerClock clock_divided, uint8_t prescalar, uint16_t clock_per_period, uint16_t duty);
+    void PWM0(bool on_off, eDividerClock clock_divided, uint8_t prescaler, uint16_t clock_per_period, uint16_t duty);
+    void PWM1(bool on_off, eDividerClock clock_divided, uint8_t prescaler, uint16_t clock_per_period, uint16_t duty);
     void AVI_Window(bool on_off);
     void PIP(bool On_Off, uint8_t PSelect, uint32_t PAddr, uint16_t Px, uint16_t Py, uint32_t ImageWidth, uint16_t Dx, uint16_t Dy, uint16_t Dwidth, uint16_t DHeight);
 
@@ -2334,10 +2335,14 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     void PWM0_StopTimer(void);
     void PWM0_DeadZoneLength(uint8_t len);
     void PWM0_SetCompareBuffer(uint16_t duty);
+    void PWM0_Duty(uint16_t duty);
     void PWM0_SetCountBuffer(uint16_t clock_per_period);
+    void PWM0_ClocksPerPeriod(uint16_t clock_per_period);
     void PWM1_SetCompareBuffer(uint16_t duty);
+    void PWM1_Duty(uint16_t duty);
     void PWM1_SetCountBuffer(uint16_t clock_per_period);
-		
+		void PWM1_ClocksPerPeriod(uint16_t clock_per_period);
+
     void SFI_Select_ROM0(void);
     void SFI_Select_ROM1(void);
     void SFI_DMA_WaitReady(void);

@@ -332,21 +332,19 @@ Construcao
 //================================================================================
 
 
-//nao funciona
-void RA8889::RA8876_brightness(uint16_t val)
+//não testado
+//precisa estar configurado jumper J27 e J28 no modulo de display apra uso desta funcionaldiade
+void RA8889::Brightness(uint16_t level)
 {
 	// Turn on PWM if not already active, map 8-bit to 16-bit PWM0 register
-  PWM0_SetCompareBuffer(val);
+  PWM0_SetCompareBuffer(level);
 	
 	_bus->RegisterWrite(REG_PMUXR, BIT_PWM0_TIMER_DIV1 | BIT_XPWM0_OUTPUT_PWM_TIMER0);
 	
 	uint8_t temp = _bus->RegisterRead(REG_PCFGR);
-	if (val)
-	{
+	if (level)  {
 		temp = BIT_PWM0_DEAD_ZONE_ENABLE | BIT_PWM0_AUTO_RELOAD | BIT_PWM0_START;
-	}
-	else
-	{
+	} else {
 		temp = 0;
 	}
 	_bus->RegisterWrite(REG_PCFGR, temp);
@@ -358,131 +356,6 @@ void RA8889::RA8876_brightness(uint16_t val)
 // Funções/Macros auxiliares
 //
 //================================================================================
-
-
-#ifdef SERIAL_DEBUG_2
-  bool serialStarted = false;
-
-
-/**
- * @brief Depuracao do codigo
- *
- * @verbatim
- * None
- * @endverbatim
- *
- * @param None
- *
- * @note None
- */
-void SerialPrint(String msg, uint32_t value, bool b, bool newline)
-{
-  #ifdef SERIAL_DEBUG
-  if (!serialStarted) return;  // segurança extra
-  #endif
-  Serial.print(msg);
-  if (b) {
-    newline ? Serial.println(value) : Serial.print(value);
-  } else {
-    if (newline) Serial.println("");
-  }
-}
-
-
-/**
- * @brief Depuracao do codigo com valor ponto flutuante
- *
- * @verbatim
- * None
- * @endverbatim
- *
- * @param None
- *
- * @note None
- */
-void SerialPrintF(String msg, double value, uint8_t decimal, bool b, bool newline)
-{
-  #ifdef SERIAL_DEBUG
-  if (!serialStarted) return;  // segurança extra
-  #endif
-  Serial.print(msg);
-  if (b) {
-    newline ? Serial.println(value, decimal) : Serial.print(value, decimal);
-  } else {
-    if (newline) Serial.println("");
-  }
-}
-
-
-void SerialPrintH(String msg, uint64_t value, bool b, bool newline)
-{
-  #ifdef SERIAL_DEBUG
-  if (!serialStarted) return;  // segurança extra
-  #endif
-
-  Serial.print(msg);
-
-  if (b) {
-    char buffer[19]; // "0x" + 16 dígitos + '\0'
-    #if defined(ARDUINO_ARCH_AVR)
-      // AVR tem apenas 32 bits
-      sprintf(buffer, "0x%lX", (unsigned long)value);
-    #else
-      // Plataformas com suporte 64 bits
-      sprintf(buffer, "0x%llX", (unsigned long long)value);
-    #endif
-
-    if (newline)
-      Serial.println(buffer);
-    else
-      Serial.print(buffer);
-  }
-  else {
-    if (newline)
-      Serial.println();
-  }
-}
-
-
-// --- 2. Para strings (char*) ---
-void SerialPrintH(String msg, const char* value, bool b, bool newline)
-{
-  #ifdef SERIAL_DEBUG
-  if (!serialStarted) return;  // segurança extra
-  #endif
-
-  Serial.print(msg);
-
-  if (b && value && *value) {
-    uint64_t val = 0;
-
-   // Detecta base automaticamente
-    int base = (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) ? 16 : 10;
-
-    #if defined(ARDUINO_ARCH_AVR)
-      // AVR não tem strtoull(), usa 32 bits
-      val = strtoul(value, nullptr, base);
-    #else
-      // ESP32, ARM, etc. — têm strtoull()
-      val = strtoull(value, nullptr, base);
-    #endif
-
-    // Converte e imprime em formato 0xHEX
-    char buffer[19];  // "0x" + 16 dígitos + '\0'
-    sprintf(buffer, "0x%llX", (unsigned long long)val);
-
-    if (newline)
-      Serial.println(buffer);
-    else
-      Serial.print(buffer);
-  }
-  else {
-    if (newline)
-      Serial.println();
-  }
-}
-
-#endif
 
 
 /**
@@ -1042,8 +915,8 @@ static int intToStr(int val, char* buf, int minWidth)
 //seta o bus atraves de implementacao de interface como Parallel, SPI e I2C
 void RA8889::setBus(IBus& bus) 
 {
-  _bus = &bus;
-  _bus->Init();    //inicilaiza o baramento de comunicação SPI/Parallel/I2C
+  _bus = &bus;                                   //Ponteiro apra qual baramento de comunicação SPI/Parallel/I2C será usado
+  //_bus->Init();                                //inicilaiza o baramento de comunicação SPI/Parallel/I2C
 }
 
 
@@ -1146,10 +1019,10 @@ bool RA8889::Begin(void)
      return false;
   }
   
-  HardwareReset();                     //Hardware Reset
+  HardwareReset();                             //Hardware Reset
+  DEBUG_PRINTD("HardwareReset()...", 0, false, 0, true);         //Debug
 
-  //SPI_Init();                           //inicializa comunicação SPI
-  _bus->Init();                        //inicializa comunicação SPI, I2C ou Parallel
+  _bus->Init();                                //inicializa comunicação SPI, I2C ou Parallel
   DEBUG_PRINT("_bus->Init() Sucesso", 0,false,true);
 
   #ifdef CHECK_RAIO_FAMILY
@@ -1171,9 +1044,8 @@ bool RA8889::Begin(void)
   // Bit 1 do STSR (0x02) = 1 → inicialização em andamento
   // Bit 1 do STSR (0x02) = 0 → inicialização concluída
   while(_bus->StatusRead() & 0x02);
-  
   DEBUG_PRINT("_bus->StatusRead() Sucesso", 0,false,true);
-
+  
   //Inicializa as configurações basicas do display RA8889
   if (!Initialize()) {
     DEBUG_PRINT("RA8889 initial fail!",0,false,true);
@@ -10326,14 +10198,14 @@ void RA8889::PWM0_DeadZoneLength(uint8_t len)
  *       Este buffer determina o ponto em que o PWM muda de nível durante o ciclo.
  *       É útil para ajustar o duty cycle do PWM com precisão.
  */
-void RA8889::PWM0_SetCompareBuffer(uint16_t duty)   
+void RA8889::PWM0_SetCompareBuffer(uint16_t duty)
 {   
   _bus->CmdWrite(REG_TCMPB0L);                   //0x88, Timer 0 compare buffer register [TCMPB0L]
   _bus->DataWrite(duty);                           
   _bus->CmdWrite(REG_TCMPB0H);                   //0x89, Timer 0 compare buffer register [TCMPB0H]
   _bus->DataWrite(duty >> 8);                      
 }
-
+void RA8889::PWM0_Duty(uint16_t duty) {PWM0_SetCompareBuffer(duty);}
 
 //================================================================================
 //
@@ -10377,6 +10249,7 @@ void RA8889::PWM0_SetCountBuffer(uint16_t clock_per_period)
   _bus->CmdWrite(REG_TCNTB0H);                   //0x8b, Timer 0 count buffer register [TCNTB0H]
   _bus->DataWrite(clock_per_period >> 8);        
 }
+void RA8889::PWM0_ClocksPerPeriod(uint16_t clock_per_period) {PWM0_SetCountBuffer(clock_per_period);}
 
 
 //================================================================================
@@ -10433,7 +10306,7 @@ void RA8889::PWM1_SetCompareBuffer(uint16_t duty)
   _bus->CmdWrite(REG_TCMPB1H);                   //0x8d, Timer 1 compare buffer register [TCMPB1H]
   _bus->DataWrite(duty >> 8);                    
 }
-
+void RA8889::PWM1_Duty(uint16_t duty) {PWM1_SetCompareBuffer(duty);}
 
 //================================================================================
 //
@@ -10476,6 +10349,7 @@ void RA8889::PWM1_SetCountBuffer(uint16_t clock_per_period)
   _bus->CmdWrite(REG_TCNTB1H);                   //0x8f, Timer 1 count buffer register [TCNTB1H]
   _bus->DataWrite(clock_per_period >> 8);        
 }
+void RA8889::PWM1_ClocksPerPeriod(uint16_t clock_per_period) {PWM1_SetCountBuffer(clock_per_period);}
 
 
 //================================================================================
@@ -19347,7 +19221,7 @@ void RA8889::PIP(bool On_Off,                   // 0 : disable PIP, 1 : enable P
  */    
 void RA8889::PWM0(bool on_off,                  // true ON pwm, false OFF pwm
                         eDividerClock clock_divided,  // divided PWM clock
-                        uint8_t prescalar,            // Prescaler : only 1~256
+                        uint8_t prescaler,            // Prescaler : only 1~256
                         uint16_t clock_per_period,    // clock per period (Count_Buffer) : set PWM output period time
                         uint16_t duty                 // duty (compare buffer) : set PWM output high level time (Duty cycle)
                         )
@@ -19355,7 +19229,7 @@ void RA8889::PWM0(bool on_off,                  // true ON pwm, false OFF pwm
   //0x84, PWM Prescaler Register (PSCLR)
 
   PWM0_Select();                                
-  PWM_Prescaler(prescalar);
+  PWM_Prescaler(prescaler);
 
   //0x85, PWM clock Mux Register (PMUXR)
 
@@ -19363,11 +19237,11 @@ void RA8889::PWM0(bool on_off,                  // true ON pwm, false OFF pwm
   
   //0x8a, Timer 0 count buffer register [TCNTB0L]
   //0x8b, Timer 0 count buffer register [TCNTB0H]
-  PWM0_SetCountBuffer(clock_per_period);       //Medidor superior
+  PWM0_ClocksPerPeriod(clock_per_period);      //Medidor superior
   
   //0x88, Timer 0 compare buffer register [TCMPB0L]
    //0x89, Timer 0 compare buffer register [TCMPB0H]
-  PWM0_SetCompareBuffer(clock_per_period);     //DUTY
+  PWM0_Duty(duty);                             //DUTY
 
   //0x86, PWM Configuration Register (PCFGR) 
   on_off ? PWM0_StartTimer() : PWM0_StopTimer();
@@ -19393,9 +19267,9 @@ void RA8889::PWM0(bool on_off,                  // true ON pwm, false OFF pwm
  *   PWM output period = (Count Buffer + 1) x PWM CLK time
  *   PWM output high level time = (Compare Buffer + 1) x PWM CLK time
  */
-void RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
+void RA8889::PWM1(bool on_off,                        // true ON pwm, false OFF pwm
                         eDividerClock clock_divided,  // divided PWM clock
-                        uint8_t prescalar,            // Prescaler : only 1~256
+                        uint8_t prescaler,            // Prescaler : only 1~256
                         uint16_t clock_per_period,    // clock per period (Count_Buffer) : set PWM output period time
                         uint16_t duty                 // duty (compare buffer) : set PWM output high level time (Duty cycle)
                         )
@@ -19403,7 +19277,7 @@ void RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
   //0x84, PWM Prescaler Register (PSCLR)
 
   PWM1_Select();
-  PWM_Prescaler(prescalar);
+  PWM_Prescaler(prescaler);
 
   //0x85, PWM clock Mux Register (PMUXR)
 
@@ -19411,11 +19285,11 @@ void RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
 
   //0x8e, Timer 1 count buffer register [TCNTB1L]
   //0x8f, Timer 1 count buffer register [TCNTB1H]
-  PWM1_SetCountBuffer(clock_per_period);       //Medidor superior
+  PWM1_ClocksPerPeriod(clock_per_period);      //Medidor superior
 
   //0x8c, Timer 1 compare buffer register [TCMPB1L]
   //0x8d, Timer 1 compare buffer register [TCMPB1H]
-  PWM1_SetCompareBuffer(clock_per_period);     //DUTY
+  PWM1_Duty(duty);                             //DUTY
 
   //0x86, PWM Configuration Register (PCFGR) 
   on_off ? PWM1_StartTimer() : PWM1_StopTimer();
@@ -19426,6 +19300,10 @@ void RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
  * @brief  Seta os pino da luz de fundo
  *
  * @verbatim
+ * Para uso desta função necessário configuração fisica de hardware
+ * do módulo de display ER-TFT070-2-6105. Os jumper precisam ser 
+ * configurados: J27 curto, J28 aberto
+ * 
  * Uso com Sheild ER-AS-5517
  * -------------------------
  * O módulo shield ER-AS-5517 para ser utilizado em Arduino UNO/Mega/Duo 
@@ -19442,9 +19320,18 @@ void RA8889::PWM1(bool on_off,                  // true ON pwm, false OFF pwm
  * possível.  Isso é feito utilziando um dos pinos do MCU disponível conectado 
  * diretamente ao pino 14 (BL CONBTROL) do módulo de display ER-TFT070-2-6105.  
  * No display ER-TFT070-2-6105 baseado no controlador da RAIO RA8889 o 
- * controle de backlight precisa ser feito pelo usuário. 
- * Para oturos módulos de display, por exemplo o ER-TFTM070-5 baseado no RA8875,
+ * controle de backlight precisa ser feito pelo usuário.
+ * 
+ * Para outros módulos de display, por exemplo o ER-TFTM070-5 baseado no RA8875,
  * o seu pino 14 é mantido geralmetne solto, sem conexão com nada.
+ * 
+ * Importante: O controle de ligar e desligar a luz de fundo só é possível se 
+ * o controlador MCU pode fornecer uma carga suficiente para acionar a luz de 
+ * fundo, mesmo que seus pinos de saida digital opere em 3,3V. Desta forma, o
+ * display não irá aparecer a imagem. APra o caso de não cosneguir cotnrole 
+ * ligar/desligar a luz de fundo, conecte o pino 14 com CON3 diretamente na 
+ * alimentação de 3,3V. Esta função não terá utilidade.
+ * 
  * @endverbatim
  * @param pin: Número do pino do Host que será conectado ao modulo de display
  * 
@@ -19459,12 +19346,52 @@ void RA8889::setBacklight(uint8_t pin)
 }
 
 
-/** Não surtiu efeito
+/** 
+ * @brief  Liga/desliga a luz de fundo
+ *
+ * @verbatim
+ * Para uso desta função necessário configuração fisica de hardware
+ * do módulo de display ER-TFT070-2-6105. Os jumper precisam ser 
+ * configurados: J27 curto, J28 aberto
+ * 
+ * Liga e desliga a luz de fundo pelos pinos digitais previamente configurados
+ * como saída. Utilzie a função setBacklight() para configurar o pino de saída 
+ * digital conectado ao módulo de display, por exmeplo Pino 14 do módulo.
+ * 
+ * @endverbatim
+ * 
+ * @param on: true, liga a luz de fundo
+ * 
+ * @note  
+ * O controle de ligar e desligar a luz de fundo só é possível se 
+ * o controlador MCU pode fornecer uma carga suficiente para acionar a luz de 
+ * fundo, mesmo que seus pinos de saida digital opere em 3,3V. Desta forma, o
+ * display não irá aparecer a imagem. APra o caso de não cosneguir cotnrole 
+ * ligar/desligar a luz de fundo, conecte o pino 14 com CON3 diretamente na 
+ * alimentação de 3,3V. Esta função não terá utilidade.
+ */
+void RA8889::BacklightOn(bool on)
+{
+  if (_pin_backlight == 0) return;
+  on ? digitalWrite(_pin_backlight, HIGH) : digitalWrite(_pin_backlight, LOW);
+  DEBUG_PRINTD("Status Backlight", digitalRead(_pin_backlight), true, 500, true);         //Debug
+}
+
+
+/** 
  * @brief  Turn Backlight On/Off
  *
- * @param bool on                  -> true backlight ON
+ * @verbatim
+ * Para uso desta função necessário configuração fisica de hardware
+ * do módulo de display ER-TFT070-2-6105. Os jumper precisam ser 
+ * configurados: J27 aberto, J28 curto
+
+ * @param bool on -> true backlight ON
  * 
- * @note None
+ * @note  
+ * O controle de ligar e desligar e intensidade da luz de fundo só é possível 
+ * se o módulo de display for configurado fisicamente em seus jumper J27 e J28
+ * para que o controle interno PWM seja direcionado ao pino 14 do CON3.
  */
 void RA8889::Backlight(bool on) {
   if (on) {

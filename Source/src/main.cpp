@@ -21,7 +21,7 @@
 #define  PIN_RESET      9
 #define  PIN_CS         10
 #define  PIN_INT        00
-#define  PIN_BLCONTROL  46 //External backlight control connected to this Arduino pin (quando nao estiver usando modulo display shield)
+#define  PIN_BLCONTROL  15 //External backlight control connected to this Arduino pin (quando nao estiver usando modulo display shield)
 
 /*
   ==TFT Hardware SPI to ESP32  WROOM 32, 38 pin ==
@@ -140,21 +140,28 @@ void setup() {
   cfg.pin_cs   = 10;
   cfg.freq_write = 20000000;
   
-  bus_spi.Config(&cfg);                         // Grava a configuração
-  gfx.setBus(bus_spi);                          // Seta o Bus SPI
+  bus_spi.Config(&cfg);                        // Grava a configuração
+  gfx.setBus(bus_spi);                         // Seta o Bus SPI
   DEBUG_PRINT("Bus SPI configurado", 0,false,true);
-  bool b = gfx.Begin();                     // inicializa o display 
-  gfx.setBacklight(PIN_BLCONTROL);          //Controle de luz de fundo
 
-  DEBUG_PRINTD("Begin Sucessfull", 0, false, 4000, true);         //Debug
+//  gfx.setBacklight(PIN_BLCONTROL);             //Controle de luz de fundo
+//  gfx.BacklightOn(true);                       //Liga luz de fundo
+  pinMode(15, OUTPUT);
+  digitalWrite(15, HIGH);
+  DEBUG_PRINTD("Backlight ON", 0, false, 0, true);         //Debug
+
+  bool b = gfx.Begin();                        //Inicializa o display 
+//  gfx.setBacklight(PIN_BLCONTROL);             //Controle de luz de fundo
+//  gfx.BacklightOn(true);                       //Liga luz de fundo
+
+  DEBUG_PRINTD("Begin Sucessfull", 0, false, 1000, true);         //Debug
   DEBUG_PRINTD("",0,false,0,true);  
 
   gfx.FillScreen(clWhite);                     //Limpa a tela da ultima exibição apos power off
 
   gfx.DisplayOn(true);                         //esta funcao nao seria necessaria, pois init() já inicializa o display no modo grafico
-  DEBUG_PRINTD("Start Display ON", 0, false, 2000, true);         //Debug
-  DEBUG_PRINTD("",0,false,0,true);  
-
+  DEBUG_PRINTD("Start Display ON", 0, false, 1000, true);         //Debug
+  
   DEBUG_PRINT("",0,false,true);
   DEBUG_PRINT("----------------------------------------------------",0,false,true);
   DEBUG_PRINT("Parameter",0,false,true);
@@ -162,20 +169,29 @@ void setup() {
   DEBUG_PRINT("Display Width:        ", gfx.Width(),true,true);
   DEBUG_PRINT("Display Height:       ", gfx.Height(),true,true);
   DEBUG_PRINT("Color Deth (bpp):     ", gfx.getColorDepth(),true,true);
-  DEBUG_PRINT("Layer Start Address : ", gfx.LayerStartAddr(0),true,true);
-  DEBUG_PRINTD("----------------------------------------------------",0,false,3000,true);
+  DEBUG_PRINT("Layer Start Address:  ", gfx.LayerStartAddr(0),true,true);
+  DEBUG_PRINT("Modo Grafico:         ", gfx.IsGraphicMode(),true,true);
+  DEBUG_PRINT("MISO :                ", MISO,true,true);
+  DEBUG_PRINT("MOSI :                ", MOSI,true,true);
+  DEBUG_PRINT("SCK :                 ", SCK,true,true);
+  DEBUG_PRINT("SS :                  ", SS,true,true);
+  DEBUG_PRINT("HSPI :                ", HSPI,true,true);
+  DEBUG_PRINT("FSPI :                ", FSPI,true,true);
+  DEBUG_PRINTD("----------------------------------------------------",0,false,1000,true);
 
+  //isso no esp32 dá pau
+  //randomSeed(analogRead(0)); //para animacao dos pixel - wilson explicou
 
-  randomSeed(analogRead(0)); //para animacao dos pixel - wilson explicou
-
-  delay(3000);
+  delay(2000);
 }
 
 
 void loop() {
+
 #ifdef ACTIVE0
   gfx.GraphicMode();
   gfx.setWindow(0,0, gfx.Width(), gfx.Height());
+  DEBUG_PRINTD("Passou setWindow", 0, false, 1000, true);         //Debug
 #endif
 
 //posicao do texto e espacos  
@@ -187,6 +203,7 @@ void loop() {
 //Exemplo de Desenhos com pixel
 //---------------------------------------------------------------------------
   gfx.DrawSquare(0,0,gfx.Width()-1,gfx.Height()-1, clBlack, true);
+  DEBUG_PRINTD("Primeiro DrawSquare())", 0, false, 1000, true);         //Debug
 
   uint16_t w =  100 ;
   uint16_t h =  10 ; 
@@ -196,12 +213,16 @@ void loop() {
   gfx.DrawPixel(20, 45,clBakersBrown);
   gfx.DrawPixel(200, 300,clYellowOrange);
   gfx.DrawPixel(100, 400,clRoseDust);
+  
+  DEBUG_PRINTH("Cor DrwaPixel: ", clRoseDust, true,true);
+  DEBUG_PRINTD("------------------------------------------", 0, false, 500, true);
 
   gfx.DrawPixels(200,100,30,myColors);
   gfx.DrawPixels(200,200,30,myColors);
   gfx.DrawPixels(200,300,30,myColors);
 
-  delay (2000);
+
+  delay (1000);
 #endif
 
 #ifdef ACTIVE2
@@ -296,19 +317,21 @@ void loop() {
 //---------------------------------------------------------------------------
 //Exemplo de Teste de getPixel
 //---------------------------------------------------------------------------
-  gfx.FillScreen(clBlack);
+  gfx.FillScreen(clWhite);
   uint16_t x = 100;
   uint16_t y = 100;
+  DEBUG_PRINTH("Cor da tela:                      ", clWhite, true,true);
 
   gfx.DrawPixel(x, y, clYellow);
-  DEBUG_PRINTH("Cor enviada: ", clYellow, true,true);
-  DEBUG_PRINTD("------------------------------------------", 0, false, 1000, true);
+  DEBUG_PRINTH("Cor enviada (clYellow):           ", clYellow, true,true);
+  DEBUG_PRINTD("------------------------------------------", 0, false, 0, true);
   uint16_t oldColor = gfx.getPixel(x, y);       // se não tiver, pode usar buffer próprio
-  DEBUG_PRINTH("Cor Recebida: ", oldColor, true,true);
-  DEBUG_PRINTD("------------------------------------------", 0, false, 2000, true);
+  DEBUG_PRINTH("Cor Recebida:                     ", oldColor, true,true);
+  DEBUG_PRINTD("------------------------------------------", 0, false, 0, true);
   uint16_t oldColor2 = gfx.getPixel(x+1, y+1);       // se não tiver, pode usar buffer próprio
-  DEBUG_PRINTH("Cor Recebida posicao (+1,+1): ", oldColor2, true,true);
-  DEBUG_PRINTD("------------------------------------------", 0, false, 2000, true);
+  DEBUG_PRINTH("Cor Recebida posicao (+1,+1):     ", oldColor2, true,true);
+  DEBUG_PRINTH("Cor Recebida posicao (+100,+100): ", gfx.getPixel(x+100, y+100), true,true);
+  DEBUG_PRINTD("------------------------------------------", 0, false, 1000, true);
 
 #endif
 
