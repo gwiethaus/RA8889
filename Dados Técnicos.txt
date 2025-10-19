@@ -76,6 +76,7 @@ Display ER-TFT070-2-6105
   MicroSD Card Interface:           Pin Header Connection
   Font Chip:                        ER3806-1 (Genitop GT20L24F6Y, Refer to font chip datasheet for detail)
   Font chips number:                1
+  Arduino Shield:                   ER-AS-5517
   
   * Arduino Shield (5V,4-wire SPI,FFC Connection by default)
   
@@ -93,6 +94,42 @@ Legendas
   IDEC                        Image Display Engine Controller (possivelmente)
   Host                        Hospediro MCU/MPU (master) que envia comandos ao RA8889
 
+Controle de Backlight
+---------------------
+
+  No modelos de display ER-TFT070-2-6105 possui luz de fundo que precisa ser 
+  acionado. Este acionamento se dá por duas vias: Controle externo ou controle 
+  por PWM interno do display. Para o tipo de cotnrole é determinado pela 
+  configuração dos Jumpers na placa do módulo de display. Os J27 e J28 
+  controlam essa característica.
+  
+  - Controle Externo:     J27 curto, J28 aberto
+  - Controle Interno/PWM: J27 aberto, J28 curto
+  
+  Controle Externo:
+  
+  Quando se utiliza o módulo arduino shield ER-AS-5517 ele opera por padrão em 
+  5V. O módulo de display ER-TFT070-2-6105 possui o pino 14 do conetor CON3,  
+  que controla a luz de fundo.
+  
+  O pino do arduino shield conecta no seu pino de 5V interno com a saida para o 
+  pino 14 do modulo de display (veja diagrama do Arduino shield). Desta forma 
+  sempre que ligar o módulo a luz de fundo já vem acionada.
+
+  No caso de não utilziar o arduino shield, o pino 14 precisa ser ligado 
+  diretamente aos 3,3V. O ESP32-S3 não tem condições de acionar o Pino 14.
+  
+  Tentativa Experimetnal:
+  Para cotnrole externo de PWM, pode se fazer uma motnagem eletrônicao com um 
+  circuito gerador de PWM, por exemplo o ATiny85 emq ue um dos pinos do SP32 
+  controla o PWM do Attiny85 este entao é lgiado ao pino 14 do módulo de 
+  display.
+  
+  Controle Interno:
+  
+  O controle da intensidade de brilho pode ser realizado programando os 
+  registradores PWM do RA8889.
+ 
 
 SPI no ESP32-S3
 ---------------
@@ -5539,4 +5576,33 @@ Dicas GitHub
 ------------
 
 https://docs.github.com/pt/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax
+
+
+
+
+seria mais correto fazer assim:
+
+#if HSPI
+  #define HAS_HSPI 1
+#else
+  #define HAS_HSPI 0
+#endif
+
+#if VSPI
+  #define HAS_VSPI 1
+#else 
+  #define HAS_VSPI 0
+#endif
+
+#if FSPI
+  #define HAS_FSPI 1
+#else
+  #define HAS_FSPI 0
+#end if
+
+#if SPI
+  #define HAS_SPI  1
+#else
+  #define HAS_SPI 0
+#end if
 
