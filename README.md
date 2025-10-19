@@ -9,7 +9,8 @@ O módulo shield ER-AS-5517 para ser utilziado em Arduino UNO/Mega/Duo apresenta
 Os driver para o uso da tela está preparado através do ajuste de configuração da SDRAM, PLL, ROM, Flash SPI e Fontes basicas. Permite a configuração do tipo de profundidde de cores de operação do display em 8 bits (RGB332), 16 (RGB565) ou 24 bits (RGB888). Possui tambem módulo de tela de toque capacitivo controlado pelo circuito FocalTech da série FT5xx6.
 
 O microcontrolador de Display RA8889 possui recurso de manter a última tela antes do Power Off. No inicio parecia um Bug de que o Reset de Harware e de software não estavam ocorrendo adequadamente.
-Após alguns testes, destacou que de inicio após as configuraões do display usando o método Begin() manter o display desligado. Preencher a tela com algum padrão de fundo ou apresentação e então lgiar o dsiplay pelo comando DisplayOn(). Esse recurso de aramzenanmento da ultima imagem de tela faz sentido quando precisa desligar a tela e religar ela sem a eprda de suas informações em memória.
+
+Durante alguns testes realizados, destacou que inicialmente após as configuraões do display, usando o método Begin(), e manter o display desligado. Foi feito o preenchimento da tela com algum padrão de fundo ou apresentação e então ligar o dsiplay pelo comando DisplayOn(). Esse recurso de aramzenanmento da ultima imagem de tela faz sentido quando precisa desligar a tela e religar ela sem a eprda de suas informações em memória.
 
 Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no formato Doxygen para gerar documentação.
 
@@ -165,7 +166,7 @@ void Bus_SPI::endSender() {
 
 Avisa que o controle será sempre por transacao. Ela inicia e finalzia sempre quando tem uma operaçãoo de escrita no barramento spi. Alem disso, StartSender() e EndSender() serão necessários sempre que há uma escrita ou leitura do barramento.
 
-### Quando usa cfg.ctrl_trans = false:
+### Quando cfg.ctrl_trans = false:
 
 A transação fica ativa sempre no inicio e nunca finaliza durante todo tempo de vida do software. Alem disso, StartSender() e EndSender() não terão efeito algum.
 
