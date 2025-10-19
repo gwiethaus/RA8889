@@ -72,6 +72,10 @@ void setup() {
 }
 ```
 
+# Futura versão
+## Controle de Barramento SPI com transação Ativa e Controlada 
+
+
 # Todo
 
 - Transferencia de DMA
