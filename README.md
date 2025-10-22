@@ -75,7 +75,7 @@ void setup() {
 }
 ```
 
-## Tela de Toque (Comunicação I2C)
+## Tela de Toque (Comunicação I²C)
 
 
 1️⃣ Exemplo de loop usando polling com transições:
@@ -113,7 +113,7 @@ void loop() {
 }
 ```
 
-2️⃣ Explicando o fluxo
+🔹 Explicando o fluxo
 - _newtouch e _touchcount são atualizados pela ISR e por getTouches().
 - ProcessTouchEvents() compara cada touchPoint[i] com _history[i] para determinar transição:
   - TOUCH_DOWN → novo toque detectado
@@ -121,6 +121,73 @@ void loop() {
   - TOUCH_UP → toque liberado ou timeout expirado
 - Dentro do loop, você pode processar cada evento individualmente usando o array events[] retornado.
 - _touchcount e _newtouch garantem que você não perca toques nem processe eventos repetidos.
+
+3️⃣ While com múltiplos toques
+
+```
+while (true) {
+    if (ft.Touched()) {             // se algum toque novo existe
+        uint8_t n = ft.ProcessTouchEvents(events, FT_MAX_TOUCHES);
+        for (uint8_t i = 0; i < n; i++) {
+            if (events[i].transition == TouchEventInfo::TOUCH_DOWN) {
+                // faz ação de pressionamento
+            } else if (events[i].transition == TouchEventInfo::TOUCH_UP) {
+                // faz ação de liberação
+            } else if (events[i].transition == TouchEventInfo::TOUCH_MOVE) {
+                // faz ação de movimento
+            }
+        }
+    }
+}
+```
+
+4️⃣ Como usar no loop principal
+
+```
+FT ft;
+TouchEventInfo events[FT_MAX_TOUCHES];
+
+void loop() {
+    uint8_t n = ft.Poll();
+
+    for (uint8_t i = 0; i < n; i++) {
+        switch (events[i].transition) {
+            case TOUCH_DOWN:  Serial.println("Down"); break;
+            case TOUCH_MOVE:  Serial.println("Move"); break;
+            case TOUCH_UP:    Serial.println("Up"); break;
+        }
+    }
+
+    // ... seu código da aplicação continua
+}
+```
+
+5️⃣ Como usar na aplicação
+
+```
+FT ft;
+TouchEventInfo events[FT_MAX_TOUCHES];
+
+void loop() {
+    uint8_t n = ft.getTouches();      // lê hardware
+    uint8_t evCount = ft.processTouchEvents(events, FT_MAX_TOUCHES);
+
+    for (uint8_t i = 0; i < evCount; i++) {
+        switch (events[i].transition) {
+            case TOUCH_DOWN:  Serial.println("Down"); break;
+            case TOUCH_MOVE:  Serial.println("Move"); break;
+            case TOUCH_UP:    Serial.println("Up"); break;
+            default: break;
+        }
+    }
+}
+```
+
+🔹 Benefícios desse pacote final
+- _history mantém o estado temporal de cada toque.
+- _touchcount e _newtouch são atualizados apenas nos eventos reais (Down/Up).
+- processTouchEvents() transforma os dados do chip em eventos lógicos coerentes, incluindo movimentação e timeout.
+- Totalmente compatível com seu enum class TouchEvent e TouchPoint.
 
 # Futura versão
 
@@ -267,3 +334,7 @@ void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
 - Configuração I2C entre MCU/MPU e Display
 - Melhoria do Driver FocalTech FT5xx6
 
+
+1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🅰️ 🅱️
+✅ ⚠️ 💡 ⚙️ 🧩 📍 👉 👈 👇 👌 💬 📊 ⏰ 🔴 🟢 🟡 🔧 📘 🔄 🧱 🧮 ➡️ 📌 🧠 🚨
+🔹 ⚡ ✔️ ❌ 👏 🔍 😄 😎 💯 🚫 🚀 🔁 🧭 🔒 📈 👀 🎯 
