@@ -75,7 +75,9 @@ void setup() {
 }
 ```
 
-## Tela de Toque (Comunicação I²C)
+## Classe Tela de Toque FT
+
+A tela te toque tem comuncação com barramento I²C com o MCU, com frequência de comunicação de 400kHz. Os recursos desta classe pode-se destacar até 5 multiplos toques simultaneamente com status de toque independente, cotnrole de eventos callback de usuário, cotnrole de debounce apra evitar falhas e ruidos de tela.
 
 1️⃣ Configurando a Tela de toque
 
