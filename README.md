@@ -17,8 +17,11 @@ Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no fo
 # Hardware
 
 - Arduino Uno/Mega
-- ESP32 / ESP32-S3 (iniciando)
-- Interface Comunicação SPI
+- ESP32 / ESP32-C3 / ESP32-S2 / ESP32-S3
+- Display baseado em controlador RA8889
+- Interface Comunicação SPI entre o modulo Display e a MCU
+- Controlador de tela de toque FocalTech FT5x16 de comunciação I2C
+- Controle de Painel de Display de vários fabricantes
 
 # Novas implementações
 
@@ -377,7 +380,6 @@ void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
 }
 ``` 
 
-
 # Todo
 
 ## Pendente
@@ -387,6 +389,7 @@ void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
 - Melhoria das funções IDEC
 - Comunicação Paralela entre MCU/MPU e Display
 - Configuração I2C entre MCU/MPU e Display
+- Driver adaptado arpa RA8876 e RA8877 (Semelhante ao RA8889)
 
 ## Andamento
 - Melhoria do Driver FocalTech FT5xx6
