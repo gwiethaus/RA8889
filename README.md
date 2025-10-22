@@ -77,6 +77,58 @@ void setup() {
 
 ## Tela de Toque (Comunicação I²C)
 
+1️⃣ Configurando a Tela de toque
+
+```
+//ESP_32
+#define  PIN_RESET      9  //Reset do RA8889
+#define  PIN_RESET_CP   0  //Reset da Tela de toque não é conectado
+#define  PIN_CS         10  
+#define  PIN_INT        16 //interrupção da tela de toque 
+#define  PIN_SDA        18 //I2C
+#define  PIN_SCL        17 //I2C
+#define  PIN_BLCONTROL  15 //External backlight control connected to this Arduino pin (quando nao estiver usando modulo display shield)
+
+Bus_SPI bus_spi;
+RA8889 gfx(PIN_CS, PIN_RESET);
+FT touch(PIN_SDA, PIN_SCL, PIN_INT, PIN_RESET_CP);
+
+void myInterrupt_cb(TouchEventInfo tevent, uint8_t idtouch, uint8_t ntouch){
+//...
+}
+
+void setup() {
+  Serial.begin(115200);
+  
+  IBus::SPIBusConfig_t cfg;
+  cfg.spi_type = HOST_FSPI;
+  cfg.pin_mosi = 11;
+  cfg.pin_miso = 13;
+  cfg.pin_sclk = 12;
+  cfg.pin_cs   = 10;
+  cfg.freq_write = 20000000;
+  bus_spi.Config(&cfg);                        // Grava a configuração
+  gfx.setBus(bus_spi);                         // Seta o Bus SPI
+  bool b = gfx.Begin();                        //Inicializa o display
+  gfx.FillScreen(clWhite);                     //Limpa a tela da ultima exibição apos power off
+  gfx.DisplayOn(true);                         //esta funcao nao seria necessaria, pois init() já inicializa o display no modo grafico
+  gfx.GraphicMode();
+  gfx.setWindow(0,0, gfx.Width(), gfx.Height());
+
+  b = touch.Begin();
+  touch.AllowMultitouch(true);
+  touch.OnTouch(myInterrupt_cb);
+  touch.OnTouchEnable(true);
+  touch.setDebounceTouch(false);
+  touch.AllowMultitouch(false);             //Apenas um toque é permitido
+  touch.setNumTouches(2);                   //valores maiores que 1 se multitouch está habilitado 
+  ...
+}
+
+void loop() {
+//...
+}
+```
 
 1️⃣ Exemplo de loop usando polling com transições:
 
