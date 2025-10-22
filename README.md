@@ -378,13 +378,19 @@ void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
 
 # Todo
 
+## Pendente
 - Transferencia de DMA
 - Fontes de Usuário
 - Melhorias das funções de uso fontes da CGROM
 - Melhoria das funções IDEC
 - Comunicação Paralela entre MCU/MPU e Display
 - Configuração I2C entre MCU/MPU e Display
+
+## Andamento
 - Melhoria do Driver FocalTech FT5xx6
+- Eventos callback de usuário para tela de toque
+- Tratamento de eventos de tela DOWN, UP, MOVE, NONE
+- Multitoques simultâneaos de 1 até 5 (hardware)
 
 
 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🅰️ 🅱️
