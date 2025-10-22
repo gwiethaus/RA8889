@@ -116,9 +116,9 @@ void loop() {
 2️⃣ Explicando o fluxo
 - _newtouch e _touchcount são atualizados pela ISR e por getTouches().
 - ProcessTouchEvents() compara cada touchPoint[i] com _history[i] para determinar transição:
- - TOUCH_DOWN → novo toque detectado
- - TOUCH_MOVE → posição mudou (debounce opcional)
- - TOUCH_UP → toque liberado ou timeout expirado
+  - TOUCH_DOWN → novo toque detectado
+  - TOUCH_MOVE → posição mudou (debounce opcional)
+  - TOUCH_UP → toque liberado ou timeout expirado
 - Dentro do loop, você pode processar cada evento individualmente usando o array events[] retornado.
 - _touchcount e _newtouch garantem que você não perca toques nem processe eventos repetidos.
 
