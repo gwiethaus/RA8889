@@ -24,6 +24,8 @@ Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no fo
 
 Atravpés de uso de interface OOP podemos escolher facilmente o tipo de barramento de comunciação e configurar ele. Inicia-se este implementação que terá que sofrer mudança em todos os métodos onde se escreve ou lê o barrmaneto SPI que agora será via interface IBus. O usuário poderá escolher entre Bus I2C, SPI e Parallel para comunciaçlão do o display. Segue um exemplo modelo abaixo que já está pronto a estrutura basica para impelemtnar os métodos e classes:
 
+## Controle do Tipo de Barramento
+
 ```
 Bus_SPI spi;
 RA8889 gfx(PIN_CS, PIN_RESET);
@@ -72,6 +74,53 @@ void setup() {
   
 }
 ```
+
+## Tela de Toque (Comunicação I2C)
+
+
+1️⃣ Exemplo de loop usando polling com transições:
+
+```
+FT ft;
+TouchEventInfo events[FT_MAX_TOUCHES];
+
+void loop() {
+    // 1️⃣ Chama poll do driver, que atualiza touchPoints e history
+    uint8_t n = ft.ProcessTouchEvents(events, FT_MAX_TOUCHES);
+
+    // 2️⃣ Para cada evento detectado, verifica a transição
+    for (uint8_t i = 0; i < n; i++) {
+        switch(events[i].transition) {
+            case TouchEventInfo::TOUCH_DOWN:
+                Serial.printf("Toque DOWN - ID:%u X:%u Y:%u\n", 
+                               events[i].id, events[i].x, events[i].y);
+                break;
+            case TouchEventInfo::TOUCH_MOVE:
+                Serial.printf("Toque MOVE - ID:%u X:%u Y:%u\n", 
+                               events[i].id, events[i].x, events[i].y);
+                break;
+            case TouchEventInfo::TOUCH_UP:
+                Serial.printf("Toque UP - ID:%u X:%u Y:%u\n", 
+                               events[i].id, events[i].x, events[i].y);
+                break;
+            default:
+                break;
+        }
+    }
+
+    // 3️⃣ Opcional: faz alguma ação contínua ou delay curto
+    delay(10);
+}
+```
+
+2️⃣ Explicando o fluxo
+- _newtouch e _touchcount são atualizados pela ISR e por getTouches().
+- ProcessTouchEvents() compara cada touchPoint[i] com _history[i] para determinar transição:
+-- TOUCH_DOWN → novo toque detectado
+-- TOUCH_MOVE → posição mudou (debounce opcional)
+-- TOUCH_UP → toque liberado ou timeout expirado
+- Dentro do loop, você pode processar cada evento individualmente usando o array events[] retornado.
+- _touchcount e _newtouch garantem que você não perca toques nem processe eventos repetidos.
 
 # Futura versão
 
