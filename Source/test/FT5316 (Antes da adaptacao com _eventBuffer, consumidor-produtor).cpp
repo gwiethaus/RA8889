@@ -173,14 +173,26 @@ uchar FT5316_touchDataRead(void)
 	return ret;
 }
 
-*/
 
+
+bool FT:SampleTouch(uint16_t *x, uint16_t *y)
+{
+  *x = -1*(ts_event.x1-1023);
+  *y = -1*(ts_event.y1-599);
+  if(ts_event.Key_Sta == KEY_DOWN)
+  {
+    ts_event.Key_Sta = KEY_UP;
+    return true;
+  }
+  return false;
+}
+
+*/
 
 //Somente permite uma instancia de objeto
 
 // Definição da instância (somente aqui!)
 FT* FT::_instanceft = nullptr;
-
 
 FT::FT(uint8_t sdapin, uint8_t sclpin, uint8_t intpin, uint8_t rstpin)
 {
@@ -201,20 +213,8 @@ FT::FT(uint8_t sdapin, uint8_t sclpin, uint8_t intpin, uint8_t rstpin)
   _instanceft = this;                          //Salva esta instância
   _width = 0;                                  //Total de pontos na horizontal da tela de toque
   _height = 0;                                 //Total de pontos na vertical da tela de toque
-  _inverted_mount = false;                     //Montagem normal do painel de tela de toque
   _settoucharea = false;                       //configurou a area de toque
-
-  //alocar memoria para o events e limpa os estados de toque
-  for (uint8_t i = 0; i < _maxmultitouch; i++) {
-    //touchPoints[i] = {0,0,false};
-    touchPoints[i].reset();
-    //_history[i] = {false,0,{0, 0, 0, 0, TouchEvent::Unknown}};
-    _history[i].reset();
-    //se desejar pode usar tambem: _eventBuffer.reset();
-    _eventBuffer.events[i] = {0,0,0, TouchEvent::Unknown, TouchTransition::TOUCH_NONE};
-  }
-  _eventBuffer.count = 0;
-
+  _started = false;
 }
 
 
@@ -322,6 +322,39 @@ uint8_t FT::TouchAddress(uint8_t reg, uint8_t *pBuf, uint8_t len)
 }
 
 
+//Realiza a leitura de todos os registradores de toque
+//a leitura alimenta a matriz de dados interno 
+//Alimenta todos os registradores de toques touchPoints[]
+//void FT::ReadDataTouchRaw()
+//{
+//  _touchcount = ReadRegister(FT_TD_STATUS) & 0x0f;                       // 0x02, Frame remaining or number of events (Win7 protocol)[7:4], Number of touch points[3:0]
+//  static uint8_t tbuf[FT5316_TOUCH_DATA_SIZE];                           // buffer temporário para leitura dos registros (6 bytes por toque) 
+//  uint8_t bytesRead = TouchAddress(0x03, tbuf, FT5316_TOUCH_DATA_SIZE);  // 0x03 = TOUCH1_XH
+//
+//  // Atualiza array interno
+//  for (uint8_t i = 0; (i < FT5316_MAX_TOUCHES); i++) {
+//    touchPoints[i].x      = ((tbuf[i+0] & 0x0F) << 8) | tbuf[(i+1)*FT5316_TOUCH_ENTRY];       //Coordenada X 
+//    touchPoints[i].y      = ((tbuf[i+2] & 0x0F) << 8) | tbuf[(i+3)*FT5316_TOUCH_ENTRY];       //Coordenada Y 
+//    touchPoints[i].event  = ToPointEvent((tbuf[(i+0)*FT5316_TOUCH_ENTRY] & 0xC0) >> 6);       //Event Flag
+//    touchPoints[i].id     = (tbuf[(i+2)*FT5316_TOUCH_ENTRY] & 0xF0) >> 4;                     //ID hardware fornece
+//    touchPoints[i].weight = tbuf[(i+4)*FT5316_TOUCH_ENTRY];                                   //Pressao na tela
+//  }
+//}
+
+
+
+//Realiza a leitura somente de numero de toques permitidos dos registradores de toque
+//a leitura alimenta a matriz de dados interno 
+//Alimenta todos os registradores de toques touchPoints[]
+//void FT::ReadDataTouch(uint8_t num_touch)
+//{
+//	
+//}
+
+
+
+
+
 /**
  * @brief Inicia a tela de toque Serie FT5x06 e FT5x16
  *
@@ -409,105 +442,21 @@ void FT::Reset(void)
 
 
 /**
- * @brief Troca os valores entre duas variáveis, garantindo que 'maior' contenha o valor mais alto.
- * 
- * Esta função utiliza **referências (&)**, o que permite a troca direta de valores entre as variáveis,
- * sem necessidade de ponteiros ou retorno.  
- * Se o valor de @p maior já for maior ou igual a @p minor, nenhuma troca é realizada.
- * 
- * @param maior Referência para o valor que deve conter o maior número após a troca.
- * @param minor Referência para o valor que deve conter o menor número após a troca.
- * 
- * @note Aqui uso referência (&), que é o modo mais direto de trocar valores em C++.
- */
-void FT::Exchange(uint16_t &maior, uint16_t &minor)
-{
-  if (maior >= minor) return;
-  uint16_t temp = maior;                       //Guada o menor no temp
-  maior = minor;                               //coloca o maior no lugar correto 
-  minor = temp;                                //coloca o menor no lugar correto
-}
-
-
-/**
- * @brief Calcula os fatores de escala (compressão ou expansão) entre a área de toque e a área do display.
+ * @brief Configura a area de toque
  *
- * Esta função ajusta os fatores de escala `scaleX` e `scaleY` de modo que as coordenadas do painel de toque
- * sejam proporcionalmente convertidas para as dimensões do display.
- *
- * A fórmula aplicada é:
- * @code
- * scaleX = (float)_dispwidth / (float)_width;
- * scaleY = (float)_dispheight / (float)_height;
- * @endcode
- *
- * @note A função evita divisão por zero verificando se `_width` e `_height` são válidos.
- */
-void FT::ScaleFactor(void)
-{
-  //evitar divisão por zero
-  if (_width == 0 || _height == 0) return;   
-  
-  //fator de escala de comrepssao ou expansão
-  scaleX = (float)_dispwidth / (float)_width;
-  scaleY = (float)_dispheight / (float)_height;
-}
-
-
-/**
- * @brief Configura a área de toque do painel.
- *
- * Define as dimensões brutas de leitura da tela de toque e ajusta automaticamente
- * o fator de escala em relação à área do display.
- *
- * @param width Número total de pontos (resolução) na horizontal da tela de toque.
- * @param height Número total de pontos (resolução) na vertical da tela de toque.
- * @param inverted_mount Indica se a tela de toque está fisicamente montada invertida sobre o display.
+ * @param width numero pontos na horizontal
+ * @return height numero pontos na vertical
  *
  * @code
- * setTouchArea(800, 480, false);
+ * setTouchArea(800, 480);
+ * 
  * @endcode
- *
- * @note Caso a tela de toque não esteja montada exatamente alinhada com o display,
- *       esse parâmetro permite compensar a inversão na leitura dos eixos.
  */
-void FT::setTouchArea(uint16_t width, uint16_t height, bool inverted_mount)
+void FT::setTouchArea(uint16_t width, uint16_t height)
 {
   _width = width;
   _height = height;
-  if (_inverted_mount != inverted_mount) _inverted_mount = inverted_mount;
   _settoucharea = (_width > 0) && (_height > 0);
-  ScaleFactor();
-}
-
-
-/**
- * @brief Configura a área do display relacionada ao toque.
- *
- * Define as dimensões físicas do display que correspondem à projeção do toque
- * e calcula automaticamente os fatores de escala entre o painel e o display.
- *
- * @param width Número total de pontos (resolução) na horizontal do display.
- * @param height Número total de pontos (resolução) na vertical do display.
- *
- * @code
- * setDisplayArea(800, 480);
- * @endcode
- *
- * @note Se a área de toque ainda não foi configurada, assume-se que ela tem as mesmas dimensões do display.
- */
-void FT::setDisplayArea(uint16_t width, uint16_t height)
-{
-  _dispwidth = width;
-  _dispheight = height;
-  
-  // Se ainda não configurado, assume toque igual ao tamanho do display
-  if (!_settoucharea) {
-    _width = _dispwidth;
-    _height = _dispheight;
-  }
-  
-  ScaleFactor();
 }
 
 
@@ -587,7 +536,7 @@ uint8_t FT::getTouches(TouchPoint *tpoint)
   uint8_t validTouches = 0;                                              //Contador toques válidos
   for (k = 0, i = 0; (k < _numtouchesallow); k++, i += FT5316_TOUCH_ENTRY) { //Pega a coordenada x,y de cada toque de tela simultâneo
     uint8_t ev            = (tbuf[i+0] & 0xC0) >> 6;                     //Eventos de Touch
-    tpoint[k].x           = ((tbuf[i+0] & 0x0f) << 8) | tbuf[i+1];       //Coordenada X
+	tpoint[k].x           = ((tbuf[i+0] & 0x0f) << 8) | tbuf[i+1];       //Coordenada X
     tpoint[k].y           = ((tbuf[i+2] & 0x0f) << 8) | tbuf[i+3];       //Coordenada Y
     tpoint[k].id          = (tbuf[i+2] & 0xF0) >> 4;                     //ID hardware fornece
     tpoint[k].weight      = tbuf[i+4];                                   //Pressao na tela
@@ -662,7 +611,7 @@ uint8_t FT::getTouches()
   uint8_t validTouches = 0;                                              //Contador toques válidos
   for (k = 0, i = 0; (k < _numtouchesallow); k++, i += FT5316_TOUCH_ENTRY) {          //Atualiza array interno
     uint8_t ev            = (tbuf[i+0] & 0xC0) >> 6;                     //Eventos de Touch
-    touchPoints[k].x      = ((tbuf[i+0] & 0x0F) << 8) | tbuf[i+1];       //Coordenada X
+	touchPoints[k].x      = ((tbuf[i+0] & 0x0F) << 8) | tbuf[i+1];       //Coordenada X
     touchPoints[k].y      = ((tbuf[i+2] & 0x0F) << 8) | tbuf[i+3];       //Coordenada Y
     touchPoints[k].id     = (tbuf[i+2] & 0xF0) >> 4;                     //ID hardware fornece
     touchPoints[k].weight = tbuf[i+4];                                   //Pressao na tela
@@ -703,45 +652,32 @@ uint8_t FT::getTouches()
  */
 bool FT::SampleTouch(uint8_t index, uint16_t *x, uint16_t *y)
 {
-  // Verifica se há eventos a processar
-  if (_eventBuffer.count == 0) return false;
-  
-  if (index == 0 || index > _eventBuffer.count) return false; // índice inválido
-  
+  if (index == 0 || index > _maxmultitouch) return false; //limita conforme configuração
   index--; // converte para 0-based
-  auto &ev = _eventBuffer.events[index];
 
-  // Verifica se o evento é toque válido (toque novo ou em movimento)
-  if (ev.transition == TOUCH_DOWN ||  ev.transition == TOUCH_MOVE) {
-    
+  const auto &tp = touchPoints[index];
+
+  if (tp.event == TouchEvent::Press || tp.event == TouchEvent::Change) {
     // Ajusta coordenadas para o sistema de tela
-    if (!_inverted_mount) {
-      *x = static_cast<uint16_t>(ev.x * scaleX);
-      *y = static_cast<uint16_t>(ev.y * scaleY);
-    } else {
-      // Inverte eixo X e/ou Y conforme montagem invertida (espelhamento)
-      *x = static_cast<uint16_t>((_width - ev.x) * scaleX);
-      *y = static_cast<uint16_t>((_height - ev.y) * scaleY);
-    }
+    *x = tp.x;
+    *y = tp.y;
 	
-     // Marca o evento como consumido (transição para "up")
-    ev.transition = TOUCH_UP;
+    // Marca toque como consumido
+    touchPoints[index].event = TouchEvent::Release;  
   
-	  // Atualiza o estado _newtouch para indicar se ainda há toques ativos
+    // Só zera _newtouch se não houver mais toques ativos
     bool anyActive = false;
-    for (uint8_t i = 0; i <  _eventBuffer.count; i++) {
-      if (_eventBuffer.events[i].transition == TOUCH_DOWN || 
-          _eventBuffer.events[i].transition == TOUCH_MOVE) {
-        anyActive = true;
-        break;
-      }
-      _newtouch = anyActive;
-      return true;
+    for (uint8_t i = 0; i < _maxmultitouch; i++) {
+        if (touchPoints[i].event == TouchEvent::Press || touchPoints[i].event == TouchEvent::Change) {
+          anyActive = true;
+          break;
+        }
     }
-
+    _newtouch = anyActive;
+    return true;
   }
-  
-  return false;    //nao houve DOWN consumido
+
+  return false;
 
 }
 
@@ -820,7 +756,7 @@ bool FT::IsAllowMultitouch(void) { return _allowmultitouch; }
  */
 void FT::setNumTouches(uint8_t num)
 {
-  if (num > _maxmultitouch) num = _maxmultitouch;
+  if (num > FT5316_MAX_TOUCHES) num = FT5316_MAX_TOUCHES;
   _allowmultitouch ? _numtouchesallow = num : _numtouchesallow = 1;
 }
 
@@ -842,7 +778,7 @@ void FT::setNumTouches(uint8_t num)
  * - Essa função retorna o limite configurado, não o número de toques ativos.
  * - Para verificar toques em tempo real, utilize @ref getTouches().
  */
-uint8_t FT::getNumTouches(void)
+uint8_t FT::getNumTouches()
 {
   return _numtouchesallow;
 }
@@ -864,11 +800,13 @@ uint8_t FT::getNumTouches(void)
  * }
  * @endcode
  */
-const TouchEventInfo& FT::getTouch(uint8_t index) const 
+const TouchPoint& FT::getTouch(uint8_t index) const 
 {
-  static TouchEventInfo empty = {0, 0, 0, TouchEvent::Unknown, TouchTransition::TOUCH_NONE};	
-  if (index >= _eventBuffer.count || index >= _maxmultitouch) return empty;  // retorna um elemento vazio se índice inválido
-  return _eventBuffer.events[index];  // acessa corretamente o array
+  if (index >= _touchcount) {
+      static TouchPoint empty = {0, 0, 0, 0, TouchEvent::Unknown};
+      return empty; // ponto vazio se índice inválido
+  }
+  return touchPoints[index];
 }
 
 
@@ -1010,7 +948,7 @@ void ISR_ATTR FT::HandleInterrupt(void)
  * 
  * Redireciona para a instância do driver.
  */
-static void IRAM_ATTR FT::HandleInterruptStatic(void) {
+static void IRAM_ATTR FT::HandleInterruptStatic() {
     if (_instanceft) _instanceft->HandleInterrupt();
 }
 
@@ -1030,7 +968,7 @@ static void IRAM_ATTR FT::HandleInterruptStatic(void) {
 bool FT::Touched()
 {
   // Usa o estado interno definido pelo ISR
-  if (_useinterrupt) return _newtouch; 
+  if (_use_interrupt) return _newtouch; 
 
   // Caso contrário, faz leitura direta via I2C
   uint8_t touches = 0;
@@ -1164,12 +1102,12 @@ bool FT::getDebounceTouch() const
  * @see TouchEventInfo
  * @see TouchTransition
  */
-uint8_t FT::ProcessTouchEvents(void)
+uint8_t FT::ProcessTouchEvents(TouchEventInfo *events, uint8_t maxEvents)
 {
   uint8_t count = 0;
   uint32_t now = millis();                                               //atial tempo antes de processar os toques
   
-  for (uint8_t i = 0; i < _maxmultitouch && count < _maxmultitouch; i++) {    //processa todos os eventos
+  for (uint8_t i = 0; i < _maxmultitouch && count < maxEvents; i++) {    //processa todos os eventos
 
       auto &curr = touchPoints[i];                                       //pega o atual evento de toque
       auto &hist = _history[i];                                          //pega o atual history dos eventos
@@ -1219,27 +1157,16 @@ uint8_t FT::ProcessTouchEvents(void)
           }
       }
   
-      // 🔹 Preenche o buffer interno apenas se houve transição
-      if (trans != TOUCH_NONE) {
-        auto &evt = _eventBuffer.events[_eventBuffer.count];
-        evt.id         = curr.id;                                        //ID
-        evt.x          = curr.x;                                         //Coordenada X
-        evt.y          = curr.y;                                         //Coordenada Y
-        evt.event      = curr.event;                                     //Atual evento
-        evt.transition = trans;                                          //transicao
-        _eventBuffer.count++;                                            //proximo buffer para tratar
+      if (trans != TOUCH_NONE) {                                          //se transicao for diferente de nada, atualiza
+          events[count].id         = curr.id;                             //ID
+          events[count].x          = curr.x;                              //Coordenada X
+          events[count].y          = curr.y;                              //Coordenada Y
+          events[count].transition = trans;                               //transicao 
+          count++;
       }
-
   }
   
-  return _eventBuffer.count;
-}
-
-
-
-uint8_t FT::getTouchCount(void) const 
-{
-  return _eventBuffer.count;
+  return count;
 }
 
 
@@ -1259,22 +1186,22 @@ uint8_t FT::getTouchCount(void) const
  */
 void FT::Poll(void)
 {
-  //Nota esta parte ainda precisa ser bem visto para evitar falhas, mas tudo indica que esta funcionando bem com
-  // a função struct de limpar o buffer de eventos
-   _eventBuffer.reset();     // 🔹 limpa buffer
+    // 1️⃣ Lê os toques atuais do hardware
+    getTouches();
 
-    getTouches();            // 1️⃣ Atualiza os pontos crus do hardware
-    ProcessTouchEvents();    // 2️⃣ Preenche _eventBuffer e atualiza transições
+    // 2️⃣ Processa eventos lógicos (DOWN, MOVE, UP) usando histórico
+    TouchEventInfo events[FT5316_MAX_TOUCHES];
+    uint8_t n = ProcessTouchEvents(events, FT5316_MAX_TOUCHES);
 
     // 3️⃣ Dispara callback para cada evento processado
-    if (_UserCallback && _callbackenable) {
-        for (uint8_t i = 0; i < _eventBuffer.count; i++) {
-          _UserCallback(_eventBuffer.events[i], i, _eventBuffer.count); // envia evento processado
+    if (_UserCallback && _usercallbackenable) {
+        for (uint8_t i = 0; i < n; i++) {
+          _UserCallback(events[i], i, n); // envia evento processado
         }
     }
 
    // 4️⃣ Atualiza flag _newtouch
-    _newtouch = (_touchcount > 0); // permanece true se houver toques ativos, modificado por ProcessTouchEvents()
+    _newtouch = (_touchcount > 0); // permanece true se houver toques ativos
 }
 
 
@@ -1332,7 +1259,7 @@ bool FT::Enable(void)
   #endif
   
   _interrupt_enabled = true;
-  _useinterrupt = true;
+  _use_interrupt = true;
   _newtouch = false;
   _touchcount = 0;
   return true;
@@ -1371,7 +1298,7 @@ bool FT::Disable(void)
   #endif
   
   _interrupt_enabled = false;
-  _useinterrupt = false;
+  _use_interrupt = false;
   _newtouch = false;
   _touchcount = 0;		
   return true;
@@ -1389,7 +1316,7 @@ bool FT::Disable(void)
  * @retval true  Operação bem-sucedida.
  * @retval false Falha (pino inválido ou não suporta interrupção).
  */
-bool FT::EnableInterrupt(bool enable)
+bool EnableInterrupt(bool enable)
 {
 
   if (_ctp_intpin == 0xFF) return false;           // Nenhum pino configurado
@@ -1400,7 +1327,7 @@ bool FT::EnableInterrupt(bool enable)
     int8_t irq = digitalPinToInterrupt(_ctp_intpin);
 	if (irq == NOT_AN_INTERRUPT) {          // Não é possível usar esse pino como interrupção
 	  _interrupt_enabled = false;
-      _useinterrupt = false;
+      _use_interrupt = false;
 	  return false;
 	}
     attachInterrupt(irq, HandleInterruptStatic, FALLING);
@@ -1409,7 +1336,7 @@ bool FT::EnableInterrupt(bool enable)
     attachInterrupt(_ctp_intpin, HandleInterruptStatic, FALLING);
   #endif
     _interrupt_enabled = true;
-    _useinterrupt = true;
+    _use_interrupt = true;
 	
   } else if (!enable && _interrupt_enabled) {
 	  
@@ -1424,7 +1351,7 @@ bool FT::EnableInterrupt(bool enable)
     detachInterrupt(_ctp_intpin);
   #endif
     _interrupt_enabled = false;
-    _useinterrupt = false;
+    _use_interrupt = false;
   
   }
 
@@ -1433,3 +1360,114 @@ bool FT::EnableInterrupt(bool enable)
   return true;
 
 }
+
+
+
+
+
+
+
+//void FT::ProcessTouch()
+//{
+//	
+//	//construindo
+//  getTouches();                               //Pega os toques
+//  
+//  for (i = 0; i<_counttouch;i++){
+//    switch (tpoint[i].event) {                //Pega o evento RAW
+//      case TouchEvent::Press:
+//        _dragMode = false;
+//        _touchStartTime = millis();
+//		_UserCallback(touchPoints[i], i, n);
+//  	  break;
+//	  
+//      case TouchEvent::Release:
+//	  
+//  	  break;
+//	  
+//      case TouchEvent::Change:
+//  	  break;
+//	  
+//      case TouchEvent::Unknown:
+//  	  break;
+//  	
+//    }	
+//    _UserCallback(touchPoints[i], i, n);
+//  }
+//
+//
+/////orignal abaixo
+//
+//  getTouches();                               //Pega os toques
+//  uint8_t n = 0;
+//  TouchPoint tpoint = touchPoints[n];
+//  TPoint point{_touchX[n], _touchY[n]};
+//
+//
+//	if (tpoint.event == TRawEvent::Press)
+//	{
+//		_points[0] = point;
+//		_pointIdx = 1;
+//		_dragMode = false;
+//		_touchStartTime = millis();
+//		fireEvent(point, TEvent::TouchStart);	
+//	}
+//	else if (tpoint.event == TRawEvent::Change)
+//	{
+//		if (_pointIdx < 10)
+//		{
+//			_points[_pointIdx] = point;
+//			_pointIdx += 1;
+//		}
+//		if (!_dragMode && _points[0].aboutEqual(point) && millis() - _touchStartTime > 300)
+//		{
+//			_dragMode = true;
+//			fireEvent(point, TEvent::DragStart);
+//		}
+//		else if (_dragMode)
+//			fireEvent(point, TEvent::DragMove);
+//
+//		fireEvent(point, TEvent::TouchMove);
+//	}
+//	else if (tpoint.event == TRawEvent::Release)
+//	{
+//		_points[9] = point;
+//		_touchEndTime = millis();
+//		fireEvent(point, TEvent::TouchEnd);
+//		if (_dragMode)
+//		{
+//			fireEvent(point, TEvent::DragEnd);
+//			_dragMode = false;
+//		}
+//		if (_points[0].aboutEqual(point) && _touchEndTime - _touchStartTime <= 300)
+//		{
+//			fireEvent(point, TEvent::Tap);
+//			_points[0] = {0, 0};
+//			_touchStartTime = 0;
+//		}
+//	}
+//	else
+//	{
+//	}
+//}
+
+
+
+//void FT::Poll(void)
+//{
+//  if (!_newtouch) return;                      //nenhum toque para processar
+//
+//  if ((_UserCallback != nullptr) && _usercallbackenable) {
+//    uint8_t n = getTouches();
+//    //Para cada toque na tela esta funcao é disparada
+//    DEBUG_PRINTD("Poll(void), toques: ", n, true, 0, true);         //Debug
+//    DEBUG_PRINTD("Poll(void), _maxmultitouch: ", _maxmultitouch, true, 0, true);         //Debug
+//    for (uint8_t i = 0; i < n; i++) {
+//	  _UserCallback(touchPoints[i], i, n);
+//      Serial.print("touchPoints[");Serial.print(i);Serial.print("] ");Serial.println(static_cast<uint8_t>(touchPoints[i].event));
+//      if (_touchcount > 0) _touchcount--;                             //decremetna numero de toques ate zerar
+//    }
+//  }
+//  if (_touchcount == 0) _newtouch = false;     //libera apos o ultimo toque sair
+//
+//}

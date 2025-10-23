@@ -5,7 +5,7 @@
 #define FT_I2C_DATAREAD                        0x00       //Read Data from I2C
 
 //Multitoque
-#define FT_MAX_TOUCHES                         0x05      //Max multitouch allowed
+#define FT5316_MAX_TOUCHES                     0x05      //Max multitouch allowed (Touch Register Sets)
 
 //Register address
 
@@ -84,7 +84,7 @@
 #define FT_ID_G_LIB_VERSION_L                  0xa2
 #define FT_ID_G_CIPHER                         0xa3      //Chip vendor ID
     #define FT5X06_ID                          0x55      //ID FT5x06
-    #define FT5X16_ID                          0x0A      //ID FT5x16
+    #define FT5X16_ID                          0x0a      //ID FT5x16
     #define FT5X36_ID                          0x14      //ID FT5x36
     #define FT6X06_ID                          0x06      //ID FT6x06
     #define FT6X36_ID                          0x36      //ID FT5x36

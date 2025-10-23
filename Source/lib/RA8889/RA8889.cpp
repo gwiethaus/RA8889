@@ -358,6 +358,45 @@ void RA8889::Brightness(uint16_t level)
 //================================================================================
 
 
+// --- conversão HSV → RGB565 ---
+uint16_t HSVToRGB565(float h, float s, float v) {
+  float r, g, b;
+  int i = int(h * 6);
+  float f = h * 6 - i;
+  float p = v * (1 - s);
+  float q = v * (1 - f * s);
+  float t = v * (1 - (1 - f) * s);
+
+  switch (i % 6) {
+    case 0: r = v; g = t; b = p; break;
+    case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break;
+    case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break;
+    case 5: r = v; g = p; b = q; break;
+  }
+
+  uint16_t R = (uint16_t)(r * 31);
+  uint16_t G = (uint16_t)(g * 63);
+  uint16_t B = (uint16_t)(b * 31);
+  return (R << 11) | (G << 5) | B;
+}
+
+
+// --- função para aplicar fade em um pixel RGB565 ---
+uint16_t FadePixel(uint16_t color, float factor) {
+  uint16_t r = (color >> 11) & 0x1F;
+  uint16_t g = (color >> 5) & 0x3F;
+  uint16_t b = color & 0x1F;
+
+  r = max(0, (int)(r * factor));
+  g = max(0, (int)(g * factor));
+  b = max(0, (int)(b * factor));
+
+  return (r << 11) | (g << 5) | b;
+}
+
+
 /**
  * @brief Subtração binária de 8 bits usando bitwise (borrow)
  * 

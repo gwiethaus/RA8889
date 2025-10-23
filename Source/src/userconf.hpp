@@ -12,7 +12,7 @@ https://www.servomagazine.com/magazine/article/add-a-smart-digital-readout-to-yo
 //#define ACTIVE2
 //#define ACTIVE3
 //#define ACTIVE4
-#define ACTIVE5
+//#define ACTIVE5
 //#define ACTIVE6
 //#define ACTIVE7
 //#define ACTIVE8

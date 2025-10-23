@@ -22,6 +22,7 @@ class IBus {
         uint8_t pin_miso   = 0;
         uint8_t pin_sclk   = 0;
         uint8_t pin_cs     = 0;        // Chip Select (SPI padrão)
+        bool ctrl_trans    = false;    // Controle de transação (false: unica transação durante tod tempo de vida do software)
     };
 
     struct I2CBusConfig_t : public IBusConfig_t {
