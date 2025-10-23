@@ -382,22 +382,25 @@ void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
 
 # Todo
 
+🟢 finalziado 🟡 parcial 🔴 não iniciado
+
 ## Pendente
-- Transferencia de DMA
-- Fontes de Usuário
-- Melhorias das funções de uso fontes da CGROM
-- Melhoria das funções IDEC
-- Comunicação Paralela entre MCU/MPU e Display
-- Configuração I2C entre MCU/MPU e Display
-- Driver adaptado arpa RA8876 e RA8877 (Semelhante ao RA8889)
+- 🔴 Transferencia de DMA
+- 🟡 Fontes de Usuário
+- 🟡 Melhorias das funções de uso fontes da CGROM
+- 🟡 Melhoria das funções IDEC
+- 🔴 Comunicação Paralela entre MCU/MPU e Display
+- 🟡 Configuração I2C entre MCU/MPU e Display
+- 🟡 Driver adaptado para RA8876 e RA8877 (Semelhante ao RA8889)
 
 ## Andamento
-- Melhoria do Driver FocalTech FT5xx6
-- Eventos callback de usuário para tela de toque
-- Tratamento de eventos de tela DOWN, UP, MOVE, NONE
-- Multitoques simultâneaos de 1 até 5 (hardware)
+- 🟡 Melhoria do Driver FocalTech FT5xx6
+- 🟢 Eventos callback de usuário para tela de toque
+- 🟢 Tratamento de eventos de tela DOWN, UP, MOVE, NONE
+- 🟢 Multitoques simultâneaos de 1 até 5 (hardware)
+- 🔴 Ajuste pelo usuário do tempo de transição em milisegundos entre o evento DOWN e MOVE
 
 
 1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🅰️ 🅱️
 ✅ ⚠️ 💡 ⚙️ 🧩 📍 👉 👈 👇 👌 💬 📊 ⏰ 🔴 🟢 🟡 🔧 📘 🔄 🧱 🧮 ➡️ 📌 🧠 🚨
-🔹 ⚡ ✔️ ❌ 👏 🔍 😄 😎 💯 🚫 🚀 🔁 🧭 🔒 📈 👀 🎯 
+🔹 ⚡ ✔️ ❌ 👏 🔍 😄 😎 💯 🚫 🚀 🔁 🧭 🔒 📈 👀 🎯 🏆
