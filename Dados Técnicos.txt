@@ -3524,43 +3524,221 @@ attachInterrupt()
 Como passar callback para função interrupção
 --------------------------------------------
 
-Para passar um callback para uma função de interrupção em C++, declare um ponteiro de função como parâmetro da função de interrupção e, na função que a gerencia, passe o endereço da função callback desejada como argumento. A função de interrupção utiliza esse ponteiro para chamar a função callback no momento certo. 
+  Para passar um callback para uma função de interrupção em C++, declare um 
+  ponteiro de função como parâmetro da função de interrupção e, na função que 
+  a gerencia, passe o endereço da função callback desejada como argumento. A 
+  função de interrupção utiliza esse ponteiro para chamar a função callback no 
+  momento certo. 
+  
+  Passos para implementar um callback em uma função de interrupção: 
+  
+  1. Defina a Função Callback: Crie a função que você quer que seja executada 
+     quando a interrupção ocorrer. Essa função deve ter a mesma assinatura 
+	 (tipo de retorno e parâmetros) que o ponteiro de função que você usará.
+     
+	 Exemplo:
+	 
+     void minhaFuncaoCallback() {
+              // Código a ser executado na interrupção
+              std::cout << "Interrupção ocorreu!\n";
+     }
+     
+  2. Declare o Ponteiro de Função como Parâmetro: Na função de interrupção, 
+    declare um ponteiro de função que irá receber o endereço da sua callback. 
+     
+     Exemplo:
+     
+      void minhaFuncaoInterrupcao(void (*callback)()) {
+              // ... código de inicialização da interrupção ...
+              // Ao ocorrer a interrupção, chama-se o callback:
+              callback();
+      }
+  
+  3. Passe o Endereço da Callback: Quando você chama a função de interrupção, 
+     passe o nome da função callback (que é implicitamente um ponteiro para 
+	 ela) como argumento. 
+     
+     Exemplo:
+     
+     minhaFuncaoInterrupcao(&minhaFuncaoCallback); // Passa o endereço de minhaFuncaoCallback
+  
+    Como funciona:
+    - Quando a interrupção é acionada, a função minhaFuncaoInterrupcao é executada. 
+    - Dentro dela, a linha callback() invoca a função que foi passada como parâmetro. 
+    - Como minhaFuncaoCallback foi passada, ela será executada nesse momento, realizando a ação desejada. 
+  
+    Outras opções e considerações:
+    - std::function: Em C++, para um código mais flexível, você pode usar std::function, que pode armazenar diferentes tipos de "chamáveis" (funções, ponteiros de função, lambdas, objetos com operador ()). 
+    - Funções membro: Se a callback for um método de uma classe, você precisará usar ponteiros para funções membro e, possivelmente, a instância da classe. 
+    - Contexto do hardware: A forma exata de implementar interrupções e callbacks depende muito do hardware e da arquitetura do sistema (por exemplo, microcontroladores, sistemas operacionais). 
 
-Passos para implementar um callback em uma função de interrupção: 
+attachInterrupt em Orientação a Objeto
+--------------------------------------
 
-1. Defina a Função Callback: Crie a função que você quer que seja executada quando a interrupção ocorrer.
-   Essa função deve ter a mesma assinatura (tipo de retorno e parâmetros) que o ponteiro de função que você usará.
-   Exemplo:
-   void minhaFuncaoCallback() {
-            // Código a ser executado na interrupção
-            std::cout << "Interrupção ocorreu!\n";
-   }
-   
-2. Declare o Ponteiro de Função como Parâmetro: Na função de interrupção, declare um ponteiro de função que irá receber o endereço da sua callback. 
-   
-   Exemplo:
-   
-    void minhaFuncaoInterrupcao(void (*callback)()) {
-            // ... código de inicialização da interrupção ...
-            // Ao ocorrer a interrupção, chama-se o callback:
-            callback();
-    }
+  Para usar attachInterrupt em programação orientada a objetos (OOP) no 
+  Arduino, você deve passar uma função membro estática ou global como 
+  manipulador de interrupção. Como attachInterrupt não aceita um objeto 
+  para chamar uma função membro normal, a solução comum é criar uma função 
+  estática na classe que age como ponteiro para o objeto de instância que 
+  realmente lidará com a interrupção, como mostrado em um post do Stack 
+  Overflow.
+  
+  1. https://stackoverflow.com/questions/76644826/how-to-use-attachinterrupt-inside-a-class-in-arduino
+  2. https://forum.arduino.cc/t/oop-interrupt/419211/7
+    
+  Arduino
+  #include <Arduino.h>
+  
+  // Exemplo de classe
+  class MinhaClasse {
+    public:
+      // Construtor que configura a interrupção
+      MinhaClasse(int pino, int modo) {
+        // A função onInterrupt() será chamada pela função estática
+        pinMode(pino, INPUT);
+        attachInterrupt(digitalPinToInterrupt(pino), staticISR, modo);
+      }
+  
+    private:
+      // Função estática que age como ponto de entrada da interrupção
+      static void staticISR() {
+        // Chama a função de instância do objeto (se existir)
+        // Neste exemplo simples, apenas definimos uma flag
+        // Em um cenário real, você precisaria de uma maneira de acessar o objeto correto
+        // (Ex: singleton, ou um array de instâncias)
+        isrFlag = true; 
+      }
+  
+      // Flag para sinalizar a interrupção
+      static bool isrFlag;
+  
+    public:
+      // Função para processar a interrupção (chamada fora da ISR)
+      void processarInterrupcao() {
+        if (isrFlag) {
+          isrFlag = false;
+          // Faça algo aqui, por exemplo, ler um sensor, atualizar um valor, etc.
+          Serial.println("Interrupção detectada!");
+        }
+      }
+  };
+  
+  // Inicializa a variável estática
+  bool MinhaClasse::isrFlag = false;
+  
+  // Crie uma instância da classe
+  // Para simplificar, vamos criar um objeto global
+  MinhaClasse meuObjeto(2, CHANGE); 
+  
+  void setup() {
+    Serial.begin(9600);
+  }
+  
+  void loop() {
+    meuObjeto.processarInterrupcao();
+  }
+  
+  Explicação
+  
+  - Função estática staticISR(): Como attachInterrupt não pode passar um 
+    objeto de contexto, você precisa de uma função estática para atuar como 
+	manipulador de interrupção.
+	
+  - Ponteiro _instance: Na classe, você pode manter um ponteiro para a única 
+    instância da classe que será responsável por lidar com a interrupção.
+	
+  - Chamada da função membro: Dentro da função estática staticISR, você chama 
+    a função de instância apropriada (onInterrupt() no exemplo) usando o 
+	ponteiro _instance.
+	
+  - digitalPinToInterrupt(): É uma boa prática usar 
+    digitalPinToInterrupt(pino) como o primeiro parâmetro para attachInterrupt 
+	para garantir a portabilidade entre diferentes placas Arduino. 
+	
+  - Este padrão permite que você gerencie interrupções de maneira organizada 
+    dentro da estrutura de uma classe, mantendo a funcionalidade encapsulada e 
+	reutilizável. 
 
-3. Passe o Endereço da Callback: Quando você chama a função de interrupção, passe o nome da função callback (que é implicitamente um ponteiro para ela) como argumento. 
-   
-   Exemplo:
-   
-   minhaFuncaoInterrupcao(&minhaFuncaoCallback); // Passa o endereço de minhaFuncaoCallback
 
-  Como funciona:
-  - Quando a interrupção é acionada, a função minhaFuncaoInterrupcao é executada. 
-  - Dentro dela, a linha callback() invoca a função que foi passada como parâmetro. 
-  - Como minhaFuncaoCallback foi passada, ela será executada nesse momento, realizando a ação desejada. 
+Boa pratica usando constantes MACRO para ISR
+--------------------------------------------
 
-  Outras opções e considerações:
-  - std::function: Em C++, para um código mais flexível, você pode usar std::function, que pode armazenar diferentes tipos de "chamáveis" (funções, ponteiros de função, lambdas, objetos com operador ()). 
-  - Funções membro: Se a callback for um método de uma classe, você precisará usar ponteiros para funções membro e, possivelmente, a instância da classe. 
-  - Contexto do hardware: A forma exata de implementar interrupções e callbacks depende muito do hardware e da arquitetura do sistema (por exemplo, microcontroladores, sistemas operacionais). 
+  Algo itenressante e uma boa pratica de programação. Quando se utilziar do 
+  Arduinio Uno, pro exemplo (AVR) não irá gerar problemas na compilação, já 
+  que IRAM_ATTR é um parãmetro de ISR de otimização apenas para o ESP32 e 
+  que no arduino não existe.
+
+  #if defined(ESP32) || defined(ESP8266)
+    #define ISR_ATTR IRAM_ATTR
+  #else
+    #define ISR_ATTR   /* vazio em Arduinos AVR */
+  #endif
+  ...
+  void ISR_ATTR mynhaISR() { counter++; }
+  ...
+  
+  Esse código funciona e é uma boa prática para garantir que códigos sejam 
+  portável entre o ESP32/ESP8266 e placas Arduino tradicionais. Ele define o 
+  atributo ISR_ATTR como IRAM_ATTR para placas ESP e como uma macro vazia para 
+  placas AVR, o que é necessário para o bom funcionamento das interrupções em 
+  cada arquitetura de hardware.
+  
+  #if defined(ESP32) || defined(ESP8266): Esta linha verifica se o código está 
+  sendo compilado para um ESP32 ou um ESP8266.
+  
+  #define ISR_ATTR IRAM_ATTR: Se a condição acima for verdadeira, ele define 
+  ISR_ATTR para IRAM_ATTR. Isso é crucial para o ESP32 e ESP8266, pois 
+  especifica que as funções de interrupção devem ser carregadas na memória RAM 
+  interna (IRAM), e não na memória Flash.
+  
+  #else: Caso o código não esteja sendo compilado para um ESP32 ou ESP8266 (ou 
+  seja, um Arduino AVR como o UNO), a parte do código abaixo deste else é 
+  executada.
+  
+  #define ISR_ATTR /* vazio em Arduinos AVR */: A diretiva #define ISR_ATTR é 
+  definida como vazia. Isso significa que o macro ISR_ATTR não terá nenhum 
+  efeito sobre o código. Em Arduinos AVR, as interrupções são tratadas de 
+  forma diferente e o IRAM_ATTR não é necessário, então definindo-o como 
+  vazio o código continua a funcionar como esperado, sem causar erros. 
+
+
+Comuncaicao I2C dentro de Rotinas de Interrupção ISR
+----------------------------------------------------
+
+  Não é aconselhável colocar comunicação I2C diretamente dentro de uma rotina 
+  de serviço de interrupção (ISR), pois as ISRs devem ser mantidas o mais 
+  curtas e rápidas possível. Executar o I2C em uma ISR pode causar atrasos e 
+  problemas de tempo, já que a comunicação I2C envolve operações que podem 
+  demorar. A prática recomendada é que a ISR simplesmente defina uma flag 
+  volátil e o loop principal verifique essa flag para iniciar a comunicação 
+  I2C. 
+  
+  Por que não é recomendado
+  -------------------------
+  
+  - Atrasos: O I2C pode ter atrasos, especialmente se um dispositivo escravo 
+    precisar de tempo para processar dados. Isso é incompatível com a 
+	necessidade de que as ISRs sejam muito rápidas.
+  - Bloqueio: As operações de comunicação, como a inicialização e a 
+    transferência de dados, podem bloquear o microcontrolador, o que é 
+	proibido em uma ISR.
+  - Perda de dados: Se a ISR demorar muito, outras interrupções ou tarefas do 
+    programa podem ser perdidas. 
+  
+  A abordagem recomendada
+  -----------------------
+  
+  - Na ISR: A rotina de interrupção (ISR) deve ser mínima. A função mais comum 
+    é apenas definir uma variável global volatile como um sinal de que um evento 
+	ocorreu.
+	
+  - No loop principal: O loop principal do programa (ou uma tarefa de menor 
+    prioridade) verifica continuamente o estado dessa variável global.
+	
+  - Execução: Se a flag for verdadeira, o loop principal executa a comunicação 
+    I2C completa, incluindo o envio/recebimento de dados, e depois reconfigura 
+	a flag para falsa. 
+
 
 
 Função callback passado por uma variavel para o attachInterrupt()
@@ -3783,6 +3961,201 @@ I2C Communications (Wire)
    
     delay(500);
   } 
+
+
+Uso do objeto Serial com Interrupções
+-------------------------------------
+
+  Estava investigando o assunto e me deparei com um site que utilizava 
+  Serial.print() dentro de uma rotina de serviço de itnerrupção ISR que 
+  disparava quando ocorria algum evento de interrupção. Isso não é uma 
+  pratica segura e confiável, mesmo se utilziando de pinos de INT dedicados. 
+  
+  Um dos sites pesquisados francês (https://ledisrupteurdimensionnel.com/langage-de-programmation-darduino/attachinterrupt-interruptions-avec-arduino/) 
+  sugeria os seguitens trechos de código, apesar da construção estar correta:
+  
+  int interruption = 0;
+  volatile int numInterrupt = 0;
+  
+  void setup() {
+    Serial.begin(9600);  
+    attachInterrupt(interruption, fonctionInterruption, FALLING);
+  }
+  
+  void loop() {
+    while(true){
+        Serial.print(".");
+        delay(250);
+    }  
+  }
+  
+  void fonctionInterruption() {
+    Serial.print("Interruption numéro ");
+    Serial.println(numInterrupt);
+    numInterrupt++;
+  }
+
+  Usar Serial.print() dentro de uma rotina de interrupção (ISR) não é seguro 
+  nem recomendado, mesmo que o site mostre o contrário. Será detalhado
+  direitinho o porquê disso 👇 ocorre.
+  
+  ⚙️ O que realmente acontece
+
+  Quando se chama Serial.print(), a função usa interrupções internas para 
+  transmitir bytes pela UART. Escreve os dados em um buffer circular (FIFO) 
+  controlado pelo driver da UART. O envio físico dos bytes é feito 
+  assíncronamente (interrompendo o código principal a cada byte transmitido).
+
+  Mas dentro de uma ISR, as interrupções globais ficam desabilitadas (a menos 
+  que as reative manualmente com interrupts(), o que também é perigoso), 
+  principalmete se ocorrer outras interrupções de hadware neste meio periodo.
+  
+  ➡️ Portanto, o Serial.print() tenta usar um recurso que depende de 
+  interrupções, mas estas estão desabilitadas, então ele bloqueia esperando o 
+  buffer liberar espaço — o que nunca vai acontecer. Como resultado, vai 
+  ocorer o travamento total do programa ou perda de dados no melhor dos casos.
+
+  ⚡ Por que o exemplo do site “funciona”
+
+  Provavelmente o exemplo do site funciona apenas por coincidência, já que a 
+  chamada da ISR é realizada esporadicamente ou raramente (tempo curto entre 
+  interrupções). O Serial buffer nesse caso ainda tem espaço livre e não chega 
+  a encher. Se observar, o código do loop() (com delay(250)), fora da ISR, dá 
+  tempo para o envio assíncrono drenar o buffer antes da próxima interrupção.
+
+  Isso tudo é um comportamento não garantido — muda se a interrupção ocorrer 
+  com frequência ou se a velocidade de transmissão for baixa.
+
+  ✅ Maneira correta de fazer
+
+  A ISR deve ser mínima e rápida. O ideal é somente sinalizar que algo ocorreu, 
+  através de uma interrupção, sinalizar e então tratar isso em um loop():
+
+  volatile bool interrupcao_ocorreu = false;
+  volatile int numInterrupt = 0;
+  
+  void setup() {
+    Serial.begin(9600);
+    attachInterrupt(digitalPinToInterrupt(2), fonctionInterruption, FALLING);
+  }
+  
+  void loop() {
+    if (interrupcao_ocorreu) {
+      interrupcao_ocorreu = false;
+      Serial.print("Interrupção número ");
+      Serial.println(numInterrupt);
+    }
+  
+    Serial.print(".");
+    delay(250);
+  }
+  
+  void fonctionInterruption() {
+    interrupcao_ocorreu = true;
+    numInterrupt++;
+  }
+
+  Dessa forma, a ISR apenas marca um flag (sem usar Serial.print()) e o código 
+  principal, fora da ISR, é quem faz a impressão.
+
+  ⚠️ Sobre “pinos específicos de interrupção”
+
+  Essa confusão é comum. Nos Arduinos antigos (como Uno), só alguns pinos 
+  tinham interrupções externas dedicadas (INT0, INT1 etc.). Mas isso não muda 
+  nada sobre o uso do Serial.print() — o problema é o contexto da ISR, não o 
+  pino. Mesmo em um pino “dedicado”, o Serial.print() dentro da ISR continua 
+  sendo inseguro.
+
+  ⚙️ E apra o ESP32 dual core
+  
+  Em alguns casos pode ser até benefício, mas apenas com uso em determiandos 
+  cenários.
+  
+  o ESP32 dual-core traz benefícios, mas não muda o fato fundamental de que 
+  usar Serial.print() diretamente dentro de uma ISR continua sendo perigoso, 
+  só que o motivo e o impacto passam a ser um pouco diferentes.
+  
+  ⚙️ Estrutura interna do ESP32
+  
+  Analisando o seguinte cenário para o ESP32:
+    
+	- Em alguns modelos de ESP32 possuem dois núcleos:
+      * Core 0 → normalmente roda o Wi-Fi, Bluetooth e tarefas do sistema 
+       (FreeRTOS).
+      * Core 1 → normalmente roda o código do usuário (Arduino).
+    - FreeRTOS como sistema operacional multitarefa.
+    - Drivers UART e Serial rodando como tarefas do sistema (dependem de queues, 
+	  buffers e interrupções).
+  
+  🚫 Por que o problema persiste
+
+  Mesmo com dois núcleos, durante a execução da ISR, o nível de interrupção 
+  (IRAM) é elevado e as interrupções da CPU corrente ficam desativadas. O 
+  driver UART do Serial.print() ainda usa filas e interrupções de TX para 
+  transmitir os bytes. Portanto, dentro de uma ISR, o código Serial.print() 
+  pode tentar enviar dados para a fila UART — e, se a fila estiver cheia, 
+  ele bloqueia esperando, o que não é permitido em ISRs.
+
+  No melhor caso, ele pode não travar, se o buffer estiver livre, mas pode 
+  gerar “Guru Meditation Error” ou reset de watchdog se a ISR demorar demais.
+  
+  ✅ O que muda de positivo no ESP32
+
+  Nem tudo é só amarguras, mas tem um lado bom nessa história. Se  
+  considerarmos o seguinte:
+  
+  1. FreeRTOS em dois núcleos
+     É possível criar uma tarefa dedicada no outro core apenas para processar 
+	 as interrupções ou lidar com logs — o que separa o contexto da ISR do 
+	 Serial.print().
+  
+  2. Fila de eventos (Queue)
+     A ISR pode simplesmente enviar um evento para uma Queue ou Semaphore, e 
+	 uma task em outro core imprime no Serial. Exemplo do seguinte 
+	 pseudocódigo:
+
+     QueueHandle_t queue;
+     volatile int numInterrupt = 0;
+     
+     void IRAM_ATTR fonctionInterruption() {
+       int n = numInterrupt++;
+       xQueueSendFromISR(queue, &n, NULL);
+     }
+     
+     void SerialTask(void *pvParameters) {
+       int val;
+       while (true) {
+         if (xQueueReceive(queue, &val, portMAX_DELAY)) {
+           Serial.print("Interrupção número ");
+           Serial.println(val);
+         }
+       }
+     }
+     
+     void setup() {
+       Serial.begin(115200);
+       queue = xQueueCreate(10, sizeof(int));
+       attachInterrupt(digitalPinToInterrupt(4), fonctionInterruption, FALLING);
+       xTaskCreatePinnedToCore(SerialTask, "SerialTask", 4096, NULL, 1, NULL, 0);
+     }
+     
+     void loop() {
+       delay(1000);
+     }
+   
+   🔸 A ISR é mínima e roda em microsegundos.
+   🔸 A SerialTask() roda no Core 0 ou 1, em paralelo, sem travar.  
+  
+  ⚡ Conclusão
+   
+  -------------------------------------------------------------------------------------------------------------------------------------------------
+  Situação                          Serial.print() na ISR é seguro?   Explicação
+  -------------------------------------------------------------------------------------------------------------------------------------------------
+  Arduino Uno / Mega                ❌ Não                            UART depende de interrupções desabilitadas na ISR
+  ESP32 single-core                 ❌ Não                            Mesmo problema — travamento ou watchdog
+  ESP32 dual-core                   ⚠️ Parcialmente mitigado          Ainda inseguro, mas pode “parecer funcionar” se a ISR for leve e buffer livre
+  ESP32 com Queue ou Task dedicada  ✅ Sim (modo correto)             ISR apenas sinaliza; outra task trata o Serial
+  -------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 Condicional Ternário em C++
