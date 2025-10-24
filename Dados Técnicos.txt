@@ -565,6 +565,7 @@ SPIClass como objeto e ponteiro
   }
     
   Conclusão
+  ---------
   
   - ESP32: Evite a prática de tentar "encerrar" e "recriar" objetos SPIClass, 
     especialmente os que são usados internamente pelo sistema. Use ponteiros 
@@ -842,12 +843,12 @@ SPIClass como objeto e ponteiro
   Por que o uso do ponteiro resolve?
   ----------------------------------
   
-  A razão pela qual usar new funcionou para você é que ele evita a 
-  inicialização automática e o gerenciamento de objetos de SPI pelo framework 
-  na pilha, que pode entrar em conflito com as rotinas de inicialização 
-  internas do ESP32, especialmente em barramentos que podem ter uso interno 
-  (como o FSPI em alguns modelos). Com new, você tem controle total sobre 
-  quando a instância é criada e configurada, evitando esses conflitos.
+  A razão pela qual usar "new" funciona é que ele evita a inicialização 
+  automática e o gerenciamento de objetos de SPI pelo framework na pilha, 
+  que pode entrar em conflito com as rotinas de inicialização internas do 
+  ESP32, especialmente em barramentos que podem ter uso interno (como o FSPI 
+  em alguns modelos). Com new, você tem controle total sobre quando a 
+  instância é criada e configurada, evitando esses conflitos.
   
   ESP32S3 FSPI & HSPI Help
   https://forum.arduino.cc/t/esp32s3-fspi-hspi-help/1368669
@@ -958,13 +959,16 @@ Configurar no Platformio ESP32-S3 Devkit 1 N16R8 com e Sem OTA
   platformio.ini. (The initial project can created with e.g. the standard 
   ESP32-S3-DevKitC-1 board setting).
 
+
 Configurar o ESP32-S3
 ---------------------
+
   Para o ESP32-S3 DevKit-1 que tem 2 USB (com Covnersor UART e OTG/JATAG)
   Conecte na USB-UART do ESP32-S3 (A que nao tem ponto azul marcado)  
   conecte na Porta USB no PC (lador esquerdo, 2a porta)
   Escolha a com port certa COM4 (Porta USB-UART)
   Trasnfira os arquivos para o ESP32.
+
 
 Conexao Adaptador Cabo Flat 40 vias para pinos
 ----------------------------------------------
@@ -1063,6 +1067,7 @@ A que se refere o Host no datasheet RA8889
   
   Ou seja, tudo isso é visto do ponto de vista do microcontrolador, que é o 
   “host” escrevendo ou lendo o RA8889.
+
 
 Serial Flash Interface e SPI Interface
 --------------------------------------
@@ -1292,6 +1297,7 @@ Serial Flash or SPI Interface (reg [0x01])
   No contexto do controlador RA8889, o registro 0x01 bit 1 está relacionado à ativação ou desativação da interface Serial Flash ou SPI. Vamos destrinchar isso:
   
   🧠 O que significa esse bit?
+  
   Esse bit é um controle de habilitação. Quando você o configura como:
   
   1 (Enable): você está habilitando a interface Serial Flash ou SPI. Isso permite que o RA8889 se comunique com dispositivos externos (como memórias Flash) usando o protocolo SPI.
@@ -1299,6 +1305,7 @@ Serial Flash or SPI Interface (reg [0x01])
   0 (Disable): você está desabilitando essa interface, ou seja, o RA8889 não usará SPI para comunicação externa.
 
   📡 Por que isso é importante?
+  
   O RA8889 possui múltiplas interfaces de comunicação com o host e periféricos, incluindo:
   
   - Paralela (8080/6800)
@@ -1311,6 +1318,7 @@ Serial Flash or SPI Interface (reg [0x01])
   - Está trabalhando com um sistema embarcado que prefere comunicação serial por economia de pinos ou simplicidade.
   
   ⚙️ Aplicações práticas
+  
   Imagine que você está desenvolvendo um sistema com um microcontrolador que tem poucos pinos disponíveis. Usar SPI com o RA8889 permite:
   
   - Comunicação eficiente com menos fios.
@@ -1323,6 +1331,7 @@ Serial Flash or SPI Interface (reg [0x01])
   entre um MCU e o RA8889.
 
   🔌 Como isso funciona na prática?
+  
   O RA8889 pode acessar uma Serial Flash (como uma NOR Flash SPI) para:
   
   📁 Carregar imagens ou gráficos armazenados externamente.
@@ -1330,6 +1339,7 @@ Serial Flash or SPI Interface (reg [0x01])
   🎮 Armazenar recursos visuais em aplicações como painéis gráficos, displays industriais ou interfaces de usuário.
   
   🧩 Por que isso é útil?
+  
   Imagine que o microcontrolador principal não tem memória suficiente para armazenar todos os recursos gráficos. Ao habilitar esse bit, o RA8889 pode autonomamente buscar esses dados na Flash externa via SPI, sem depender do host para cada transferência.
   
   Isso reduz:
@@ -1410,45 +1420,53 @@ Character Generator ROM
 Modo de Escrita/Leitura da SDRAM
 --------------------------------
 
-Modo linear e modo de bloco.
+  Modo linear e modo de bloco.
+  
+  Modo de bloco, conhecido como sistema de coordenadas cartesians (x,y) que os 
+  canvas são lidos e escritos na memoria como um sistema (0,0) de mesmo 
+  formato de coordenadas de tela.
+  
+  Modo linear, o canvas é lido/escrito na memopria de forma sequencial em 
+  posição de endereços refletindo isso no display como uma sequencia de pixels 
+  iniciando em 0 até o final.
+  
+  O tipo de modo pode ser lido ou ativado pelo registrador 0x5e bit 2.
+  
+  o gerenciamento do destino da window do DMA da area do canvas, pelo 
+  registrador, [0xc0..0xc3], também é afetado por esse modo.
 
-Modo de bloco, conhecido como sistema de coordenadas cartesians (x,y) que os 
-canvas são lidos e escritos na memoria como um sistema (0,0) de mesmo formato 
-de coordenadas de tela.
-
-Modo linear, o canvas é lido/escrito na memopria de forma sequencial em 
-posição de endereços refletindo isso no display como uma sequencia de pixels 
-iniciando em 0 até o final.
-
-O tipo de modo pode ser lido ou ativado pelo registrador 0x5e bit 2.
-
-o gerenciamento do destino da window do DMA da area do canvas, pelo 
-registrador, [0xc0..0xc3], também é afetado por esse modo.
 
 Significado do x na configuração de bits
 ----------------------------------------
 
-  Nos bits indicados em um datasheet o x representa “don’t care” (não importa o valor).
-  Isso significa que qualquer valor não irá afetar o registrador.
+  Nos bits indicados em um datasheet o x representa “don’t care” (não importa 
+  o valor). Isso significa que qualquer valor não irá afetar o registrador.
   
-  bits [7-6]: 0x: O valor do bit 7 deve ser zero e o valor do bit 6 pode ser qualquer valor
-              x1: O valor do bit 7 pode ser qulquer valor e o valor do bit 6 deve ser 1.
+  bits [7-6]: 0x: O valor do bit 7 deve ser zero e o valor do bit 6 pode ser 
+                  qualquer valor
+              x1: O valor do bit 7 pode ser qulquer valor e o valor do bit 6 
+			      deve ser 1.
+
 
 MCU e MPU
 ---------
 
-Diferença entre MCU e MPU:
-
-  MCU (Microcontroller Unit) → um chip que já tem CPU, memória, periféricos integrados (ex: Arduino, ESP32, STM32, etc.).
+  Diferença entre MCU e MPU:
   
-  MPU (Microprocessor Unit) → apenas o processador, sem memória nem periféricos integrados (ex: ARM Cortex-A, Intel 8086, Z80).
-  
+    MCU (Microcontroller Unit) → um chip que já tem CPU, memória, periféricos 
+	integrados (ex: Arduino, ESP32, STM32, etc.).
+    
+    MPU (Microprocessor Unit) → apenas o processador, sem memória nem 
+	periféricos integrados (ex: ARM Cortex-A, Intel 8086, Z80).
+    
   Ou seja, em teoria:
-  
+    
     - MCU = processador + memória + periféricos.
     - MPU = só o processador.
 
+
 Por que os datasheets de controladores de LCD usam "MPU I/F"?
+-------------------------------------------------------------
 
   Porque historicamente os primeiros controladores gráficos eram pensados para 
   conversar com microprocessadores externos (MPUs), como 8080, 6800, Z80…
@@ -1464,7 +1482,8 @@ Por que os datasheets de controladores de LCD usam "MPU I/F"?
     - a interface é genérica (pode ser usada tanto por um MCU quanto por um MPU),
     - mantém compatibilidade com documentação e padrões antigos.
 
-Nota sobre nomenclatura "MPU I/F" vs "MCU I/F":
+  Nota sobre nomenclatura "MPU I/F" vs "MCU I/F"
+  ----------------------------------------------
   
   Em datasheets de controladores gráficos (como RA8875, RA8889), a interface de
   barramento com o host é chamada de "MPU I/F" (Microprocessor Unit Interface).
@@ -1868,38 +1887,47 @@ Vsync Interrupt Status
 
   📘 RA8889 – Registrador 0x0C (Interrupt Status Register)
 
-  Esse registrador contém os flags de status de interrupções. O bit específico de Vsync Interrupt Status indica se ocorreu uma interrupção de sincronismo vertical — ou seja, o momento em que o display terminou de desenhar um quadro e está pronto para o próximo.
+  Esse registrador contém os flags de status de interrupções. O bit específico 
+  de Vsync Interrupt Status indica se ocorreu uma interrupção de sincronismo 
+  vertical — ou seja, o momento em que o display terminou de desenhar um 
+  quadro e está pronto para o próximo.
   
   🧠 Como usar isso no ESP32-S3 com Arduino IDE
 
-1. Detectar o Vsync
+  1. Detectar o Vsync
+  
+  Você pode ler o registrador 0x0C via SPI ou paralelo (dependendo da 
+  interface que você está usando) e verificar se o bit de Vsync está setado.
+  
+  uint8_t status = readRegister(0x0C);
+  if (status & VSYNC_BIT_MASK) {
+    // Interrupção de Vsync detectada
+    handleVsync();
+  }
+  
+  ⚠️ #define VSYNC_BIT_MASK 0x10
+  
+  2. Limpar o bit de interrupção
+  
+  Após tratar a interrupção, você normalmente precisa escrever 1 no bit 
+  correspondente para limpá-lo (isso é comum em registradores de status).
+  
+  writeRegister(0x0C, VSYNC_BIT_MASK); // Limpa o bit
+  
+  Depois da escrita no registrador automaticametne é limpo, zerado
+  
+  3. Configurar interrupções no ESP32-S3
+  
+  Pode usar attachInterrupt() para GPIOs que recebem o sinal de Vsync (se o 
+  RA8889 estiver configurado para gerar pulso externo).
+  
+  attachInterrupt(digitalPinToInterrupt(VSYNC_PIN), vsyncISR, RISING);
+  
+  🛠️ Dica extra: Evite tearing na tela
+  
+  Usar o Vsync para sincronizar atualizações de buffer é essencial para evitar 
+  artefatos visuais. Espere pelo Vsync antes de atualizar a imagem no display.
 
-Você pode ler o registrador 0x0C via SPI ou paralelo (dependendo da interface que você está usando) e verificar se o bit de Vsync está setado.
-
-uint8_t status = readRegister(0x0C);
-if (status & VSYNC_BIT_MASK) {
-  // Interrupção de Vsync detectada
-  handleVsync();
-}
-
-⚠️ #define VSYNC_BIT_MASK 0x10
-
-2. Limpar o bit de interrupção
-
-Após tratar a interrupção, você normalmente precisa escrever 1 no bit correspondente para limpá-lo (isso é comum em registradores de status).
-
-writeRegister(0x0C, VSYNC_BIT_MASK); // Limpa o bit
-
-Depois da escrita no registrador automaticametne é limpo, zerado
-
-3. Configurar interrupções no ESP32-S3
-Você pode usar attachInterrupt() para GPIOs que recebem o sinal de Vsync (se o RA8889 estiver configurado para gerar pulso externo).
-
-attachInterrupt(digitalPinToInterrupt(VSYNC_PIN), vsyncISR, RISING);
-
-🛠️ Dica extra: Evite tearing na tela
-
-Usar o Vsync para sincronizar atualizações de buffer é essencial para evitar artefatos visuais. Espere pelo Vsync antes de atualizar a imagem no display.
 
 PWM0 Compare Buffer
 -------------------
@@ -2215,6 +2243,7 @@ I2C Clock Pre-scale
   Nesse caso, ou você usa o I²C do próprio MCU, ou usa o I²C interno do 
   RA8889, mas sempre configurando ele por SPI.
 
+
 BTE - Block Transfer Engine
 ---------------------------
 
@@ -2480,7 +2509,6 @@ Padrão de Cores RGB
   R  R  R  g  g  g  b  b     
   << 0
   
-  
   GREEN - Registrador 0xd3 [7:5]
   07 06 05 04 03 02 01 00
   G  G  G  b  b  0  0  0 
@@ -2490,7 +2518,6 @@ Padrão de Cores RGB
   07 06 05 04 03 02 01 00
   B  B  0  0  0  0  0  0
   << 6
-  
   
   🔹 Para 65k cores (R5G6B5):
   ---------------------------
@@ -2516,7 +2543,6 @@ Padrão de Cores RGB
   r  r  g  g  g  g  g  g  B  B  B  B  B  0  0  0 
   << 3
   
-  
   🔹 Para 16.7M cores (R8G8B8):
   -----------------------------
   
@@ -2541,6 +2567,7 @@ Padrão de Cores RGB
   r  r  r  r  r  r  r  r  g  g  g  g  g  g  g  g  B  B  B  B  B  B  B  B  
   >> 0
 
+
 Usando Notepad++ para subtituir letras usando Expressao Regular
 ---------------------------------------------------------------
 
@@ -2550,7 +2577,6 @@ Usando Notepad++ para subtituir letras usando Expressao Regular
   3. Marque opcao Match Case
   4. MArque opção Regular expression
   5. Desmarque , matches newline
-
 
   Remover virgula no final do texto
   ---------------------------------
@@ -2566,6 +2592,7 @@ Usando Notepad++ para subtituir letras usando Expressao Regular
   
   Não remove vírgulas que estão no meio do texto.
   
+
 Visual Studio Code
 ------------------
 
@@ -4066,7 +4093,7 @@ Uso do objeto Serial com Interrupções
   pino. Mesmo em um pino “dedicado”, o Serial.print() dentro da ISR continua 
   sendo inseguro.
 
-  ⚙️ E apra o ESP32 dual core
+  ⚙️ Para o ESP32 dual core
   
   Em alguns casos pode ser até benefício, mas apenas com uso em determiandos 
   cenários.
@@ -4157,6 +4184,10 @@ Uso do objeto Serial com Interrupções
   ESP32 com Queue ou Task dedicada  ✅ Sim (modo correto)             ISR apenas sinaliza; outra task trata o Serial
   -------------------------------------------------------------------------------------------------------------------------------------------------
 
+  Da mesma forma que ocorre com o Serial.print(), milli(), delay, 
+  delayMicroseconds() também não funcionam dentro das ISR de interrupções 
+  porque usam o clock para gerar a contagem de tempo.
+  
 
 Condicional Ternário em C++
 ---------------------------
@@ -5346,8 +5377,8 @@ Why is dtostrf() not working for this one value?
   dtostrf(pres,5,0,mqttPres);
 
 
-O que faz o auto em C++
------------------------
+O que faz o "auto" em C++
+-------------------------
 
   O auto faz o compilador "deduzir" automaticamente o tipo da variável a partir do valor que você está atribuindo.
   
@@ -5395,6 +5426,7 @@ O que faz o auto em C++
   Usar auto& permite alterar diretamente a configuração interna sem precisar chamar spi.config(cfg) de novo.
   
   💡 Resumindo: auto simplifica a declaração de variáveis, deixa o código mais limpo e evita você ter que escrever tipos longos ou repetitivos.
+
 
 Frequencia (Velocidade) SPI
 ---------------------------
@@ -5501,8 +5533,8 @@ Classe Amiga (Friend)
   objetos em C++. Vamos destrinchar e verificar o comportamento real do friend 
   class para que se entenda o porquê da limitação e como contornar elas.
 
-  🧩 O que acontece no seu código
-  -------------------------------
+  🧩 O que acontece no código
+  ---------------------------
   
   Foi feito o seguinte:
   
@@ -5548,7 +5580,7 @@ Classe Amiga (Friend)
       // ...
   };
 
-  E então sua classe base precisa virar um template também:
+  E então a classe base precisa virar um template também:
 
   template <typename BusType>
   class DisplayBaseTemplate {
