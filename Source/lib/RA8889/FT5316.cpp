@@ -19,6 +19,7 @@ I'm not afraid to admit, I'm feeling pretty lost at the moment, I could go on to
 pulse.cpp
 
 Pulse::Pulse(int pulsePin,  void (*pulseFunc)()) {
+
 and pulse.h
 
 Pulse(int pulsePin, void (*)());
@@ -54,12 +55,6 @@ O uso de um template poderia ser evitado, se alguém apenas codificasse (ou seja
 Mas também tenha em mente que, ao escrever um template e depois criar Button<1>, Button<2>, etc., você só escreveu o código uma vez, o compilador precisa emitir a saída compilada para cada instanciação. Haverá uma cópia de cada função em Button para cada instanciação diferente de Button, mesmo que a função membro não se importe com o valor que Pin tem e cada cópia seja, na verdade, exatamente o mesmo código compilado.
 -------------------------
 
-Nota: milli(). Serial.print() nao funcionam dentro das itnerrupções porque usam o clock para gerar a cotangem destas funcoes e isso apra porque mas itnerrupções são desativadas quando entra numa ISR.
-o serial.print usa as interrupções para pegar o rpoximo caracter epla serial apor chegar no buffer, como as itenrrupçoes estao desabilitadas neste momento nunca chegará mais caracteres ate que a ISR termine.
-Entao semrep que for usar alguma função de uma classe que dependa do clock, e necessita de itenrrupções n~çao será possivel ate´que a rotina ISR de itnerrupção atual termine.
-se for usar uma variavel global de uma classe para dentro de uma isr, declare ela sempre como volatile ou static volatile
-
-------------------------------
 
 */
 
@@ -71,11 +66,6 @@ se for usar uma variavel global de uma classe para dentro de uma isr, declare el
 /*
 static struct _ts_event ts_event = {0};
 
-static void FT5316_RdParFrPCTPFun(uchar *PCTP_Par,uchar ValFlag)
-{  
-  I2Cx_readDataBurst(I2C1, FT5316_ADDRESS, 0x00, ValFlag, PCTP_Par);
-}
-
 
 bool FT5316_isInterrupt(void)
 {
@@ -85,29 +75,6 @@ bool FT5316_isInterrupt(void)
     return true;
  	}
   return false;
-}
-
-
-void FT5316::Begin(void)
-{
-  FT5316_reset();
-}
-
-
-void FT5316_Wr_Reg(uchar RegIndex, uchar RegValue1)
-{  
-  I2Cx_writeData(I2C1, FT5316_ADDRESS, RegIndex, RegValue1);
-  
-	delay_us(100);
-}
-
-
-uchar FT5316_Read_Reg(uchar RegIndex)
-{
-  uchar receive=0;
- 	
-  receive = I2Cx_readData(I2C1, FT5316_ADDRESS, RegIndex);
-	return receive;
 }
 
 
@@ -182,6 +149,39 @@ uchar FT5316_touchDataRead(void)
 FT* FT::_instanceft = nullptr;
 
 
+/**
+ * @brief Construtor da classe FT (touch controller).
+ *
+ * Inicializa os pinos de comunicação I2C, pino de interrupção e pino de reset,
+ * configura os parâmetros internos da classe e aloca memória para os buffers de eventos.
+ *
+ * @param sdapin Pino SDA da interface I2C.
+ * @param sclpin Pino SCL da interface I2C.
+ * @param intpin Pino de interrupção do touch controller.
+ * @param rstpin Pino de reset do touch controller.
+ *
+ * @note Os trechos de código comentados dentro do construtor servem como referência
+ *       de alternativas de inicialização ou reset de buffers:
+ *       - `touchPoints[i] = {0,0,false};` pode ser usado como alternativa ao `touchPoints[i].reset()`.
+ *       - `_history[i] = {false,0,{0,0,0,0,TouchEvent::Unknown}};` pode substituir `_history[i].reset()`.
+ *       - `_eventBuffer.reset();` poderia ser usado para limpar todo o buffer de eventos.
+ *
+ * @note Valores padrão configurados:
+ *       - `_ctp_addr` = FT_I2C_ADDRESS
+ *       - `_maxmultitouch` = FT5316_MAX_TOUCHES
+ *       - `_newtouch` = false
+ *       - `_touchcount` = 0
+ *       - `_useinterrupt` = false
+ *       - `_interrupt_enabled` = false
+ *       - `_allowmultitouch` = false
+ *       - `_numtouchesallow` = 1
+ *       - `_callbackenable` = false
+ *       - `_width` = 0
+ *       - `_height` = 0
+ *       - `_inverted_mount` = false
+ *       - `_settoucharea` = false
+ *       - `_transition_time_ms` = 50
+ */
 FT::FT(uint8_t sdapin, uint8_t sclpin, uint8_t intpin, uint8_t rstpin)
 {
   _ctp_intpin = intpin;
@@ -190,8 +190,6 @@ FT::FT(uint8_t sdapin, uint8_t sclpin, uint8_t intpin, uint8_t rstpin)
   _ctp_sclpin = sclpin;
   _ctp_addr = FT_I2C_ADDRESS;
   _maxmultitouch = FT5316_MAX_TOUCHES;
-  _newtouch = false;
-  _touchcount = 0;
   _useinterrupt = false;
   _interrupt_enabled = false;
   _allowmultitouch = false;
@@ -201,23 +199,24 @@ FT::FT(uint8_t sdapin, uint8_t sclpin, uint8_t intpin, uint8_t rstpin)
   _instanceft = this;                          //Salva esta instância
   _width = 0;                                  //Total de pontos na horizontal da tela de toque
   _height = 0;                                 //Total de pontos na vertical da tela de toque
+  _dispwidth = 0;
+  _dispheight = 0;
   _inverted_mount = false;                     //Montagem normal do painel de tela de toque
   _settoucharea = false;                       //configurou a area de toque
-
-  //alocar memoria para o events e limpa os estados de toque
-  for (uint8_t i = 0; i < _maxmultitouch; i++) {
-    //touchPoints[i] = {0,0,false};
-    touchPoints[i].reset();
-    //_history[i] = {false,0,{0, 0, 0, 0, TouchEvent::Unknown}};
-    _history[i].reset();
-    //se desejar pode usar tambem: _eventBuffer.reset();
-    _eventBuffer.events[i] = {0,0,0, TouchEvent::Unknown, TouchTransition::TOUCH_NONE};
-  }
-  _eventBuffer.count = 0;
-
+  _transition_time_ms = 50;                    //tempo minimo de transição entre evento DOWN e MOVE
 }
 
 
+/**
+ * @brief Destruidor da classe FT.
+ *
+ * Limpa os recursos associados à instância da classe, garantindo que a 
+ * interrupção do pino do touch controller seja desanexada e que o callback
+ * de usuário não seja mais chamado.
+ *
+ * @note Se futuramente a classe alocar memória dinâmica ou registrar
+ *       outros recursos externos, este é o local apropriado para liberá-los.
+ */
 FT::~FT(void) 
 {
   #ifdef DIGITALPINTOINTERRUPT
@@ -225,6 +224,10 @@ FT::~FT(void)
   #else
     detachInterrupt(_ctp_intpin);
   #endif
+  
+  // Desassocia o callback de usuário para evitar chamadas após destruição
+  _UserCallback = nullptr;
+  _callbackenable = false;  
 };
 
 
@@ -240,7 +243,7 @@ FT::~FT(void)
  *         ou se nenhum byte foi recebido.
  *
  * @code
- * uint8_t val = ReadRegister(0x02); // Lê o registrador de status FT_TD_STATUS
+ * uint8_t val = ReadRegister(0x02);
  * Serial.print("Valor do registrador 0x02: ");
  * Serial.println(val);
  * @endcode
@@ -323,22 +326,71 @@ uint8_t FT::TouchAddress(uint8_t reg, uint8_t *pBuf, uint8_t len)
 
 
 /**
- * @brief Inicia a tela de toque Serie FT5x06 e FT5x16
+ * @brief Lê o ID do chip FT5x06 / FT5x16 / FT5x36 / FT6x06 / FT6x36
  *
- * @param uint8_t addr: Endereço do dispositivo I2C conectado ao MCU
- * 
- * @return true, sucesso
- * 
- * @note None
+ * Este método acessa o registrador de Vendor/Chip ID (FT_ID_G_CIPHER) via I2C
+ * e retorna o valor lido. Pode ser usado para identificar o modelo do
+ * controlador de touch conectado.
+ *
+ * @return uint8_t ID do chip lido.
+ *
+ * @note As constantes correspondentes aos IDs conhecidos são:
+ * - FT5X06_ID  : 0x55
+ * - FT5X16_ID  : 0x0a
+ * - FT5X36_ID  : 0x14
+ * - FT6X06_ID  : 0x06
+ * - FT6X36_ID  : 0x36
  *
  * @code
- * None
+ * uint8_t id = ft.ReadChipID();
+ * Serial.print("Chip ID lido: 0x");
+ * Serial.println(id, HEX);
+ *
+ * switch(id) {
+ *     case FT5X06_ID: Serial.println("FT5x06 detectado"); break;
+ *     case FT5X16_ID: Serial.println("FT5x16 detectado"); break;
+ *     case FT5X36_ID: Serial.println("FT5x36 detectado"); break;
+ *     case FT6X06_ID: Serial.println("FT6x06 detectado"); break;
+ *     case FT6X36_ID: Serial.println("FT6x36 detectado"); break;
+ *     default: Serial.println("Chip desconhecido"); break;
+ * }
  * @endcode
- * 
+ */
+uint8_t FT::ReadChipID(void)
+{
+    // Lê o registrador do Vendor/Chip ID via I2C
+    uint8_t chip_id = ReadRegister(FT_ID_G_CIPHER);
+    return chip_id;
+}
+
+
+/**
+ * @brief Inicializa a tela de toque das séries FT5x06 e FT5x16.
+ *
+ * Configura os pinos I2C (SDA/SCL), pinos de interrupção e reset, realiza 
+ * verificação de comunicação com o dispositivo e aplica configurações 
+ * iniciais nos registradores do controlador.
+ *
+ * @param addr Endereço I2C do touch controller conectado ao MCU.
+ *
+ * @return true se a comunicação I2C foi estabelecida corretamente; false caso contrário.
+ *
+ * @note 
+ * - Se os pinos SDA ou SCL forem 0, os pinos padrão do Wire serão usados.
+ * - O pino de interrupção (_ctp_intpin) é configurado, mas a ISR não é ativada aqui.
+ * - O pino de reset (_ctp_rstpin) é configurado e o hardware é resetado, se necessário.
+ * - O método **não limpa os buffers de toque automaticamente**, por isso é recomendado 
+ *   chamar `reset()` no início do `Begin()` para garantir estado limpo.
+ *
+ * @see FT::Reset()
+ * @see FT::HardwareReset()
  */
 bool FT::Begin(uint8_t addr)
 {
   _ctp_addr = addr;
+  
+  //Resetar os buffers antes de qualquer operação de hardware
+  Reset();
   
   //Faz as devidas verificacoes antes de habilitar as interrupções
   
@@ -357,30 +409,77 @@ bool FT::Begin(uint8_t addr)
   
   if (_ctp_rstpin != 0xff) {
     pinMode(_ctp_rstpin, OUTPUT);
-    Reset();
+    HardwareReset();
   }
 
-//  if (readRegister8(FT6X36_REG_PANEL_ID) != FT6X36_VENDID)
-//		return false;	
-
-  //Verifica se esta tudo Ok
+  //Verifica comunicação I2C
   Wire.beginTransmission(_ctp_addr);
   bool sucess = (Wire.endTransmission() == 0);
-  DEBUG_PRINTD("Deu bom FT::Begin(void) (0 ruim, 1 bom)? ", sucess, true, 0, true);         //Debug
-
-  WriteRegister(FT_ID_G_THGROUP, 0x16);             //0x80               
-  WriteRegister(FT_ID_G_THPEAK, 0x3c);              //0x81
-  WriteRegister(FT_ID_G_THCAL, 0xe9);               //0x82
-  WriteRegister(FT_ID_G_COMPENSATE_STATUS, 0x01);   //0x83
-  WriteRegister(FT_D_G_COMPENSATE_FLAG, 0x01);      //0x84
-  WriteRegister(FT_ID_G_THDIFF, 0xa0);              //0x85
-  WriteRegister(FT_ID_G_CTRL, 0x0a);                //0x86
-  WriteRegister(FT_ID_G_TIME_ENTER_MONITOR, 0x06);  //0x87
-  WriteRegister(FT_ID_G_PERIODACTIVE, 0x28);        //0x88
-  WriteRegister(FT_DEVIDE_MODE, 0x00);              //0x00
   
-  DEBUG_PRINTD("Entrou FT::Begin(void)", 0, false, 0, true);         //Debug
+  if (sucess) {
 
+    if (ReadChipID != FT5X16_ID) {
+      if (Serial) Serial.println("Chip ID FT5x16 don't found ");
+      return false;
+    }
+
+    // Threshold de detecção de toque válido.
+    // 0x16 = 22 decimal, sensibilidade média. Normalmente 0x10-0x30 é aceitável.
+    // Valor apropriado para uso geral.
+    WriteRegister(FT_ID_G_THGROUP, 0x16);             //0x80
+    
+    // Threshold do pico do toque, usado para filtrar picos rápidos.
+    // 0x3C = 60 decimal, valor razoável. 
+    // Valores típicos: 0x20~0x50 dependendo da sensibilidade desejada.	
+	WriteRegister(FT_ID_G_THPEAK, 0x3c);              //0x81
+	
+    // Valor de calibração de threshold.
+    // 0xE9 = 233 decimal, bastante alto, aumenta a tolerância.
+    // Depende do ambiente e display. Geralmente entre 0x80~0xE9.
+    // Se desejar menos falsos positivos.
+    WriteRegister(FT_ID_G_THCAL, 0xe9);               //0x82
+	
+    // Habilita compensação automática do sensor (flag de status)
+    // 0x01 = ativado
+    // Normalmente se quer ligado.	
+    WriteRegister(FT_ID_G_COMPENSATE_STATUS, 0x01);   //0x83
+    
+	// Flag de compensação de temperatura e variações do display
+    // 0x01 = ativo
+    // Normalmente ligado para estabilidade.
+	WriteRegister(FT_D_G_COMPENSATE_FLAG, 0x01);      //0x84
+    
+	// Diferença de threshold para movimento de toque
+    // 0xA0 = 160 decimal
+    // Valores típicos: 0x50~0xA0 dependendo da aplicação
+    // Ajustado para toque médio/pesado
+	WriteRegister(FT_ID_G_THDIFF, 0xa0);              //0x85
+	
+    // Registro de controle geral
+    // Bits do datasheet: 
+    // 0x0A = 00001010b
+    // Geralmente: 
+    // - Bit 3 = 1 → habilita modo de monitoramento
+    // - Bit 1 = 1 → habilita interrupção
+    // Depende de quais recursos se deseja habilitar.
+    WriteRegister(FT_ID_G_CTRL, 0x0a);                //0x86
+	
+	// Tempo para entrar no modo de monitoramento
+    // 0x06 = 6ms ou unidade definida no datasheet
+    // Valor baixo → sensor rápido para entrar em monitor
+    WriteRegister(FT_ID_G_TIME_ENTER_MONITOR, 0x06);  //0x87
+	
+	// Período de varredura no modo ativo
+    // 0x28 = 40 decimal, unidade do datasheet geralmente em ms
+    // Taxa de atualização razoável, não muito lenta
+    WriteRegister(FT_ID_G_PERIODACTIVE, 0x28);        //0x88
+	
+	// Define modo do dispositivo
+    // 0x00 = normal mode (work mode)
+    WriteRegister(FT_DEVIDE_MODE, 0x00);              //0x00
+
+  }
+  
   return sucess;
 }
 
@@ -397,7 +496,7 @@ bool FT::Begin(uint8_t addr)
  * @return None
  *
  */
-void FT::Reset(void)
+void FT::HardwareReset(void)
 {
   if (_ctp_rstpin == 0) return;
   digitalWrite(_ctp_rstpin, HIGH);//on
@@ -529,7 +628,7 @@ TouchEvent FT::ToPointEvent(uint8_t event)
 }
 
 
-/**
+/** PRECISA AJUSTAR....
  * @brief Lê múltiplos pontos de toque do FT5316 usando um array externo
  *
  * Esta função utiliza o registrador de status para determinar quantos pontos de toque
@@ -1016,6 +1115,36 @@ static void IRAM_ATTR FT::HandleInterruptStatic(void) {
 
 
 /**
+ * @brief Reseta o estado interno do touch controller.
+ *
+ * Esta função limpa os buffers de eventos e reseta os pontos de toque,
+ * garantindo que não haja toques pendentes ou históricos antigos.
+ *
+ * @note Os trechos de código comentados dentro do método servem como
+ *       referência para alternativas de inicialização:
+ *       - `touchPoints[i] = {0,0,false};` pode substituir `touchPoints[i].reset()`.
+ *       - `_history[i] = {false,0,{0,0,0,0,TouchEvent::Unknown}};` pode substituir `_history[i].reset()`.
+ *       - `_eventBuffer.reset();` poderia ser usado para limpar todo o buffer de eventos.
+ *
+ * @see FT::FT() Para referência de inicialização completa do objeto.
+ */
+void FT::Reset(void)
+{
+  for (uint8_t i = 0; i < _maxmultitouch; i++) {
+    //touchPoints[i] = {0,0,false};
+    touchPoints[i].reset();
+    //_history[i] = {false,0,{0,0,0,0,TouchEvent::Unknown}};
+    _history[i].reset();
+    //se desejar pode usar tambem: _eventBuffer.reset();
+    _eventBuffer.events[i] = {0,0,0, TouchEvent::Unknown, TouchTransition::TOUCH_NONE};
+  }
+  _eventBuffer.count = 0;
+  _touchcount = 0;
+  _newtouch = false;
+}
+
+
+/**
  * @brief Verifica se houve um novo toque desde a última leitura.
  *
  * Caso as interrupções estejam habilitadas (`_use_interrupt == true`),
@@ -1104,6 +1233,52 @@ bool FT::getDebounceTouch() const
 
 
 /**
+ * @brief Define o tempo mínimo entre eventos de toque DOWN e MOVE.
+ * 
+ * Esse tempo é usado para controlar a sensibilidade entre o toque inicial
+ * e a detecção de movimento. Valores muito baixos (< 5 ms) podem gerar
+ * falsos movimentos, enquanto valores muito altos (> 1000 ms) tornam
+ * a resposta lenta.
+ * 
+ * @verbatim
+ * _transition_time_ms = 50
+ *   Representa o tempo mínimo (em milissegundos) entre os eventos de toque DOWN e MOVE.
+ *   Esse intervalo controla a sensibilidade da transição de um toque inicial (TOUCH_DOWN)
+ *   para um movimento (TOUCH_MOVE). Valores menores tornam a resposta mais rápida, enquanto
+ *   valores maiores reduzem a sensibilidade a pequenos movimentos acidentais.
+ * @endverbatim 
+ *
+ * @param ms Tempo de transição em milissegundos (intervalo de 5–1000 ms recomendados).
+ */
+void setTransitionTime(uint16_t ms) {
+ if (ms < 5) ms = 5;             //Evita zero ou valores extremamente baixos
+ else if (ms > 1000) ms = 1000;  //Evita tempos excessivos
+ _transition_time_ms = ms;       //Seta o tempo de transição
+}
+
+
+/**
+ * @brief Retorna o tempo configurado para a transição entre DOWN e MOVE.
+ * 
+ * Esse valor pode ser usado para depuração ou ajuste dinâmico em tempo de execução.
+ * 
+ * @verbatim
+ * _transition_time_ms = 50
+ *   Representa o tempo mínimo (em milissegundos) entre os eventos de toque DOWN e MOVE.
+ *   Esse intervalo controla a sensibilidade da transição de um toque inicial (TOUCH_DOWN)
+ *   para um movimento (TOUCH_MOVE). Valores menores tornam a resposta mais rápida, enquanto
+ *   valores maiores reduzem a sensibilidade a pequenos movimentos acidentais.
+ * @endverbatim 
+ *
+ * @return Tempo atual de transição em milissegundos.
+ */
+ uint16_t getTransitionTime() const
+{
+  return _transition_time_ms;
+}
+
+
+/**
  * @brief Processa e traduz os eventos de toque detectados pelo controlador FT5x16.
  *
  * Esta função é responsável por analisar o estado atual dos toques reportados pelo
@@ -1188,10 +1363,16 @@ uint8_t FT::ProcessTouchEvents(void)
             if (_debouncetouch) {                                        // 👈 controle condicional de debounce
                int16_t dx = abs((int16_t)curr.x - (int16_t)hist.prev.x);
                int16_t dy = abs((int16_t)curr.y - (int16_t)hist.prev.y);
-               if (dx > FT_TOUCH_DEBOUNCE_PX || dy > FT_TOUCH_DEBOUNCE_PX)
+			   uint32_t delta = now - hist.lastSeen;
+               // 🔸 Considera movimento somente se:
+               // - houve deslocamento maior que o limite de debounce, e
+               // - passou o tempo mínimo configurado pelo usuário
+			   if (dx > FT_TOUCH_DEBOUNCE_PX || dy > FT_TOUCH_DEBOUNCE_PX || delta > _transition_time_ms)
                  trans = TOUCH_MOVE;
             } else {
-              trans = TOUCH_MOVE;                                         // 👈 sem debounce: qualquer variação já é movimento
+              if ((now - hist.lastSeen) > _transition_time_ms) {
+				  trans = TOUCH_MOVE;                                         // 👈 sem debounce: qualquer variação já é movimento
+			  }
             }
           }
           // Atualiza registro de presença
@@ -1211,7 +1392,7 @@ uint8_t FT::ProcessTouchEvents(void)
       
       } else {                                                           //Não é nenhum caso
           
-          // Timeout: assume que o toque sumiu
+          // ⏱️ Timeout: assume que o toque desapareceu
           if (hist.active && (now - hist.lastSeen) > FT_TOUCH_TIMEOUT_MS) { //history event ativo 
               trans = TOUCH_UP;
               hist.active = false;
@@ -1236,7 +1417,16 @@ uint8_t FT::ProcessTouchEvents(void)
 }
 
 
-
+/**
+ * @brief Retorna o número de pontos de toque atualmente detectados.
+ *
+ * Esta função acessa o buffer interno de eventos de toque e retorna
+ * a contagem de pontos de toque válidos no momento da leitura.
+ * O valor retornado indica quantos toques simultâneos estão sendo
+ * processados pelo controlador.
+ *
+ * @return uint8_t Número de pontos de toque detectados (0 se nenhum toque ativo).
+ */
 uint8_t FT::getTouchCount(void) const 
 {
   return _eventBuffer.count;
@@ -1259,9 +1449,7 @@ uint8_t FT::getTouchCount(void) const
  */
 void FT::Poll(void)
 {
-  //Nota esta parte ainda precisa ser bem visto para evitar falhas, mas tudo indica que esta funcionando bem com
-  // a função struct de limpar o buffer de eventos
-   _eventBuffer.reset();     // 🔹 limpa buffer
+   _eventBuffer.reset();     // 🔹 Função struct para limpar buffer de eventos
 
     getTouches();            // 1️⃣ Atualiza os pontos crus do hardware
     ProcessTouchEvents();    // 2️⃣ Preenche _eventBuffer e atualiza transições
@@ -1278,13 +1466,31 @@ void FT::Poll(void)
 }
 
 
-//apenas um sinal para indicar se a ISR de usuario sera mantido em pausa (sem execucao)
-//no entando as itenrrupções manipulaveis pelo sistema continuam ativas
+/**
+ * @brief Pausa temporariamente a execução do callback de usuário associado à ISR.
+ *
+ * Esta função desabilita a execução do callback definido pelo usuário sem 
+ * interferir nas interrupções internas ou no funcionamento do sistema.
+ * É útil quando se deseja suspender o tratamento de eventos de toque
+ * sem desativar completamente a detecção de interrupções.
+ *
+ * @note As interrupções controladas internamente pelo sistema permanecem ativas.
+ * @see Continue()
+ */
 void FT::Pause(void) { _callbackenable = false; }
 
 
-//apenas um sinal para indicar se a ISR de usuario será ativado arpa continuar (continua a execucação)
-//no entando as itenrrupções manipulaveis pelo sistema continuam ativas
+/**
+ * @brief Retoma a execução do callback de usuário previamente pausado.
+ *
+ * Esta função reativa a chamada do callback de usuário associado à ISR,
+ * permitindo que os eventos de toque voltem a ser processados normalmente.
+ * Não altera o estado das interrupções internas do sistema.
+ *
+ * @note As interrupções do sistema permanecem ativas independentemente deste estado.
+ *
+ * @see Pause()
+ */
 void FT::Continue(void) { _callbackenable = true; }
 
 
@@ -1297,14 +1503,12 @@ void FT::Continue(void) { _callbackenable = true; }
  *
  * @note O método deve ser chamado após `Begin()`.
  *       A função ISR deve ser declarada com o atributo `IRAM_ATTR` no ESP32.
+ *       Ao habilitar, os flags de toque pendentes (_newtouch, _touchcount) são
+ *       zerados, mas o histórico de toques (_touchPoints[]) é preservado.
  *
  * @code
- * void IRAM_ATTR myISR(TouchEventInfo tevent, uint8_t idtouch, uint8_t ntouch); {
- *   // código callback do usuario
- * }
- *
  * FT touch(SDA, SCL, TOUCH_INT, TOUCH_RST);
- * if (!touch.EnableInterrupt(true)) {
+ * if (!touch.Enable()) {
  *   Serial.println("Falha ao habilitar interrupção de toque!");
  * }
  * @endcode
@@ -1333,8 +1537,11 @@ bool FT::Enable(void)
   
   _interrupt_enabled = true;
   _useinterrupt = true;
+  
+  // Reset de flags de toque pendentes, preservando histórico
   _newtouch = false;
   _touchcount = 0;
+  
   return true;
 }
 
@@ -1344,6 +1551,9 @@ bool FT::Enable(void)
  *
  * Após chamar esta função, a rotina ISR anterior não será mais executada
  * quando ocorrerem toques no display.
+ *
+ * @note Ao desabilitar, os flags de toque pendentes (_newtouch, _touchcount) 
+ *       são zerados, mas o histórico de toques (_touchPoints[]) é preservado.
  *
  * @code
  * FT touch(SDA, SCL, TOUCH_INT, TOUCH_RST);
@@ -1372,8 +1582,11 @@ bool FT::Disable(void)
   
   _interrupt_enabled = false;
   _useinterrupt = false;
+  
+  // Reset de flags de toque pendentes, preservando histórico
   _newtouch = false;
-  _touchcount = 0;		
+  _touchcount = 0;	
+  
   return true;
 }
 
@@ -1384,6 +1597,10 @@ bool FT::Disable(void)
  * Permite ao usuário ativar ou desativar o uso da interrupção sem
  * reconfigurar todo o driver. Caso `enable` seja falso, o toque será
  * detectado apenas via leitura direta I2C (`poll()` / `Touched()`).
+ *
+ * @note Ao habilitar ou desabilitar, os flags de toque pendentes
+ *       (_newtouch, _touchcount) são zerados. O histórico de toques
+ *       (_touchPoints[]) é preservado.
  *
  * @param enable true para habilitar, false para desabilitar.
  * @retval true  Operação bem-sucedida.
@@ -1428,8 +1645,10 @@ bool FT::EnableInterrupt(bool enable)
   
   }
 
+  // Reset de flags de toque pendentes, preservando histórico
   _newtouch = false;
-  _touchcount = 0;	
+  _touchcount = 0;
+
   return true;
 
 }

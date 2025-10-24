@@ -77,7 +77,7 @@ bool FT5316_sampleTouch(unsigned short* x, unsigned short* y);
 #define FT5316_TOUCH_ENTRY       6
 #define FT5316_TOUCH_DATA_SIZE   FT5316_MAX_TOUCHES * FT5316_TOUCH_ENTRY
 
-#define FT_TOUCH_TIMEOUT_MS   120   // tempo limite p/ considerar que um toque foi solto
+#define FT_TOUCH_TIMEOUT_MS   120   // tempo limite p/ considerar que um toque foi solto 
 #define FT_TOUCH_DEBOUNCE_PX  3     // variação mínima para considerar movimento
 
 
@@ -317,10 +317,10 @@ typedef void (*UserISR_t)(TouchEventInfo tevent, uint8_t idtouch, uint8_t ntouch
  *
  * @section nota_sec Notas importantes
  *
- * - `_history[]` deve ser mantido como **protegido** ou **privado**, pois registra
+ * - "_history[]" deve ser mantido como **protegido** ou **privado**, pois registra
  *   o estado anterior de cada dedo e é essencial para detecção correta de transições.
- * - `_debouncetouch` permite alternar entre estabilidade e sensibilidade máxima.
- * - O timeout (`FT_TOUCH_TIMEOUT_MS`) protege contra falhas na comunicação I2C ou remoção rápida de dedos.
+ * - "_debouncetouch" permite alternar entre estabilidade e sensibilidade máxima.
+ * - "_transition_time_ms" o timeout protege contra falhas na comunicação I2C, transição entre DOWN/MOVE ou remoção rápida de dedos.
  */
 class FT {
   private:
@@ -332,6 +332,8 @@ class FT {
   public:
     FT(uint8_t sdapin, uint8_t sclpin, uint8_t intpin, uint8_t rstpin);
     ~FT(void);
+	void HardwareReset(void);
+	uint8_t ReadChipID(void);
     bool Begin(uint8_t addr);
     void setDisplayArea(uint16_t width, uint16_t height);
     void setTouchArea(uint16_t width, uint16_t height, bool inverted_mount);
@@ -349,7 +351,7 @@ class FT {
     const TouchEventInfo& getTouch(uint8_t index) const;
     uint8_t getTouchCount(void) const;
     
-    void Reset(void);
+    
     void Poll(void);
     bool SampleTouch(uint8_t index, uint16_t *x, uint16_t *y);
     void AllowMultitouch(bool enable);
@@ -368,6 +370,7 @@ class FT {
     TouchHistory _history[FT5316_MAX_TOUCHES]; //Events Touch History
     TouchEventBuffer _eventBuffer;             //Buffer de Evento (Software) controle consumidor/produtor
     uint8_t _touchcount;                       //Numero de um ou mais toques detectados
+    volatile uint8_t _lastState;
 
     uint16_t _width;                           //Total de pontos na horizontal da tela de toque
     uint16_t _height;                          //Total de pontos na vertical da tela de toque
@@ -382,16 +385,17 @@ class FT {
     uint8_t _numtouchesallow = 1;              //numero de toques deejados
     bool _allowmultitouch = false;             // true = multitouch, false = apenas single
     bool _debouncetouch = true;                // 👈 controle de debounce (padrão: ativo)
-
+    uint16_t _transition_time_ms = 50;         //Tempo mínimo (em milissegundos) entre os eventos de toque DOWN e MOVE
+	
     uint8_t _ctp_addr;                         //Touch I2C Adrress
     uint8_t _ctp_intpin = 255;                 //Touch interrupt pin
     uint8_t _ctp_rstpin = 0;                   //Reset pin
     uint8_t _ctp_sdapin = 0;                   //comuncaicao I2C, pino SDA com a tela de toque
     uint8_t _ctp_sclpin = 0;                   //comuncaicao I2C, pino SCL com a tela de toque
       
-    bool _started;
-    volatile uint8_t _lastState;
-    void Exchange(uint16_t &maior, uint16_t &minor);
+    
+    void Reset(void);                          //Reseta o estado interno do touch controller.
+	void Exchange(uint16_t &maior, uint16_t &minor);
     void ScaleFactor(void);
     uint32_t Dist(const TouchPoint &loc);
     uint32_t Dist(const TouchPoint &loc1, const TouchPoint &loc2);
