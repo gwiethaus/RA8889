@@ -162,7 +162,7 @@ FT* FT::_instanceft = nullptr;
  *
  * @note Os trechos de código comentados dentro do construtor servem como referência
  *       de alternativas de inicialização ou reset de buffers:
- *       - `touchPoints[i] = {0,0,false};` pode ser usado como alternativa ao `touchPoints[i].reset()`.
+ *       - `_touchPoints[i] = {0,0,false};` pode ser usado como alternativa ao `_touchPoints[i].reset()`.
  *       - `_history[i] = {false,0,{0,0,0,0,TouchEvent::Unknown}};` pode substituir `_history[i].reset()`.
  *       - `_eventBuffer.reset();` poderia ser usado para limpar todo o buffer de eventos.
  *
@@ -418,7 +418,7 @@ bool FT::Begin(uint8_t addr)
   
   if (sucess) {
 
-    if (ReadChipID != FT5X16_ID) {
+    if (ReadChipID() != FT5X16_ID) {
       if (Serial) Serial.println("Chip ID FT5x16 don't found ");
       return false;
     }
@@ -628,31 +628,39 @@ TouchEvent FT::ToPointEvent(uint8_t event)
 }
 
 
-/** PRECISA AJUSTAR....
- * @brief Lê múltiplos pontos de toque do FT5316 usando um array externo
+/**
+ * @brief Lê múltiplos pontos de toque do FT5316 usando um array externo fornecido pelo usuário
  *
- * Esta função utiliza o registrador de status para determinar quantos pontos de toque
- * estão ativos e em seguida lê as coordenadas (x,y) de até @p num pontos simultâneos.
- * O resultado é armazenado em uma matriz de estruturas TouchPoint fornecida pelo usuário.
+ * Esta função acessa o registrador de status do FT5316 para determinar quantos pontos de toque
+ * estão ativos, e em seguida lê as coordenadas (x,y) de até `num` pontos simultâneos.
+ * Os resultados são armazenados em uma matriz de estruturas TouchPoint fornecida pelo usuário.
  *
- * @param pPoint Ponteiro para uma matriz de estruturas TouchPoint onde as coordenadas serão gravadas.
- * @param num Número máximo de toques que serão tratados (máximo suportado pelo FT5316 é 5).
+ * **Importante:** esta função **não altera** o estado interno da classe, como `_touchcount[]`,
+ * `_newtouch` ou `_eventBuffer`. Ela apenas fornece ao usuário uma visão dos toques atuais.
  *
- * @return Número de toques efetivamente lidos e armazenados em pLoc.
+ * @param tpoint Ponteiro para uma matriz de estruturas TouchPoint onde as coordenadas serão gravadas.
+ *               Deve ter espaço para pelo menos `num` elementos.
+ * @param numtouch Número máximo de toques que serão processados pelo usuário. Se `num` for maior que
+ *            `_numtouchesallow` (capacidade máxima da controladora), será limitado automaticamente.
+ *
+ * @return Número de toques efetivamente lidos e armazenados em `tpoint`.
  *
  * @note Cada ponto de toque ocupa 6 bytes no registrador do FT5316.
- *       O retorno pode ser menor que num se menos toques foram detectados.
+ *       O retorno pode ser menor que `num` se menos toques foram detectados.
+ *
+ * @note Se multitouch estiver desabilitado (`_allowmultitouch == false`), será lido apenas 1 toque.
  *
  * @code
  * struct TouchPoint {
- *   uint16_t x;         //Touch pos x
- *   uint16_t y;         //Touch pos y
- *   uint16_t id;        //Touch ID of Touch Point bit [3:0]
- *   TouchEvent status;  // agora só aceita valores do enum
+ *   uint16_t x;         // Coordenada X do toque
+ *   uint16_t y;         // Coordenada Y do toque
+ *   uint16_t id;        // ID do ponto de toque fornecido pelo hardware
+ *   uint8_t weight;     // Pressão do toque
+ *   TouchEvent event;   // Evento de toque (Press, Move/Change, Release)
  * };
  *
  * TouchPoint touchPoints[5];
- * uint8_t touches = getTouches(touchPoints, 5);
+ * uint8_t touches = ft.getTouches(touchPoints, 5);
  *
  * if (touches > 0) {
  *   for (uint8_t i = 0; i < touches; i++) {
@@ -662,46 +670,52 @@ TouchEvent FT::ToPointEvent(uint8_t event)
  *   }
  * }
  * @endcode
- * 
- * @note é removido _touchcount da função pois deve ser avaliado que houve um pressionamento inctementando touchcount e se houve uma liberação, decrementando touchcount.
- */ 
-uint8_t FT::getTouches(TouchPoint *tpoint)
+ */
+uint8_t FT::getTouches(TouchPoint *tpoint, uint8_t numtouch)
 {
   uint8_t i = 0;
   uint8_t k = 0;
 
-  if (!tpoint) {_touchcount = 0; return 0;}                             //must have a buffer and be able to take at least one
+  if (!tpoint || numtouch == 0) return 0;                                //Precisa ter um buffer e no minimo um toque
 
   uint8_t hitPoints = ReadRegister(FT_TD_STATUS) & 0x0F;                 //0x02, bits [3:0], lê número de toques ativos
   if (!_allowmultitouch && hitPoints > 1) hitPoints = 1;                 //Se multitouch estiver desabilitado, força apenas 1 toque
 
   static uint8_t tbuf[FT5316_TOUCH_DATA_SIZE];                           //buffer temporário para leitura dos registros (6 bytes por toque) 
   uint8_t bytesRead = TouchAddress(0x03, tbuf, FT5316_TOUCH_DATA_SIZE);  //0x03 = TOUCH1_XH
-  if (bytesRead < FT5316_TOUCH_DATA_SIZE) {                              // Evita deixar o sistema com estado inconsistente, “liberações rápidas” (flicks ou toques muito curtos)
-    _touchcount = 0;
-    _newtouch = false;
-    return 0;
-  }
+  if (bytesRead < FT5316_TOUCH_DATA_SIZE) return 0;                      //Leitura falhou, retorna zero
 
   uint8_t validTouches = 0;                                              //Contador toques válidos
-  for (k = 0, i = 0; (k < _numtouchesallow); k++, i += FT5316_TOUCH_ENTRY) { //Pega a coordenada x,y de cada toque de tela simultâneo
-    uint8_t ev            = (tbuf[i+0] & 0xC0) >> 6;                     //Eventos de Touch
+  uint8_t maxTouches = (numtouch > _numtouchesallow) ? _numtouchesallow : numtouch;
+
+  //Percorre cada toque disponível (até o limite do usuário ou do controlador)
+  for (k = 0, i = 0; (k < maxTouches); k++, i += FT5316_TOUCH_ENTRY) {
+    uint8_t ev            = (tbuf[i+0] & 0xC0) >> 6;                     //Eventos de toque
+    uint16_t rawX         = ((tbuf[i+0] & 0x0F) << 8) | tbuf[i+1];
+    uint16_t rawY         = ((tbuf[i+2] & 0x0F) << 8) | tbuf[i+3];
+
+    //Aplica transformação de coordenadas (inversão + escala)
+    ApplyTransform(rawX, rawY, &tpoint[k].x, &tpoint[k].y);
+
     tpoint[k].x           = ((tbuf[i+0] & 0x0f) << 8) | tbuf[i+1];       //Coordenada X
     tpoint[k].y           = ((tbuf[i+2] & 0x0f) << 8) | tbuf[i+3];       //Coordenada Y
+
     tpoint[k].id          = (tbuf[i+2] & 0xF0) >> 4;                     //ID hardware fornece
     tpoint[k].weight      = tbuf[i+4];                                   //Pressao na tela
     tpoint[k].event       = ToPointEvent(ev);                            //Event Flag
     if (tpoint[k].event != TouchEvent::Unknown) validTouches++;          //Conta apenas eventos válidos (Press, Release, Move/Change)
   }
 
-  //_touchcount = validTouches;                                            //Atualiza quantidade de toques ativos
   return validTouches;
 }
 
 
 /**
- * @brief Atualiza e retorna todos os toques ativos usando o array interno protegido.
+ * @brief Lê os toques ativos do controlador FT5316 e atualiza o array interno protegido.
  *
+ * Esta função lê os registros I2C do FT5x16, atualiza o array `_touchPoints[]`
+ * e aplica a transformação de coordenadas (_inverted_mount, scaleX/scaleY) usando ApplyTransform().
+ * 
  * @verbatim
  * Limita os numero de toques através das veriaveis:
  *   
@@ -717,15 +731,17 @@ uint8_t FT::getTouches(TouchPoint *tpoint)
  *   ...
  * }
  * Ou seja:
- *  _numtouchesallow controla quantos índices do array touchPoints[] serão processados.
+ *  _numtouchesallow controla quantos índices do array _touchPoints[] serão processados.
  * Se _numtouchesallow = 1 (multitouch desativado), apenas o primeiro toque será avaliado.
  * Mesmo que o hardware detecte 5 dedos, _touchcount só será incrementado para os toques que realmente passaram pelo loop.
- * 
  * @endverbatim
+ * 
+ * @note Esta função é protegida e usada internamente pelo sistema; não deve ser chamada
+ *       diretamente pelo usuário.
  * 
  * @param None
  * 
- * @return Número de toques detectados
+ * @return Número de toques válidos lidos (Press ou Move/Change).
  *
  * @code
  * touch.
@@ -739,14 +755,13 @@ uint8_t FT::getTouches(TouchPoint *tpoint)
  * }
  * @endcode
  * 
- * @note é removido _touchcount da função pois deve ser avaliado que houve um pressionamento inctementando touchcount e se houve uma liberação, decrementando touchcount.
  */
 uint8_t FT::getTouches()
 {
   uint8_t i = 0;
   uint8_t k = 0;
 
-  uint8_t hitPoints = ReadRegister(FT_TD_STATUS) & 0x0F;                 //0x02, bits [3:0], lê número de toques ativos
+  uint8_t hitPoints = ReadRegister(FT_TD_STATUS) & 0x0F;                 //0x02, bits [3:0], lê número de toques ativos pelo pelo controlador
 
   if (!_allowmultitouch && hitPoints > 1) hitPoints = 1;                 //Se multitouch estiver desabilitado, força apenas 1 toque
 
@@ -760,38 +775,75 @@ uint8_t FT::getTouches()
 
   uint8_t validTouches = 0;                                              //Contador toques válidos
   for (k = 0, i = 0; (k < _numtouchesallow); k++, i += FT5316_TOUCH_ENTRY) {          //Atualiza array interno
-    uint8_t ev            = (tbuf[i+0] & 0xC0) >> 6;                     //Eventos de Touch
-    touchPoints[k].x      = ((tbuf[i+0] & 0x0F) << 8) | tbuf[i+1];       //Coordenada X
-    touchPoints[k].y      = ((tbuf[i+2] & 0x0F) << 8) | tbuf[i+3];       //Coordenada Y
-    touchPoints[k].id     = (tbuf[i+2] & 0xF0) >> 4;                     //ID hardware fornece
-    touchPoints[k].weight = tbuf[i+4];                                   //Pressao na tela
-    touchPoints[k].event  = ToPointEvent(ev);                            //Event Flag
-    if (touchPoints[k].event != TouchEvent::Unknown) validTouches++;     //Conta apenas eventos válidos (Press, Release, Move/Change)
+    uint8_t ev           = (tbuf[i+0] & 0xC0) >> 6;                      //Eventos de Touch
+    uint16_t rawX        = ((tbuf[i+0] & 0x0F) << 8) | tbuf[i+1];        //Coordenada X bruta
+    uint16_t rawY        = ((tbuf[i+2] & 0x0F) << 8) | tbuf[i+3];        //Coordenada Y bruta
+    
+    //Aplica transformação de coordenadas (inversão/espelhamento + escala)
+    uint16_t tx, ty;
+    ApplyTransform(rawX, rawY, &tx, &ty);
+    _touchPoints[k].x      = tx;                                          //Coordenada X
+    _touchPoints[k].y      = ty;                                          //Coordenada Y
+    
+    _touchPoints[k].id     = (tbuf[i+2] & 0xF0) >> 4;                     //ID hardware fornece
+    _touchPoints[k].weight = tbuf[i+4];                                   //Pressao na tela
+    _touchPoints[k].event  = ToPointEvent(ev);                            //Event Flag
+    if (_touchPoints[k].event != TouchEvent::Unknown) validTouches++;     //Conta apenas eventos válidos (Press, Release, Move/Change)
   }
-  //_touchcount = validTouches;                                            //Atualiza quantidade de toques ativos
+
   return validTouches;
+}
+
+
+/**
+ * @brief Aplica a transformação de coordenadas (escala e espelhamento).
+ *
+ * Esta função converte as coordenadas originais do toque (x, y) conforme:
+ * - os fatores de escala `scaleX` e `scaleY`;
+ * - a configuração de montagem invertida (`_inverted_mount`);
+ * - as dimensões da tela (`_width` e `_height`).
+ *
+ * @param[in]  x_in  Coordenada X original.
+ * @param[in]  y_in  Coordenada Y original.
+ * @param[out] x_out Coordenada X transformada.
+ * @param[out] y_out Coordenada Y transformada.
+ */
+void FT::ApplyTransform(uint16_t x_in, uint16_t y_in, uint16_t *x_out, uint16_t *y_out)
+{
+  if (!_inverted_mount) {
+    *x_out = static_cast<uint16_t>(x_in * scaleX);
+    *y_out = static_cast<uint16_t>(y_in * scaleY);
+  } else {
+    // 🔄 Montagem invertida: aplica espelhamento e escala
+    *x_out = static_cast<uint16_t>((_width  - x_in) * scaleX);
+    *y_out = static_cast<uint16_t>((_height - y_in) * scaleY);
+  }
 }
 
 
 /**
  * @brief Verifica e consome um toque específico da tela de toque.
  * 
- * Esta função retorna as coordenadas de um toque específico (índice `num`) e
- * consome o evento, marcando o status do toque como `Up`. Se o toque for consumido,
- * o flag interno `_newtouch` também é resetado, sinalizando que não há toques novos
- * pendentes.
+ * Esta função retorna as coordenadas de um toque específico (índice `index`) e
+ * consome o evento, marcando sua transição como `TOUCH_UP`. Se o toque for
+ * consumido, o flag interno `_newtouch` é atualizado conforme o restante dos
+ * toques ainda ativos no buffer.
+ *
+ * O índice (`index`) é 1-based; ou seja, o primeiro toque é `index = 1`. A função
+ * converte automaticamente para 0-based internamente.
  * 
- * O índice do toque (`num`) é 1-based; ou seja, o primeiro toque é `num = 1`.
- * A função automaticamente converte para 0-based internamente.
+ * As coordenadas X e Y são automaticamente ajustadas para a escala e, caso a tela
+ * esteja montada invertida (`_inverted_mount = true`), são espelhadas de acordo com
+ * a largura (`_width`) e altura (`_height`) configuradas.
  * 
- * @param index Número do toque a ser consultado (1 a _maxmultitouch).
+ * @param index Número do toque a ser consultado (1 a `_maxmultitouch`).
  * @param x Ponteiro para armazenar a coordenada X do toque.
  * @param y Ponteiro para armazenar a coordenada Y do toque.
  *
- * @return true se houve toque Down consumido; false se nao tiver toques Down
+ * @return true se o toque foi consumido (Down ou Move); false caso contrário.
  * 
- * @note As coordenadas X e Y são invertidas e ajustadas conforme a largura (_width)
- *       e altura (_height) da tela.
+ * @note Esta função é tipicamente chamada dentro do loop principal após `Poll()`.
+ *       Não deve ser usada em paralelo com interrupções.
  * 
  * @code
  * uint16_t x, y;
@@ -802,10 +854,11 @@ uint8_t FT::getTouches()
  */
 bool FT::SampleTouch(uint8_t index, uint16_t *x, uint16_t *y)
 {
-  // Verifica se há eventos a processar
+  //🚫 Nenhum evento para processar
   if (_eventBuffer.count == 0) return false;
   
-  if (index == 0 || index > _eventBuffer.count) return false; // índice inválido
+  // Índice fora do intervalo válido
+  if (index == 0 || index > _eventBuffer.count) return false;
   
   index--; // converte para 0-based
   auto &ev = _eventBuffer.events[index];
@@ -813,31 +866,24 @@ bool FT::SampleTouch(uint8_t index, uint16_t *x, uint16_t *y)
   // Verifica se o evento é toque válido (toque novo ou em movimento)
   if (ev.transition == TOUCH_DOWN ||  ev.transition == TOUCH_MOVE) {
     
-    // Ajusta coordenadas para o sistema de tela
-    if (!_inverted_mount) {
-      *x = static_cast<uint16_t>(ev.x * scaleX);
-      *y = static_cast<uint16_t>(ev.y * scaleY);
-    } else {
-      // Inverte eixo X e/ou Y conforme montagem invertida (espelhamento)
-      *x = static_cast<uint16_t>((_width - ev.x) * scaleX);
-      *y = static_cast<uint16_t>((_height - ev.y) * scaleY);
-    }
+    //🔹 Aplica conversão e espelhamento de coordenadas conforme montagem
+    ApplyTransform(ev.x, ev.y, x, y);
 	
      // Marca o evento como consumido (transição para "up")
     ev.transition = TOUCH_UP;
   
-	  // Atualiza o estado _newtouch para indicar se ainda há toques ativos
+	  // 🔁 Atualiza flag global _newtouch de novo toque
     bool anyActive = false;
     for (uint8_t i = 0; i <  _eventBuffer.count; i++) {
-      if (_eventBuffer.events[i].transition == TOUCH_DOWN || 
-          _eventBuffer.events[i].transition == TOUCH_MOVE) {
+      auto &ev = _eventBuffer.events[i];
+      if (ev.transition == TOUCH_DOWN || ev.transition == TOUCH_MOVE) {
         anyActive = true;
         break;
       }
-      _newtouch = anyActive;
-      return true;
     }
-
+    
+    _newtouch = anyActive;
+    return true;
   }
   
   return false;    //nao houve DOWN consumido
@@ -858,7 +904,7 @@ bool FT::SampleTouch(uint8_t index, uint16_t *x, uint16_t *y)
  * 
  * Em contrapartida, quando habilitado (`enable = true`), o driver passa a
  * armazenar e reportar múltiplos toques através das estruturas internas
- * `touchPoints[]` e `_history[]`.
+ * `_touchPoints[]` e `_history[]`.
  *
  * Essa configuração é útil em casos onde o hardware físico suporta multitouch,
  * mas o firmware da aplicação deseja restringir o comportamento (por exemplo,
@@ -1109,7 +1155,7 @@ void ISR_ATTR FT::HandleInterrupt(void)
  * 
  * Redireciona para a instância do driver.
  */
-static void IRAM_ATTR FT::HandleInterruptStatic(void) {
+void IRAM_ATTR FT::HandleInterruptStatic(void) {
     if (_instanceft) _instanceft->HandleInterrupt();
 }
 
@@ -1122,7 +1168,7 @@ static void IRAM_ATTR FT::HandleInterruptStatic(void) {
  *
  * @note Os trechos de código comentados dentro do método servem como
  *       referência para alternativas de inicialização:
- *       - `touchPoints[i] = {0,0,false};` pode substituir `touchPoints[i].reset()`.
+ *       - `_touchPoints[i] = {0,0,false};` pode substituir `_touchPoints[i].reset()`.
  *       - `_history[i] = {false,0,{0,0,0,0,TouchEvent::Unknown}};` pode substituir `_history[i].reset()`.
  *       - `_eventBuffer.reset();` poderia ser usado para limpar todo o buffer de eventos.
  *
@@ -1131,8 +1177,8 @@ static void IRAM_ATTR FT::HandleInterruptStatic(void) {
 void FT::Reset(void)
 {
   for (uint8_t i = 0; i < _maxmultitouch; i++) {
-    //touchPoints[i] = {0,0,false};
-    touchPoints[i].reset();
+    //_touchPoints[i] = {0,0,false};
+    _touchPoints[i].reset();
     //_history[i] = {false,0,{0,0,0,0,TouchEvent::Unknown}};
     _history[i].reset();
     //se desejar pode usar tambem: _eventBuffer.reset();
@@ -1250,7 +1296,8 @@ bool FT::getDebounceTouch() const
  *
  * @param ms Tempo de transição em milissegundos (intervalo de 5–1000 ms recomendados).
  */
-void setTransitionTime(uint16_t ms) {
+void FT::setTransitionTime(uint16_t ms) 
+{
  if (ms < 5) ms = 5;             //Evita zero ou valores extremamente baixos
  else if (ms > 1000) ms = 1000;  //Evita tempos excessivos
  _transition_time_ms = ms;       //Seta o tempo de transição
@@ -1272,7 +1319,7 @@ void setTransitionTime(uint16_t ms) {
  *
  * @return Tempo atual de transição em milissegundos.
  */
- uint16_t getTransitionTime() const
+ uint16_t FT::getTransitionTime() const
 {
   return _transition_time_ms;
 }
@@ -1282,7 +1329,7 @@ void setTransitionTime(uint16_t ms) {
  * @brief Processa e traduz os eventos de toque detectados pelo controlador FT5x16.
  *
  * Esta função é responsável por analisar o estado atual dos toques reportados pelo
- * controlador (via `touchPoints[]`) e determinar as transições de estado entre
+ * controlador (via `_touchPoints[]`) e determinar as transições de estado entre
  * "TOUCH_DOWN", "TOUCH_MOVE" e "TOUCH_UP", gerando uma lista de eventos limpos
  * e prontos para consumo pela aplicação (por exemplo, uma GUI ou sistema de input).
  *
@@ -1339,76 +1386,338 @@ void setTransitionTime(uint16_t ms) {
  * @see TouchEventInfo
  * @see TouchTransition
  */
+//uint8_t FT::ProcessTouchEvents(void)
+//{
+//  uint8_t count = 0;
+//  uint32_t now = millis();                                               //atial tempo antes de processar os toques
+//  
+//  for (uint8_t i = 0; i < _maxmultitouch && count < _maxmultitouch; i++) {    //processa todos os eventos
+//
+//      auto &curr = _touchPoints[i];                                      //pega o atual evento de toque
+//      auto &hist = _history[i];                                          //pega o atual history dos eventos
+//      TouchTransition trans = TOUCH_NONE;
+//  
+//      bool isDownOrContact = (curr.event == TouchEvent::Press || curr.event == TouchEvent::Change); //pressionamento ou mudança
+//  
+//      if (isDownOrContact) {                                             //caso pressionamento/mudança
+//      
+//          if (!hist.active) {                                            //atual history nao ativo
+//              trans = TOUCH_DOWN;                                        //transicao é press
+//              hist.active = true;                                        //ativo history
+//              _touchcount++;                                             //cotnagem de toques 
+//              _newtouch = true;                                          //novo toque 
+//          } else if (curr.x != hist.prev.x || curr.y != hist.prev.y) {   //se a posicao x,y do anterior e atual sao diferentes
+//            if (_debouncetouch) {                                        // 👈 controle condicional de debounce
+//               int16_t dx = abs((int16_t)curr.x - (int16_t)hist.prev.x);
+//               int16_t dy = abs((int16_t)curr.y - (int16_t)hist.prev.y);
+//			   uint32_t delta = now - hist.lastSeen;
+//               // 🔸 Considera movimento somente se:
+//               // - houve deslocamento maior que o limite de debounce, e
+//               // - passou o tempo mínimo configurado pelo usuário
+//			   if (dx > FT_TOUCH_DEBOUNCE_PX || dy > FT_TOUCH_DEBOUNCE_PX || delta > _transition_time_ms)
+//                 trans = TOUCH_MOVE;
+//            } else {
+//              if ((now - hist.lastSeen) > _transition_time_ms) {
+//				  trans = TOUCH_MOVE;                                         // 👈 sem debounce: qualquer variação já é movimento
+//			  }
+//            }
+//          }
+//          // Atualiza registro de presença
+//          hist.lastSeen = now;                                           //guarda o tempo atual antes dos toques 
+//          hist.prev = curr;                                              //guarda o atual toque como atnerior
+//      
+//      } else if (curr.event == TouchEvent::Release) {                    //caso liberacao
+//          
+//          if (hist.active) {                                             //o atual history esta ativo
+//              trans = TOUCH_UP;                                          //transicao é release
+//              hist.active = false;                                       //libera o history ativo
+//              if (_touchcount > 0) _touchcount--;                        //libera um toque a menos  
+//          }
+//          // Atualiza registro de presença
+//          hist.lastSeen = now;                                           //guarda o timer atual
+//          hist.prev = curr;                                              //o atual liberacao de tecla sera o anterior
+//      
+//      } else {                                                           //Não é nenhum caso
+//          
+//          // ⏱️ Timeout: assume que o toque desapareceu
+//          if (hist.active && (now - hist.lastSeen) > FT_TOUCH_TIMEOUT_MS) { //history event ativo 
+//              trans = TOUCH_UP;
+//              hist.active = false;
+//              if (_touchcount > 0) _touchcount--;
+//          }
+//      }
+//  
+//      // 🔹 Preenche o buffer interno apenas se houve transição
+//      if (trans != TOUCH_NONE) {
+//        auto &evt = _eventBuffer.events[_eventBuffer.count];
+//        evt.id         = curr.id;                                        //ID
+//        evt.x          = curr.x;                                         //Coordenada X
+//        evt.y          = curr.y;                                         //Coordenada Y
+//        evt.event      = curr.event;                                     //Atual evento
+//        evt.transition = trans;                                          //transicao
+//        _eventBuffer.count++;                                            //proximo buffer para tratar
+//      }
+//
+//  }
+//  
+//  return _eventBuffer.count;
+//}
+
+
+//muitos ensivel com _transition_time_ms = 10
+//nao responde com _transition_time_ms = 100 o move
+//Esse comportamento mostra que a lógica de tempo está funcionando, mas o “tempo de transição” ainda está sendo interpretado de forma inversa ao que a gente deseja.
+//
+//👉 O problema é:
+//atualmente, o código só gera MOVE se já tiver passado mais de _transition_time_ms desde o último evento.
+//Mas o hist.lastSeen é atualizado toda vez — inclusive dentro do DOWN.
+//
+//Então, quando você toca e move rápido, o delta fica sempre pequeno (porque acabou de atualizar o lastSeen), e o MOVE nunca acontece.
+//Já quando o valor é muito pequeno (como 10 ms), o delta quase sempre ultrapassa esse tempo, então o MOVE vem imediatamente — por isso parece “hipersensível”.
+//
+//🎯 Solução
+//
+//Ajustar o momento em que hist.lastSeen é atualizado.
+//
+//Ele deve ser atualizado somente depois de gerar um MOVE real, não a cada leitura — assim o delta realmente mede “quanto tempo faz desde o último movimento reconhecido”.
+//
+//uint8_t FT::ProcessTouchEvents(void)
+//{
+//  uint8_t count = 0;
+//  uint32_t now = millis();                                               //atial tempo antes de processar os toques
+//  
+//  for (uint8_t i = 0; i < _maxmultitouch && count < _maxmultitouch; i++) {    //processa todos os eventos
+//
+//      auto &curr = _touchPoints[i];                                       //pega o atual evento de toque
+//      auto &hist = _history[i];                                          //pega o atual history dos eventos
+//      TouchTransition trans = TOUCH_NONE;
+//  
+//      bool isDownOrContact = (curr.event == TouchEvent::Press || curr.event == TouchEvent::Change); //pressionamento ou mudança
+//  
+//      if (isDownOrContact) {                                             //caso pressionamento/mudança
+//      
+//          if (!hist.active) {                                            //atual history nao ativo
+//              trans = TOUCH_DOWN;                                        //transicao é press
+//              hist.active = true;                                        //ativo history
+//              _touchcount++;                                             //cotnagem de toques 
+//              _newtouch = true;                                          //novo toque 
+//          } else { //if (curr.x != hist.prev.x || curr.y != hist.prev.y) {   //se a posicao x,y do anterior e atual sao diferentes
+//               uint32_t delta = now - hist.lastSeen;
+//
+//               // Se houve movimento real
+//               int16_t dx = abs((int16_t)curr.x - (int16_t)hist.prev.x);
+//               int16_t dy = abs((int16_t)curr.y - (int16_t)hist.prev.y);
+//               bool moved = (dx > FT_TOUCH_DEBOUNCE_PX || dy > FT_TOUCH_DEBOUNCE_PX);
+//
+//               if (moved) {
+//                 if (!_debouncetouch || delta > _transition_time_ms) trans = TOUCH_MOVE;                                        // 👈 controle condicional de debounce
+//               } else {
+//                  // Mesmo sem movimento, após certo tempo, ainda pode gerar MOVE
+//                  if (delta > _transition_time_ms) trans = TOUCH_MOVE;
+//               }
+//          }
+//        
+//          // Atualiza registro de presença
+//          hist.lastSeen = now;                                           //guarda o tempo atual antes dos toques 
+//          hist.prev = curr;                                              //guarda o atual toque como atnerior
+//      
+//      } else if (curr.event == TouchEvent::Release) {                    //caso liberacao
+//          
+//          if (hist.active) {                                             //o atual history esta ativo
+//              trans = TOUCH_UP;                                          //transicao é release
+//              hist.active = false;                                       //libera o history ativo
+//              if (_touchcount > 0) _touchcount--;                        //libera um toque a menos  
+//          }
+//          // Atualiza registro de presença
+//          hist.lastSeen = now;                                           //guarda o timer atual
+//          hist.prev = curr;                                              //o atual liberacao de tecla sera o anterior
+//      
+//      } else {                                                           //Não é nenhum caso
+//          
+//          // ⏱️ Timeout: assume que o toque desapareceu
+//          if (hist.active && (now - hist.lastSeen) > FT_TOUCH_TIMEOUT_MS) { //history event ativo 
+//              trans = TOUCH_UP;
+//              hist.active = false;
+//              if (_touchcount > 0) _touchcount--;
+//          }
+//      }
+//  
+//      // 🔹 Preenche o buffer interno apenas se houve transição
+//      if (trans != TOUCH_NONE) {
+//        auto &evt = _eventBuffer.events[_eventBuffer.count];
+//        evt.id         = curr.id;                                        //ID
+//        evt.x          = curr.x;                                         //Coordenada X
+//        evt.y          = curr.y;                                         //Coordenada Y
+//        evt.event      = curr.event;                                     //Atual evento
+//        evt.transition = trans;                                          //transicao
+//        _eventBuffer.count++;                                            //proximo buffer para tratar
+//      }
+//
+//  }
+//  
+//  return _eventBuffer.count;
+//}
+//
+
+
+
+ /**
+ * @brief Processa os eventos de toque detectados pelo controlador FT5x06/FT5x16.
+ *
+ * Esta função percorre todos os pontos de toque detectados pelo controlador FT5x16/FT5316
+ * e identifica as transições de cada toque:
+ * - `TOUCH_DOWN`: toque inicial detectado.
+ * - `TOUCH_MOVE`: movimento detectado após deslocamento ou tempo configurado.
+ * - `TOUCH_UP`: toque liberado ou timeout expirado.
+ * 
+ * Esta função é responsável por analisar o estado atual dos toques reportados pelo
+ * controlador (via `_touchPoints[]`) e determinar as transições de estado entre
+ * "TOUCH_DOWN", "TOUCH_MOVE" e "TOUCH_UP", gerando uma lista de eventos limpos
+ * e prontos para consumo pela aplicação (por exemplo, uma GUI ou sistema de input).
+ *
+ * Caso um ponto ativo desapareça por mais de `FT_TOUCH_TIMEOUT_MS`, ele é considerado
+ * como liberado (TOUCH_UP).
+ *
+ * O buffer interno `_eventBuffer` é preenchido apenas quando há alguma transição.
+ * Cada evento é transformado em coordenadas de tela usando a função `ApplyTransform()`.
+ * 
+ * @section Controle de Debounce
+ *
+ * O método utiliza uma lógica de *debounce temporal e espacial*:
+ * - Apenas movimentos reais (diferença acima de `FT_TOUCH_DEBOUNCE_PX`) são considerados.
+ * - O tempo mínimo entre transições MOVE é controlado por `_transition_time_ms`.
+ *
+ * O **debounce de toque** é um recurso opcional (ativado por `setDebounceTouch(true)`)
+ * que serve para filtrar microvariações de coordenadas geradas por ruído ou instabilidade
+ * no sensor capacitivo.
+ *
+ * Quando ativo (`_debouncetouch = true`):
+ *   - Movimentos inferiores a `FT_TOUCH_DEBOUNCE_PX` pixels são ignorados.
+ *   - Isso evita que pequenos tremores do dedo sejam interpretados como movimentos reais.
+ *
+ * Quando desativado (`_debouncetouch = false`):
+ *   - Qualquer variação de coordenada (mesmo mínima) é considerada um `TOUCH_MOVE`.
+ *   - Indicado para sistemas que precisam de resposta instantânea e suave (ex.: desenhos livres).
+ *
+ * ---
+ * 
+ * @section history_sec Histórico (_history)
+ *
+ * O algoritmo utiliza um sistema interno de **histórico por dedo (_history[])**
+ * para rastrear o estado anterior de cada ponto de toque. Esse histórico permite:
+ *   - Saber quando um novo dedo entrou em contato (TOUCH_DOWN).
+ *   - Detectar movimentos reais (TOUCH_MOVE).
+ *   - Reconhecer quando o dedo foi removido (TOUCH_UP).
+ *   - Aplicar timeout automático quando o toque "desaparece" fisicamente (sem evento de release).
+ * 
+ * Cada posição de toque (até `_maxmultitouch`) mantém um registro independente com:
+ *   - `active` → indica se aquele dedo estava anteriormente ativo.
+ *   - `prev` → guarda as últimas coordenadas conhecidas do toque.
+ *   - `lastSeen` → registra o momento (em ms) da última atualização.
+ *
+ * O histórico garante estabilidade na detecção de transições, permitindo que o
+ * sistema reconheça corretamente eventos mesmo quando há pequenas falhas momentâneas
+ * na leitura do controlador.
+ *
+ * ---
+ * 
+ * @return uint8_t Número de eventos de toque válidos adicionados ao buffer interno.
+ *
+ * @note Esta função deve ser chamada periodicamente (ex: no loop principal) para
+ *       garantir a detecção correta dos toques e suas transições.
+ * 
+ * @note Esta função deve ser chamada periodicamente (ex.: dentro de um `Poll()`).
+ * 
+ * @note O método `setDebounceTouch(bool)` permite ativar ou desativar o filtro de debounce.
+ *
+ * @note A função respeita as seguintes regras:
+ *      - Controle de debounce por deslocamento (`FT_TOUCH_DEBOUNCE_PX`) e por tempo (`_transition_time_ms`).
+ *      - Timeout de toque inativo (`FT_TOUCH_TIMEOUT_MS`) para gerar `TOUCH_UP`.
+ *      - O buffer interno `_eventBuffer.count` é incrementado apenas quando há transição.
+ *      - As flags `_touchcount` e `_newtouch` são atualizadas de acordo com os toques ativos.
+ * 
+ * @warning Não altera estruturas de toque externas nem deve ser usada pelo usuário.
+ * 
+ * @see setTransitionTime()
+ * @see FT_TOUCH_DEBOUNCE_PX
+ * @see FT_TOUCH_TIMEOUT_MS
+ * @see FT::setDebounceTouch()
+ * @see FT::getDebounceTouch()
+ * @see TouchEventInfo
+ * @see TouchTransition 
+ */
 uint8_t FT::ProcessTouchEvents(void)
 {
-  uint8_t count = 0;
-  uint32_t now = millis();                                               //atial tempo antes de processar os toques
+  uint32_t now = millis();                                                   //⏱️ Marca o tempo atual para comparar com o histórico
   
-  for (uint8_t i = 0; i < _maxmultitouch && count < _maxmultitouch; i++) {    //processa todos os eventos
+  // 🔄 Processa todos os toques até o limite máximo permitido
+  for (uint8_t i = 0; i < _maxmultitouch; i++) {                             //processa todos os eventos
 
-      auto &curr = touchPoints[i];                                       //pega o atual evento de toque
-      auto &hist = _history[i];                                          //pega o atual history dos eventos
-      TouchTransition trans = TOUCH_NONE;
-  
+      auto &curr = _touchPoints[i];                                          //📍 Ponto de toque atual
+      auto &hist = _history[i];                                              //🧠 Histórico associado a esse ponto
+      TouchTransition trans = TOUCH_NONE;                                    //Nenum evento de transição no moemnto
+      
+       // Verifica se o toque atual está em estado ativo (pressionado ou alterado)
       bool isDownOrContact = (curr.event == TouchEvent::Press || curr.event == TouchEvent::Change); //pressionamento ou mudança
   
-      if (isDownOrContact) {                                             //caso pressionamento/mudança
-      
-          if (!hist.active) {                                            //atual history nao ativo
-              trans = TOUCH_DOWN;                                        //transicao é press
-              hist.active = true;                                        //ativo history
-              _touchcount++;                                             //cotnagem de toques 
-              _newtouch = true;                                          //novo toque 
-          } else if (curr.x != hist.prev.x || curr.y != hist.prev.y) {   //se a posicao x,y do anterior e atual sao diferentes
-            if (_debouncetouch) {                                        // 👈 controle condicional de debounce
-               int16_t dx = abs((int16_t)curr.x - (int16_t)hist.prev.x);
-               int16_t dy = abs((int16_t)curr.y - (int16_t)hist.prev.y);
-			   uint32_t delta = now - hist.lastSeen;
-               // 🔸 Considera movimento somente se:
-               // - houve deslocamento maior que o limite de debounce, e
-               // - passou o tempo mínimo configurado pelo usuário
-			   if (dx > FT_TOUCH_DEBOUNCE_PX || dy > FT_TOUCH_DEBOUNCE_PX || delta > _transition_time_ms)
-                 trans = TOUCH_MOVE;
-            } else {
-              if ((now - hist.lastSeen) > _transition_time_ms) {
-				  trans = TOUCH_MOVE;                                         // 👈 sem debounce: qualquer variação já é movimento
-			  }
+      if (isDownOrContact) {                                                 //caso pressionamento/mudança
+        // 🟢 Novo toque detectado
+        if (!hist.active) {                                                  //atual history nao ativo
+            trans = TOUCH_DOWN;                                              //transicao é press
+            hist.active = true;                                              //ativo history
+            _touchcount++;                                                   //cotnagem de toques 
+            _newtouch = true;                                                //novo toque 
+            
+            // Armazena tempo e posição inicial
+            hist.lastSeen = now;   
+            hist.prev = curr;
+        } else {                                                             //🔵 Toque já ativo — verificar se houve movimento real
+            uint32_t delta = now - hist.lastSeen;                            //Tempo desde o último evento válido
+
+            // Calcula deslocamento nas coordenadas
+            int16_t dx = abs((int16_t)curr.x - (int16_t)hist.prev.x);
+            int16_t dy = abs((int16_t)curr.y - (int16_t)hist.prev.y);
+            bool moved = (dx > FT_TOUCH_DEBOUNCE_PX || dy > FT_TOUCH_DEBOUNCE_PX);
+            
+            //Se houve deslocamento acima do limite mínimo
+            if (moved) {
+              // Verifica o tempo mínimo entre transições (debounce temporal)
+              if (!_debouncetouch || delta > _transition_time_ms) {          //👈 controle condicional de debounce
+                trans = TOUCH_MOVE;                                          //Movimento reconhecido
+                hist.lastSeen = now;                                         //✅ atualiza timer
+                hist.prev = curr;                                            //Salva posição atual
+               }
             }
-          }
-          // Atualiza registro de presença
-          hist.lastSeen = now;                                           //guarda o tempo atual antes dos toques 
-          hist.prev = curr;                                              //guarda o atual toque como atnerior
-      
-      } else if (curr.event == TouchEvent::Release) {                    //caso liberacao
+        }
+            
+      } else if (curr.event == TouchEvent::Release) {                        //🔴 Evento de liberação de toque
           
-          if (hist.active) {                                             //o atual history esta ativo
-              trans = TOUCH_UP;                                          //transicao é release
-              hist.active = false;                                       //libera o history ativo
-              if (_touchcount > 0) _touchcount--;                        //libera um toque a menos  
+          if (hist.active) {                                                 //o atual history esta ativo
+              trans = TOUCH_UP;                                              //transicao é release
+              hist.active = false;                                           //libera o history ativo
+              if (_touchcount > 0) _touchcount--;                            //libera um toque a menos  
           }
-          // Atualiza registro de presença
-          hist.lastSeen = now;                                           //guarda o timer atual
-          hist.prev = curr;                                              //o atual liberacao de tecla sera o anterior
+          hist.lastSeen = now;                                               //guarda o timer atual
+          hist.prev = curr;                                                  //o atual liberacao de tecla sera o anterior
       
-      } else {                                                           //Não é nenhum caso
+      } else {                                                               //⚫ Nenhum evento — verificar timeout
           
           // ⏱️ Timeout: assume que o toque desapareceu
-          if (hist.active && (now - hist.lastSeen) > FT_TOUCH_TIMEOUT_MS) { //history event ativo 
+          if (hist.active && (now - hist.lastSeen) > FT_TOUCH_TIMEOUT_MS) {  //history event ativo 
               trans = TOUCH_UP;
               hist.active = false;
               if (_touchcount > 0) _touchcount--;
           }
       }
   
-      // 🔹 Preenche o buffer interno apenas se houve transição
+      // 💾 Armazena o evento reconhecido no buffer, se houve transição
       if (trans != TOUCH_NONE) {
         auto &evt = _eventBuffer.events[_eventBuffer.count];
-        evt.id         = curr.id;                                        //ID
-        evt.x          = curr.x;                                         //Coordenada X
-        evt.y          = curr.y;                                         //Coordenada Y
-        evt.event      = curr.event;                                     //Atual evento
-        evt.transition = trans;                                          //transicao
-        _eventBuffer.count++;                                            //proximo buffer para tratar
+        evt.id         = curr.id;                                            //ID
+        evt.event      = curr.event;                                         //Atual evento
+        evt.transition = trans;                                              //transicao
+        ApplyTransform(curr.x, curr.y, &evt.x, &evt.y);                      //Aplica transformação de coordenadas antes de salvar no buffer
+        _eventBuffer.count++;                                                //proximo buffer para tratar
       }
 
   }
@@ -1526,7 +1835,7 @@ bool FT::Enable(void)
     int8_t irq = digitalPinToInterrupt(_ctp_intpin);
 	if (irq == NOT_AN_INTERRUPT) {          // Não é possível usar esse pino como interrupção
 	  _interrupt_enabled = false;
-      _use_interrupt = false;
+      _useinterrupt = false;
 	  return false;
 	}
     attachInterrupt(irq, HandleInterruptStatic, FALLING);
@@ -1652,3 +1961,57 @@ bool FT::EnableInterrupt(bool enable)
   return true;
 
 }
+
+
+/**
+ * @brief Lê o tipo de gesto detectado pelo FT5x16.
+ *
+ * Esta função acessa o registrador GEST_ID (0x01) e atualiza a estrutura interna
+ * `_gestureState` com o último gesto reconhecido.
+ *
+ * @return Código do gesto reconhecido (ver @ref FT5x16Gesture_t).
+ *
+ * @note Deve ser chamada após `getTouched()` ou `updateTS()`.
+ */
+uint8_t FT::getGesture(void)
+{
+    // TODO: Implementar leitura do registrador 0x01 (GEST_ID)
+    // e atualizar _gestureState.
+    return 0;
+}
+
+
+/**
+ * @brief Retorna o último gesto reconhecido.
+ *
+ * @return Estrutura @ref FT5x16GestureState_t contendo o tipo e o estado do gesto.
+ */
+GestureState_t FT::getGestureState(void) const
+{
+  return _gestureState;
+}
+
+
+/**
+ * @brief Limpa o estado atual do gesto.
+ *
+ * Esta função redefine a estrutura `_gestureState` para valores neutros,
+ * permitindo detectar novos gestos de forma isolada.
+ */
+void FT::ResetGesture(void)
+{
+  _gestureState.reset();
+}
+
+
+/**
+ * @brief Verifica se há um gesto ativo reconhecido.
+ *
+ * @return true se há gesto válido, false caso contrário.
+ */
+bool FT::HasGesture(void) const
+{
+  return _gestureState.active;
+}
+
+

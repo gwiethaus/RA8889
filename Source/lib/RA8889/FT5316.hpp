@@ -77,7 +77,7 @@ bool FT5316_sampleTouch(unsigned short* x, unsigned short* y);
 #define FT5316_TOUCH_ENTRY       6
 #define FT5316_TOUCH_DATA_SIZE   FT5316_MAX_TOUCHES * FT5316_TOUCH_ENTRY
 
-#define FT_TOUCH_TIMEOUT_MS   120   // tempo limite p/ considerar que um toque foi solto 
+#define FT_TOUCH_TIMEOUT_MS   100   // tempo limite p/ considerar que um toque foi solto orignal 120
 #define FT_TOUCH_DEBOUNCE_PX  3     // variação mínima para considerar movimento
 
 
@@ -183,6 +183,41 @@ struct TouchEventBuffer {
 
 
 /**
+ * @enum Gesture_t
+ * @brief Enumeração dos gestos reconhecidos pelo controlador FT5x16.
+ *
+ * Estes valores correspondem ao conteúdo do registrador GEST_ID (0x01),
+ * conforme documentação oficial da FocalTech.
+ */
+enum class Gesture_t : uint8_t {
+  GEST_NONE      = 0x00,  //Nenhum gesto reconhecido
+  GEST_MOVE_UP   = 0x10,  //Deslizar para cima
+  GEST_MOVE_DOWN = 0x14,  //Deslizar para baixo
+  GEST_MOVE_LEFT = 0x18,  //Deslizar para a esquerda
+  GEST_MOVE_RIGHT= 0x1C,  //Deslizar para a direita
+  GEST_ZOOM_IN   = 0x48,  //Aproximar dois dedos (pinçar)
+  GEST_ZOOM_OUT  = 0x49   //Afastar dois dedos (pinçar)
+};
+
+
+/**
+ * @struct GestureState_t
+ * @brief Estrutura que armazena o último gesto detectado e seu estado.
+ */
+struct GestureState_t {
+  Gesture_t type;        //Tipo do gesto detectado
+  bool active;           //Indica se um gesto foi reconhecido e está ativo
+  uint32_t timestamp;    //Momento em que o gesto foi identificado (ms)
+
+  void reset() {
+    type = Gesture_t::GEST_NONE;
+    active = false;
+    timestamp = 0;
+  }
+};
+
+
+/**
  * @typedef UserISR_t
  * 
  * @brief Tipo de função de callback definido pelo usuário para tratamento de eventos de toque.
@@ -277,11 +312,11 @@ typedef void (*UserISR_t)(TouchEventInfo tevent, uint8_t idtouch, uint8_t ntouch
  * @section principais_metodos_sec Principais métodos
  *
  * - `uint8_t getTouches()`  
- *   Lê todos os toques atualmente ativos, atualiza `touchPoints[]` e `_touchcount`.  
+ *   Lê todos os toques atualmente ativos, atualiza `_touchPoints[]` e `_touchcount`.  
  *   Considera o limite de toques permitido (_numtouchesallow) e aplica tratamento seguro em caso de falha de comunicação I2C.
  *
  * - `uint8_t ProcessTouchEvents(TouchEventInfo *events, uint8_t maxEvents)`  
- *   Processa os dados de `touchPoints[]` e gera transições lógicas de toque (`TOUCH_DOWN`, `TOUCH_MOVE`, `TOUCH_UP`)  
+ *   Processa os dados de `_touchPoints[]` e gera transições lógicas de toque (`TOUCH_DOWN`, `TOUCH_MOVE`, `TOUCH_UP`)  
  *   usando o histórico `_history[]`. Inclui suporte a debounce e timeout.
  *
  * - `void setDebounceTouch(bool enable)` / `bool getDebounceTouch() const`  
@@ -303,7 +338,7 @@ typedef void (*UserISR_t)(TouchEventInfo tevent, uint8_t idtouch, uint8_t ntouch
  * }
  *
  * void loop() {
- *     uint8_t n = touch.getTouches();               // Atualiza touchPoints[]
+ *     uint8_t n = touch.getTouches();               // Atualiza _touchPoints[]
  *     TouchEventInfo events[5];
  *     uint8_t count = touch.ProcessTouchEvents(events, 5); // Processa transições lógicas
  *
@@ -332,8 +367,8 @@ class FT {
   public:
     FT(uint8_t sdapin, uint8_t sclpin, uint8_t intpin, uint8_t rstpin);
     ~FT(void);
-	void HardwareReset(void);
-	uint8_t ReadChipID(void);
+    void HardwareReset(void);
+    uint8_t ReadChipID(void);
     bool Begin(uint8_t addr);
     void setDisplayArea(uint16_t width, uint16_t height);
     void setTouchArea(uint16_t width, uint16_t height, bool inverted_mount);
@@ -346,18 +381,22 @@ class FT {
     bool Touched(void);
     void setNumTouches(uint8_t num);
     uint8_t getNumTouches(void);
-    uint8_t getTouches(TouchPoint *pPoint);
-    uint8_t getTouches(void);
+    uint8_t getTouches(TouchPoint *tpoint, uint8_t numtouch);
     const TouchEventInfo& getTouch(uint8_t index) const;
     uint8_t getTouchCount(void) const;
-    
-    
+    uint16_t getTransitionTime() const;
+    void setTransitionTime(uint16_t ms);
     void Poll(void);
     bool SampleTouch(uint8_t index, uint16_t *x, uint16_t *y);
     void AllowMultitouch(bool enable);
     bool IsAllowMultitouch(void);
     void setDebounceTouch(bool enable);        // 👈 novo método
     bool getDebounceTouch() const;             // 👈 consulta o estado
+    uint8_t getGesture(void);                  //
+    GestureState_t getGestureState(void) const;
+    void ResetGesture(void);
+    bool HasGesture(void) const;
+
   protected:
     static FT* _instanceft;                    //ponteiro estático global para a instância ativa
     UserISR_t _UserCallback = nullptr;         //Interrupt Service Request user (function pointer)
@@ -366,11 +405,13 @@ class FT {
     bool _interrupt_enabled = false;           //Interrupções internas foi ativada ativadas
     volatile bool _newtouch = false;           //Marcado pela ISR, houve um ou mais toques
     volatile uint16_t _isrcounter = 0;         //numero de itenrrupç~eos produzidas/consumidas 
-    TouchPoint touchPoints[FT5316_MAX_TOUCHES];//Matriz de estado dos toques de Hardware
+    TouchPoint _touchPoints[FT5316_MAX_TOUCHES];//Matriz de estado dos toques de Hardware
     TouchHistory _history[FT5316_MAX_TOUCHES]; //Events Touch History
     TouchEventBuffer _eventBuffer;             //Buffer de Evento (Software) controle consumidor/produtor
     uint8_t _touchcount;                       //Numero de um ou mais toques detectados
     volatile uint8_t _lastState;
+
+    GestureState_t _gestureState;                //Estado atual do gesto detectado
 
     uint16_t _width;                           //Total de pontos na horizontal da tela de toque
     uint16_t _height;                          //Total de pontos na vertical da tela de toque
@@ -395,7 +436,7 @@ class FT {
       
     
     void Reset(void);                          //Reseta o estado interno do touch controller.
-	void Exchange(uint16_t &maior, uint16_t &minor);
+    void Exchange(uint16_t &maior, uint16_t &minor);
     void ScaleFactor(void);
     uint32_t Dist(const TouchPoint &loc);
     uint32_t Dist(const TouchPoint &loc1, const TouchPoint &loc2);
@@ -403,6 +444,8 @@ class FT {
     TouchEvent ToPointEvent(uint8_t event);
     void ISR_ATTR HandleInterrupt(void);
     static void IRAM_ATTR HandleInterruptStatic(void);
+    void ApplyTransform(uint16_t x_in, uint16_t y_in, uint16_t *x_out, uint16_t *y_out);
+    uint8_t getTouches(void);
     uint8_t ProcessTouchEvents();
 };
 
