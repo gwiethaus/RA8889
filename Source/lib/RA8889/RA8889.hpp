@@ -355,23 +355,16 @@
 /*The SDRAM is divided into several image buffers and the maximum number of image buffers is limited by the 
 memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximum number = 16/0.96 = 16.6 */
 /*vertical mulit page application*/
-#define MAX_LAYER 10     //numero maximo de layer (páginas) para endereçar
-#define MEMORY_SIZE 128 * 1024 * 1024  //Tamanho da memoria em bits (128Mb convertidos em bits)
+//substituido pela funcao Layers() mais preciso de acoirdo com a resolução da tela e numero de color depth 
+//#define MAX_LAYER 10     //numero maximo de layer (páginas) para endereçar
 
-//se tornar obsoleto (Não utilziar)
-//Calculo é feito por LayerStartAddr()
-/*
-#define LAYER1_START_ADDR  800*480*2*0
-#define LAYER2_START_ADDR  800*480*2*1
-#define LAYER3_START_ADDR  800*480*2*2
-#define LAYER4_START_ADDR  800*480*2*3
-#define LAYER5_START_ADDR  800*480*2*4
-#define LAYER6_START_ADDR  800*480*2*5
-#define LAYER7_START_ADDR  800*480*2*6
-#define LAYER8_START_ADDR  800*480*2*7
-#define LAYER9_START_ADDR  800*480*2*8
-#define LAYER10_START_ADDR 800*480*2*9
-*/
+
+//Importante!
+//Precisa ser configurado de acordo a quantidade de memória do display, 
+//para se poder ter acesso as outras camadas ou páginas de memória do display
+//A configuração é em quantidade de bits ou tamanho em bits. 
+//Para o caso do RA8889 possi memória itnerna de 128Mb (megabits)
+#define MEMORY_SIZE 128 * 1024 * 1024          //Tamanho da memoria em bits (128Mb convertidos em bits)
 
 //--------------------------------------------------------------------------------
 // Select SPI / I2C / Parallel
@@ -1689,7 +1682,7 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     uint16_t Height(void);
     uint8_t getColorDepth(void);
     uint32_t LayerStartAddr(uint8_t layer);
-    
+    uint16_t Layers(void);
     void MainImage_StartAddress(uint32_t addr);
     void MainImage_Width(uint16_t Wx);
     void MainWindow_StartXY(uint16_t wx, uint16_t hy);
@@ -1946,7 +1939,7 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
 
   protected:
-    uint8_t _xnreset;	                         //Chip reset pin
+    uint8_t _xnreset;	                           //Chip reset pin
     uint16_t _displaywidth;                      //lardura do display
     uint16_t _displayheight;                     //altura do display
     uint8_t _bpp;                                //color depht 8/16/24 bit per pixel (bpp)

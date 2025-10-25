@@ -6899,7 +6899,7 @@ void RA8889::VSYNC_PulseWidth(uint8_t vspw)
  * None
  * @endverbatim
  *
- * @param layer: camada 0..MAX_LAYER-1 (layer 0, layer 1, layer 2....)
+ * @param layer: camada 0..Layers()-1 (layer 0, layer 1, layer 2....)
  *
  * @note  Page (image buffer) Configure: 
  *        The maximum number of pages is based on SDRAM capacity and color 
@@ -6916,12 +6916,34 @@ void RA8889::VSYNC_PulseWidth(uint8_t vspw)
  *        retornar o endreço da primeira pagina 0, ou seja endreço 0
  *
  * @return Page layer start address
+ * 
+ * @see Layers()
  */
 uint32_t RA8889::LayerStartAddr(uint8_t layer)
 {
-  if (layer > MAX_LAYER-1) return 0;
+  if (layer > Layers()-1) return 0;                             //dr drlrvionou mais que permitido
   return _displaywidth * _displayheight * (_bpp / 8) * layer;   //ex. 800x480 * (16 (16bpp)/8) * 1 = 768000 = 0xbb800
   DEBUG_PRINT("LayerStartAddr, _bpp: ",_bpp,true,true);    //Debug
+}
+
+
+/**
+ * @brief Retorna o numero de Paginas totais que podems er endereçados
+ *
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note  None
+ *
+ * @return Page layers
+ */
+uint16_t RA8889::Layers(void)
+{
+  if (_bpp == 0) return 1;
+  return MEMORY_SIZE / (_displaywidth * _displayheight * (_bpp / 8));
 }
 
 
@@ -20667,6 +20689,22 @@ void RA8889::DrawBitmap(uint8_t *pixels, eColorDepthBPP pictureBpp, uint16_t x, 
 
   ActiveWindow_XY(0,0);
   ActiveWindow_WidhtHeight(_displaywidth, _displayheight);
+}
+
+
+//offset na area de memoria do display na forma de coordenadas
+//trata o display comos e fosse uma gigantesca tela. A area normal de exibição da tela quando a coordenda ultrapassa ela, por exemplo escrever na posicao de memoria 2048x2048 não será exibido na area da tela atual 800x480. Não deve ultrapassar a area maxima de memoria da tela que vai depender do controlador de display e da memoria que ela possui.
+bool RA8889::setDisplayOffset(uint16_t x, uint16_t y) 
+{
+//   if (x > 8188)
+//        return false;
+//    else if (y > 8191)
+//        return false;
+//
+//    // Set main window offset
+//    setWindowStartXY(x, y);
+//
+    return true;
 }
 
 
