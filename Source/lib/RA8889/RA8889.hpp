@@ -1669,6 +1669,9 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     uint8_t SoftwareReset(void);
     void Brightness(uint16_t level);
 
+    void StartWrite(void);
+    void EndWrite(void);
+
     bool Begin(void);
     void DisplayOn(bool on);
     void setBacklight(uint8_t pin);
@@ -1683,6 +1686,7 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     uint8_t getColorDepth(void);
     uint32_t LayerStartAddr(uint8_t layer);
     uint16_t Layers(void);
+    bool setDisplayOffset(uint16_t x, uint16_t y);
     void MainImage_StartAddress(uint32_t addr);
     void MainImage_Width(uint16_t Wx);
     void MainWindow_StartXY(uint16_t wx, uint16_t hy);

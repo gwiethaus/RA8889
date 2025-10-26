@@ -57,6 +57,8 @@ class IBus {
     virtual uint8_t StatusRead(void) = 0;
     virtual void RegisterWrite(uint8_t reg, uint8_t data) = 0;
     virtual uint8_t RegisterRead(uint8_t reg) = 0;  
+    virtual bool StartWrite(void) = 0;
+    virtual void EndWrite(void) = 0;
     virtual ~IBus() {}
   protected:
     friend class DisplayBase;  //Na classe DisplayBase podem usar os metodos protegidos desta classe.

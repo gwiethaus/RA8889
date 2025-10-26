@@ -19502,6 +19502,55 @@ void RA8889::AVI_Window(bool on_off)
 
 
 /**
+ * @brief Inicia um bloco de escrita no barramento conectado ao RA8889.
+ *
+ * Esta função é uma camada de abstração que repassa o comando para o
+ * barramento físico associado à instância (SPI, I2C, FSMC, etc.), iniciando
+ * uma transação de escrita de dados.
+ *
+ * É utilizada principalmente durante operações de alto volume de dados,
+ * como o envio de pixels para o display em interfaces gráficas (ex: LVGL).
+ *
+ * @return void
+ *
+ * @note
+ * - Internamente chama `bus->StartWrite()`.
+ * - Caso o ponteiro `bus` seja nulo, a função é ignorada.
+ *
+ * @code
+ * gfx.StartWrite();
+ * gfx.DrawPixels(area, px_map);
+ * gfx.EndWrite();
+ * @endcode
+ */
+void RA8889::StartWrite(void)                     
+{
+  _bus->StartWrite();
+}
+
+
+/**
+ * @brief Finaliza o bloco de escrita atual no barramento conectado ao RA8889.
+ *
+ * Esta função encerra o bloco de escrita iniciado por StartWrite(),
+ * finalizando a transação ativa no barramento físico associado.
+ *
+ * É utilizada após o término de uma operação de transferência intensa,
+ * garantindo que o barramento retorne ao estado ocioso de forma controlada.
+ *
+ * @return void
+ *
+ * @note
+ * - Internamente chama `bus->EndWrite()`.
+ * - Caso o ponteiro `bus` seja nulo, a função é ignorada.
+ */
+void RA8889::EndWrite(void)                       
+{
+  _bus->EndWrite();
+}
+
+
+/**
  * @brief Retorna o numero de cores definidos do display
  *
  * @verbatim

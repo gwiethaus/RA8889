@@ -245,6 +245,7 @@ uint8_t Bus_SPI::RwByte(uint8_t value)
  */
 void Bus_SPI::CmdWrite(uint8_t cmd)
 {
+  CheckTransaction();
   SetCS(0);                                    //SS_RESET
   RwByte(SPI_CMDWRITE);                        //0x00, Avisa Display que será um comando
   RwByte(cmd);                                 //Envia um comando de 1 byte para o Display
@@ -265,6 +266,7 @@ void Bus_SPI::CmdWrite(uint8_t cmd)
  */
 void Bus_SPI::DataWrite(uint8_t data)
 {
+  CheckTransaction();
   SetCS(0);                                    //SS_RESET;
   RwByte(SPI_DATAWRITE);                       //0x80, Indica Dados para escrever
   RwByte(data);                                //Envia um byte de Dado para o SPI
@@ -286,6 +288,7 @@ void Bus_SPI::DataWrite8(uint8_t data) {DataWrite(data);}
  */
 void Bus_SPI::DataWrite16(uint16_t data)
 {
+  CheckTransaction();
   SetCS(0);                                    //SS_RESET;
   RwByte(SPI_DATAWRITE);                       //0x80, Indica Dados para escrever
   RwByte(data);                                //Envia um byte menos significativo de Dado para o SPI
@@ -307,6 +310,7 @@ void Bus_SPI::DataWrite16(uint16_t data)
  */
 void Bus_SPI::DataWrite24(uint32_t data)
 {
+  CheckTransaction();
   SetCS(0);                                    //SS_RESET;
   RwByte(SPI_DATAWRITE);                       //0x80, Indica Dados para escrever 
   RwByte(data);                                //Envia byte 1 de Dado para o SPI
@@ -330,6 +334,7 @@ void Bus_SPI::DataWrite24(uint32_t data)
 uint8_t Bus_SPI::DataRead(void)
 {
   uint8_t temp;
+  CheckTransaction();
   SetCS(0);                                    //SS_RESET
   RwByte(SPI_DATAREAD);                        //0xc0, Leitura de dados
   temp = RwByte(0x00);                         //
@@ -352,6 +357,7 @@ uint8_t Bus_SPI::DataRead(void)
 uint16_t Bus_SPI::DataRead16(uint8_t address)
 {
   uint16_t data;
+  CheckTransaction();
   SetCS(0);                                    //SS_RESET
   spi->transfer(address);                      //
   data = spi->transfer(0x00);                  //MSB
@@ -378,6 +384,7 @@ uint16_t Bus_SPI::DataRead16(uint8_t address)
 uint8_t Bus_SPI::StatusRead(void)
 {
   uint8_t temp = 0;
+  CheckTransaction();
   SetCS(0);                                    //SS_RESET
   RwByte(SPI_STATUSREAD);                      //0x40, Read Status SPI
   temp = RwByte(REG_STSR);                     //0x00, Read STSR Register
@@ -402,6 +409,7 @@ uint8_t Bus_SPI::StatusRead(void)
  */
 void Bus_SPI::RegisterWrite(uint8_t reg, uint8_t data)
 {
+  CheckTransaction();
   CmdWrite(reg);
   DataWrite(data);
 }
@@ -422,6 +430,93 @@ void Bus_SPI::RegisterWrite(uint8_t reg, uint8_t data)
  */
 uint8_t Bus_SPI::RegisterRead(uint8_t reg)
 {
+  CheckTransaction();
   CmdWrite(reg);
   return DataRead();
+}
+
+
+/**
+ * @brief Verifica e garante que exista uma transação SPI ativa.
+ *
+ * Esta função é utilizada em chamadas que não fazem parte de um bloco de escrita
+ * volumosa (StartWrite/EndWrite), assegurando que ao menos uma transação esteja ativa.
+ *
+ * Caso nenhuma transação esteja em andamento, inicia uma nova automaticamente.
+ *
+ * É especialmente útil em comandos isolados, como leituras de status ou registros
+ * de controle, prevenindo falhas por ausência de beginTransaction().
+ *
+ * @return void
+ *
+ * @note
+ * - Se `_spi_startwrite == false` e `_spi_transaction == false`, inicia uma nova transação SPI.
+ * - Não altera `_spi_startwrite`, pois seu objetivo é apenas manter o barramento ativo.
+ */
+void Bus_SPI::CheckTransaction()
+{
+  if (!_spi_startwrite && !_spi_transaction) {
+    spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
+	_spi_transaction = true;
+  }
+}
+
+
+/**
+ * @brief Inicia um bloco de escrita SPI e garante uma transação ativa.
+ *
+ * Esta função inicia uma transação SPI se ainda não houver uma ativa,
+ * configurando os parâmetros do barramento (clock, ordem de bits e modo SPI)
+ * e marcando o início de um bloco de escrita de dados volumosos.
+ *
+ * É ideal para ser utilizada em operações de alto tráfego, como transferências
+ * gráficas no LVGL, evitando o overhead de múltiplos beginTransaction().
+ *
+ * @return true se uma nova transação foi iniciada com sucesso, false se já havia uma ativa
+ *
+ * @note
+ * - Define os flags internos `_spi_transaction = true` e `_spi_startwrite = true`.
+ * - Caso o SPI ainda não tenha sido inicializado (`_spi_init == false`), a função não executa.
+ *
+ * @code
+ * bus->StartWrite();
+ * bus->DrawPixels(...);
+ * bus->EndWrite();
+ * @endcode
+ */
+bool Bus_SPI::StartWrite(void)
+{
+  if (!_spi_init) return false;
+  if (!_spi_transaction) {
+    spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
+    _spi_transaction = true;
+	_spi_startwrite = true;
+    return true;
+  }
+  return false;
+}
+
+
+/**
+ * @brief Finaliza um bloco de escrita SPI e encerra a transação ativa.
+ *
+ * Esta função encerra uma transação SPI iniciada por StartWrite(),
+ * liberando o barramento e retornando o SPI ao estado ocioso.
+ *
+ * Deve ser utilizada após o término de transferências intensas,
+ * como o envio de buffers de imagem para o display.
+ *
+ * @return void
+ *
+ * @note
+ * - Finaliza a transação somente se `_spi_startwrite == true` e `_spi_transaction == true`.
+ * - Define `_spi_transaction = false` e `_spi_startwrite = false` ao final.
+ */
+void Bus_SPI::EndWrite(void)
+{
+  if (!_spi_init) return;
+  if (!_spi_startwrite) return;
+  if (_spi_transaction) spi->endTransaction();
+  _spi_transaction = false;
+  _spi_startwrite = false;
 }

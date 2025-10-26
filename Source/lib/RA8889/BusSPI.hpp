@@ -69,11 +69,13 @@ class Bus_SPI : public IBus {
     uint8_t _spi_datamode;                       //SPI_MODE0[1,2,3] de comunicacao
     uint8_t _spi_dataorder;                      //ordem de dados spi MSBFIRST ou LSBFIRST
     bool _spi_transaction;                       //A trasação rpincipal do barramento spi está ativo
+    bool _spi_startwrite = false;                //inicia o bloco de escrita (evita overhead de bulk de dados)
 
     void createSPI(SPIHostType hostType);
     void SetCS(uint8_t level_cs);
     uint8_t RwByte(uint8_t value);
-	
+    void CheckTransaction(void);
+
     void Init(void) override;
     void CmdWrite(uint8_t cmd) override;
     void DataWrite(uint8_t data) override;
@@ -85,6 +87,8 @@ class Bus_SPI : public IBus {
     uint8_t StatusRead(void) override;
     void RegisterWrite(uint8_t reg, uint8_t data) override;
     uint8_t RegisterRead(uint8_t reg) override;
+    bool StartWrite(void);
+    void EndWrite(void);
 };
 
 #endif    // fim de include guard BUSSPI_HPP
