@@ -397,6 +397,7 @@ void my_disp_flush(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map) {
 - 🔴 Comunicação Paralela entre MCU/MPU e Display
 - 🟡 Configuração I2C entre MCU/MPU e Display
 - 🟡 Driver adaptado para RA8876 e RA8877 (Semelhante ao RA8889)
+- 🟢 Controle de Transação SPI para transferência de volume de dados
 
 ## Drive FT5x16
 - 🟢 Melhoria do Driver FocalTech FT5xx6
