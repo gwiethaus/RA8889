@@ -20078,10 +20078,6 @@ void RA8889::PushBlock(uint16_t x,
 }
 
 
-//Para uso com area Window definida onde a primeira posicao 0,0
-//Esta funcao muito usada com o LVGL para transferir volume de dados para dentro de uma janela
-//onde flush_fb ira calcular as dimensoes e passado para esta funcao transferir os pixels para o display.
-//use com auto_increment = true, raramente se usa com false
 /**
  * @brief Envia um bloco linear de pixels para o RA8889 dentro da janela ativa.
  *
@@ -20092,34 +20088,48 @@ void RA8889::PushBlock(uint16_t x,
  * ou esticamento da imagem, porque:
  * 1. Antes da escrita, deve-se definir a janela ativa com setWindow(x, y, width, height).
  * 2. O RA8889 incrementa automaticamente o cursor interno à medida que recebe pixels.
+ *    "RAiO RA8889 Character/Graphic TFT LCD Controller Datasheet, June 5, 2025, RAiO Technology Inc., page 29"
  * 3. Ao final de cada linha da janela, o cursor automaticamente passa para o início da próxima linha.
  *
  * Dessa forma, o buffer linear é interpretado como um bloco 2D dentro da janela, preservando
  * a forma correta da imagem.
+ * 
+ * Definir uma Área de Janela de Escrita:
+ * Utilizar a função setWindow() para definir a área da Window de escrita na memoria.
+ * Esta funcao muito usada com o LVGL para transferir volume de dados para dentro de uma janela
+ * onde flush_fb ira calcular as dimensoes e passado para esta funcao transferir os pixels para o display.
+ * 
+ * auto_increment = true
+ * O posicionamento do pixel inicial na tela é realizado por fora desta função
+ * Mantêm a posicao atual do cursor itenrno do RA889 apra a proxima escrita da memória
+ * 
+ * auto_increment = false
+ * O posicionamento do pixel começa em 0,0 na atual janela ativa e o buffer é transferido para a janela.
+ * Cada execução desta função inicia sempre na posição 0,0 da janela.
+ * 
  * @endverbatim
  *
  * @param color_buffer Ponteiro para o buffer de cores (8/16/24 bits, dependendo do COLOR_DEPTH).
  * @param num_pixels Número total de pixels a serem enviados.
- * @param auto_increment true = avança automaticamente o cursor interno do RA8889.
+ * @param auto_increment autoincremento do ponteiro de dados itnerno true: O posicionamento do pixel na tela é realizado por fora, false, o posicionamento na jenala é realizado em 0,0 e transferido sequencialmente o buffer de dados
+ *                       true = avança automaticamente o cursor interno do RA8889.
+ * @see setWindow()
+ * @see setPixelPos()
  */
 void RA8889::WritePixels(const void* color_buffer,
                                uint32_t num_pixels,
-                               bool auto_increment  // true = avança cursor, false = mantém posição (cursosr interno do display)
+                               bool auto_increment   // true = avança cursor, false = mantém posição (cursosr interno do display)
                               ) 
 {
-    GotoPixel_XY(0, 0);           // posição inicial
+  if(!auto_increment) GotoPixel_XY(0, 0);      // Posição inicial
 
-    _bus->CmdWrite(REG_MRWDP);      // Memory Data Read/Write Port
+  _bus->CmdWrite(REG_MRWDP);                   // Memory Data Read/Write Port
 
 #if defined(COLOR_DEPTH_8)
     const uint8_t* p = static_cast<const uint8_t*>(color_buffer);
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
         _bus->DataWrite8(p[i]);
-
-        // mantém o cursor no mesmo pixel
-        // precisa resetar para 0,0 ou posição inicial
-        if(!auto_increment) GotoPixel_XY(0, 0);
     }
 
 #elif defined(COLOR_DEPTH_16)
@@ -20127,7 +20137,6 @@ void RA8889::WritePixels(const void* color_buffer,
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
         _bus->DataWrite16(p[i]);
-        if(!auto_increment) GotoPixel_XY(0, 0);
     }
 
 #elif defined(COLOR_DEPTH_24)
@@ -20135,13 +20144,13 @@ void RA8889::WritePixels(const void* color_buffer,
     for(uint32_t i = 0; i < num_pixels; i++) {
         Wait_WriteFIFO_NotFull();
         _bus->DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
-        if(!auto_increment) GotoPixel_XY(0, 0);
         p += 3;
     }
 #else
     #error "COLOR_DEPTH não definido corretamente"
 #endif
 }
+
 
 
 /**
