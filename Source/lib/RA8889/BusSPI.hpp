@@ -87,7 +87,7 @@ class Bus_SPI : public IBus {
     uint8_t StatusRead(void) override;
     void RegisterWrite(uint8_t reg, uint8_t data) override;
     uint8_t RegisterRead(uint8_t reg) override;
-    bool StartWrite(void);
+    uint8_t StartWrite(void);
     void EndWrite(void);
 };
 

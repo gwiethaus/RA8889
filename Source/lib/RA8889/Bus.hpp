@@ -22,7 +22,6 @@ class IBus {
         uint8_t pin_miso   = 0;
         uint8_t pin_sclk   = 0;
         uint8_t pin_cs     = 0;        // Chip Select (SPI padrão)
-        bool ctrl_trans    = false;    // Controle de transação (false: unica transação durante tod tempo de vida do software)
     };
 
     struct I2CBusConfig_t : public IBusConfig_t {
@@ -32,10 +31,15 @@ class IBus {
     };
 
     struct ParallelBusConfig_t : public IBusConfig_t {
-        uint8_t data_pins[16]{};
-        uint8_t pin_wr = 0;
-        uint8_t pin_rd = 0;
-        uint8_t pin_cs = 0;
+        uint8_t parallel_type = 0;            //type 8/16 parallel bus
+		uint8_t data_pins[16]{};              //data bus 8 pin or 16 pin
+        uint8_t pin_wr       = 0;             //write signal
+		uint8_t pin_rd       = 0;             //read signal
+        uint8_t pin_rs       = 0;             //0=command, 1=data signal
+        uint8_t pin_cs       = 0;             //bus chip select
+		uint8_t pin_en       = 0;             //enable (/RD or/WR)
+		uint8_t pin_wait     = 0;             //sait signal
+        uint8_t pin_int     = 0xff;           //se nao utilziar nao requer preenchimento
     };
     
     virtual void Config(const IBusConfig_t* cfg) = 0; // público: usuário pode configurar
@@ -57,7 +61,7 @@ class IBus {
     virtual uint8_t StatusRead(void) = 0;
     virtual void RegisterWrite(uint8_t reg, uint8_t data) = 0;
     virtual uint8_t RegisterRead(uint8_t reg) = 0;  
-    virtual bool StartWrite(void) = 0;
+    virtual uint8_t StartWrite(void) = 0;
     virtual void EndWrite(void) = 0;
     virtual ~IBus() {}
   protected:

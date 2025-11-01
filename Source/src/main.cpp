@@ -112,7 +112,7 @@ void setup() {
   touch.setDebounceTouch(false);
   touch.setTouchArea(gfx.Width(), gfx.Height(), false);
   touch.setDisplayArea(gfx.Width(), gfx.Height());
-
+  touch.setTransitionTime(20);
   b = touch.Begin(FT_I2C_ADDRESS);
   if (!b) {
     DEBUG_PRINTD("Erro ao inicializar o touch! ", b, true, 0, true);

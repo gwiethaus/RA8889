@@ -404,12 +404,12 @@ uint8_t Bus_SPI::StatusRead(void)
  * @param None
  *
  * @note reg: registrador do display, data: dados para escrever no registrador
- *
+  *       Não é necessário o uso interno da função CheckTransaction(), pois  CmdWrite() e DataRead() já possuem o  CheckTransaction()
+  * 
  * @return None
  */
 void Bus_SPI::RegisterWrite(uint8_t reg, uint8_t data)
 {
-  CheckTransaction();
   CmdWrite(reg);
   DataWrite(data);
 }
@@ -425,12 +425,12 @@ void Bus_SPI::RegisterWrite(uint8_t reg, uint8_t data)
  * @param None
  *
  * @note reg: registrador do display
+ *       Não é necessário o uso interno da função CheckTransaction(), pois  CmdWrite() e DataRead() já possuem o  CheckTransaction()
  *
  * @return dados do registrador
  */
 uint8_t Bus_SPI::RegisterRead(uint8_t reg)
 {
-  CheckTransaction();
   CmdWrite(reg);
   return DataRead();
 }
@@ -457,7 +457,7 @@ void Bus_SPI::CheckTransaction()
 {
   if (!_spi_startwrite && !_spi_transaction) {
     spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
-	_spi_transaction = true;
+  	_spi_transaction = true;
   }
 }
 
@@ -472,8 +472,9 @@ void Bus_SPI::CheckTransaction()
  * É ideal para ser utilizada em operações de alto tráfego, como transferências
  * gráficas no LVGL, evitando o overhead de múltiplos beginTransaction().
  *
- * @return true se uma nova transação foi iniciada com sucesso, false se já havia uma ativa
- *
+ * @return 0 SPI nao foi iniciado
+ *         1 Já existe uma transação ativa
+ *         2 Transação inciciada
  * @note
  * - Define os flags internos `_spi_transaction = true` e `_spi_startwrite = true`.
  * - Caso o SPI ainda não tenha sido inicializado (`_spi_init == false`), a função não executa.
@@ -484,16 +485,15 @@ void Bus_SPI::CheckTransaction()
  * bus->EndWrite();
  * @endcode
  */
-bool Bus_SPI::StartWrite(void)
+uint8_t Bus_SPI::StartWrite(void)
 {
-  if (!_spi_init) return false;
+  if (!_spi_init) return 0;
   if (!_spi_transaction) {
     spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
     _spi_transaction = true;
-	_spi_startwrite = true;
-    return true;
-  }
-  return false;
+	  _spi_startwrite = true;
+    return 2;
+  } else return 3;
 }
 
 

@@ -980,6 +980,7 @@ RA8889::RA8889(uint8_t cs, uint8_t rst)
   _displaywidth  = LCD_HW;
   _displayheight = LCD_VH;
   _bpp           = COLOR_DEPTH;
+  _current_page  = 0;
   _mcu           = MCU;
   _colorfmt      = static_cast<uint8_t>(ePDATAColorFmt::RGB); //iniciar com o formato de cor RGB
   _usedma        = false;
@@ -1280,11 +1281,11 @@ bool RA8889::Initialize(void)
 #endif
 
 //Image buffer configure
-
-  MainImage_StartAddress( LayerStartAddr(0) );
+  
+  MainImage_StartAddress( LayerStartAddr(_current_page) );
   MainImage_Width(_displaywidth); 
   MainWindow_StartXY(0,0);
-  CanvasImage_StartAddr( LayerStartAddr(0) );
+  CanvasImage_StartAddr( LayerStartAddr(_current_page) );
   CanvasImage_Width(_displaywidth);
   ActiveWindow_XY(0,0);
   ActiveWindow_WidhtHeight(_displaywidth, _displayheight);  
@@ -6893,6 +6894,26 @@ void RA8889::VSYNC_PulseWidth(uint8_t vspw)
 
 
 /**
+ * @brief Retorna o numero de Paginas totais que podems er endereçados
+ *
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note  None
+ *
+ * @return Page layers
+ */
+uint16_t RA8889::Layers(void)
+{
+  if (_bpp == 0) return 1;
+  return MEMORY_SIZE / (_displaywidth * _displayheight * (_bpp / 8));
+}
+
+
+/**
  * @brief Page Layer Start Address
  *
  * @verbatim
@@ -6921,29 +6942,9 @@ void RA8889::VSYNC_PulseWidth(uint8_t vspw)
  */
 uint32_t RA8889::LayerStartAddr(uint8_t layer)
 {
-  if (layer > Layers()-1) return 0;                             //dr drlrvionou mais que permitido
+  if (layer > Layers()-1) return 0;                             //camada/pagina não pode ser mais que permitido
   return _displaywidth * _displayheight * (_bpp / 8) * layer;   //ex. 800x480 * (16 (16bpp)/8) * 1 = 768000 = 0xbb800
-  DEBUG_PRINT("LayerStartAddr, _bpp: ",_bpp,true,true);    //Debug
-}
-
-
-/**
- * @brief Retorna o numero de Paginas totais que podems er endereçados
- *
- * @verbatim
- * None
- * @endverbatim
- *
- * @param None
- *
- * @note  None
- *
- * @return Page layers
- */
-uint16_t RA8889::Layers(void)
-{
-  if (_bpp == 0) return 1;
-  return MEMORY_SIZE / (_displaywidth * _displayheight * (_bpp / 8));
+  DEBUG_PRINT("LayerStartAddr, _bpp: ",_bpp,true,true);         //Debug
 }
 
 
@@ -18451,7 +18452,23 @@ uint8_t RA8889::KeyScan_ReadKeyStrobeData(uint8_t index)
 //================================================================================
 
 
-//Escrita de Memoria de Display com MPU 8 bits / color depth 8bpp
+/**
+ * @brief Escreve um bloco de pixels em memória do display (MPU 8 bits / color depth 8bpp).
+ *
+ * Cada pixel é representado por 1 byte no array de dados.
+ * A função envia os dados pelo barramento paralelo de 8 bits.
+ *
+ * @param x Coordenada X inicial no display.
+ * @param y Coordenada Y inicial no display.
+ * @param w Largura do bloco a ser escrito.
+ * @param h Altura do bloco a ser escrito.
+ * @param data Ponteiro para o array de pixels (8 bits por pixel).
+ *
+ * @note A função automaticamente muda para o modo gráfico, se necessário.
+ * @note Antes da escrita, a posição inicial é definida com GotoPixel_XY().
+ * @note Cada byte é enviado usando `_bus->DataWrite()`, aguardando
+ *       a FIFO ficar disponível.
+ */
 void RA8889::MPU8_8bpp_MemoryWrite(
                                          uint16_t x,                    // x of coordinate
                                          uint16_t y,                    // y of coordinate
@@ -18463,14 +18480,12 @@ void RA8889::MPU8_8bpp_MemoryWrite(
   uint16_t i;                                  //posicao da linha
   uint16_t j;                                  //posicao da coluna
   if (!IsGraphicMode()) GraphicMode();         //Se no modo texto, muda para o modo grafico
-  //ActiveWindow_XY(x, y);
-  //ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);                          //Posicao inicial de escrita da memoria
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {                    //Varredura da linha
     for (j = 0; j < w; j++) {                  //Varredura da coluna
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apontado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apontado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
   }
@@ -18478,7 +18493,23 @@ void RA8889::MPU8_8bpp_MemoryWrite(
 }
 
 
-//Escrita de Memoria de Display com MPU 8 bits / color depth 16bpp
+/**
+ * @brief Escreve um bloco de pixels em memória do display (MPU 8 bits / color depth 16bpp).
+ *
+ * Cada pixel é representado por 2 bytes consecutivos no array `data`.
+ * Os bytes são enviados sequencialmente pelo barramento paralelo de 8 bits.
+ *
+ * @param x Coordenada X inicial no display.
+ * @param y Coordenada Y inicial no display.
+ * @param w Largura do bloco a ser escrito.
+ * @param h Altura do bloco a ser escrito.
+ * @param data Ponteiro para o array de pixels (2 bytes por pixel, uint8_t*).
+ *
+ * @note O modo gráfico é selecionado automaticamente, se necessário.
+ * @note A FIFO do barramento é verificada antes de cada escrita.
+ * @note O registrador MRWDP (Memory Data Read/Write Port) é utilizado
+ *       para indicar escrita de memória.
+ */
 void RA8889::MPU8_16bpp_MemoryWrite(
                                           uint16_t x,                    // x of coordinate
                                           uint16_t y,                    // y of coordinate
@@ -18490,17 +18521,15 @@ void RA8889::MPU8_16bpp_MemoryWrite(
   uint16_t i;                                  //posicao da linha
   uint16_t j;                                  //posicao da coluna
   if (!IsGraphicMode()) GraphicMode();         //Se no modo texto, muda para o modo grafico
-  //ActiveWindow_XY(x, y);
-  //ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);                          //Posicao inicial de escrita da memoria
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {
     for (j = 0; j < w; j++) {
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
   }
@@ -18508,7 +18537,22 @@ void RA8889::MPU8_16bpp_MemoryWrite(
 }
 
 
-//Escrita de Memoria de Display com MPU 8 bits / color depth 24bpp
+/**
+ * @brief Escreve um bloco de pixels em memória do display (MPU 8 bits / color depth 24bpp).
+ *
+ * Cada pixel é representado por 3 bytes consecutivos no array `data`.
+ * Os bytes são enviados sequencialmente pelo barramento paralelo de 8 bits.
+ *
+ * @param x Coordenada X inicial no display.
+ * @param y Coordenada Y inicial no display.
+ * @param w Largura do bloco a ser escrito.
+ * @param h Altura do bloco a ser escrito.
+ * @param data Ponteiro para o array de pixels (3 bytes por pixel).
+ *
+ * @note Automaticamente muda para modo gráfico se necessário.
+ * @note Cada byte é enviado verificando a FIFO do barramento.
+ * @note Utiliza o registrador MRWDP para escrita de memória.
+ */
 void RA8889::MPU8_24bpp_MemoryWrite(
                                           uint16_t x,                    // x of coordinate
                                           uint16_t y,                    // y of coordinate
@@ -18520,28 +18564,41 @@ void RA8889::MPU8_24bpp_MemoryWrite(
   uint16_t i;                                  //posicao da linha
   uint16_t j;                                  //posicao da coluna
   if (!IsGraphicMode()) GraphicMode();         //Se no modo texto, muda para o modo grafico
-  //ActiveWindow_XY(x, y);
-  //ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);                          //Posicao inicial de escrita da memoria
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {
     for (j = 0; j < w; j++) {
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apotnado no array de dados
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
   }
   Wait_WriteFIFO_Empty();
 }
 
-//fazendo esta fucnao....
-//Escrita de Memoria de Display com MPU 16 bits / color depth 16bpp
+
+/**
+ * @brief Escreve um bloco de pixels em memória do display (MPU 16 bits / color depth 16bpp).
+ *
+ * Cada pixel é representado por 16 bits (uint16_t) e enviado diretamente
+ * pelo barramento paralelo de 16 bits.
+ *
+ * @param x Coordenada X inicial no display.
+ * @param y Coordenada Y inicial no display.
+ * @param w Largura do bloco a ser escrito.
+ * @param h Altura do bloco a ser escrito.
+ * @param data Ponteiro para o array de pixels (16 bits por pixel).
+ *
+ * @note Automaticamente seleciona o modo gráfico se o display estiver em modo texto.
+ * @note O registrador MRWDP é utilizado para escrita de memória.
+ * @note Cada pixel é enviado usando `_bus->DataWrite()` com 16 bits.
+ */
 void RA8889::MPU16_16bpp_MemoryWrite(
                                            uint16_t x,                    // x of coordinate
                                            uint16_t y,                    // y of coordinate
@@ -18553,14 +18610,12 @@ void RA8889::MPU16_16bpp_MemoryWrite(
   uint16_t i;                                  //posicao da linha
   uint16_t j;                                  //posicao da coluna
   if (!IsGraphicMode()) GraphicMode();         //Se no modo texto, muda para o modo grafico
-  //ActiveWindow_XY(x, y);
-  //ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {                    //y
     for (j = 0; j < w; j++) {                  //x
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apontado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apontado no array de dados
       data++;                                  //incrementa o potneiro para a poxima posição
     }
   }
@@ -18568,25 +18623,39 @@ void RA8889::MPU16_16bpp_MemoryWrite(
 }
 
 
-//Escrita de Memoria de Display com MPU 16 bits / color depth 24bpp modo 1
+/**
+ * @brief Escreve um bloco de pixels em memória do display (MPU 16 bits / color depth 24bpp, Modo 1).
+ *
+ * Cada pixel é representado por 24 bits, enviados como 3 valores de 16 bits
+ * consecutivos pelo barramento paralelo de 16 bits.
+ *
+ * @param x Coordenada X inicial no display.
+ * @param y Coordenada Y inicial no display.
+ * @param w Largura do bloco a ser escrito (em pixels; processa 2 pixels por loop).
+ * @param h Altura do bloco a ser escrito.
+ * @param data Ponteiro para o array de pixels (16 bits por valor parcial).
+ *
+ * @note Ativa modo gráfico automaticamente se necessário.
+ * @note Define a posição inicial de escrita com GotoPixel_XY().
+ * @note Cada valor é enviado usando `_bus->DataWrite()` verificando FIFO.
+ * @note Registra MRWDP usado para escrita de memória.
+ */
 void RA8889::MPU16_24bpp_Mode1_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data)
 {
   uint16_t i;                                  //posicao da linha
   uint16_t j;                                  //posicao da coluna
   if (!IsGraphicMode()) GraphicMode();         //Se no modo texto, muda para o modo grafico
-  ActiveWindow_XY(x, y);
-  ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {
     for (j = 0; j < w/2; j++) {
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apotnado no array de dados
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
       data++;                                  //incrementa o potneiro apra a poxima posição
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apotnado no array de dados
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
       data++;                                  //incrementa o potneiro apra a poxima posição
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
+      _bus->DataWrite(*data);                  //Trasfere o byte apotnado no array de dados
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
       data++;                                  //incrementa o potneiro apra a poxima posição
     }
@@ -18595,66 +18664,136 @@ void RA8889::MPU16_24bpp_Mode1_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , u
 }
 
 
-//Escrita de Memoria de Display com MPU 16 bits / color depth 24bpp modo 2
-void RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data)
+/**
+ * @brief Escreve um bloco de pixels em memória do display (MPU 16 bits / color depth 24bpp, Modo 2).
+ *
+ * Cada pixel é representado por 24 bits, enviados como 2 valores de 16 bits
+ * consecutivos pelo barramento paralelo de 16 bits (2 bytes por loop interno).
+ *
+ * @param x Coordenada X inicial no display.
+ * @param y Coordenada Y inicial no display.
+ * @param w Largura do bloco a ser escrito.
+ * @param h Altura do bloco a ser escrito.
+ * @param data Ponteiro para o array de pixels (16 bits por valor parcial).
+ *
+ * @note Automaticamente muda para modo gráfico se necessário.
+ * @note Cada valor é enviado usando `_bus->DataWrite()` verificando FIFO.
+ * @note Utiliza o registrador MRWDP para escrita de memória.
+ */
+void RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint16_t *data)
 {
   uint16_t i;                                  //posicao da linha
   uint16_t j;                                  //posicao da coluna
   if (!IsGraphicMode()) GraphicMode();         //Se no modo texto, muda para o modo grafico
-  ActiveWindow_XY(x, y);
-  ActiveWindow_WidhtHeight(w, h);
   GotoPixel_XY(x, y);
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
   for (i = 0; i < h; i++) {
     for (j = 0; j < w; j++) {
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
-      data++;                                  //incrementa o potneiro apra a poxima posição
+      _bus->DataWrite(*data);                  //Trasfere o byte apontado no array de dados
+      data++;                                  //incrementa o ponteiro para a proxima posição
       Wait_WriteFIFO_NotFull();                //Aguarde ate que a FIFO nao esteja mais cheia
-      _bus->DataWrite(*data);                    //Trasfere o byte apotnado no array de dados
-      data++;                                  //incrementa o potneiro apra a poxima posição
+      _bus->DataWrite(*data);                  //Trasfere o byte apontado no array de dados
+      data++;                                  //incrementa o potneiro para a proxima posição
     }
   }
   Wait_WriteFIFO_Empty();
 }
 
 
-//NAO ESTA CONCLUIDA....
-//Esta funcao é a sitense das funcoes acima, funcionando de forma automatica, de acordo coma escolha inicial da
-//inicializacao do sistema com MPU e color depth escolhido
-void RA8889::MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint8_t *data)
+/**
+ * @brief Escreve um bloco de pixels na memória do display.
+ *
+ * Esta função atua como uma camada genérica que seleciona automaticamente
+ * a implementação correta de escrita de memória dependendo da configuração
+ * de barramento (MPU 8 bits ou 16 bits) e da profundidade de cor (8bpp, 16bpp, 24bpp).
+ *
+ * No momento, esta função é destinada apenas ao barramento paralelo.
+ *
+ * @param x Coordenada X inicial no display.
+ * @param y Coordenada Y inicial no display.
+ * @param w Largura do bloco de pixels a ser escrito.
+ * @param h Altura do bloco de pixels a ser escrito.
+ * @param data Ponteiro para o array de pixels.
+ *             - Para MPU8: cada pixel é 8 bits (ou múltiplos, dependendo do color depth)
+ *             - Para MPU16: cada pixel é 16 bits (necessário reinterpret_cast)
+ *
+ * @note A função seleciona a implementação adequada via macros de compilação:
+ *       - `MCU_8bit_COLORDEPTH_8bpp` → MPU8_8bpp_MemoryWrite
+ *       - `MCU_8bit_COLORDEPTH_16bpp` → MPU8_16bpp_MemoryWrite
+ *       - `MCU_8bit_COLORDEPTH_24bpp` → MPU8_24bpp_MemoryWrite
+ *       - `MCU_16bit_COLORDEPTH_16bpp` → MPU16_16bpp_MemoryWrite
+ *       - `MCU_16bit_COLORDEPTH_24bpp_Mode1` → MPU16_24bpp_Mode1_MemoryWrite
+ *       - `MCU_16bit_COLORDEPTH_24bpp_Mode2` → MPU16_24bpp_Mode2_MemoryWrite
+ *
+ * @note Modos não implementados (ex: 16bit 8bpp) podem gerar warnings de compilação.
+ *
+ * @warning No momento, esta função **não suporta SPI/I2C**.
+ *          Para essas interfaces, seria necessário implementar outra camada
+ *          que faça a conversão do ponteiro `data` para o formato correto
+ *          e chame `_bus->DataWrite8/16()` ou equivalente.
+ *
+ * @example
+ * // Escreve um bloco 100x50 de pixels em 16bpp no barramento paralelo de 16 bits
+ * uint16_t buffer[5000];
+ * RA8889.Display.MemoryWrite(0, 0, 100, 50, reinterpret_cast<uint8_t*>(buffer));
+ */
+void RA8889::MemoryWrite(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+                         const void* data_buffer,
+                         bool auto_increment = true)
 {
 
-#ifdef MCU_8bit_COLORDEPTH_8bpp
-  MPU8_8bpp_MemoryWrite(x, y, w , h , data); 
-#endif
+  if (!IsGraphicMode()) GraphicMode();
+  if (!auto_increment) GotoPixel_XY(x, y);
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
+  
+#if defined(MCU_8bit_COLORDEPTH_8bpp)
+  const uint8_t* p = static_cast<const uint8_t*>(data_buffer);
+  for (uint16_t i = 0; i < h; i++)
+    for (uint16_t j = 0; j < w; j++)
+      { Wait_WriteFIFO_NotFull(); _bus->DataWrite(p[i*w+j]); }
 
-#ifdef MCU_8bit_COLORDEPTH_16bpp
-  MPU8_16bpp_MemoryWrite(x, y, w , h , data; 
-#endif
+#elif defined(MCU_8bit_COLORDEPTH_16bpp)
+  const uint8_t* p = static_cast<const uint8_t*>(data_buffer);
+    for (uint16_t i = 0; i < h; i++)
+      for (uint16_t j = 0; j < w; j++)
+        { Wait_WriteFIFO_NotFull(); _bus->DataWrite(*p++); Wait_WriteFIFO_NotFull(); _bus->DataWrite(*p++); }
 
-#ifdef MCU_8bit_COLORDEPTH_24bpp
-  MPU8_24bpp_MemoryWrite(x, y, w , h , data); 
-#endif
+#elif defined(MCU_8bit_COLORDEPTH_24bpp)
+  const uint8_t* p = static_cast<const uint8_t*>(data_buffer);
+  for (uint16_t i = 0; i < h; i++)
+    for (uint16_t j = 0; j < w; j++)
+      for (uint8_t k=0; k<3; k++)              //Envia 3 bytes de cor por vez
+        { Wait_WriteFIFO_NotFull(); _bus->DataWrite(*p++); }
 
-#ifdef MCU_16bit_COLORDEPTH_8bpp_Mode2
-  //
-#endif
+#eldif defined(MCU_16bit_COLORDEPTH_8bpp_Mode2)
+  #error "Modo de cor/barramento não implementado"
 
-#ifdef MCU_16bit_COLORDEPTH_16bpp
-  MPU16_16bpp_MemoryWrite(x, y, w, h, reinterpret_cast<const uint16_t*>(data));
-#endif
+#elif defined(MCU_16bit_COLORDEPTH_16bpp)
+  const uint16_t* p = static_cast<const uint16_t*>(data_buffer);
+  for (uint16_t i = 0; i < h; i++)
+    for (uint16_t j = 0; j < w; j++)
+      { Wait_WriteFIFO_NotFull(); _bus->DataWrite(p[i*w+j]); }
 
-#ifdef MCU_16bit_COLORDEPTH_24bpp_Mode1
-  MPU16_24bpp_Mode1_MemoryWrite(x, y, w , h , reinterpret_cast<const uint16_t*>(data)); 
-#endif
+#elif defined(MCU_16bit_COLORDEPTH_24bpp_Mode1)
+  const uint16_t* p = static_cast<const uint16_t*>(data_buffer);
+  for (uint16_t i = 0; i < h; i++)
+    for (uint16_t j = 0; j < w/2; j++)
+       for (uint8_t k=0; k<3; k++)             //Envia 3 bytes de cor por vez
+         { Wait_WriteFIFO_NotFull(); _bus->DataWrite(*p++); }
 
-#ifdef MCU_16bit_COLORDEPTH_8bpp_Mode1
+#elif defined(MCU_16bit_COLORDEPTH_8bpp_Mode1)
+  #error "Modo de cor/barramento não implementado"
 
-#endif
+#elif defined(MCU_16bit_COLORDEPTH_24bpp_Mode2)
+  const uint16_t* p = static_cast<const uint16_t*>(data_buffer);
+  for (uint16_t i = 0; i < h; i++)
+    for (uint16_t j = 0; j < w; j++)
+      { Wait_WriteFIFO_NotFull(); _bus->DataWrite(*p++); Wait_WriteFIFO_NotFull(); _bus->DataWrite(*p++); }
 
-#ifdef MCU_16bit_COLORDEPTH_24bpp_Mode2
-  MPU16_24bpp_Mode2_MemoryWrite(x, y, w , h , reinterpret_cast<const uint16_t*>(data));
+#else
+  #error "Modo de barramento não implementado"
+
 #endif
 
 }
@@ -19761,7 +19900,30 @@ void RA8889::FillScreen(uint32_t color)
   uint8_t mode = IsGraphicMode();   //Veja ese esta em modo grafico
   if (!mode) GraphicMode();         //Muda para modo grafico
   DrawSquare(0, 0, _displaywidth-1, _displayheight-1, color, true);
+  _bgcolor = color;
   if (!mode) {TextMode();}          //Restaura o modo anterior
+}
+
+
+/**
+ * @brief Limpa a atual tela ativa para o ultimo padrão de cores e posiciona o cursos no inicio da tela
+ *        
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
+void RA8889::ClearScreen()
+{
+  uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
+  if (!mode) GraphicMode();                    //Muda para modo grafico
+  DrawSquare(0, 0, _displaywidth-1, _displayheight-1, _bgcolor, true);
+  TextColor(_text_fgcolor, _text_bgcolor);
+  setPosCursor(_cursor_x,_cursor_y);
+  if (!mode) {TextMode();}                     //Restaura o modo anterior
 }
 
 
@@ -19771,18 +19933,6 @@ void RA8889::setPosCursor(uint16_t x, uint16_t y)
   GotoText_XY(x, y);
   _cursor_x = x;                               //Update global cursor position y variables
   _cursor_y = y;                               //Update global cursor position y variables
-}
-
-
-//limpa a atual ativa tela para o ultimo padrão de cores e posiciona o cursos no inicio da tela
-void RA8889::ClearScreen()
-{
-  uint8_t mode = IsGraphicMode();              //Veja ese esta em modo grafico
-  if (!mode) GraphicMode();                    //Muda para modo grafico
-  DrawSquare(0, 0, _displaywidth-1, _displayheight-1, _bgcolor, true);
-  TextColor(_text_fgcolor, _text_bgcolor);
-  setPosCursor(_cursor_x,_cursor_y);
-  if (!mode) {TextMode();}                     //Restaura o modo anterior
 }
 
 
@@ -19796,7 +19946,7 @@ void RA8889::ClearScreen()
  *
  * @note None
  */
-void RA8889::SetPixelPosXY(uint16_t x, uint16_t y)
+void RA8889::setPixelPos(uint16_t x, uint16_t y)
 {
   GotoText_XY(x,y);
 }
@@ -19812,7 +19962,7 @@ void RA8889::SetPixelPosXY(uint16_t x, uint16_t y)
  *
  * @note None
  */
-void RA8889::SetPixelPos(pospixel_t pos)
+void RA8889::setPixelPos(pospixel_t pos)
 {
   GotoText_XY(pos.x, pos.y);
 }
@@ -19828,7 +19978,7 @@ void RA8889::SetPixelPos(pospixel_t pos)
  *
  * @note None
  */
-uint16_t RA8889::GetPixelPosX()
+uint16_t RA8889::getPixelPosX(void)
 {
   uint16_t pos;
   _bus->CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
@@ -19849,7 +19999,7 @@ uint16_t RA8889::GetPixelPosX()
  *
  * @note None
  */
-uint16_t RA8889::GetPixelPosY()
+uint16_t RA8889::getPixelPosY(void)
 {
   uint16_t pos;
   _bus->CmdWrite(REG_F_CURY0);                   //0x65, Text Write Y-coordinates Register 0 (F_CURY0)
@@ -19870,7 +20020,7 @@ uint16_t RA8889::GetPixelPosY()
  *
  * @note None
  */
-pospixel_t RA8889::GetPixelPosXY()
+pospixel_t RA8889::getPixelPos(void)
 {
   pospixel_t pos;
   _bus->CmdWrite(REG_F_CURX0);                   //0x63, Text Write X-coordinates Register 0 (F_CURX0)
@@ -19887,13 +20037,24 @@ pospixel_t RA8889::GetPixelPosXY()
 }
 
 
-//page: número da página para setar
-void RA8889::SetPage(uint8_t page)
+/**
+ * @brief Ativa a pagina/layer de endereçamento de pixels
+ *        
+ * @verbatim
+ * @endverbatim
+ *
+ * @param page: número da página para setar (0..n)
+ *
+ * @note None
+ */
+void RA8889::setPage(uint8_t page)
 {
+  if (_current_page == page) return;
   CanvasImage_StartAddr( LayerStartAddr(page) );
   CanvasImage_Width(_displaywidth);
   ActiveWindow_XY(0,0);
   ActiveWindow_WidhtHeight(_displaywidth, _displayheight);
+  _current_page = page;
 }
 
 
@@ -19919,17 +20080,6 @@ void RA8889::ShowPage(uint8_t page)
   CanvasImage_Width(_displaywidth);
   ActiveWindow_XY(0, 0);
   ActiveWindow_WidhtHeight(_displaywidth, _displayheight);
-}
-
-
-//limpa a tela com a cor desejada
-void RA8889::ClearCurrentPage(uint32_t color)
-{
-  ForegroundColor(color);                      //High level, Foreground color
-  Point1_XY(0, 0);
-  Point2_XY(_displaywidth-1, _displayheight-1);
-  SquareMode_Start(true);
-  //CoreTask_WaitReady();
 }
 
 
@@ -20005,13 +20155,17 @@ void RA8889::PutPixel(uint16_t x,      // x of coordinate
  *       8bpp:  RGB332
  *       16bpp: RGB565
  *       24bpp: RGB888
+ *
+ * @see GraphicMode()
+ * @see setWindow()
  */
 uint32_t RA8889::getPixel(uint16_t x, uint16_t y)
 {
   uint32_t color = 0;
+  
   GotoPixel_XY(x, y);                          //Posiciona o pixel na tela
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
-  _bus->DataRead();	                             //dummy read is required somehow
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
+  _bus->DataRead();	                           //dummy read is required somehow
 
   Wait_WriteFIFO_NotFull();                    //Espera que a FIFO não esteja cheia de algum outro processamento anterior
 
@@ -20126,31 +20280,32 @@ void RA8889::WritePixels(const void* color_buffer,
   _bus->CmdWrite(REG_MRWDP);                   // Memory Data Read/Write Port
 
 #if defined(COLOR_DEPTH_8)
-    const uint8_t* p = static_cast<const uint8_t*>(color_buffer);
-    for(uint32_t i = 0; i < num_pixels; i++) {
-        Wait_WriteFIFO_NotFull();
-        _bus->DataWrite8(p[i]);
-    }
+  const uint8_t* p = static_cast<const uint8_t*>(color_buffer);
+  for(uint32_t i = 0; i < num_pixels; i++) {
+      _bus->DataWrite8(p[i]);
+      Wait_WriteFIFO_NotFull();
+  }
 
 #elif defined(COLOR_DEPTH_16)
-    const uint16_t* p = static_cast<const uint16_t*>(color_buffer);
-    for(uint32_t i = 0; i < num_pixels; i++) {
-        Wait_WriteFIFO_NotFull();
-        _bus->DataWrite16(p[i]);
-    }
+  const uint16_t* p = static_cast<const uint16_t*>(color_buffer);
+  for(uint32_t i = 0; i < num_pixels; i++) {
+    _bus->DataWrite16(p[i]);
+    Wait_WriteFIFO_NotFull();
+  }
 
 #elif defined(COLOR_DEPTH_24)
-    const uint8_t* p = static_cast<const uint8_t*>(color_buffer); 
-    for(uint32_t i = 0; i < num_pixels; i++) {
-        Wait_WriteFIFO_NotFull();
-        _bus->DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
-        p += 3;
-    }
+  const uint8_t* p = static_cast<const uint8_t*>(color_buffer); 
+  for(uint32_t i = 0; i < num_pixels; i++) {
+    _bus->DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
+    p += 3;
+    Wait_WriteFIFO_NotFull();
+  }
+
 #else
     #error "COLOR_DEPTH não definido corretamente"
+
 #endif
 }
-
 
 
 /**
@@ -20181,6 +20336,7 @@ void RA8889::WritePixels(const void* color_buffer,
  */
 void RA8889::setWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
+  CanvasImage_StartAddr( LayerStartAddr(_current_page) );    // garante a página atual
   ActiveWindow_XY(x, y);
   ActiveWindow_WidhtHeight(width, height); 
 }

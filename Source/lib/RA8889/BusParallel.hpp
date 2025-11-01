@@ -15,13 +15,26 @@
   #include <RA8889_Reg.hpp>
 #endif
 
+enum ParallelType {
+    PARALLEL8  = 8,  //Porta paralela de 8 bits
+    PARALLEL16 = 16  //Porta paralela de 16 bits
+};
+
 class Bus_Parallel : public IBus {
   public:
     Bus_Parallel() = default;
     void Config(const IBusConfig_t* cfg)  override;
   protected:
     ParallelBusConfig_t _cfg;                         //Config local específica de Parallel
-
+    bool _parallel_init = false;                      //inicializou o Paralelo 8080/6800
+    ParallelType _parallel_type;
+	int _parallel_pindir = OUTPUT;                    //Direção INPUT/OUTPUT de configuracao dos pinos
+	
+	inline void PulseEN();
+	void SetCS(uint8_t level_cs);
+    void SetRS(uint8_t level_rs);
+	void SetDataPinsDirection(int direction);
+	
     void Init() override;
     void CmdWrite(uint8_t cmd) override;
     void DataWrite(uint8_t data) override;

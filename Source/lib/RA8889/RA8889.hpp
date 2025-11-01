@@ -362,9 +362,9 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 //Importante!
 //Precisa ser configurado de acordo a quantidade de memória do display, 
 //para se poder ter acesso as outras camadas ou páginas de memória do display
-//A configuração é em quantidade de bits ou tamanho em bits. 
-//Para o caso do RA8889 possi memória itnerna de 128Mb (megabits)
-#define MEMORY_SIZE 128 * 1024 * 1024          //Tamanho da memoria em bits (128Mb convertidos em bits)
+//Para o caso do RA8889, possi memória interna de 128Mb (megabits)
+//A configuração é em quantidade de bits ou tamanho em bits convertidos em bytes. 
+#define MEMORY_SIZE 128 * 1024 * 1024 / 8      //Tamanho da memoria em bytes (128Mbits * 1014 * 1024 bits / 8 bits/byte)
 
 //--------------------------------------------------------------------------------
 // Select SPI / I2C / Parallel
@@ -1703,14 +1703,13 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     uint16_t Color8To16bpp(uint8_t color8);
     uint16_t Color24To16bpp(uint32_t color24);
     uint32_t Color16To24bpp(uint16_t color16);
-    void SetPixelPosXY(uint16_t x, uint16_t y);
-    void SetPixelPos(pospixel_t pos);
-    uint16_t GetPixelPosX();
-    uint16_t GetPixelPosY();
-    pospixel_t GetPixelPosXY();
-    void ClearCurrentPage(uint32_t color = 0x00000000);
+    void setPixelPos(uint16_t x, uint16_t y);
+    void setPixelPos(pospixel_t pos);
+    uint16_t getPixelPosX(void);
+    uint16_t getPixelPosY(void);
+    pospixel_t getPixelPos(void);
     uint8_t ReadIDCode(void);
-    void SetPage(uint8_t page);
+    void setPage(uint8_t page);
     void ShowPage(uint8_t page);
     void ShowPicturePgm(uint32_t size, const uint8_t *datap);
     void ShowPicture(eColorDepthBPP pictureBpp, uint32_t numpixels, const uint8_t *datap);
@@ -1940,7 +1939,7 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     void MPU16_16bpp_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data);
     void MPU16_24bpp_Mode1_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data);
     void MPU16_24bpp_Mode2_MemoryWrite(uint16_t x,uint16_t y, uint16_t w , uint16_t h , const uint16_t *data);
-    void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const uint8_t *data);
+    void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const void* data_buffer, bool auto_increment = true);
 
   protected:
     uint8_t _xnreset;	                           //Chip reset pin
@@ -1959,7 +1958,8 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     uint32_t _text_fgcolor;                      //cor do texto de frente
     uint16_t _cursor_x = 0;                      //Global cursor position y variables
     uint16_t _cursor_y = 0;                      //Global cursor position y variables
-
+    uint8_t _current_page = 0;                   //Atual pagina/camada selecionada
+	
     //Parametros da fonte
     uint8_t _fnt_rom_scs = 0;                    //SCS
     uint8_t _fnt_dma_bus = 0;                    //Font DMA Bus

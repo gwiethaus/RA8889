@@ -1,0 +1,3703 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x1 (POWERON),boot:0x2b (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce3808,len:0x4bc
+load:0x403c9700,len:0xbd8
+load:0x403cc700,len:0x2a0c
+entry 0x403c98d0
+Disable SD and RTP pin
+Config()----------------------------------------
+_cfg.freq_write 20000000
+_cfg.pin_cs     10
+_cfg.pin_miso   13
+_cfg.pin_mosi   11
+_cfg.pin_sclk   12
+_cfg.spi_host   0
+_cfg.spi_type   4
+Bus SPI configurado
+Status Backlight0
+Backlight ON
+HardwareReset()...
+Entrou em Bus_SPI::Init
+Selecionou Objeto FSPI criado (valor): 0
+Entrou em HAS_SPI_TRANSCATION
+Valor do spi clock max: 20000000
+Valor do spi data order: 1
+Valor do spi data mode: 0
+-----------------------------
+Valor do Freq. write: 20000000
+Valor do SCLK:        12
+Valor do MISO:        13
+Valor do MOSI:        11
+Valor do CS:          10
+_bus->Init() Sucesso
+RA8889 connect pass!
+_bus->StatusRead()84
+PLL_InitilizeWaitReady() Sucesso
+_bus->StatusRead() Sucesso
+PLL Initialized
+RA8889 initial sucess!
+Begin Sucessfull: 1
+Start Display ON
+Habilitou interrupções de hardware
+Start Touch Display
+
+----------------------------------------------------
+Parameter
+Started Display       
+Display Width:        800
+Display Height:       480
+Color Deth (bpp):     16
+Layer Start Address:  0
+Modo Grafico:         1
+MISO :                13
+MOSI :                11
+SCK :                 12
+SS :                  10
+HSPI :                1
+FSPI :                0
+----------------------------------------------------
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 277
+>>> Pos y 218
+-------------------------------
+Loop -> ID: 0 X: 277 Y: 218 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 274
+>>> Pos y 216
+-------------------------------
+Loop -> ID: 0 X: 274 Y: 216 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 274
+>>> Pos y 215
+-------------------------------
+Loop -> ID: 0 X: 274 Y: 215 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 274
+>>> Pos y 215
+-------------------------------
+Loop -> ID: 0 X: 274 Y: 215 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 323
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 170 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 170 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 170 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 324
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 324 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 325
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 325 Y: 170 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 325
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 325 Y: 170 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 331
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 331 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 334
+>>> Pos y 177
+-------------------------------
+Loop -> ID: 0 X: 334 Y: 177 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 335
+>>> Pos y 178
+-------------------------------
+Loop -> ID: 0 X: 335 Y: 178 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 337
+>>> Pos y 180
+-------------------------------
+Loop -> ID: 0 X: 337 Y: 180 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 339
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 339 Y: 181 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 341
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 341 Y: 181 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 343
+>>> Pos y 182
+-------------------------------
+Loop -> ID: 0 X: 343 Y: 182 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 346
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 346 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 348
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 348 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 350
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 350 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 352
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 352 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 352
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 352 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 354
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 354 Y: 181 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 355
+>>> Pos y 179
+-------------------------------
+Loop -> ID: 0 X: 355 Y: 179 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 356
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 356 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 356
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 356 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 356
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 356 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 355
+>>> Pos y 163
+-------------------------------
+Loop -> ID: 0 X: 355 Y: 163 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 353
+>>> Pos y 158
+-------------------------------
+Loop -> ID: 0 X: 353 Y: 158 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 349
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 349 Y: 155 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 347
+>>> Pos y 153
+-------------------------------
+Loop -> ID: 0 X: 347 Y: 153 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 343
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 343 Y: 150 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 338
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 338 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 336
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 336 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 335
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 335 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 334
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 334 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 332
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 332 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 330
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 330 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 324
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 324 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 321
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 321 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 321
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 321 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 320
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 144 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 329
+>>> Pos y 142
+-------------------------------
+Loop -> ID: 0 X: 329 Y: 142 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 329
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 329 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 329
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 329 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 329
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 329 Y: 143 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 324
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 324 Y: 144 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 323
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 145 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 316
+>>> Pos y 141
+-------------------------------
+Loop -> ID: 0 X: 316 Y: 141 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 314
+>>> Pos y 140
+-------------------------------
+Loop -> ID: 0 X: 314 Y: 140 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 314
+>>> Pos y 140
+-------------------------------
+Loop -> ID: 0 X: 314 Y: 140 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 324
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 324 Y: 147 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 323
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 146 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 331
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 331 Y: 148 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 331
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 331 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 332
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 332 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 332
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 332 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 332
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 332 Y: 148 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 323
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 148 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 323
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 148 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 256
+>>> Pos y 178
+-------------------------------
+Loop -> ID: 0 X: 256 Y: 178 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 254
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 254 Y: 181 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 254
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 254 Y: 181 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 254
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 254 Y: 181 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 259
+>>> Pos y 189
+-------------------------------
+Loop -> ID: 0 X: 259 Y: 189 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 258
+>>> Pos y 191
+-------------------------------
+Loop -> ID: 0 X: 258 Y: 191 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 258
+>>> Pos y 191
+-------------------------------
+Loop -> ID: 0 X: 258 Y: 191 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 254
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 254 Y: 188 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 254
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 254 Y: 188 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 254
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 254 Y: 188 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 254
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 254 Y: 188 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 252
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 252 Y: 184 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 252
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 252 Y: 184 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 252
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 252 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 252
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 252 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 252
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 252 Y: 184 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 252
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 252 Y: 184 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 251
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 251 Y: 184 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 251
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 251 Y: 184 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 251
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 251 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 251
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 251 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 251
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 251 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 251
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 251 Y: 183 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 267
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 267 Y: 186 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 267
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 267 Y: 186 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 267
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 267 Y: 186 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 286
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 286 Y: 155 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 286
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 286 Y: 155 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 308
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 308 Y: 173 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 304
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 304 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 304
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 304 Y: 173 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 294
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 294 Y: 143 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 294
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 294 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 294
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 294 Y: 143 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 300
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 143 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 300
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 143 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 318
+>>> Pos y 139
+-------------------------------
+Loop -> ID: 0 X: 318 Y: 139 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 318
+>>> Pos y 139
+-------------------------------
+Loop -> ID: 0 X: 318 Y: 139 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 313
+>>> Pos y 165
+-------------------------------
+Loop -> ID: 0 X: 313 Y: 165 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 313
+>>> Pos y 165
+-------------------------------
+Loop -> ID: 0 X: 313 Y: 165 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 320
+>>> Pos y 164
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 164 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 320
+>>> Pos y 164
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 164 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 336
+>>> Pos y 166
+-------------------------------
+Loop -> ID: 0 X: 336 Y: 166 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 337
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 337 Y: 172 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 337
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 337 Y: 172 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 333
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 333 Y: 171 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 333
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 333 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 333
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 333 Y: 171 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 319
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 171 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 319
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 171 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 326
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 150 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 150 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 326
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 150 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 334
+>>> Pos y 182
+-------------------------------
+Loop -> ID: 0 X: 334 Y: 182 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 329
+>>> Pos y 182
+-------------------------------
+Loop -> ID: 0 X: 329 Y: 182 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 329
+>>> Pos y 182
+-------------------------------
+Loop -> ID: 0 X: 329 Y: 182 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 325
+>>> Pos y 180
+-------------------------------
+Loop -> ID: 0 X: 325 Y: 180 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 179
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 179 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 319
+>>> Pos y 179
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 179 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 317
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 317 Y: 155 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 317
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 317 Y: 155 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 317
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 317 Y: 155 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 309
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 309 Y: 170 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 307
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 307 Y: 170 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 307
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 307 Y: 170 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 318
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 318 Y: 145 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 143
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 143 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 144
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 144 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 145
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 145 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 146 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 147
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 147 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 148
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 148 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 149
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 149 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 149
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 149 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 149
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 149 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 150 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 321
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 321 Y: 150 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 321
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 321 Y: 150 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 321
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 321 Y: 150 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 321
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 321 Y: 150 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 151
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 151 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 151
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 151 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 152
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 152 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 152
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 152 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 153
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 153 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 324
+>>> Pos y 153
+-------------------------------
+Loop -> ID: 0 X: 324 Y: 153 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 324
+>>> Pos y 154
+-------------------------------
+Loop -> ID: 0 X: 324 Y: 154 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 325
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 325 Y: 155 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 325
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 325 Y: 155 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 325
+>>> Pos y 156
+-------------------------------
+Loop -> ID: 0 X: 325 Y: 156 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 156
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 156 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 156
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 156 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 156
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 156 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 157
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 157 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 158
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 158 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 158
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 158 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 159
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 159 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 327
+>>> Pos y 161
+-------------------------------
+Loop -> ID: 0 X: 327 Y: 161 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 327
+>>> Pos y 163
+-------------------------------
+Loop -> ID: 0 X: 327 Y: 163 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 327
+>>> Pos y 164
+-------------------------------
+Loop -> ID: 0 X: 327 Y: 164 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 327
+>>> Pos y 165
+-------------------------------
+Loop -> ID: 0 X: 327 Y: 165 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 327
+>>> Pos y 166
+-------------------------------
+Loop -> ID: 0 X: 327 Y: 166 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 168
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 168 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 169
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 169 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 170 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 170 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 170
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 170 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 171 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 172 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 172 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 172 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 172 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 172 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 172 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 172
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 172 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 176
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 176 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 176
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 176 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 177
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 177 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 178
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 178 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 178
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 178 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 178
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 178 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 180
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 180 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 180
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 180 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 181 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 181 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 181
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 181 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 182
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 182 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 183 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 184 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 184 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 185
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 185 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 185
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 185 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 185
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 185 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 186 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 186 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 186 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 186 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 187
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 187 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 188 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 188 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 188 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 189
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 189 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 190
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 190 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 190
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 190 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 191
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 191 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 191
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 191 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 191
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 191 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 191
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 191 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 192
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 192 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 192
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 192 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 193
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 193 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 328
+>>> Pos y 193
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 193 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 327
+>>> Pos y 193
+-------------------------------
+Loop -> ID: 0 X: 327 Y: 193 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 327
+>>> Pos y 194
+-------------------------------
+Loop -> ID: 0 X: 327 Y: 194 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 327
+>>> Pos y 194
+-------------------------------
+Loop -> ID: 0 X: 327 Y: 194 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 195
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 195 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 195
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 195 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 196
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 196 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 326
+>>> Pos y 196
+-------------------------------
+Loop -> ID: 0 X: 326 Y: 196 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 325
+>>> Pos y 196
+-------------------------------
+Loop -> ID: 0 X: 325 Y: 196 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 325
+>>> Pos y 197
+-------------------------------
+Loop -> ID: 0 X: 325 Y: 197 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 324
+>>> Pos y 197
+-------------------------------
+Loop -> ID: 0 X: 324 Y: 197 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 198
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 198 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 198
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 198 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 198
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 198 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 323
+>>> Pos y 198
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 198 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 199
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 199 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 199
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 199 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 322
+>>> Pos y 200
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 200 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 200
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 200 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 320
+>>> Pos y 201
+-------------------------------
+Loop -> ID: 0 X: 320 Y: 201 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 201
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 201 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 319
+>>> Pos y 201
+-------------------------------
+Loop -> ID: 0 X: 319 Y: 201 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 318
+>>> Pos y 201
+-------------------------------
+Loop -> ID: 0 X: 318 Y: 201 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 317
+>>> Pos y 202
+-------------------------------
+Loop -> ID: 0 X: 317 Y: 202 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 317
+>>> Pos y 203
+-------------------------------
+Loop -> ID: 0 X: 317 Y: 203 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 316
+>>> Pos y 203
+-------------------------------
+Loop -> ID: 0 X: 316 Y: 203 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 315
+>>> Pos y 203
+-------------------------------
+Loop -> ID: 0 X: 315 Y: 203 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 314
+>>> Pos y 205
+-------------------------------
+Loop -> ID: 0 X: 314 Y: 205 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 313
+>>> Pos y 205
+-------------------------------
+Loop -> ID: 0 X: 313 Y: 205 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 311
+>>> Pos y 205
+-------------------------------
+Loop -> ID: 0 X: 311 Y: 205 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 311
+>>> Pos y 205
+-------------------------------
+Loop -> ID: 0 X: 311 Y: 205 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 310
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 310 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 308
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 308 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 307
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 307 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 306
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 306 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 305
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 305 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 304
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 304 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 304
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 304 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 304
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 304 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 303
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 303 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 303
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 303 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 303
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 303 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 303
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 303 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 303
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 303 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 302
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 302 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 302
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 302 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 302
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 302 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 302
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 302 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 206
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 206 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 301
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 300
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 299
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 299 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 299
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 299 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 299
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 299 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 299
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 299 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 299
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 299 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 298
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 298 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 298
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 298 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 298
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 298 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 298
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 298 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 298
+>>> Pos y 207
+-------------------------------
+Loop -> ID: 0 X: 298 Y: 207 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 298
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 298 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 298
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 298 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 298
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 298 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 297
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 297 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 297
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 297 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 297
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 297 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 297
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 297 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 297
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 297 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 296
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 296 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 296
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 296 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 295
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 295 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 295
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 295 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 295
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 295 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 294
+>>> Pos y 208
+-------------------------------
+Loop -> ID: 0 X: 294 Y: 208 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 294
+>>> Pos y 209
+-------------------------------
+Loop -> ID: 0 X: 294 Y: 209 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 293
+>>> Pos y 209
+-------------------------------
+Loop -> ID: 0 X: 293 Y: 209 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 293
+>>> Pos y 209
+-------------------------------
+Loop -> ID: 0 X: 293 Y: 209 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 292
+>>> Pos y 209
+-------------------------------
+Loop -> ID: 0 X: 292 Y: 209 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 292
+>>> Pos y 209
+-------------------------------
+Loop -> ID: 0 X: 292 Y: 209 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 291
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 291 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 291
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 291 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 290
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 290 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 289
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 289 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 289
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 289 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 288
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 288 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 288
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 288 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 288
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 288 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 287
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 287 Y: 210 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 286
+>>> Pos y 211
+-------------------------------
+Loop -> ID: 0 X: 286 Y: 211 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 286
+>>> Pos y 211
+-------------------------------
+Loop -> ID: 0 X: 286 Y: 211 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 286
+>>> Pos y 211
+-------------------------------
+Loop -> ID: 0 X: 286 Y: 211 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 285
+>>> Pos y 213
+-------------------------------
+Loop -> ID: 0 X: 285 Y: 213 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 284
+>>> Pos y 213
+-------------------------------
+Loop -> ID: 0 X: 284 Y: 213 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 283
+>>> Pos y 215
+-------------------------------
+Loop -> ID: 0 X: 283 Y: 215 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 282
+>>> Pos y 215
+-------------------------------
+Loop -> ID: 0 X: 282 Y: 215 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 282
+>>> Pos y 216
+-------------------------------
+Loop -> ID: 0 X: 282 Y: 216 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 282
+>>> Pos y 217
+-------------------------------
+Loop -> ID: 0 X: 282 Y: 217 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 281
+>>> Pos y 218
+-------------------------------
+Loop -> ID: 0 X: 281 Y: 218 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 280
+>>> Pos y 218
+-------------------------------
+Loop -> ID: 0 X: 280 Y: 218 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 280
+>>> Pos y 220
+-------------------------------
+Loop -> ID: 0 X: 280 Y: 220 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 279
+>>> Pos y 220
+-------------------------------
+Loop -> ID: 0 X: 279 Y: 220 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 279
+>>> Pos y 222
+-------------------------------
+Loop -> ID: 0 X: 279 Y: 222 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 279
+>>> Pos y 223
+-------------------------------
+Loop -> ID: 0 X: 279 Y: 223 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 278
+>>> Pos y 223
+-------------------------------
+Loop -> ID: 0 X: 278 Y: 223 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 277
+>>> Pos y 225
+-------------------------------
+Loop -> ID: 0 X: 277 Y: 225 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 277
+>>> Pos y 225
+-------------------------------
+Loop -> ID: 0 X: 277 Y: 225 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 276
+>>> Pos y 226
+-------------------------------
+Loop -> ID: 0 X: 276 Y: 226 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 276
+>>> Pos y 226
+-------------------------------
+Loop -> ID: 0 X: 276 Y: 226 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 276
+>>> Pos y 227
+-------------------------------
+Loop -> ID: 0 X: 276 Y: 227 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 275
+>>> Pos y 228
+-------------------------------
+Loop -> ID: 0 X: 275 Y: 228 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 274
+>>> Pos y 229
+-------------------------------
+Loop -> ID: 0 X: 274 Y: 229 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 274
+>>> Pos y 230
+-------------------------------
+Loop -> ID: 0 X: 274 Y: 230 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 273
+>>> Pos y 230
+-------------------------------
+Loop -> ID: 0 X: 273 Y: 230 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 273
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 273 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 271
+>>> Pos y 232
+-------------------------------
+Loop -> ID: 0 X: 271 Y: 232 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 269
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 269 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 269
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 269 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 268
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 268 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 267
+>>> Pos y 234
+-------------------------------
+Loop -> ID: 0 X: 267 Y: 234 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 267
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 267 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 267
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 267 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 266
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 266 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 265
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 265 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 265
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 265 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 264
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 264 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 264
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 264 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 263
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 263 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 262
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 262 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 261
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 261 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 260
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 260 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 260
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 260 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 259
+>>> Pos y 234
+-------------------------------
+Loop -> ID: 0 X: 259 Y: 234 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 258
+>>> Pos y 234
+-------------------------------
+Loop -> ID: 0 X: 258 Y: 234 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 256
+>>> Pos y 234
+-------------------------------
+Loop -> ID: 0 X: 256 Y: 234 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 256
+>>> Pos y 234
+-------------------------------
+Loop -> ID: 0 X: 256 Y: 234 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 255
+>>> Pos y 234
+-------------------------------
+Loop -> ID: 0 X: 255 Y: 234 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 254
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 254 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 252
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 252 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 251
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 251 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 251
+>>> Pos y 232
+-------------------------------
+Loop -> ID: 0 X: 251 Y: 232 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 249
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 249 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 248
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 248 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 247
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 247 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 246
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 246 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 245
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 245 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 244
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 244 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 243
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 243 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 241
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 241 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 240
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 240 Y: 231 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 238
+>>> Pos y 232
+-------------------------------
+Loop -> ID: 0 X: 238 Y: 232 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 237
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 237 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 236
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 236 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 236
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 236 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 234
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 234 Y: 233 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 233
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 233 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 231
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 231 Y: 235 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 231
+>>> Pos y 236
+-------------------------------
+Loop -> ID: 0 X: 231 Y: 236 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 230
+>>> Pos y 236
+-------------------------------
+Loop -> ID: 0 X: 230 Y: 236 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 230
+>>> Pos y 236
+-------------------------------
+Loop -> ID: 0 X: 230 Y: 236 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 227
+>>> Pos y 247
+-------------------------------
+Loop -> ID: 0 X: 227 Y: 247 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 225
+>>> Pos y 248
+-------------------------------
+Loop -> ID: 0 X: 225 Y: 248 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 225
+>>> Pos y 248
+-------------------------------
+Loop -> ID: 0 X: 225 Y: 248 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 225
+>>> Pos y 248
+-------------------------------
+Loop -> ID: 0 X: 225 Y: 248 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 225
+>>> Pos y 248
+-------------------------------
+Loop -> ID: 0 X: 225 Y: 248 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 226
+>>> Pos y 248
+-------------------------------
+Loop -> ID: 0 X: 226 Y: 248 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 226
+>>> Pos y 248
+-------------------------------
+Loop -> ID: 0 X: 226 Y: 248 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 227
+>>> Pos y 249
+-------------------------------
+Loop -> ID: 0 X: 227 Y: 249 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 228
+>>> Pos y 250
+-------------------------------
+Loop -> ID: 0 X: 228 Y: 250 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 228
+>>> Pos y 250
+-------------------------------
+Loop -> ID: 0 X: 228 Y: 250 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 229
+>>> Pos y 250
+-------------------------------
+Loop -> ID: 0 X: 229 Y: 250 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 230
+>>> Pos y 250
+-------------------------------
+Loop -> ID: 0 X: 230 Y: 250 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 230
+>>> Pos y 251
+-------------------------------
+Loop -> ID: 0 X: 230 Y: 251 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 231
+>>> Pos y 251
+-------------------------------
+Loop -> ID: 0 X: 231 Y: 251 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 231
+>>> Pos y 251
+-------------------------------
+Loop -> ID: 0 X: 231 Y: 251 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 231
+>>> Pos y 251
+-------------------------------
+Loop -> ID: 0 X: 231 Y: 251 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 231
+>>> Pos y 251
+-------------------------------
+Loop -> ID: 0 X: 231 Y: 251 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 232
+>>> Pos y 252
+-------------------------------
+Loop -> ID: 0 X: 232 Y: 252 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 233
+>>> Pos y 252
+-------------------------------
+Loop -> ID: 0 X: 233 Y: 252 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 233
+>>> Pos y 253
+-------------------------------
+Loop -> ID: 0 X: 233 Y: 253 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 233
+>>> Pos y 253
+-------------------------------
+Loop -> ID: 0 X: 233 Y: 253 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 233
+>>> Pos y 253
+-------------------------------
+Loop -> ID: 0 X: 233 Y: 253 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 233
+>>> Pos y 253
+-------------------------------
+Loop -> ID: 0 X: 233 Y: 253 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 282
+>>> Pos y 189
+-------------------------------
+Loop -> ID: 0 X: 282 Y: 189 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 282
+>>> Pos y 189
+-------------------------------
+Loop -> ID: 0 X: 282 Y: 189 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 273
+>>> Pos y 141
+-------------------------------
+Loop -> ID: 0 X: 273 Y: 141 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 276
+>>> Pos y 151
+-------------------------------
+Loop -> ID: 0 X: 276 Y: 151 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 276
+>>> Pos y 151
+-------------------------------
+Loop -> ID: 0 X: 276 Y: 151 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 341
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 341 Y: 175 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 175
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 175 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 173
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 173 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 340
+>>> Pos y 174
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 174 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 297
+>>> Pos y 158
+-------------------------------
+Loop -> ID: 0 X: 297 Y: 158 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 297
+>>> Pos y 158
+-------------------------------
+Loop -> ID: 0 X: 297 Y: 158 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 289
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 289 Y: 171 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 289
+>>> Pos y 171
+-------------------------------
+Loop -> ID: 0 X: 289 Y: 171 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 328
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 188 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 328
+>>> Pos y 188
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 188 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 447
+>>> Pos y 253
+-------------------------------
+Loop -> ID: 0 X: 447 Y: 253 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 445
+>>> Pos y 255
+-------------------------------
+Loop -> ID: 0 X: 445 Y: 255 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 445
+>>> Pos y 255
+-------------------------------
+Loop -> ID: 0 X: 445 Y: 255 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 137
+>>> Pos y 421
+-------------------------------
+Loop -> ID: 0 X: 137 Y: 421 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 137
+>>> Pos y 421
+-------------------------------
+Loop -> ID: 0 X: 137 Y: 421 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 142
+>>> Pos y 275
+-------------------------------
+Loop -> ID: 0 X: 142 Y: 275 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 142
+>>> Pos y 275
+-------------------------------
+Loop -> ID: 0 X: 142 Y: 275 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 142
+>>> Pos y 275
+-------------------------------
+Loop -> ID: 0 X: 142 Y: 275 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 154
+>>> Pos y 227
+-------------------------------
+Loop -> ID: 0 X: 154 Y: 227 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 154
+>>> Pos y 227
+-------------------------------
+Loop -> ID: 0 X: 154 Y: 227 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 176
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 176 Y: 186 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 176
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 176 Y: 186 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 176
+>>> Pos y 186
+-------------------------------
+Loop -> ID: 0 X: 176 Y: 186 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 210
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 210 Y: 155 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 210
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 210 Y: 155 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 210
+>>> Pos y 155
+-------------------------------
+Loop -> ID: 0 X: 210 Y: 155 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 162
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 162 Y: 146 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 162
+>>> Pos y 146
+-------------------------------
+Loop -> ID: 0 X: 162 Y: 146 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 120
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 120 Y: 150 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+Change/Move
+>>> Pos X 120
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 120 Y: 150 Tipo: MOVE
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 120
+>>> Pos y 150
+-------------------------------
+Loop -> ID: 0 X: 120 Y: 150 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 183
+>>> Pos y 131
+-------------------------------
+Loop -> ID: 0 X: 183 Y: 131 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 183
+>>> Pos y 131
+-------------------------------
+Loop -> ID: 0 X: 183 Y: 131 Tipo: UP

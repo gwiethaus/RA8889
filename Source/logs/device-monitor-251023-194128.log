@@ -1,0 +1,409 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x1 (POWERON),boot:0x2b (SPI_FAST_FLASH_BOOT)
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce3808,len:0x4bc
+load:0x403c9700,len:0xbd8
+load:0x403cc700,len:0x2a0c
+entry 0x403c98d0
+Disable SD and RTP pin
+Config()----------------------------------------
+_cfg.freq_write 20000000
+_cfg.pin_cs     10
+_cfg.pin_miso   13
+_cfg.pin_mosi   11
+_cfg.pin_sclk   12
+_cfg.spi_host   0
+_cfg.spi_type   4
+Bus SPI configurado
+Status Backlight0
+Backlight ON
+HardwareReset()...
+Entrou em Bus_SPI::Init
+Selecionou Objeto FSPI criado (valor): 0
+Entrou em HAS_SPI_TRANSCATION
+Valor do spi clock max: 20000000
+Valor do spi data order: 1
+Valor do spi data mode: 0
+-----------------------------
+Valor do Freq. write: 20000000
+Valor do SCLK:        12
+Valor do MISO:        13
+Valor do MOSI:        11
+Valor do CS:          10
+_bus->Init() Sucesso
+RA8889 connect pass!
+_bus->StatusRead()84
+PLL_InitilizeWaitReady() Sucesso
+_bus->StatusRead() Sucesso
+PLL Initialized
+RA8889 initial sucess!
+Begin Sucessfull: 1
+Start Display ON
+Habilitou interrupções de hardware
+Start Touch Display
+
+----------------------------------------------------
+Parameter
+Started Display       
+Display Width:        800
+Display Height:       480
+Color Deth (bpp):     16
+Layer Start Address:  0
+Modo Grafico:         1
+MISO :                13
+MOSI :                11
+SCK :                 12
+SS :                  10
+HSPI :                1
+FSPI :                0
+----------------------------------------------------
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 339
+>>> Pos y 184
+-------------------------------
+Loop -> ID: 0 X: 339 Y: 184 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 340
+>>> Pos y 185
+-------------------------------
+Loop -> ID: 0 X: 340 Y: 185 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 362
+>>> Pos y 177
+-------------------------------
+Loop -> ID: 0 X: 362 Y: 177 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 344
+>>> Pos y 183
+-------------------------------
+Loop -> ID: 0 X: 344 Y: 183 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 400
+>>> Pos y 187
+-------------------------------
+Loop -> ID: 0 X: 400 Y: 187 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 363
+>>> Pos y 217
+-------------------------------
+Loop -> ID: 0 X: 363 Y: 217 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 409
+>>> Pos y 193
+-------------------------------
+Loop -> ID: 0 X: 409 Y: 193 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 411
+>>> Pos y 190
+-------------------------------
+Loop -> ID: 0 X: 411 Y: 190 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 406
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 406 Y: 210 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 405
+>>> Pos y 209
+-------------------------------
+Loop -> ID: 0 X: 405 Y: 209 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 404
+>>> Pos y 218
+-------------------------------
+Loop -> ID: 0 X: 404 Y: 218 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 404
+>>> Pos y 217
+-------------------------------
+Loop -> ID: 0 X: 404 Y: 217 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 460
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 460 Y: 210 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 460
+>>> Pos y 210
+-------------------------------
+Loop -> ID: 0 X: 460 Y: 210 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 453
+>>> Pos y 226
+-------------------------------
+Loop -> ID: 0 X: 453 Y: 226 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 450
+>>> Pos y 230
+-------------------------------
+Loop -> ID: 0 X: 450 Y: 230 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 444
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 444 Y: 231 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 444
+>>> Pos y 231
+-------------------------------
+Loop -> ID: 0 X: 444 Y: 231 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 447
+>>> Pos y 225
+-------------------------------
+Loop -> ID: 0 X: 447 Y: 225 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 448
+>>> Pos y 223
+-------------------------------
+Loop -> ID: 0 X: 448 Y: 223 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 451
+>>> Pos y 224
+-------------------------------
+Loop -> ID: 0 X: 451 Y: 224 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 451
+>>> Pos y 224
+-------------------------------
+Loop -> ID: 0 X: 451 Y: 224 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 568
+>>> Pos y 233
+-------------------------------
+Loop -> ID: 0 X: 568 Y: 233 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 167
+>>> Pos y 267
+-------------------------------
+Loop -> ID: 0 X: 167 Y: 267 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 217
+>>> Pos y 213
+-------------------------------
+Loop -> ID: 0 X: 217 Y: 213 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 215
+>>> Pos y 211
+-------------------------------
+Loop -> ID: 0 X: 215 Y: 211 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 233
+>>> Pos y 220
+-------------------------------
+Loop -> ID: 0 X: 233 Y: 220 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 231
+>>> Pos y 219
+-------------------------------
+Loop -> ID: 0 X: 231 Y: 219 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 286
+>>> Pos y 228
+-------------------------------
+Loop -> ID: 0 X: 286 Y: 228 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 286
+>>> Pos y 227
+-------------------------------
+Loop -> ID: 0 X: 286 Y: 227 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 301
+>>> Pos y 228
+-------------------------------
+Loop -> ID: 0 X: 301 Y: 228 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 300
+>>> Pos y 226
+-------------------------------
+Loop -> ID: 0 X: 300 Y: 226 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 323
+>>> Pos y 243
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 243 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 323
+>>> Pos y 240
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 240 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 330
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 330 Y: 235 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 328
+>>> Pos y 236
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 236 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 323
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 323 Y: 235 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 322
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 322 Y: 235 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 334
+>>> Pos y 226
+-------------------------------
+Loop -> ID: 0 X: 334 Y: 226 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 334
+>>> Pos y 226
+-------------------------------
+Loop -> ID: 0 X: 334 Y: 226 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 342
+>>> Pos y 228
+-------------------------------
+Loop -> ID: 0 X: 342 Y: 228 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 342
+>>> Pos y 228
+-------------------------------
+Loop -> ID: 0 X: 342 Y: 228 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 333
+>>> Pos y 228
+-------------------------------
+Loop -> ID: 0 X: 333 Y: 228 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 328
+>>> Pos y 225
+-------------------------------
+Loop -> ID: 0 X: 328 Y: 225 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 238
+>>> Pos y 240
+-------------------------------
+Loop -> ID: 0 X: 238 Y: 240 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 239
+>>> Pos y 238
+-------------------------------
+Loop -> ID: 0 X: 239 Y: 238 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 236
+>>> Pos y 237
+-------------------------------
+Loop -> ID: 0 X: 236 Y: 237 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 234
+>>> Pos y 237
+-------------------------------
+Loop -> ID: 0 X: 234 Y: 237 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 233
+>>> Pos y 242
+-------------------------------
+Loop -> ID: 0 X: 233 Y: 242 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 231
+>>> Pos y 240
+-------------------------------
+Loop -> ID: 0 X: 231 Y: 240 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 222
+>>> Pos y 236
+-------------------------------
+Loop -> ID: 0 X: 222 Y: 236 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 224
+>>> Pos y 235
+-------------------------------
+Loop -> ID: 0 X: 224 Y: 235 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 218
+>>> Pos y 224
+-------------------------------
+Loop -> ID: 0 X: 218 Y: 224 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 163
+>>> Pos y 232
+-------------------------------
+Loop -> ID: 0 X: 163 Y: 232 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 215
+>>> Pos y 157
+-------------------------------
+Loop -> ID: 0 X: 215 Y: 157 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 203
+>>> Pos y 222
+-------------------------------
+Loop -> ID: 0 X: 203 Y: 222 Tipo: UP
+<<<<<<< Touch ID 0 >>>>>>>
+Soltou
+>>> Pos X 163
+>>> Pos y 135
+-------------------------------
+Loop -> ID: 0 X: 163 Y: 135 Tipo: DOWN
+<<<<<<< Touch ID 0 >>>>>>>
+None
+>>> Pos X 163
+>>> Pos y 135
+-------------------------------
+Loop -> ID: 0 X: 163 Y: 135 Tipo: UP
