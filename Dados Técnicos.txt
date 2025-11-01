@@ -256,7 +256,7 @@ SPIClass como objeto e ponteiro
 	Programando Dispositivos Embarcados com Orientação a Objetos em C++
 	https://embarcados.com.br/programando-dispositivos-embarcados-com-orientacao-a-objetos-em-c/
 
-  Exemplo
+  Exemplo:
   
   #include <SPI.h>
   
@@ -3376,6 +3376,248 @@ Ponteiro em C++
 
   - O compilador cuida disso sozinho. Você escreve o mesmo código em C/C++ e ele gera o binário adequado para cada plataforma.
 
+
+Ponteiro de tipo não definido void*
+-----------------------------------
+  
+  A expressão "ponteiro de tipo não definido void" refere-se a um ponteiro 
+  genérico (void*) na linguagem C e C++. O termo "void" (vazio, em inglês) 
+  indica que o ponteiro não está associado a um tipo de dado específico no 
+  momento da sua declaração, podendo apontar para qualquer tipo de dado. 
+  
+  O que é um ponteiro void*
+  -------------------------
+
+  - Tipo Genérico: Um void* pode armazenar o endereço de memória de qualquer 
+    variável, independentemente do seu tipo (como int, char, float, ou 
+	estruturas personalizadas).
+	
+  - Flexibilidade: Isso é útil em situações onde o tipo de dado a ser 
+    manipulado é desconhecido em tempo de compilação, como em funções de 
+	gerenciamento de memória (malloc, calloc, realloc) ou estruturas de dados 
+	genéricas (listas, filas).
+	
+  - Requer Conversão (Casting): Para acessar ou desreferenciar os dados para 
+    os quais um ponteiro void* aponta, é necessário fazer uma conversão 
+	explícita (cast) para o tipo de ponteiro apropriado. Isso informa ao 
+	compilador como interpretar os dados naquele endereço de memória. 
+	
+  Exemplo de Uso (Linguagem C):
+
+  #include <stdio.h>
+  
+  int main() {
+      int numero = 10;
+      float flutuante = 3.14;
+      void *ptr;           // Declara um ponteiro void
+  
+      ptr = &numero;       // ptr aponta para um int
+      // Para acessar o valor, é necessário um cast:
+      printf("Valor do numero: %d\n", *((int*)ptr)); // Saída: 10
+  
+      ptr = &flutuante;    // ptr aponta para um float
+      // Para acessar o valor, é necessário um cast para float*:
+      printf("Valor do flutuante: %.2f\n", *((float*)ptr)); // Saída: 3.14
+  
+      return 0;
+  }
+  
+  Em resumo, um ponteiro void* é um ponteiro para um tipo "vazio" ou 
+  "indefinido" que serve como um ponteiro curinga, capaz de apontar para 
+  qualquer coisa, mas que exige que o programador gerencie a informação de 
+  tipo durante o uso. 
+
+  Uso de reinterpret_cast
+  -----------------------
+  
+  O reinterpret_cast é um operador de conversão de tipo em C++ usado para 
+  reinterpretar a representação binária subjacente de um ponteiro como um 
+  ponteiro de um tipo diferente, ou mesmo como um tipo integral e vice-versa. 
+  É uma operação de baixo nível e considerada insegura, pois o compilador não 
+  realiza verificações de segurança ou compatibilidade de tipos, ficando a 
+  cargo do desenvolvedor garantir que a conversão faça sentido e seja válida. 
+  
+  1. Uso Comum com Ponteiros
+  
+  O principal uso do reinterpret_cast com ponteiros ocorre em cenários muito 
+  específicos, geralmente envolvendo interoperabilidade de baixo nível ou 
+  manipulação direta de memória, como:
+  
+  - Conversão entre tipos de ponteiro incompatíveis: Permite converter um 
+    TipoA* para um TipoB*, mesmo que TipoA e TipoB não tenham nenhuma relação 
+	hierárquica.
+	
+  - Comunicação com APIs de C ou sistemas operacionais: Muitas APIs legadas 
+    esperam ou retornam ponteiros void* ou tipos integrais que representam 
+	endereços de memória, exigindo o reinterpret_cast para a conversão.
+	
+  - Funções de hash: Pode ser usado para mapear o valor de um ponteiro (seu 
+    endereço de memória) para um índice (um valor integral) em uma função 
+	hash.
+
+  - Serialização/Desserialização: Ao tratar um bloco de dados como um fluxo de 
+    bytes (e.g., char* ou uint8_t*) para transmissão ou armazenamento. 
+	
+  Exemplo de Uso:
+  
+  #include <iostream>
+  #include <cstdint> // Para uintptr_t
+  
+  int main() {
+      int valor_int = 42;
+      int* ponteiro_int = &valor_int;
+  
+      // Usando reinterpret_cast para converter um int* para um char*
+      char* ponteiro_char = reinterpret_cast<char*>(ponteiro_int);
+  
+      // Usando reinterpret_cast para converter um ponteiro para um tipo integral (endereço de memória)
+      uintptr_t endereco_de_memoria = reinterpret_cast<uintptr_t>(ponteiro_int);
+  
+      // Exemplo de acesso: imprime os bytes individuais do int
+      std::cout << "Bytes do inteiro (em hexadecimal):" << std::endl;
+      for (size_t i = 0; i < sizeof(int); ++i) {
+          // Aritmética de ponteiros no ponteiro_char
+          std::cout << static_cast<int>(ponteiro_char[i]) << " "; 
+      }
+      std::cout << std::endl;
+  
+      // Convertendo de volta para o tipo original
+      int* ponteiro_original = reinterpret_cast<int*>(endereco_de_memoria);
+  
+      std::cout << "Valor original acessado novamente: " << *ponteiro_original << std::endl;
+  
+      return 0;
+  }
+
+  2. Problemas e Precauções
+  
+  O uso indevido do reinterpret_cast pode levar a comportamentos indefinidos 
+  (undefined behavior) e erros difíceis de depurar, pois quebra as garantias 
+  de tipo do C++. Os principais riscos incluem: 
+  
+  - Problemas de alinhamento: Acesso a dados desalinhados pode causar falhas 
+    em algumas arquiteturas.
+  - Violação de regras de aliasing: Acessar dados de um tipo através de um 
+    ponteiro de um tipo incompatível (que não seja char* ou void* em certos 
+	contextos) pode ser inválido.
+  - Insegurança de tipos: O compilador não pode verificar se a memória 
+    apontada realmente contém um objeto do tipo de destino.
+	
+  Em geral, é altamente recomendado usar os outros casts do C++ (static_cast, 
+  dynamic_cast, const_cast) sempre que possível, pois são mais seguros e 
+  fornecem mais verificações em tempo de compilação ou execução. O 
+  reinterpret_cast deve ser usado apenas quando estritamente necessário e 
+  quando o desenvolvedor tem total conhecimento das implicações na memória e 
+  no sistema. 
+
+  Uso de static_cast
+  ------------------
+  
+  Um ponteiro void* é usado para apontar para dados de qualquer tipo, e o 
+  static_cast é a maneira moderna em C++ de converter um ponteiro para void* e 
+  vice-versa. Essa conversão é comum em funções que precisam de um ponteiro 
+  genérico, mas deve ser feita com cuidado, pois o compilador não faz 
+  verificações e o programador precisa garantir que o ponteiro seja convertido 
+  de volta para o tipo correto para evitar comportamento indefinido. 
+  
+  1. Como funciona
+  
+  - De um tipo para void*: Você pode converter um ponteiro de qualquer tipo 
+    (por exemplo, int*, MyClass*) para um void* usando static_cast.
+    
+	código cpp:
+    int numero = 10;
+    void* ptr_void = static_cast<void*>(&numero);
+	
+  - De void* para um tipo específico: Para usar o valor apontado, você precisa 
+    fazer a conversão de volta usando static_cast.
+
+    Código cpp:
+    int* ptr_int = static_cast<int*>(ptr_void);
+
+  2. Conversão de Tipo* para void* (Upcasting)
+  
+  A conversão de um ponteiro para qualquer tipo de objeto (por exemplo, int*, 
+  std::string*) para void* é implícita em C++. No entanto, você pode usar 
+  static_cast para torná-la explícita e mais clara:
+
+  C++
+
+  int* p_int = new int(42);
+  void* p_void = static_cast<void*>(p_int); // Conversão explícita
+  // void* p_void_implicito = p_int; // Conversão implícita, também válida
+
+  3. Conversão de void* para Tipo* (Downcasting)
+  
+  Esta é a aplicação mais comum e crucial do static_cast com ponteiros void*. 
+  Quando você recebe um ponteiro void* (geralmente de uma API C, como malloc, 
+  ou de um mecanismo que armazena dados de tipo desconhecido, como o void* em 
+  um callback), você precisa convertê-lo de volta para o tipo original para 
+  poder acessar os dados.
+
+  Você deve usar static_cast (ou reinterpret_cast) para essa conversão. A 
+  regra geral é usar static_cast quando o ponteiro void* foi originalmente 
+  obtido a partir do tipo de destino.
+
+  C++
+
+  void* p_void = /* ... ponteiro que sabemos que aponta para um 'int' ... */;
+
+  // Conversão de volta para o tipo original
+  int* p_int = static_cast<int*>(p_void);
+  int valor = *p_int; // Agora podemos acessar os dados
+
+  4. Cuidados necessários:
+
+  - Perda de informações de tipo: O void* não armazena informações sobre o 
+    tipo original, por isso não é possível realizar operações de incremento 
+	ou decremento nele sem convertê-lo de volta.
+	
+  - Risco de erro: Se você converter um void* de volta para o tipo errado, o 
+    programa pode falhar, apresentar um comportamento imprevisível ou até 
+	mesmo falhar silenciosamente.
+	
+  - Segurança: static_cast não realiza verificações em tempo de execução, ao 
+    contrário do dynamic_cast, que é a escolha preferível para conversões de 
+	ponteiros em hierarquias de classes.
+	
+  5. ⚠️ Importante: Segurança e static_cast
+  
+  - Não há verificação em tempo de execução: O static_cast é feito em tempo de 
+    compilação. O compilador não verifica se o ponteiro void* realmente aponta 
+	para o tipo que você está convertendo de volta (int* no exemplo).
+  
+  - Risco de Comportamento Indefinido: Se você tentar converter um void* que 
+    aponta para um float em um int* e, em seguida, desreferenciar o int*, isso 
+	resultará em comportamento indefinido (undefined behavior).
+
+  - É Responsabilidade do Programador: Ao usar static_cast de um void* para um 
+    Tipo*, é de sua responsabilidade garantir que o void* realmente contenha o 
+	endereço de um objeto daquele Tipo.
+  
+  6. Casos de uso comuns
+  
+  - Funções genéricas: Usado em APIs que precisam aceitar ponteiros para 
+    diferentes tipos de dados, como algumas funções da biblioteca padrão de C 
+	ou de outras APIs genéricas.
+	
+  - Manipulação de memória: Funções como malloc em C retornam um void* que 
+    aponta para um bloco de memória não formatada. É necessário converter esse 
+	ponteiro para o tipo desejado antes de usá-lo. 
+
+  7. Comparação com reinterpret_cast
+  
+  Para a conversão de void* para Tipo*, o static_cast é geralmente preferível 
+  a um cast estilo C ((int*)p_void) porque é mais restritivo e mais fácil de 
+  localizar no código. Alguns desenvolvedores, no entanto, usam 
+  reinterpret_cast para a conversão de e para void*, já que ele é o operador 
+  de cast mais poderoso, mas static_cast é especificamente permitido para este 
+  caso:
+
+  - Em C++, a conversão de um ponteiro de tipo de objeto para void* e 
+    vice-versa é uma das conversões permitidas para static_cast.
+
+
 digitalPinToInterrupt()
 -----------------------
 
@@ -5948,6 +6190,268 @@ Cuidado com Mesmo Nomes Classes com Macros ou Constantes #define
   Fica a dica ai, buscar nas coisas simples os problemas difíceis e volte ao 
   básico semrpe que for preciso.
 
+Is ESP32 Big Endian or Little Endian?
+-------------------------------------
+
+  https://dev.to/yoursunny/is-esp32-big-endian-or-little-endian-4lfk
+  
+    | This post is originally published on yoursunny.com blog 
+    | https://yoursunny.com/t/2021/ESP32-endian/
+  
+  I'm programming network protocols on the Espressif ESP32 microcontroller, 
+  and I want to know: is ESP32 big endian or little endian?
+  
+  Unfortunately, search results have only videos and forum posts and PDF; the 
+  answer, if present, is buried deep in pages and pages of discussions and 
+  irrelevant content.
+  
+  So I quickly wrote a little program to determine the endianness of ESP32.
+  
+  The Straight Answer: ESP32 is Little Endian
+  -------------------------------------------
+  
+  I have determined that: the Tensilica Xtensa LX6 microprocessor in ESP32 is little endian.
+  
+  ESP32 is little endian.
+  
+  Many other processors are little endian, too:
+  
+  - Intel and AMD x86 and x86_64 processors are little endian.
+  - Raspberry Pi and Beaglebone Black are little endian, although the underlying ARM processor may operate as big endian.
+  - ESP8266 is little endian. It has Tensilica Xtensa L106 microprocessor, similar to the ESP32
+  - nRF52 series is little endian. This includes the Adafruit Bluefruit nRF52832.
+  
+  Arduino Sketch to Determine Endianness
+  --------------------------------------
+  
+  I used this Arduino program to determine the endianness of ESP32 CPU:
+  
+  void setup() {
+    Serial.begin(115200);
+    Serial.println();
+  
+    uint32_t x = 0x12345678;
+    const uint8_t* p = reinterpret_cast<const uint8_t*>(&x);
+    Serial.printf("%02X%02X%02X%02X\n", p[0], p[1], p[2], p[3]);
+  }
+  
+  void loop() {
+  }
+  
+  The program should print 12345678 on a big endian machine, or 78563412 on a little endian machine.
+  ESP32 prints:
+  
+  78563412
+  
+    | So ESP32 is little endian.
+
+
+[ESP32] heap_caps_malloc()
+--------------------------
+
+  Para usar heap_caps_malloc, você deve chamar a função heap_caps_malloc 
+  passando o tamanho em bytes e os recursos (caps) de memória desejados, como 
+  MALLOC_CAP_SPIRAM para alocar da PSRAM, MALLOC_CAP_EXEC para memória 
+  executável ou outras capacidades específicas do sistema. O uso é similar ao 
+  malloc padrão, mas permite a especificação do tipo de memória.
+  
+  Sintaxe e uso básico
+  --------------------
+
+  Chamada: void* ptr = heap_caps_malloc(size, caps);
+
+  - size: O número de bytes que se deseja alocar.
+  - caps: Uma máscara de bits (OR) dos recursos desejados para a alocação.
+  - ptr: Um ponteiro para a memória alocada, que deve ser liberada com free() 
+    quando não for mais necessária.
+
+  Verifique o retorno: Sempre verifique se o ponteiro retornado não é NULL 
+  para confirmar se a alocação foi bem-sucedida.
+  
+  Exemplos de uso:
+  
+  Alocar na PSRAM: Para alocar memória especificamente na PSRAM, use o recurso 
+  MALLOC_CAP_SPIRAM.
+  
+  C
+  void *buffer_psram = heap_caps_malloc(1024, MALLOC_CAP_SPIRAM);
+  if (buffer_psram == NULL) {
+      // Falha ao alocar
+  }
+  
+  Alocar memória executável: Se você precisar de memória onde o código pode ser executado, use MALLOC_CAP_EXEC.
+  
+  C
+  void *buffer_executavel = heap_caps_malloc(256, MALLOC_CAP_EXEC);
+  if (buffer_executavel == NULL) {
+      // Falha ao alocar
+  }
+   
+  Considerações adicionais
+  ------------------------
+  
+  - Se a alocação falhar, a função heap_caps_malloc retornará NULL. Isso pode 
+    acontecer se os recursos (capabilities) solicitados não estiverem 
+	disponíveis ou se não houver memória suficiente disponível.
+  - O sistema pode ter outras capacidades como MALLOC_CAP_8BIT para memória 
+    que pode ser acessada em blocos de 8 bits, embora MALLOC_CAP_SPIRAM seja 
+	mais comum para PSRAM.
+  - Para casos onde a alocação pode ocorrer em qualquer tipo de RAM (interna 
+    ou externa), é possível configurar o sistema para que o malloc padrão (e 
+	outras funções como calloc, realloc) utilize a memória PSRAM 
+	automaticamente, dependendo da configuração (CONFIG_SPIRAM_USE e 
+	SPIRAM_USE_MALLOC). 
+
+
+Transferência em massa SPI ESP32 com Arduino IDE
+------------------------------------------------
+
+  Descreve como realizar transferência de dados em massa (bulk transfer) via 
+  SPI com ESP32 usando a IDE do Arduino.
+  
+  Para realizar a transferência de dados em massa (bulk transfer) via SPI com 
+  o ESP32 usando a IDE do Arduino, utilize a função SPI.transfer() com um 
+  parâmetro de buffer e tamanho. Para transferências de alta velocidade e 
+  contínuas, considere o uso da biblioteca especializada ESP32DMASPI, que 
+  utiliza DMA (Acesso Direto à Memória).
+  
+  Biblioteca Padrão Arduino SPI (para transferência geral em massa)
+  -----------------------------------------------------------------
+  
+  A função padrão Arduino SPI.transfer() suporta a transferência de um array 
+  de dados, sendo adequada para transferências em massa de velocidade 
+  moderada.
+  
+  cpp
+  #include <SPI.h>
+  
+  #define CS_PIN 5 // Use qualquer pino GPIO para Chip Select
+  
+  // Define o buffer e o tamanho
+  const size_t BUFFER_SIZE = 1024;
+  uint8_t tx_buffer[BUFFER_SIZE];
+  uint8_t rx_buffer[BUFFER_SIZE]; // Pode ser o mesmo que tx_buffer se você não precisar preservar os dados originais
+  
+  void setup() {
+    Serial.begin(115200);
+    SPI.begin(); // Inicializa o barramento VSPI padrão
+    pinMode(CS_PIN, OUTPUT);
+    digitalWrite(CS_PIN, HIGH); // Desseleciona o escravo inicialmente
+  
+    // Inicializa o seu tx_buffer com dados
+    for (size_t i = 0; i < BUFFER_SIZE; i++) {
+      tx_buffer[i] = i % 256;
+    }
+  }
+  
+  void loop() {
+    // Inicia a transação
+    SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0)); // Define velocidade, ordem, modo
+    digitalWrite(CS_PIN, LOW); // Seleciona o escravo
+  
+    // Realiza a transferência em massa
+    // Dados em tx_buffer são enviados, e os dados recebidos são armazenados em rx_buffer
+    SPI.transfer(tx_buffer, rx_buffer, BUFFER_SIZE); 
+    
+    // Nota: Se você não precisar dos dados recebidos, a chamada da função é:
+    // SPI.transfer(tx_buffer, BUFFER_SIZE); // Dados recebidos são armazenados em tx_buffer no local
+  
+    digitalWrite(CS_PIN, HIGH); // Desseleciona o escravo
+    SPI.endTransaction(); // Finaliza a transação e libera o barramento
+  
+    // Processa os dados recebidos em rx_buffer
+    // ...
+  
+    delay(2000);
+  }
+  
+  - SPI.beginTransaction() e SPI.endTransaction(): Estas são cruciais para 
+    definir as configurações SPI específicas (velocidade, ordem dos dados, 
+	modo) para um dispositivo e garantir a segurança de threads no 
+	barramento.
+	
+  - SPI.transfer(buffer, size): Esta função lida com a transferência de dados 
+    em massa (ambos enviando e recebendo simultaneamente) de um número 
+	especificado de bytes.
+	
+  Para Transferências de Alta Velocidade e Habilitadas para DMA (Recomendado 
+  para dados grandes e contínuos)
+  --------------------------------------------------------------------------
+  
+  Para transferir grandes volumes de dados em altas velocidades sem 
+  interrupções (por exemplo, para displays ou registro de dados), o controle 
+  de chip select via software da biblioteca padrão pode introduzir atrasos. 
+  A biblioteca ESP32DMASPI é uma solução melhor, pois usa DMA de hardware para 
+  transferências contínuas e não bloqueantes.
+  
+  1. Instale a Biblioteca: Procure por "ESP32DMASPI" no Gerenciador de 
+     Bibliotecas do Arduino e instale-a.
+	 
+  2. Use a Biblioteca: A biblioteca fornece funções como transfer(), queue(), 
+     e wait() para um manuseio eficiente dos dados.
+	 
+  cpp
+  #include <ESP32DMASPI.h>
+  
+  static constexpr uint32_t BUFFER_SIZE {4096}; // Usa tamanho de memória compatível com DMA
+  uint8_t spi_master_tx_buf[BUFFER_SIZE];
+  uint8_t spi_master_rx_buf[BUFFER_SIZE];
+  
+  void setup() {
+    Serial.begin(115200);
+    // Inicializa os buffers (garanta que estejam em memória compatível com DMA se usar recursos avançados)
+    // ... (preencha tx_buf com dados)
+  
+    // Inicia o SPI com pinos personalizados, se necessário, o padrão é VSPI
+    SPI.begin(18, 19, 23, 5); // SCK, MISO, MOSI, SS (exemplo de pinos padrão VSPI)
+  }
+  
+  void loop() {
+    // Trava o barramento e seleciona o dispositivo escravo
+    SPI.beginTransaction(SPISettings(20000000, MSBFIRST, SPI_MODE0)); // Frequência mais alta
+    digitalWrite(SS, LOW);
+  
+    // Transfere os dados usando a função da biblioteca DMA
+    SPI.transfer(spi_master_tx_buf, BUFFER_SIZE);
+  
+    digitalWrite(SS, HIGH);
+    SPI.endTransaction();
+  
+    // Processa os dados...
+    delay(100);
+  }
+    
+  Essa abordagem minimiza o tempo gasto na chamada transfer, descarregando a 
+  tarefa para o controlador DMA, tornando-a muito mais eficiente para 
+  transferências em massa.
+
+
+
+
+
+
+Curso C++ (fazendo)
+https://www.youtube.com/watch?v=IMRbGEEqzlI&list=PLx4x_zx8csUjczg1qPHavU1vw1IkBcm40&index=5
+
+Add a Smart Digital Readout to Your Milling Machine — Part 2
+https://www.servomagazine.com/magazine/article/add-a-smart-digital-readout-to-your-milling-machine-part-2
+
+
+//https://www.iconexperience.com/g_collection/icons/?icon=folder_open
+//Primeira regra no C++: Não se declara o arquivo .c, mas o .h, pois o compilar procura o identico arquivo com .c
+//use extensao de arquivos cpp e hpp
+
+Fontes
+https://design215.com/toolbox/ascii-utf8.php
+
+
+Conversao de cores:
+https://rgbcolorcode.com/color/converter/
+
+simulador C++ online
+https://www.online-cpp.com/
+https://onecompiler.com/cpp
+https://www.onlinegdb.com/#
 
 Links do LVGL
 -------------
