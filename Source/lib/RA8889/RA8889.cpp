@@ -3942,10 +3942,10 @@ uint8_t RA8889::Interrupt_Status(void)
 void RA8889::VSYNC_WaitReady(void)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_INTF);                      //0x0c, Interrupt Event Flag Register (INTF)
-  _bus->DataWrite(0x10);                         //Set bit 4, clear VSync interrupt status, solicita que verifique se o VSync está pronto
+  _bus->CmdWrite(REG_INTF);                    //0x0c, Interrupt Event Flag Register (INTF)
+  _bus->DataWrite(0x10);                       //Set bit 4, clear VSync interrupt status, solicita que verifique se o VSync está pronto
   do {
-    temp = _bus->DataRead();                     //Leia o status
+    temp = _bus->DataRead();                   //Leia o status
   } while ( (temp & 0x10) == 0x00);            //Aguarde ate que seja resetado o bit, terminou o retraço
 }
 
@@ -8438,11 +8438,11 @@ bool RA8889::Memory_IsLinearMode(void)
 void RA8889::Memory_8bpp_BlockMode(void)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  _bus->CmdWrite(REG_AW_COLOR);              //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp = _bus->DataRead();
   CLRB(temp,1);                              //Reset bit 1
   CLRB(temp,0);                              //Reset bit 2
-  _bus->DataWrite(temp);                       //Set block mode x-y 8bpp
+  _bus->DataWrite(temp);                     //Set block mode x-y 8bpp
 }
 
 
@@ -8469,11 +8469,11 @@ void RA8889::Memory_8bpp_BlockMode(void)
 void RA8889::Memory_16bpp_BlockMode(void)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_AW_COLOR);                //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
+  _bus->CmdWrite(REG_AW_COLOR);              //0x5e, Color Depth of Canvas & Active Window (AW_COLOR)
   temp = _bus->DataRead();
   CLRB(temp,1);                              //Reset bit 1
   SETB(temp,0);                              //Set bit 0
-  _bus->DataWrite(temp);                       //Set block mode x-y 16bpp
+  _bus->DataWrite(temp);                     //Set block mode x-y 16bpp
 }
 
 
@@ -20068,8 +20068,16 @@ void RA8889::setPage(uint8_t page)
 }
 
 
-//exibe uma determianda pagina
-//page: número da página
+/**
+ * @brief Exibe uma determianda pagina/frame
+ *        
+ * @verbatim
+ * @endverbatim
+ *
+ * @param page: número da página para setar (0..n)
+ *
+ * @note Não deixa a pagina como padrão
+ */
 void RA8889::ShowPage(uint8_t page)
 {
 #if defined(COLOR_DEPTH_8)
@@ -20136,7 +20144,7 @@ void RA8889::PutPixel(uint16_t x,              // x of coordinate
 {
   GotoPixel_XY(x, y);                          //Posiciona o pixel na tela
   _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
-  color &= 0xFFFFFFFFu >> (32 - bpp);
+  color &= 0xFFFFFFFFu >> (32 - _bpp);
   _bus->DataWrite(color, _bpp/8);              //Envio de n Bytes de acordo com o formato de cor
  
   #if USE_XNWAIT
@@ -20347,7 +20355,7 @@ void RA8889::DrawPixel(uint16_t x, uint16_t y, uint32_t color)
 void RA8889::DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, const void* color_buffer)
 {  
   GotoPixel_XY(x, y);
-  WritePixels(color_buffer, num_pixels, true)
+  WritePixels(color_buffer, num_pixels, true);
 }
 
 

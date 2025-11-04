@@ -64,8 +64,9 @@ class IBus {
     virtual void DataWrite(uint8_t data) = 0;
     virtual void DataWrite(uint32_t data, uint8_t step) = 0;
     virtual uint8_t DataRead(void) = 0;
-    virtual uint16_t DataRead16(uint8_t address) = 0;
+    virtual uint32_t DataRead(uint8_t address, uint8_t step) = 0;
     virtual uint8_t StatusRead(void) = 0;
+    virtual uint32_t DataRead(uint8_t step) = 0;
     virtual void RegisterWrite(uint8_t reg, uint8_t data) = 0;
     virtual uint8_t RegisterRead(uint8_t reg) = 0;  
 	virtual void WriteBytes(const uint8_t* data, size_t len) = 0;

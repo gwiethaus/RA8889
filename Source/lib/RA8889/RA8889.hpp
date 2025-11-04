@@ -1718,7 +1718,7 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     void PutPixel(uint16_t x, uint16_t y, uint32_t color);
     void WritePixels(const void* color_buffer, uint32_t num_pixels, bool auto_increment = true);
     void DrawPixel(uint16_t x, uint16_t y, uint32_t color);
-    void DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, uint16_t *data);
+    void DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, const void* color_buffer);
     void DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t color);
     void DrawSquare (uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t forecolor, bool bfill = false);
     void DrawTriangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t x3, uint16_t y3, uint32_t forecolor, bool bfill = false);

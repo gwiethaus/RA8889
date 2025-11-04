@@ -684,13 +684,18 @@ uint8_t Bus_Parallel::DataRead(void)
     return data;
 }
 
+uint32_t DataRead(uint8_t address, uint8_t step)
+{
+
+  return 0;
+}
 
 /**
  * @brief Lê uma palavra (16 bits) de dados da controladora RA8889.
  * * Usada APENAS se a interface paralela da MCU for configurada para 16 bits (PARALLEL16).
  * @return uint16_t A palavra de 16 bits lida do barramento de dados (D[15:0]).
  */
-uint16_t Bus_Parallel::DataRead16(uint8_t data)
+uint32_t Bus_Parallel::DataRead(uint8_t step)
 {
     // Se a interface for 8 bits, não é possível ler 16 bits diretamente.
     // Retorna a leitura de 8 bits para evitar erro, embora o ideal seja erro/aviso.
@@ -698,7 +703,7 @@ uint16_t Bus_Parallel::DataRead16(uint8_t data)
         return static_cast<uint16_t>(DataRead()); 
     }
 
-    uint16_t data2 = 0;
+    uint16_t data = 0;
     
     // 1. Seleciona o chip (CS ativo em nível baixo)
     SetCS(0);

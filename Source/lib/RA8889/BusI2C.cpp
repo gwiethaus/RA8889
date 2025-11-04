@@ -103,7 +103,7 @@ uint8_t Bus_I2C::DataRead(void)
 }
 
 
-uint16_t Bus_I2C::DataRead16(uint8_t address)
+uint32_t Bus_I2C::DataRead(uint8_t address, uint8_t step)
 {
   return 0;
 }

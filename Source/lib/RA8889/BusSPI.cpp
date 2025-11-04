@@ -461,33 +461,90 @@ uint8_t Bus_SPI::DataRead(void)
 }
 
 
+
 /**
- * @brief Ler dados de 2 byte da controladora display via barramento SPI
+ * @brief Lê dados da controladora RA8889 (ou similar) via barramento SPI.
+ *
+ * Esta função realiza a leitura de 1 a 4 bytes consecutivos a partir do registrador
+ * de dados da controladora gráfica. O primeiro byte recebido corresponde à parte mais
+ * alta (MSB) e o último byte à parte mais baixa (LSB). O valor final é composto em uma
+ * variável de 32 bits no formato MSB→LSB (ex: 0xAABBCCDD).
  *
  * @verbatim
- * None
+ * Exemplo de sequência:
+ *  Bytes recebidos: 0xAA, 0xBB, 0xCC, 0xDD
+ *  Valor final:     0xAABBCCDD
  * @endverbatim
- * 
- * @param None
  *
- * @note Note
+ * @param step Quantidade de bytes a ler (1 a 4). Valores fora do intervalo são
+ *             automaticamente limitados.
+ *
+ * @return uint32_t Valor lido (até 32 bits), composto na ordem MSB→LSB.
+ *
+ * @note A comunicação SPI deve estar previamente configurada. A função controla
+ *       automaticamente o sinal de chip select (CS) e envia o comando SPI_DATAREAD
+ *       antes de iniciar a leitura dos bytes de dados.
+ *
+ * @see RwByte()
+ * @see CheckTransaction()
+ * @see SetCS()
  */
-uint16_t Bus_SPI::DataRead16(uint8_t address)
+uint32_t Bus_SPI::DataRead(uint8_t step)
 {
-  uint16_t data;
+  uint32_t data;
   CheckTransaction();
   SetCS(0);                                    //SS_RESET
-  RwByte(address);                             //
-  data = RwByte(0x00) << 8;                    //MSB and Shift 8 bits right  
-  data |= RwByte(0x00);                        //LSB
+  step = (step < 1) ? 1 : (step > 4 ? 4 : step);  
+  RwByte(SPI_DATAREAD);                        //0xc0, Leitura de dados
+  for (uint8_t i = 0; i < step; i++) {
+    uint8_t byte_in = RwByte(0x00);
+    data = (data << 8) | byte_in;              // MSB primeiro → desloca antes de somar
+  }
   SetCS(1);                                    //SS_SET
   return data;
-//  spi->transfer(address);                      //
-//  data = spi->transfer(0x00);                  //MSB
-//  data <<= 8;                                  //Shift 8 bits right
-//  data |= spi->transfer(0x00);                 //LSB
-//  SetCS(1);                                    //SS_SET
-//  return data;
+}
+
+
+/**
+ * @brief Lê dados da controladora RA8889 (ou similar) via barramento SPI.
+ *
+ * Esta função realiza a leitura de 1 a 4 bytes consecutivos a partir de um endereço
+ * da controladora gráfica. O primeiro byte recebido corresponde à parte mais alta
+ * (MSB) e o último byte à parte mais baixa (LSB). O valor final é composto em uma
+ * variável de 32 bits no formato MSB→LSB (ex: 0xAABBCCDD).
+ *
+ * @verbatim
+ * Exemplo de sequência:
+ *  Bytes recebidos: 0xAA, 0xBB, 0xCC, 0xDD
+ *  Valor final:     0xAABBCCDD
+ * @endverbatim
+ *
+ * @param address Endereço ou comando a ser enviado antes da leitura dos dados.
+ * @param step Quantidade de bytes a ler (1 a 4). Valores fora do intervalo são
+ *             automaticamente limitados.
+ *
+ * @return uint32_t Valor lido (até 32 bits), alinhado conforme a ordem MSB→LSB.
+ *
+ * @note A comunicação SPI deve estar previamente configurada. A função controla
+ *       automaticamente o sinal de chip select (CS).
+ *
+ * @see RwByte()
+ * @see CheckTransaction()
+ * @see SetCS()
+ */
+uint32_t Bus_SPI::DataRead(uint8_t address, uint8_t step)
+{
+  uint32_t data;
+  CheckTransaction();
+  SetCS(0);                                    //SS_RESET
+  step = (step < 1) ? 1 : (step > 4 ? 4 : step);  
+  RwByte(address);                             //
+  for (uint8_t i = 0; i < step; i++) {
+    uint8_t byte_in = RwByte(0x00);
+    data = (data << 8) | byte_in;              // MSB primeiro → desloca antes de somar
+  }
+  SetCS(1);                                    //SS_SET
+  return data;
 }
 
 

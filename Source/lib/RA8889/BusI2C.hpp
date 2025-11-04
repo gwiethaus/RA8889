@@ -33,7 +33,7 @@ class Bus_I2C : public IBus {
     void DataWrite(uint8_t data) override;
     void DataWrite(uint32_t data, uint8_t step) override;
     uint8_t DataRead(void) override;
-    uint16_t DataRead16(uint8_t address) override;
+    uint32_t DataRead(uint8_t address, uint8_t step) override;
     uint8_t StatusRead(void) override;
     void RegisterWrite(uint8_t reg, uint8_t data) override;
     uint8_t RegisterRead(uint8_t reg) override;
