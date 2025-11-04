@@ -43,6 +43,42 @@ void Bus_I2C::Init(void)
 }
 
 
+uint8_t  Bus_I2C::StartWrite(void)
+{
+  return;
+}
+
+
+void  Bus_I2C::EndWrite(void)
+{
+  return;
+}
+
+
+void  Bus_I2C::LockBus(bool force_unlock = false)
+{
+  return;
+}
+
+
+void  Bus_I2C::UnlockBus(void)
+{
+  return;
+}
+
+
+uint8_t Bus_I2C::RwByte(uint8_t value)
+{
+  return;
+}
+
+
+void Bus_I2C::RwBytes(const uint8_t* data, uint32_t len)
+{
+  return;
+}
+
+
 void Bus_I2C::CmdWrite(uint8_t cmd)
 {
   return;
@@ -53,18 +89,11 @@ void Bus_I2C::DataWrite(uint8_t data)
 {
   return;  
 }
-void Bus_I2C::DataWrite8(uint8_t data) {DataWrite(data);}
 
 
-void Bus_I2C::DataWrite16(uint16_t data)
+void DataWrite(uint32_t data, uint8_t step)
 {
-  return;
-}
-
-
-void Bus_I2C::DataWrite24(uint32_t data)
-{
-  return;
+  return;  
 }
 
 

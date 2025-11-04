@@ -3,6 +3,13 @@
 
 #include <Arduino.h>
 
+enum StepBytes : uint8_t {
+  BYTES1 = 1,
+  BYTES2 = 2,
+  BYTES3 = 3,
+  BYTES4 = 4
+};
+
 class DisplayBase; // classe base para todos os displays
 
 class IBus {
@@ -51,18 +58,21 @@ class IBus {
 	//metodos protegidos consigam ter visibilidade em todas as classes que 
 	//herdam de DisplayBase
     virtual void Init() = 0;
+    virtual uint8_t RwByte(uint8_t value) = 0;
+    virtual void RwBytes(const uint8_t* data, uint32_t len) = 0;
     virtual void CmdWrite(uint8_t cmd) = 0;
     virtual void DataWrite(uint8_t data) = 0;
-    virtual void DataWrite8(uint8_t data) = 0;
-    virtual void DataWrite16(uint16_t data) = 0;
-    virtual void DataWrite24(uint32_t data) = 0;
+    virtual void DataWrite(uint32_t data, uint8_t step) = 0;
     virtual uint8_t DataRead(void) = 0;
     virtual uint16_t DataRead16(uint8_t address) = 0;
     virtual uint8_t StatusRead(void) = 0;
     virtual void RegisterWrite(uint8_t reg, uint8_t data) = 0;
     virtual uint8_t RegisterRead(uint8_t reg) = 0;  
+	virtual void WriteBytes(const uint8_t* data, size_t len) = 0;
     virtual uint8_t StartWrite(void) = 0;
     virtual void EndWrite(void) = 0;
+	virtual void LockBus(bool force_unlock = false) = 0;
+    virtual void UnlockBus(void) = 0;
     virtual ~IBus() {}
   protected:
     friend class DisplayBase;  //Na classe DisplayBase podem usar os metodos protegidos desta classe.

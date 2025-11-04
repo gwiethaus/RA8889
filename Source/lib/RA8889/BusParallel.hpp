@@ -28,19 +28,28 @@ class Bus_Parallel : public IBus {
     ParallelBusConfig_t _cfg;                         //Config local específica de Parallel
     bool _parallel_init = false;                      //inicializou o Paralelo 8080/6800
     ParallelType _parallel_type;
-	int _parallel_pindir = OUTPUT;                    //Direção INPUT/OUTPUT de configuracao dos pinos
+    int _parallel_pindir = OUTPUT;                    //Direção INPUT/OUTPUT de configuracao dos pinos
+    bool _parallel_startwrite = false;                //inicia o bloco de escrita (evita overhead de bulk de dados)
+    bool _lock_bus = false;                           //permite uso por dentro do SetCS()
 	
-	inline void PulseEN();
-	void SetCS(uint8_t level_cs);
+    inline void PulseEN();
+    void SetCS(uint8_t level_cs);
     void SetRS(uint8_t level_rs);
-	void SetDataPinsDirection(int direction);
+    void SetDataPinsDirection(int direction);
 	
     void Init() override;
+    uint8_t StartWrite(void) override;
+    void EndWrite(void) override;
+    void LockBus(bool force_unlock = false) override;
+    void UnlockBus(void) override;	
+    uint8_t RwByte(uint8_t value) override;
+	  void RwBytes(const uint8_t* data, uint32_t len) override;
     void CmdWrite(uint8_t cmd) override;
     void DataWrite(uint8_t data) override;
-    void DataWrite8(uint8_t data) override;
-    void DataWrite16(uint16_t data) override;
-    void DataWrite24(uint32_t data) override;
+    void  DataWrite(uint32_t data, uint8_t step) override;
+    void WriteBytes(const uint8_t* data, size_t len) override;
+    void DataWrite8(uint8_t data);
+    void DataWrite16(uint16_t data);
     uint8_t DataRead(void) override;
     uint16_t DataRead16(uint8_t address) override;
     uint8_t StatusRead(void) override;

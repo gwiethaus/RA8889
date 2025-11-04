@@ -89,6 +89,7 @@ void Bus_SPI::createSPI(SPIHostType hostType)
   #if HAS_VSPI
     case HOST_VSPI:
          spi = new SPIClass(VSPI);
+		 DEBUG_PRINT("Selecionou Objeto VSPI criado (valor): ", VSPI,true,true);
          break;
   #endif
   
@@ -144,6 +145,7 @@ void Bus_SPI::Init(void)
 
   pinMode(_cfg.pin_cs, OUTPUT);
   digitalWrite(_cfg.pin_cs, HIGH);
+  _lock_bus = false;
 
   createSPI(static_cast<SPIHostType>(_cfg.spi_type));
 
@@ -180,7 +182,34 @@ void Bus_SPI::Init(void)
   
 #endif
 
+  _spi_startwrite = false;
   _spi_init = true;
+}
+
+
+/**
+ * @brief Verifica e garante que exista uma transação SPI ativa.
+ *
+ * Esta função é utilizada em chamadas que não fazem parte de um bloco de escrita
+ * volumosa (StartWrite/EndWrite), assegurando que ao menos uma transação esteja ativa.
+ *
+ * Caso nenhuma transação esteja em andamento, inicia uma nova automaticamente.
+ *
+ * É especialmente útil em comandos isolados, como leituras de status ou registros
+ * de controle, prevenindo falhas por ausência de beginTransaction().
+ *
+ * @return void
+ *
+ * @note
+ * - Se `_spi_startwrite == false` e `_spi_transaction == false`, inicia uma nova transação SPI.
+ * - Não altera `_spi_startwrite`, pois seu objetivo é apenas manter o barramento ativo.
+ */
+void Bus_SPI::CheckTransaction()
+{
+  if (!_spi_startwrite && !_spi_transaction) {
+    spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
+  	_spi_transaction = true;
+  }
 }
 
 
@@ -209,7 +238,58 @@ void Bus_SPI::Init(void)
  */
 void Bus_SPI::SetCS(uint8_t level_cs)
 {
+  if (_lock_bus) return;
   level_cs == 0 ? digitalWrite(_cfg.pin_cs, LOW) : /*SS_RESET */  digitalWrite(_cfg.pin_cs, HIGH); /*SS_SET*/
+}
+
+
+/**
+ * @brief Realiza bloqueio do barramento pelo pino Chip Select (CS)
+ *
+ * Não serão executados bloqueio/desbloqueio de barramento pelo pino CS dentro 
+ * de metodos/funções. Desta forma ocorrendo apenas uma única chamada de 
+ * bloqueio  por esta função LockBus()
+ * 
+ * @verbatim
+ * None
+ * @endverbatim
+ * 
+ * @param force_unlock Força o desbloquio do barramento caso por algum motivo estava bloqueado os o esquecimento do uso da função UnlockBus();
+ *
+ */
+void Bus_SPI::LockBus(bool force_unlock)
+{
+  if (force_unlock) {
+    if (digitalRead(_cfg.pin_cs) == LOW) {
+	  SetCS(1);  //para evitar alguma coisa mal resolvida
+	  _lock_bus = false;
+	}
+  }
+  if (_lock_bus) return;
+  SetCS(0);
+  _lock_bus = true;
+}
+
+
+/**
+ * @brief Realiza desbloqueio do barramento pelo pino Chip Select (CS)
+ *
+ * Serão novamente executados bloqueio/desbloqueios de barramento pelo pino CS 
+ * dentro de metodos/funções. Desta forma, é liberado o barramento por essa 
+ * função LockBus().
+ * 
+ * @verbatim
+ * None
+ * @endverbatim
+ * 
+ * @param None
+ *
+ */
+void Bus_SPI::UnlockBus(void)
+{
+  if (!_lock_bus) return;
+  _lock_bus = false;
+  SetCS(1);
 }
 
 
@@ -229,6 +309,49 @@ uint8_t Bus_SPI::RwByte(uint8_t value)
   uint8_t result;
   result = spi->transfer(value);
   return result;
+}
+
+
+/**
+ * @brief Escrever um buffer de dados para barramento SPI
+ *
+ * @verbatim
+ * None
+ * @endverbatim
+ * 
+ * @param value: ponteiro de buffer de dados para o SPI
+ * @param len:   tamanho de dados para enviar para o SPI
+ *
+ * @note Note
+ */
+void Bus_SPI::RwBytes(const uint8_t* data, uint32_t len)
+{
+
+  #if defined(ESP32) || defined(ESP8266)
+    // --- ESP32 / ESP8266 ---
+    // Usa DMA interno e é o método mais rápido disponível.
+    spi->writeBytes(data, len);
+    //spi->transferBytes(data, nullptr, len);
+  #elif defined(ARDUINO_ARCH_SAM)
+    // --- Arduino Due (ARM Cortex-M3) ---
+    // Usa o método nativo de envio em bloco.
+    for (size_t i = 0; i < len; i++) {
+        spi->transfer(data[i]);
+    }
+  #elif defined(ARDUINO_ARCH_AVR)
+    // --- AVR (UNO, Mega, Nano, etc.) ---
+    // transfer(buf, len) nem sempre existe no AVR SPI padrão.
+    // Então envia byte a byte.
+    for (size_t i = 0; i < len; i++) {
+        spi->transfer(data[i]);
+    }
+  #elif defined(ARDUINO_ARCH_RP2040)
+    // --- Raspberry Pi Pico ---
+    spi->transfer((void*)data, len);
+  #else
+    // --- Fallback genérico ---
+    spi->transfer((void*)data, len);
+  #endif
 }
 
 
@@ -272,50 +395,45 @@ void Bus_SPI::DataWrite(uint8_t data)
   RwByte(data);                                //Envia um byte de Dado para o SPI
   SetCS(1);                                    //SS_SET;
 }
-void Bus_SPI::DataWrite8(uint8_t data) {DataWrite(data);}
 
 
 /**
- * @brief Escreve dados de 2 byte (16 bits) para a controladora display via barramento SPI
+ * @brief Escreve dados de 1 a 4 bytes (até 32 bits) para a controladora de display via barramento SPI.
  *
- * @verbatim
- * None
- * @endverbatim
+ * Esta função envia de 1 até 4 bytes consecutivos (definidos por @p step) ao barramento SPI, 
+ * precedidos pelo prefixo de controle SPI_DATAWRITE (0x80), que indica à controladora 
+ * que os bytes subsequentes são dados de escrita.
+ *
+ * O valor de @p data é deslocado em blocos de 8 bits e enviado no formato LSB → MSB, 
+ * conforme o padrão de transmissão SPI da maioria dos controladores gráficos (ex.: RA8889).
  * 
- * @param data: dados de 2 bytes para display
+ * O número de bytes a enviar é automaticamente limitado entre 1 e 4, mesmo que o valor de @p step 
+ * informado esteja fora desse intervalo.
+ * 
+ * @param data Valor de até 32 bits contendo os dados a serem transmitidos.
+ *              Apenas os bytes menos significativos são utilizados, conforme @p step.
+ * @param step Quantidade de bytes a transmitir (1 a 4). 
+ *              Valores fora desse intervalo serão automaticamente ajustados.
  *
- * @note Note
+ * @note 
+ * - A sequência de transmissão é:
+ *   1. Verificação de transação ativa via CheckTransaction().
+ *   2. Ativação do sinal CS (SetCS(0)).
+ *   3. Envio do byte de controle SPI_DATAWRITE (0x80).
+ *   4. Transmissão de @p step bytes de dados em ordem LSB → MSB.
+ *   5. Desativação do sinal CS (SetCS(1)).
+ * - Caso a controladora utilize convenção MSB → LSB, a ordem de envio deverá ser ajustada no loop.
+ * 
+ * @see Bus_SPI::CmdWrite()
  */
-void Bus_SPI::DataWrite16(uint16_t data)
+void Bus_SPI::DataWrite(uint32_t data, uint8_t step)
 {
   CheckTransaction();
   SetCS(0);                                    //SS_RESET;
-  RwByte(SPI_DATAWRITE);                       //0x80, Indica Dados para escrever
-  RwByte(data);                                //Envia um byte menos significativo de Dado para o SPI
-  RwByte(data >> 8);                           //Envia um byte mais significativo de Dado para o SPI
-  SetCS(1);                                    //SS_SET;
-}
-
-
-/**
- * @brief Escreve dados de 3 byte (24 bits) para a controladora display via barramento SPI
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param uint32_t data: dados de 3 bytes para display. A parte alta de bit 31-28 será truncado
- *
- * @note None
- */
-void Bus_SPI::DataWrite24(uint32_t data)
-{
-  CheckTransaction();
-  SetCS(0);                                    //SS_RESET;
+  step = (step < 1) ? 1 : (step > 4 ? 4 : step);
   RwByte(SPI_DATAWRITE);                       //0x80, Indica Dados para escrever 
-  RwByte(data);                                //Envia byte 1 de Dado para o SPI
-  RwByte(data >> 8);                           //Envia byte 2 de Dado para o SPI
-  RwByte(data >> 16);                          //Envia byte 3 de Dado para o SPI
+  for (uint8_t i = 0; i < step; i++)
+    RwByte(data >> (i * 8));                   //Envia de byte 1 até 4 de dados para o SPI
   SetCS(1);                                    //SS_SET;
 }
 
@@ -359,12 +477,17 @@ uint16_t Bus_SPI::DataRead16(uint8_t address)
   uint16_t data;
   CheckTransaction();
   SetCS(0);                                    //SS_RESET
-  spi->transfer(address);                      //
-  data = spi->transfer(0x00);                  //MSB
-  data <<= 8;                                  //Shift 8 bits right
-  data |= spi->transfer(0x00);                 //LSB
+  RwByte(address);                             //
+  data = RwByte(0x00) << 8;                    //MSB and Shift 8 bits right  
+  data |= RwByte(0x00);                        //LSB
   SetCS(1);                                    //SS_SET
   return data;
+//  spi->transfer(address);                      //
+//  data = spi->transfer(0x00);                  //MSB
+//  data <<= 8;                                  //Shift 8 bits right
+//  data |= spi->transfer(0x00);                 //LSB
+//  SetCS(1);                                    //SS_SET
+//  return data;
 }
 
 
@@ -389,7 +512,6 @@ uint8_t Bus_SPI::StatusRead(void)
   RwByte(SPI_STATUSREAD);                      //0x40, Read Status SPI
   temp = RwByte(REG_STSR);                     //0x00, Read STSR Register
   SetCS(1);                                    //SS_SET
-  //DEBUG_PRINT("Pos dentro do Bus_SPI::StatusRead ----> ", temp,true,true);
   return temp;
 }
 
@@ -397,6 +519,8 @@ uint8_t Bus_SPI::StatusRead(void)
 /** 
  * @brief Escrever em um registrador da controladora display
  *
+ * @warning Não é permitido uso de LockBus()/UnlockBus()
+ * 
  * @verbatim
  * None
  * @endverbatim
@@ -404,9 +528,14 @@ uint8_t Bus_SPI::StatusRead(void)
  * @param None
  *
  * @note reg: registrador do display, data: dados para escrever no registrador
-  *       Não é necessário o uso interno da função CheckTransaction(), pois  CmdWrite() e DataRead() já possuem o  CheckTransaction()
-  * 
+ *       Não é necessário o uso interno da função CheckTransaction(), pois  CmdWrite() e DataRead() já possuem o  CheckTransaction()
+ * 
  * @return None
+ *
+ * @see LockBus()
+ * @see UnlockBus()
+ * @see CmdWrite();
+ * @see DataWrite(data);
  */
 void Bus_SPI::RegisterWrite(uint8_t reg, uint8_t data)
 {
@@ -436,29 +565,28 @@ uint8_t Bus_SPI::RegisterRead(uint8_t reg)
 }
 
 
-/**
- * @brief Verifica e garante que exista uma transação SPI ativa.
+/** 
+ * @brief Escreve um buffer de dados para SPI
  *
- * Esta função é utilizada em chamadas que não fazem parte de um bloco de escrita
- * volumosa (StartWrite/EndWrite), assegurando que ao menos uma transação esteja ativa.
+ * @verbatim
+ * None
+ * @endverbatim
+ * 
+ * @param None
  *
- * Caso nenhuma transação esteja em andamento, inicia uma nova automaticamente.
+ * @return None
  *
- * É especialmente útil em comandos isolados, como leituras de status ou registros
- * de controle, prevenindo falhas por ausência de beginTransaction().
- *
- * @return void
- *
- * @note
- * - Se `_spi_startwrite == false` e `_spi_transaction == false`, inicia uma nova transação SPI.
- * - Não altera `_spi_startwrite`, pois seu objetivo é apenas manter o barramento ativo.
+ * @see CheckTransaction()
+ * @see SetCS()
+ * @see RwBytes()
  */
-void Bus_SPI::CheckTransaction()
+void Bus_SPI::WriteBytes(const uint8_t* data, size_t len)
 {
-  if (!_spi_startwrite && !_spi_transaction) {
-    spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
-  	_spi_transaction = true;
-  }
+  if (!_spi_init || data == nullptr || len == 0) return;
+  CheckTransaction();
+  SetCS(0);                                    //SS_RESET
+  RwBytes(data, len);
+  SetCS(1);                                    //SS_SET
 }
 
 
@@ -487,13 +615,22 @@ void Bus_SPI::CheckTransaction()
  */
 uint8_t Bus_SPI::StartWrite(void)
 {
-  if (!_spi_init) return 0;
+  uint8_t status = 0;
+  
+  if (!_spi_init) return status;
+
   if (!_spi_transaction) {
     spi->beginTransaction(SPISettings(_spi_clockmax, _spi_dataorder, _spi_datamode));
     _spi_transaction = true;
-	  _spi_startwrite = true;
-    return 2;
-  } else return 3;
+    status = 2;
+    Serial.println("ja tinha umsa transacao... nao podia entrar aqui!!!!!!!!");
+  } else status = 3;
+
+  if (!_spi_startwrite) {
+    _spi_startwrite = true;
+  }
+
+  return status;
 }
 
 
@@ -516,7 +653,13 @@ void Bus_SPI::EndWrite(void)
 {
   if (!_spi_init) return;
   if (!_spi_startwrite) return;
-  if (_spi_transaction) spi->endTransaction();
-  _spi_transaction = false;
-  _spi_startwrite = false;
+  
+  if (_spi_startwrite) {
+    _spi_startwrite = false;
+  }
+  
+  if (_spi_transaction) {
+    spi->endTransaction();
+   _spi_transaction = false;
+  }
 }

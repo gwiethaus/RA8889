@@ -69,7 +69,7 @@ void myInterrupt_cb(TouchPoint tpoint, uint8_t idtouch, uint8_t ntouch)
 }
 
 
-Bus_SPI bus_spi;
+Bus_SPI busspi;
 RA8889 gfx(PIN_CS, PIN_RESET);
 FT touch(PIN_SDA, PIN_SCL, PIN_INT, PIN_RESET_CP);
 TouchEventInfo* events;
@@ -93,8 +93,8 @@ void setup() {
   cfg.pin_sclk = 12;
   cfg.pin_cs   = 10;
   cfg.freq_write = 20000000;
-  bus_spi.Config(&cfg);                        // Grava a configuração
-  gfx.setBus(bus_spi);                         // Seta o Bus SPI
+  busspi.Config(&cfg);                         // Grava a configuração
+  gfx.setBus(busspi);                          // Seta o Bus SPI
   DEBUG_PRINT("Bus SPI configurado", 0,false,true);
 
   //So irá funcionar se o pino do MCU tiver potencia suficiente apra manter o sinal a 3,3V

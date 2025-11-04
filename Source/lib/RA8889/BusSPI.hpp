@@ -70,25 +70,28 @@ class Bus_SPI : public IBus {
     uint8_t _spi_dataorder;                      //ordem de dados spi MSBFIRST ou LSBFIRST
     bool _spi_transaction;                       //A trasação rpincipal do barramento spi está ativo
     bool _spi_startwrite = false;                //inicia o bloco de escrita (evita overhead de bulk de dados)
+    bool _lock_bus = false;                      //permite uso por dentro do SetCS()
 
     void createSPI(SPIHostType hostType);
     void SetCS(uint8_t level_cs);
-    uint8_t RwByte(uint8_t value);
     void CheckTransaction(void);
 
     void Init(void) override;
+    uint8_t StartWrite(void) override;
+    void EndWrite(void) override;
+    void LockBus(bool force_unlock = false) override;
+    void UnlockBus(void) override;
+    uint8_t RwByte(uint8_t value) override;
+	  void RwBytes(const uint8_t* data, uint32_t len) override;
     void CmdWrite(uint8_t cmd) override;
     void DataWrite(uint8_t data) override;
-    void DataWrite8(uint8_t data) override;
-    void DataWrite16(uint16_t data) override;
-    void DataWrite24(uint32_t data) override;
+    virtual void DataWrite(uint32_t data, uint8_t step) override;
     uint8_t DataRead(void) override;
     uint16_t DataRead16(uint8_t address) override;
     uint8_t StatusRead(void) override;
     void RegisterWrite(uint8_t reg, uint8_t data) override;
+	  void WriteBytes(const uint8_t* data, size_t len) override;
     uint8_t RegisterRead(uint8_t reg) override;
-    uint8_t StartWrite(void);
-    void EndWrite(void);
 };
 
 #endif    // fim de include guard BUSSPI_HPP

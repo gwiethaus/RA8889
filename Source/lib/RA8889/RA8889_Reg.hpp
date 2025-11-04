@@ -497,4 +497,7 @@
 #define SPI_DATAREAD                           0xc0            //Read Data from SPI 
 #define SPI_STATUSREAD                         0x40            //Read Status from SPI
 
+//FIFO
+#define RA8889_FIFO_SIZE                       0x40            //Tamanho de 64 bytes da FIFO de escrita/leitura
+
 #endif //fim do include guard RA8889_REG_HPP

@@ -358,6 +358,16 @@ void RA8889::Brightness(uint16_t level)
 //================================================================================
 
 
+
+uint32_t make_mask_bpp(uint8_t bpp)
+{
+  // Garante que bpp > 0 e <= 32
+  // Cria máscara do tipo 0xFF, 0xFFFF, 0xFFFFFF, 0xFFFFFFFF
+  // sem ifs nem loops
+  return (0xFFFFFFFFu >> (32 - bpp));
+}
+
+
 // --- conversão HSV → RGB565 ---
 uint16_t HSVToRGB565(float h, float s, float v) {
   float r, g, b;
@@ -2420,27 +2430,27 @@ void RA8889::PLL_InitilizeWaitReady(void)
   bool system_ok = false;
   
   do {
-    temp = _bus->StatusRead();               //Read Status Register STSR
+    temp = _bus->StatusRead();                 //Read Status Register STSR
     DEBUG_PRINT("_bus->StatusRead()", temp,true,true);
-	if((temp & 0x02) == 0x00) {                //Veja se o bit 1 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
+	if((temp & 0x02) == 0x00) {                  //Veja se o bit 1 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
 
       delay(2);                                //MCU too fast, necessary
-      _bus->CmdWrite(REG_CCR);                   //0x01, Access register Chip Configuration Register (CCR)
+      _bus->CmdWrite(REG_CCR);                 //0x01, Access register Chip Configuration Register (CCR)
       delay(2);                                //MCU too fast, necessary
-      temp = _bus->DataRead();                   //Leia o CCR 
+      temp = _bus->DataRead();                 //Leia o CCR 
       if((temp & 0x80) == 0x80) {              //Check CCR register's PLL is ready or not (bit 7 = 1) value=0x80
         system_ok = true;                      //PLL pronto
         count_timeout = 0;
       } else {
         delay(2);                              //MCU too fast, necessary
-        _bus->CmdWrite(REG_CCR);                 //0x01, Access register Chip Configuration Register (CCR)
+        _bus->CmdWrite(REG_CCR);               //0x01, Access register Chip Configuration Register (CCR)
         delay(2);                              //MCU too fast, necessary
-        _bus->DataWrite(0x80);                   //Reconfigura a frequencia do PLL
+        _bus->DataWrite(0x80);                 //Reconfigura a frequencia do PLL
       }
 	    
     } else {                          
         
-	  system_ok = false;                         //A inicialização interna ainda está sendo feita
+      system_ok = false;                         //A inicialização interna ainda está sendo feita
       count_timeout++;                           //fazer outra tentativa
 	    
     }
@@ -2832,9 +2842,9 @@ void RA8889::SDRAM_Init(void)
 void RA8889::XnWAIT_Mask(bool mask)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR)
+  _bus->CmdWrite(REG_CCR);                     //0x01, Chip Configuration Register (CCR)
   temp = _bus->DataRead();
-  mask ? SETB(temp,6) : CLRB(temp,6);      //Set/reset bit 6
+  mask ? SETB(temp,6) : CLRB(temp,6);          //Set/reset bit 6
   _bus->DataWrite(temp);	
 }
 
@@ -3071,7 +3081,7 @@ void RA8889::SFlashSPI_Enable(bool b)
 void RA8889::HostDataBus_Select_8bit(void)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_CCR);                       //0x01, Chip Configuration Register (CCR) 
+  _bus->CmdWrite(REG_CCR);                     //0x01, Chip Configuration Register (CCR) 
   temp = _bus->DataRead();
   CLRB(temp,0);                                //Reset bit 0
   _bus->DataWrite(temp);
@@ -3143,20 +3153,20 @@ void RA8889::HostDataBus_Select_16bit(void)
 void RA8889::HostColorDepthFormat(uint8_t type)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
+  _bus->CmdWrite(REG_MACR);                  //0x02, Memory Access Control Register (MACR)
   temp = _bus->DataRead();
   
-  if (type == 0) {                             //0xb: Direct write (for all 8 bits MPU I/F, 16 bits MPU I/F with 8bpp data mode 1 & 2, 16 bits MPU I/F with 16/24-bpp data mode 1 & serial host interface)
+  if (type == 0) {                           //0xb: Direct write (for all 8 bits MPU I/F, 16 bits MPU I/F with 8bpp data mode 1 & 2, 16 bits MPU I/F with 16/24-bpp data mode 1 & serial host interface)
 	  CLRB(temp,7);                            //Reset bit 7
 	  CLRB(temp,6);                            //Reset bit 6
-  } else if (type == 1) {                      //10b: Mask high byte of each data (ex. 16 bit MPU I/F with 8-bpp data mode 1)
+  } else if (type == 1) {                    //10b: Mask high byte of each data (ex. 16 bit MPU I/F with 8-bpp data mode 1)
 	  SETB(temp,7);                            //Set bit 7
 	  CLRB(temp,6);                            //Reset bit 6
-  } else if (type == 2) {                      //11b: Mask high byte of even data (ex. 16 bit MPU I/F with 24-bpp data mode 2)
+  } else if (type == 2) {                    //11b: Mask high byte of even data (ex. 16 bit MPU I/F with 24-bpp data mode 2)
 	  SETB(temp,7);                            //Set bit 7
 	  SETB(temp,6);                            //Set bit 6
   }
-  _bus->DataWrite(temp);                         //Mask high byte of each data (ex. 16 bit MPU I/F with 8-bpp data mode 1)
+  _bus->DataWrite(temp);                     //Mask high byte of each data (ex. 16 bit MPU I/F with 8-bpp data mode 1)
 }
 
 
@@ -3230,11 +3240,11 @@ void RA8889::Select_MCU_ColorDepth(void)
 void RA8889::HostReadMemoryDirection(MemoryDirection direction)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_MACR);                      //0x02, Memory Access Control Register (MACR)
+  _bus->CmdWrite(REG_MACR);                    //0x02, Memory Access Control Register (MACR)
   temp = _bus->DataRead();
   temp &= ~(cSetb5 | cSetb4);                  //Reset bit 5 e 4
   temp |= (static_cast<uint8_t>(direction) << 4); //posiciona o valor para o bit 5 e 4
-  _bus->DataWrite(temp);                         //Host Read Memory Direction
+  _bus->DataWrite(temp);                       //Host Read Memory Direction
 }
 
 
@@ -3261,7 +3271,7 @@ void RA8889::HostReadMemoryDirection(MemoryDirection direction)
 void RA8889::HostWriteMemoryDirection(MemoryDirection direction)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_MACR);                             //0x02, Memory Access Control Register (MACR)
+  _bus->CmdWrite(REG_MACR);                           //0x02, Memory Access Control Register (MACR)
   temp = _bus->DataRead();
   temp &= ~(cSetb2 | cSetb1);                         //Reset bit 2 e 1
   temp |= (static_cast<uint8_t>(direction) << 1);     //posiciona o valor para o bit 2 e 1
@@ -3361,7 +3371,7 @@ void RA8889::ExtInterrupt_NoDebounce(void)
 void RA8889::ExtInterrupt_InputLevelTrigger(eInterrupLevelTrigger leveltrg)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  _bus->CmdWrite(REG_ICR);                     //0x03, Input Control Register (ICR)
   temp = _bus->DataRead();     
   CLRB(temp,5);                                //Reset bit 5
   CLRB(temp,4);                                //Reset bit 4
@@ -3386,7 +3396,7 @@ void RA8889::ExtInterrupt_InputLevelTrigger(eInterrupLevelTrigger leveltrg)
 void RA8889::LVDS_DataFormat_VESA(void)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  _bus->CmdWrite(REG_ICR);                     //0x03, Input Control Register (ICR)
   temp = _bus->DataRead();                       
   CLRB(temp,3);                                //Reset bit 3 
   _bus->DataWrite(temp);
@@ -3409,7 +3419,7 @@ void RA8889::LVDS_DataFormat_VESA(void)
 void RA8889::LVDS_DataFormat_JEIDA(void)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_ICR);                       //0x03, Input Control Register (ICR)
+  _bus->CmdWrite(REG_ICR);                     //0x03, Input Control Register (ICR)
   temp = _bus->DataRead();                       
   SETB(temp,3);                                //Set bit 3
   _bus->DataWrite(temp);
@@ -5502,11 +5512,11 @@ void RA8889::PIP_Select_Parameter(ePIPSelect pip)
 void RA8889::Select_MainWindow_8bpp(void)
 {
   uint8_t temp;
-  _bus->CmdWrite(REG_MPWCTR);                    //0x10, Main/PIP Window Control Register
+  _bus->CmdWrite(REG_MPWCTR);                  //0x10, Main/PIP Window Control Register
   temp = _bus->DataRead();
   CLRB(temp,3);                                //Reset bit 3
   CLRB(temp,2);                                //Reset bit 2
-  _bus->DataWrite(temp);                         //Set main windows image to 8bpp
+  _bus->DataWrite(temp);                       //Set main windows image to 8bpp
 }
 
 
@@ -20083,7 +20093,7 @@ void RA8889::ShowPage(uint8_t page)
 }
 
 
-/** Não testado
+/** Nao testado
  * @brief Desenha um simples Pixel
  *        
  * @verbatim
@@ -20119,25 +20129,16 @@ void RA8889::ShowPage(uint8_t page)
  *   dados que envia pela SPI. Isso é realizado usando a funcao 
  *   SPI_DataWrite24bpp()
  */
-void RA8889::PutPixel(uint16_t x,      // x of coordinate
-                            uint16_t y,      // y of coordinate
-                            uint32_t color   //formato 8bpp:R3G3B2, 16bpp:R5G6B5 ou 24bpp:R8G8B8
-                           )
+void RA8889::PutPixel(uint16_t x,              // x of coordinate
+                      uint16_t y,              // y of coordinate
+                      uint32_t color           //formato 8bpp:R3G3B2, 16bpp:R5G6B5 ou 24bpp:R8G8B8
+                     )
 {
   GotoPixel_XY(x, y);                          //Posiciona o pixel na tela
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
-  Wait_WriteFIFO_NotFull();                    //Espera que a FIFO não esteja cheia de algum outro processamento anterior
-  
-  #if defined(COLOR_DEPTH_8)
-    _bus->DataWrite8(color & 0xff);
-  #elif defined(COLOR_DEPTH_16)
-    _bus->DataWrite16(color & 0xffff);
-  #elif defined(COLOR_DEPTH_24)
-    _bus->DataWrite24(color & 0xffffff);
-  #else
-	#error "COLOR_DEPTH não definido corretamente"
-  #endif
-  
+  _bus->CmdWrite(REG_MRWDP);                   //0x04, Memory Data Read/Write Port (MRWDP)
+  color &= 0xFFFFFFFFu >> (32 - bpp);
+  _bus->DataWrite(color, _bpp/8);              //Envio de n Bytes de acordo com o formato de cor
+ 
   #if USE_XNWAIT
     Wait_WriteFIFO_NotFull();                  //Espera no final do pixel ou bloco
   #endif
@@ -20186,52 +20187,6 @@ uint32_t RA8889::getPixel(uint16_t x, uint16_t y)
 }
 
 
-//Nao testado
-//transfere dados contido no buffer em ponto inicial da tela linearmente
-//use uma area de janela para trasnferencia (o LVGL usa esta tecnica, tasnfere lienarmente os dados preenchendo esta area de janela apssada pelo evento flush_cb()
-//use para calular num_pixels = width * height * (color_depth / 8)
-void RA8889::PushBlock(uint16_t x, 
-                             uint16_t y,
-                             uint16_t num_pixels,      //numero total de pixels no buffer
-                             const void* color_buffer  // ponteiro genérico
-                          )
-{
-    GotoPixel_XY(x, y);           // posição inicial
-    _bus->CmdWrite(REG_MRWDP);      // 0x04, Memory Data Read/Write Port
-
-#if defined(COLOR_DEPTH_8)
-    const uint8_t* p = static_cast<const uint8_t*>(color_buffer);
-    for(uint32_t i = 0; i < num_pixels; i++) {
-        Wait_WriteFIFO_NotFull();
-        _bus->DataWrite8(p[i]);
-    }
-
-#elif defined(COLOR_DEPTH_16)
-    const uint16_t* p = static_cast<const uint16_t*>(color_buffer);
-    for(uint32_t i = 0; i < num_pixels; i++) {
-        Wait_WriteFIFO_NotFull();
-        _bus->DataWrite16(p[i]);
-    }
-
-#elif defined(COLOR_DEPTH_24)
-    const uint8_t* p = static_cast<const uint8_t*>(color_buffer); // 3 bytes por pixel
-    for(uint32_t i = 0; i < num_pixels; i++) {
-        Wait_WriteFIFO_NotFull();
-        // envia 3 bytes consecutivos
-        _bus->DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
-        p += 3;
-    }
-
-#else
-    #error "COLOR_DEPTH não definido corretamente"
-#endif
-
-#if USE_XNWAIT
-    Wait_WriteFIFO_NotFull();
-#endif
-}
-
-
 /**
  * @brief Envia um bloco linear de pixels para o RA8889 dentro da janela ativa.
  *
@@ -20275,36 +20230,42 @@ void RA8889::WritePixels(const void* color_buffer,
                                bool auto_increment   // true = avança cursor, false = mantém posição (cursosr interno do display)
                               ) 
 {
-  if(!auto_increment) GotoPixel_XY(0, 0);      // Posição inicial
+  if(!auto_increment) GotoPixel_XY(0, 0);                      // Posição inicial
 
-  _bus->CmdWrite(REG_MRWDP);                   // Memory Data Read/Write Port
+  // Determina quantos pixels cabem em um FIFO do RA8889
+  uint8_t bytesPerPixel = _bpp/8;                              //bytes por pxiel baseado no bits per pixel (8/16/24)
+  uint8_t size_pixel = bytesPerPixel == 3 ? 4 : bytesPerPixel; //Se for 24 bpp (3 bytes/pixel), precisa arredondar para 4 para manter alinhamento SPI/DMA.
 
-#if defined(COLOR_DEPTH_8)
-  const uint8_t* p = static_cast<const uint8_t*>(color_buffer);
-  for(uint32_t i = 0; i < num_pixels; i++) {
-      _bus->DataWrite8(p[i]);
-      Wait_WriteFIFO_NotFull();
-  }
+  uint32_t pixelsPerChunk = RA8889_FIFO_SIZE / size_pixel;     //numero de pixels que cabem no FIFO
+  uint32_t bytesPerChunk = pixelsPerChunk * bytesPerPixel;    //quantos bytes por chunck ira ocupar
 
-#elif defined(COLOR_DEPTH_16)
-  const uint16_t* p = static_cast<const uint16_t*>(color_buffer);
-  for(uint32_t i = 0; i < num_pixels; i++) {
-    _bus->DataWrite16(p[i]);
+  uint32_t pixelsSent = 0;
+  const uint8_t* ptr = static_cast<const uint8_t*>(color_buffer); 
+
+  uint32_t pixelsRemaining = 0;
+  uint32_t thisChunk = 0;
+  uint32_t bytesThisChunk = 0;
+  uint16_t i = 1;
+
+  _bus->CmdWrite(REG_MRWDP);                                   // Memory Data Read/Write Port
+
+  while (pixelsSent < num_pixels) {
+    // Calcula quantos pixels ainda restam
+    pixelsRemaining = num_pixels - pixelsSent;                 //pixel restantes depois que enviou algo
+    thisChunk = (pixelsRemaining < pixelsPerChunk) ? pixelsRemaining : pixelsPerChunk;
+    bytesThisChunk = thisChunk * bytesPerPixel;
+    
+    // Envia bloco de pixels via SPI (rápido)
+    _bus->LockBus();
+    _bus->WriteBytes(ptr, bytesThisChunk);
+    _bus->UnlockBus();
+    ptr += bytesThisChunk;
+    pixelsSent += thisChunk;
+
+    // Espera FIFO liberar antes do próximo bloco
     Wait_WriteFIFO_NotFull();
-  }
+   }
 
-#elif defined(COLOR_DEPTH_24)
-  const uint8_t* p = static_cast<const uint8_t*>(color_buffer); 
-  for(uint32_t i = 0; i < num_pixels; i++) {
-    _bus->DataWrite24(p[0] | (p[1]<<8) | (p[2]<<16));
-    p += 3;
-    Wait_WriteFIFO_NotFull();
-  }
-
-#else
-    #error "COLOR_DEPTH não definido corretamente"
-
-#endif
 }
 
 
@@ -20362,9 +20323,6 @@ void RA8889::DrawPixel(uint16_t x, uint16_t y, uint32_t color)
 }
 
 
-//testado em colordepth 16
-//nao testado em colordepth 24
-//nao testado em colordepth 8
 /** 
  * @brief Draw a series of pixels
  *        
@@ -20373,40 +20331,23 @@ void RA8889::DrawPixel(uint16_t x, uint16_t y, uint32_t color)
  * @param (x,y):   Posicao coordenada na tela
  *        data:    an array of 8/16/24bit colors (pixels)
  *        num_pixels:   how many pixels
+ *
  * @note A cor do pixel vai depender do Color Depth escolhido
  *       8bpp:  R3G3B2
  *       16bpp: R5G6B5
  *       24bpp: R8G8B8
  *
+ * @see GotoPixel_XY()
+ * @see setPixelPos()
+ * @see WritePixels()
+ * @see PutPixel()
+ * @see DrawPixel()
+ * @see setWindow()
  */
-void RA8889::DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, uint16_t *data)
+void RA8889::DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, const void* color_buffer)
 {  
   GotoPixel_XY(x, y);
-  _bus->CmdWrite(REG_MRWDP);                     //0x04, Memory Data Read/Write Port (MRWDP)
-  Wait_WriteFIFO_NotFull();                    //Espera que a FIFO não esteja cheia de algum outro processamento anterior
-
-  #ifdef COLOR_DEPTH_16
-    for (uint32_t i = 0; i < num_pixels; i++) {                    //y
-      _bus->DataWrite16((uint16_t)*data);
-      data++;                                       //incrementa o potneiro 2 bytes para a poxima posição 
-    }
-  #endif
-  
-  #ifdef COLOR_DEPTH_24
-    uint32_t color = 0;
-    uint8_t *data8 = (uint8_t*) data;
-    for (uint32_t i = 0; i < num_pixels; i++) {                    //y
-      // lê 3 bytes consecutivos e monta uint32_t (24 bits)
-      uint32_t tmpcolor  = ((uint32_t)data8[0])       // byte 0 → bits 0-7
-                         | (((uint32_t)data8[1]) << 8)  // byte 1 → bits 8-15
-                         | (((uint32_t)data8[2]) << 16); // byte 2 → bits 16-23
-      
-      _bus->DataWrite24(tmpcolor);
-
-      data8+= 3;                              //incrementa o potneiro 3 bytes para a poxima posição
-    }
-  #endif
-  Wait_WriteFIFO_Empty();
+  WritePixels(color_buffer, num_pixels, true)
 }
 
 
@@ -20474,7 +20415,6 @@ void RA8889::DrawSquare(uint16_t x1,
   Point1_XY(x1, y1);
   Point2_XY(x2, y2);
   SquareMode_Start(bfill);
-  //CoreTask_WaitReady();
 }
 
 
@@ -20511,7 +20451,6 @@ void RA8889::DrawTriangle(uint16_t x1,
   Point2_XY(x2, y2);
   Point3_XY(x3, y3);
   TriangleMode_Start(bfill);
-  //CoreTask_WaitReady();  
 }
 
 
@@ -20542,7 +20481,6 @@ void RA8889::DrawCircle (uint16_t x1,
   Center_XY(x1,y1);
   Radius_RxRy(R, R);
   CircleMode_Start(bfill);
-  //CoreTask_WaitReady();  
 }
 
 
@@ -20575,7 +20513,6 @@ void RA8889::DrawEllipse (uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   EllipseMode_Start(bfill);
-  //CoreTask_WaitReady();
 }
 
 
@@ -20608,7 +20545,6 @@ void RA8889::DrawCurveLeftUp(uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveLeftUpMode_Start(bfill);
-  //CoreTask_WaitReady();  
 }
 
 
@@ -20641,7 +20577,6 @@ void RA8889::DrawCurveRightDown(uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveRightDownMode_Start(bfill);
-  //CoreTask_WaitReady();
 }
 
 
@@ -20676,7 +20611,6 @@ void RA8889::DrawCurveRightUp(uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveRightUpMode_Start(bfill);
-  //CoreTask_WaitReady();
 }
 
 
@@ -20711,7 +20645,6 @@ void RA8889::DrawCurveLeftDown(uint16_t x1,
   Center_XY(x1, y1);
   Radius_RxRy(Rx, Ry);
   CurveLeftDownMode_Start(bfill); 
-  //CoreTask_WaitReady();
 }
 
 
@@ -20750,7 +20683,6 @@ void RA8889::DrawCircleSquare(uint16_t x1,
   Point2_XY(x2, y2);
   Radius_RxRy(Rx, Ry);
   CircleSquareMode_Start(bfill);
-  //CoreTask_WaitReady();
 }
 
 
@@ -22039,7 +21971,7 @@ void RA8889::BTE_MPUWriteWithROP(uint32_t s1_addr,
   for(j=0;j<height;j++) {
     for(i=0;i<width;i++) {
       Wait_WriteFIFO_NotFull();                //if high speed mcu and without Xnwait check
-      _bus->DataWrite16(*data);
+      _bus->DataWrite(*data, BYTES2);          //Envio de 2 bytes
       data++;
     }
   } 
@@ -22238,7 +22170,7 @@ void RA8889::BTE_MPUWriteWithChromaKey(uint32_t des_addr,
   for(j=0;j<height;j++) {
     for(i=0;i<width;i++) {
       Wait_WriteFIFO_NotFull();//if high speed mcu and without Xnwait check
-      _bus->DataWrite16(*data);
+      _bus->DataWrite(*data, BYTES2);          //Envio de 2 bytes
       data++;
     }
   } 

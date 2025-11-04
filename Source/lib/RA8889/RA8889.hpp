@@ -1714,10 +1714,9 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     void ShowPicturePgm(uint32_t size, const uint8_t *datap);
     void ShowPicture(eColorDepthBPP pictureBpp, uint32_t numpixels, const uint8_t *datap);
 
-    void PutPixel(uint16_t x, uint16_t y, uint32_t color);
-    void PushBlock(uint16_t x, uint16_t y, uint16_t num_pixels, const void* color_buffer);
-    void WritePixels(const void* color_buffer, uint32_t num_pixels, bool auto_increment = true);
     uint32_t getPixel(uint16_t x, uint16_t y);
+    void PutPixel(uint16_t x, uint16_t y, uint32_t color);
+    void WritePixels(const void* color_buffer, uint32_t num_pixels, bool auto_increment = true);
     void DrawPixel(uint16_t x, uint16_t y, uint32_t color);
     void DrawPixels(uint16_t x, uint16_t y, uint32_t num_pixels, uint16_t *data);
     void DrawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint32_t color);
