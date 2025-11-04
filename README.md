@@ -257,17 +257,19 @@ Será possível fazaer o controle quando se deseja que o barramento SPI fique se
 ## Geral
 
 - 🟡 Wiki: Documentação Driver FT5x16
-- 🔴 Wiki: Documentação Driver RA8889
+- 🟡 Wiki: Documentação Driver RA8889
 
 ## Drive RA8889
 - 🔴 Transferencia de DMA
 - 🟡 Fontes de Usuário
 - 🟡 Melhorias das funções de uso fontes da CGROM
 - 🟡 Melhoria das funções IDEC
-- 🔴 Comunicação Paralela entre MCU/MPU e Display
+- 🟡 Comunicação Paralela entre MCU/MPU e Display
 - 🟡 Configuração I2C entre MCU/MPU e Display
 - 🟡 Driver adaptado para RA8876 e RA8877 (Semelhante ao RA8889)
 - 🟢 Controle de Transação SPI para transferência de volume de dados
+- 🟢 DrawPixels() e WritePixels() para envio em massa de pixel a controladora por DMA
+- 🟢 Controle de ativação de Barramento SPI
 
 ## Drive FT5x16
 - 🟢 Melhoria do Driver FocalTech FT5xx6
