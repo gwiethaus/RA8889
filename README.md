@@ -23,6 +23,10 @@ Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no fo
 - Controlador de tela de toque FocalTech FT5x16 de comunciação I2C
 - Controle de Painel de Display de vários fabricantes
 
+# Problemas
+
+- Preenchimento de uma tela completa 800x480x2bpp demora 453 ms, usando DMA através de SPI.write?Bytes(data,len) com uso da função WritePixels() em ESP32-S3 com uso de Arduino Core
+
 # Novas implementações
 
 Atravpés de uso de interface OOP podemos escolher facilmente o tipo de barramento de comunciação e configurar ele. Inicia-se este implementação que terá que sofrer mudança em todos os métodos onde se escreve ou lê o barrmaneto SPI que agora será via interface IBus. O usuário poderá escolher entre Bus I2C, SPI e Parallel para comunciaçlão do o display. Segue um exemplo modelo abaixo que já está pronto a estrutura basica para impelemtnar os métodos e classes:
