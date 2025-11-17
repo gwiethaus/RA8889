@@ -23,9 +23,9 @@ Todos os métodos e propriedades tem como padrão o cabeçalho explicativo no fo
 - Controlador de tela de toque FocalTech FT5x16 de comunciação I2C
 - Controle de Painel de Display de vários fabricantes
 
-# Problemas
+# Próximos Passos
 
-- Preenchimento de uma tela completa 800x480x2bpp demora 453 ms, usando DMA através de SPI.write?Bytes(data,len) com uso da função WritePixels() em ESP32-S3 com uso de Arduino Core
+- Preenchimento de uma tela completa 800x480x2bpp demora 339 ms, usando SPI com transferência DMA da biblitoeca nativa ESP-IDF do EPS32-S3. Pretenção de baixar ainda mais o tempo de desenho usando outras estratégias de trasnferência.
 
 # Novas implementações
 
@@ -40,7 +40,7 @@ RA8889 gfx(PIN_CS, PIN_RESET);
 void setup() {
      
   IBus::SPIBusConfig_t cfg;
-  cfg.spi_type = FSPI_HOST;                 //Usando barramento FSPI
+  cfg.spi_type = SPI2_HOST;                 //Usando barramento SPI2
   cfg.pin_mosi = 23;                        //Pino MOSI - Master-Out, Slave-In
   cfg.pin_miso = 19;                        //Pino MISO - Master-In, Slave-Out
   cfg.pin_sclk = 18;                        //Pino Clock
