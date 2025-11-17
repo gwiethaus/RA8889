@@ -4,21 +4,7 @@
 #include <Arduino.h>
 #include <Bus.hpp>
 #include <Config.hpp>
-
-#if defined(RA8875)
-  #include <RA8875_Reg.hpp>
-#elif defined(RA8876)
-  #include <RA8876_Reg.hpp>
-#elif defined(RA8877)
-  #include <RA8877_Reg.hpp>
-#elif defined(RA8889)
-  #include <RA8889_Reg.hpp>
-#endif
-
-enum ParallelType {
-    PARALLEL8  = 8,  //Porta paralela de 8 bits
-    PARALLEL16 = 16  //Porta paralela de 16 bits
-};
+#include <Registers.hpp>
 
 class Bus_Parallel : public IBus {
   public:
@@ -31,25 +17,25 @@ class Bus_Parallel : public IBus {
     int _parallel_pindir = OUTPUT;                    //Direção INPUT/OUTPUT de configuracao dos pinos
     bool _parallel_startwrite = false;                //inicia o bloco de escrita (evita overhead de bulk de dados)
     bool _lock_bus = false;                           //permite uso por dentro do SetCS()
+	uint8_t _channel_high = 0;                        //seleciona canal de bits altos [15..8] e bits baixos [7..0]
 	
     inline void PulseEN();
     void SetCS(uint8_t level_cs);
     void SetRS(uint8_t level_rs);
     void SetDataPinsDirection(int direction);
-	
+	  void RwHighByte(void);
+
     void Init() override;
     uint8_t StartWrite(void) override;
     void EndWrite(void) override;
     void LockBus(bool force_unlock = false) override;
     void UnlockBus(void) override;	
     uint8_t RwByte(uint8_t value) override;
-	  void RwBytes(const uint8_t* data, uint32_t len) override;
+    void RwBytes(const uint8_t* data, uint32_t len) override;
     void CmdWrite(uint8_t cmd) override;
     void DataWrite(uint8_t data) override;
     void  DataWrite(uint32_t data, uint8_t step) override;
     void WriteBytes(const uint8_t* data, size_t len) override;
-    void DataWrite8(uint8_t data);
-    void DataWrite16(uint16_t data);
     uint8_t DataRead(void) override;
     uint32_t DataRead(uint8_t step) override;
     uint32_t DataRead(uint8_t address, uint8_t step) override;

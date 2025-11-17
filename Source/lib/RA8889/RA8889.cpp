@@ -1,20 +1,5 @@
-//baixar
-//https://github.com/Lvkyky/RA8889
-//https://github.com/wwatson4506/TeensyRA8889-SPI
-//https://github.com/cycccc/zijia_ra8889_ceshi
-//https://github.com/wwatson4506/TeensyRA8876-SPI
-//https://github.com/wwatson4506/Ra8876LiteTeensy
-
 /*
-	Notas para Fazer:
-	- Determinar a autoconfiguracao das portas MISO, MOSI, CLK da micrcontroladora
-	- Determinar manual das portas MISO, MOSI, CLK da micrcontroladora
-	- tipo de comunciacao SPI MODO 0, 1, 2 dependedo da microcontroladora
-    - Sistema da porta de itnerrupção para a tela de toque do display
-	- Verificar a funcao DrawEnable_AA() deve ser do RA8876, pois no RA8889 deve ser zero
-	  
 	Links:
-	https://xod.io/libs/ivanmason/ra8876/
   https://www.youtube.com/@youtuberaio972
 	
 	Tarefas:
@@ -66,16 +51,6 @@ param.scs_select
   
   talvez nao precise disso basta deixar a cosntante sempre em BIT_SPI_DIV4... estudar
  
-Alteracoes #002:
-----------------
-
-tela manchada de pixels no power on:
-
-Alteracoes retirou o HardwareReset() no metodo bool RA8889::Begin(void)
-para tentar limapr a tela antes da incilizacao de qualqeur coisa.
-Desta forma esta funcao deverá ser a primeira coisa a ser executado no dispositivo
-verificando se isso surte efeito da tela com pixels aleatoris sempre quando dá power on
-
 Construção #002
 ---------------
 Objetivo: Fazendo as funções:
@@ -126,7 +101,6 @@ void RA8876_common::CGRAM_initial(uint32_t charAddr, const uint8_t *data, uint16
     lcdDataWrite(RA8876_CANVAS_BLOCK_MODE << 2 | RA8876_CANVAS_COLOR_DEPTH_16BPP);
 }
 Works in 8-bit and 16-bit mode...
-
 
 Construção #004
 ---------------
@@ -286,11 +260,6 @@ esp_err_t esp_lcd_panel_set_backlight(esp_lcd_panel_t *panel, uint8_t level)
 
 	return ret;
 }
-
-Construcao
-----------
-
-
 */
 
 
@@ -325,6 +294,7 @@ Construcao
 #include <ascii_table_32x48.h>
 #include <Debug.hpp>
 
+
 //================================================================================
 //
 // Funções de testes
@@ -358,13 +328,21 @@ void RA8889::Brightness(uint16_t level)
 //================================================================================
 
 
-
 uint32_t make_mask_bpp(uint8_t bpp)
 {
   // Garante que bpp > 0 e <= 32
   // Cria máscara do tipo 0xFF, 0xFFFF, 0xFFFFFF, 0xFFFFFFFF
   // sem ifs nem loops
   return (0xFFFFFFFFu >> (32 - bpp));
+}
+
+
+//Converts 565 format 16 bit color to RGB
+void Color565ToRGB(uint16_t color, uint8_t &r, uint8_t &g, uint8_t &b) {
+    
+    r = (color >> 8) & 0x00F8;
+    g = (color >> 3) & 0x00FC;
+    b = (color << 3) & 0x00F8;
 }
 
 
@@ -961,11 +939,20 @@ static int intToStr(int val, char* buf, int minWidth)
 //================================================================================
 
 
-//seta o bus atraves de implementacao de interface como Parallel, SPI e I2C
+/**
+ * @brief Seta o bus atraves de implementacao de interface como Parallel, SPI e I2C
+ * 
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ *
+ * @note None
+ */
 void RA8889::setBus(IBus& bus) 
 {
-  _bus = &bus;                                   //Ponteiro apra qual baramento de comunicação SPI/Parallel/I2C será usado
-  //_bus->Init();                                //inicilaiza o baramento de comunicação SPI/Parallel/I2C
+  _bus = &bus;                                 //Ponteiro apra qual baramento de comunicação SPI/Parallel/I2C será usado
 }
 
 
@@ -1065,48 +1052,44 @@ void RA8889::PanelResolution(ePanelResolution resolution)
 bool RA8889::Begin(void)
 {
   if (!_bus) {
-     DEBUG_PRINT("Bus not set!", 0, false, true);
+     DEBUG_PRINT(F("Bus pre-definition is not set ..........................................."), 0, false, true);
      return false;
   }
   
   HardwareReset();                             //Hardware Reset
-  DEBUG_PRINTD("HardwareReset()...", 0, false, 0, true);         //Debug
 
   _bus->Init();                                //inicializa comunicação SPI, I2C ou Parallel
-  DEBUG_PRINT("_bus->Init() Sucesso", 0,false,true);
+  DEBUG_PRINT(F("Bus Initialized ...................................................... OK"), 0,false,true);
 
   #ifdef CHECK_RAIO_FAMILY
   //Verifica se é um RA8889
-  if (ReadIDCode() == 0x89) { DEBUG_PRINT("RA8889 connect pass!",0,false, true); }
-  else { 
-    DEBUG_PRINT("RA8889 not found!",0,false,true);
-    DEBUG_PRINT("ID Code: ",ReadIDCode(),true,true);
+  if (ReadIDCode() == 0x89) { 
+    DEBUG_PRINT(F("RA8889 detected ...................................................... OK"),0,false, true); 
+  } else { 
+    DEBUG_PRINT(F("RA8889 detected .................................................... Fail"),0,false,true);
   return false;
   }
   #endif
   
   PLL_InitilizeWaitReady();
-  DEBUG_PRINT("PLL_InitilizeWaitReady() Sucesso", 0,false,true);
 
-  delay(100);
+  delay(50);
 
   // Aguarda até que a inicialização interna do RA8889 termine
   // Bit 1 do STSR (0x02) = 1 → inicialização em andamento
   // Bit 1 do STSR (0x02) = 0 → inicialização concluída
   while(_bus->StatusRead() & 0x02);
-  DEBUG_PRINT("_bus->StatusRead() Sucesso", 0,false,true);
   
   //Inicializa as configurações basicas do display RA8889
   if (!Initialize()) {
-    DEBUG_PRINT("RA8889 initial fail!",0,false,true);
+    DEBUG_PRINT(F("RA8889 initialized ................................................. Fail"),0,false,true);
     return false;
   } else {
-    DEBUG_PRINT("RA8889 initial sucess!",0,false,true);
+    DEBUG_PRINT(F("RA8889 initialized ................................................... OK"),0,false,true);
   }
-  
-  //Inicializa fonte
 
-  Font_Init();
+  Interrupt_VSync_Enable(true);                //Interrupção do VSync habilitado
+  Font_Init();                                 //Inicializa fonte
 
   return true;
 }
@@ -1785,274 +1768,6 @@ void RA8889::LCD_SetPanel(void)
 }
 
 
-//================================================================================
-// Funções SPI
-//================================================================================
-
-
-//Inicializa o SPI para a comunicacao com o Display RA8889
-//void RA8889::SPI_Init(void)
-//{
-//  pinMode(_cs, OUTPUT);
-//  spi.beginTransaction(SPISettings(_spi_clockmax, MSBFIRST, _spi_datamode));
-//  spi.begin();
-//  _spi_transaction = true;
-//}
-
-
-/**
- * @brief Controla o pino Chip Select (CS) do barramento SPI.
- *
- * Esta função ativa ou desativa o dispositivo SPI conectado ao pino CS.
- * É utilizada para garantir que apenas um dispositivo SPI esteja ativo
- * no barramento por vez, evitando conflitos de comunicação.
- *
- * @verbatim
- * A lógica de controle do CS é:
- * - Nível LOW (0): Ativa o dispositivo (CS ativo).
- * - Nível HIGH (1): Desativa o dispositivo (CS inativo/liberado).
- * @endverbatim
- * 
- * @param level_cs O nível a ser definido para o pino CS:
- *        - 0: Ativa o dispositivo (CS em LOW).
- *        - 1: Desativa o dispositivo (CS em HIGH).
- *
- * @note O pino CS é tratado como "ativo baixo". Portanto, um nível LOW
- * (representado por 0) "bloqueia" o barramento para este dispositivo
- * específico, permitindo operações de escrita/leitura. Um nível HIGH
- * (representado por 1) "libera" o barramento para que outros dispositivos
- * possam utilizá-lo.
- */
-//void RA8889::SPISetCS(uint8_t level_cs)
-//{
-//  level_cs == 0 ? digitalWrite(_cs, LOW) : /*SS_RESET */  digitalWrite(_cs, HIGH); /*SS_SET*/
-//}
-
-
-/**
- * @brief Escrever alguma informação para barramento SPI
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param value: dados para SPI
- *
- * @note Note
- */
-//uint8_t RA8889::SPIRwByte(uint8_t value)
-//{
-//  uint8_t result;
-//  result = spi.transfer(value);
-//  return result;
-//}
-
-
-/**
- * @brief Escreve comando 1 byte para a controladora display via barramento SPI
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param cmd: command value for RA8889
- *
- * @note Note
- */
-//void RA8889::SPI_CmdWrite(uint8_t cmd)
-//{
-//  SPISetCS(0);                                 //SS_RESET
-//  SPIRwByte(RA8889_SPI_CMDWRITE);              //0x00, Avisa Display que será um comando
-//  SPIRwByte(cmd);                              //Envia um comando de 1 byte para o Display
-//  SPISetCS(1);                                 //SS_SET
-//}
-
-
-/**
- * @brief Escreve dados 1 byte para a controladora display via barramento SPI
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param cmd: command value for RA8889
- *
- * @note Note
- */
-//void RA8889::SPI_DataWrite(uint8_t data)
-//{
-//  SPISetCS(0);                                 //SS_RESET;
-//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
-//  SPIRwByte(data);                             //Envia um byte de Dado para o SPI
-//  SPISetCS(1);                                 //SS_SET;
-//}
-//void RA8889::SPI_DataWrite8(uint8_t data) {SPI_DataWrite(data);}
-
-
-/**
- * @brief Escreve dados de 2 byte (16 bits) para a controladora display via barramento SPI
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param data: dados de 2 bytes para display
- *
- * @note Note
- */
-//void RA8889::SPI_DataWrite16(uint16_t data)
-//{
-//  SPISetCS(0);                                 //SS_RESET;
-//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
-//  SPIRwByte(data);                             //Envia um byte menos significativo de Dado para o SPI
-//  SPIRwByte(data >> 8);                        //Envia um byte mais significativo de Dado para o SPI
-//  SPISetCS(1);                                 //SS_SET;
-//}
-
-
-/**
- * @brief Escreve dados de 3 byte (24 bits) para a controladora display via barramento SPI
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param uint32_t data: dados de 3 bytes para display. A parte alta de bit 31-28 será truncado
- *
- * @note None
- */
-//void RA8889::SPI_DataWrite24(uint32_t data)
-//{
-//  SPISetCS(0);                                 //SS_RESET;
-//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever 
-//  SPIRwByte(data);                             //Envia byte 1 de Dado para o SPI
-//  SPIRwByte(data >> 8);                        //Envia byte 2 de Dado para o SPI
-//  SPIRwByte(data >> 16);                       //Envia byte 3 de Dado para o SPI
-//  SPISetCS(1);                                 //SS_SET;
-//}
-
-
-//SPI_DataWritePixel
-//void RA8889::SPI_DataWrite_Pixel(uint16_t data)
-//{
-//  SPISetCS(0);                                 //SS_RESET;
-//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
-//  SPIRwByte(data);                             //Escreve a parte baixa da palavra
-//  SPISetCS(1);                                 //SS_SET;
-//											   
-//  SPISetCS(0);                                 //SS_RESET;
-//  SPIRwByte(RA8889_SPI_DATAWRITE);             //0x80, Indica Dados para escrever
-//  SPIRwByte(data >> 8);                        //Escreve a parte alta da palavra
-//  SPISetCS(1);                                 //SS_SET;
-//}
-
-
-/**
- * @brief Ler dados de 1 byte da controladora display via barramento SPI
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param None
- *
- * @note Note
- */
-//uint8_t RA8889::SPI_DataRead(void)
-//{
-//  uint8_t temp;
-//  SPISetCS(0);                             //SS_RESET
-//  SPIRwByte(RA8889_SPI_DATAREAD);          //0xc0, Leitura de dados
-//  temp = SPIRwByte(0x00);                  //envia um dummy byte para receber dados
-//  SPISetCS(1);                             //SS_SET
-//  return temp;
-//}
-
-
-//uint16_t RA8889::DataRead16(uint8_t address)
-//{
-//  uint16_t data;
-//  SPISetCS(0);                             //SS_RESET
-//  spi.transfer(address);
-//  data = spi.transfer(0x00);               //MSB
-//  data <<= 8;                              //Shift 8 bits right
-//  data |= SPI.transfer(0x00);              //LSB
-//  SPISetCS(1);                             //SS_SET
-//  return data;
-//}
-
-
-//================================================================================
-// Comandos para o Display
-//================================================================================
-
-
-/** OK
- * @brief Ler o registardor de estado STSR da controladora display
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param None
- *
- * @note Note
- *
- * @return valor de estadado do STSR
- */
-//uint8_t RA8889::StatusRead(void)
-//{
-//  uint8_t temp = 0;
-//  SPISetCS(0);                            //SS_RESET
-//  SPIRwByte(RA8889_SPI_STATUSREAD);       //0x40, Read Status SPI
-//  temp = SPIRwByte(REG_STSR);             //0x00, Read STSR Register
-//  SPISetCS(1);                            //SS_SET
-//  return temp;
-//}
-
-
-/** 
- * @brief Escrever em um registrador da controladora display
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param None
- *
- * @note reg: registrador do display, data: dados para escrever no registrador
- *
- * @return None
- */
-//void RA8889::RegisterWrite(uint8_t reg, uint8_t data)
-//{
-//  SPI_CmdWrite(reg);
-//  SPI_DataWrite(data);
-//}
-
-
-/** 
- * @brief Ler um registrador da controladora display
- *
- * @verbatim
- * None
- * @endverbatim
- * 
- * @param None
- *
- * @note reg: registrador do display
- *
- * @return dados do registrador
- */
-//uint8_t RA8889::RegisterRead(uint8_t reg)
-//{
-//  uint8_t temp;
-//  SPI_CmdWrite(reg);
-//  temp = SPI_DataRead();
-//  return temp;
-//}
-
-
 /**
  * @brief Executa um reset de hardware no RA8889 através do pino RESET.
  *
@@ -2431,8 +2146,8 @@ void RA8889::PLL_InitilizeWaitReady(void)
   
   do {
     temp = _bus->StatusRead();                 //Read Status Register STSR
-    DEBUG_PRINT("_bus->StatusRead()", temp,true,true);
-	if((temp & 0x02) == 0x00) {                  //Veja se o bit 1 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
+
+    if((temp & 0x02) == 0x00) {                //Veja se o bit 1 esta limpo (0x00=modo de operação normal, evento de inicialização interna terminou)
 
       delay(2);                                //MCU too fast, necessary
       _bus->CmdWrite(REG_CCR);                 //0x01, Access register Chip Configuration Register (CCR)
@@ -2450,56 +2165,77 @@ void RA8889::PLL_InitilizeWaitReady(void)
 	    
     } else {                          
         
-      system_ok = false;                         //A inicialização interna ainda está sendo feita
-      count_timeout++;                           //fazer outra tentativa
+      system_ok = false;                       //A inicialização interna ainda está sendo feita
+      count_timeout++;                         //fazer outra tentativa
 	    
     }
 	  
     if(system_ok==false && count_timeout==COUNT_TIMEOUT) {   //Sistema ainda nao está pronto e houve timeout
-      HardwareReset();                           //*note1, envia um reset novamente
-      count_timeout = 0;                         //zera o contador de timeout 
+      HardwareReset();                         //*note1, envia um reset novamente
+      count_timeout = 0;                       //zera o contador de timeout 
     }
 	
-  } while(system_ok==false);                     //faz enquanto não ficar pronto o sistema
+  } while(system_ok==false);                   //faz enquanto não ficar pronto o sistema
 }
 
 
-//Habilita o PLL
-void RA8889::PLL_Enable(void)
+/** 
+ * @brief Habilita o PLL
+ * 
+ * @verbatim
+ * REG [0x01] Chip Configuration Register (CCR)
+ * bit [7] Reconfigure PLL frequency
+ *     0b1 PLL enable; cannot change PLL parameter.
+ *     0b0 PLL disanable; can change PLL parameter.
+ * Note:
+ *   a. When user change PLL relative parameters, PLL clock won’t change immediately, user must set this bit as “1” again.
+ *   b. User may read (check) this bit to know whether system already switch to PLL clock or not yet. Read “1” means PLL clock ready and switch successfully.
+ * @endverbatim
+ *  
+ * @return 0: Sucess, 255: fail with timeout
+ */
+uint8_t RA8889::PLL_Enable(void)
 {
-/* 1: PLL enable; cannot change PLL parameter.*/
   uint8_t temp;
   uint16_t i;
 
-  _bus->CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
-  //removi isso nao faz sentido escrever comando REG_CCR e outro o SSR simultaneao sem enviar dados ou receber depois dele
-  //_bus->CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
+  _bus->CmdWrite(REG_CCR);                     //0x01, Envia comando Chip Configuration Register (CCR) 
   temp = _bus->DataRead();
   SETB(temp,7);                                //Habilita o PLL
-  _bus->DataWrite(temp);
+  _bus->DataWrite(temp);                       //Escreve o registrador CCR
 
   delayMicroseconds(10);                       // PLL lock time = 1024 T OSC clocks, if OSC=10MHz, PLL lock time = 10 us.
 
   /*check PLL was ready ( Please according to your usage to modify. (Modifique de acordo com o uso)	*/
   for(i=0;i<1000;i++) {
-    _bus->CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
-    temp = _bus->DataRead();                       //Leia o registrador
-    if( (temp & 0x80)==0x80 ){break;}            //Veja se as configuracoes do PLL ficaram prontas para o uso
+    _bus->CmdWrite(REG_CCR);                   //0x01, Envia comando Chip Configuration Register (CCR) 
+    temp = _bus->DataRead();                   //Leia o registrador
+    if( (temp & 0x80)==0x80 ){return 0xff;}    //Veja se as configuracoes do PLL ficaram prontas para o uso
   }
+  return 0;                                    //fail
 }
 
 
-//Desabilita o PLL
+/** 
+ * @brief Desabilita o PLL
+ * 
+ * @verbatim
+ * REG [0x01] Chip Configuration Register (CCR)
+ * bit [7] Reconfigure PLL frequency
+ *     0b1 to this bit will reconfigure PLL frequency.
+ *     0b0 PLL disanable; can change PLL parameter.
+ * Note:
+ *   a. When user change PLL relative parameters, PLL clock won’t change immediately, user must set this bit as “1” again.
+ *   b. User may read (check) this bit to know whether system already switch to PLL clock or not yet. Read “1” means PLL clock ready and switch successfully.
+ * @endverbatim
+ */
 void RA8889::PLL_Disable(void)
 {
-/* 0: PLL disanable; can change PLL parameter.*/
   uint8_t temp;
-  _bus->CmdWrite(REG_CCR);                       //0x01, Envia comando Chip Configuration Register (CCR) 
-  //removi isso nao faz sentido escrever comando REG_CCR e outro o SSR simultaneao sem enviar dados ou receber depois dele
-  //_bus->CmdWrite(0x00);                          //Como o CCR possui tudo zerado por default ainda na inicilizacao e configuração do dispositivo, o bit 7 será zerado (inicia com 1 como default)
-  temp = _bus->DataRead();
+  _bus->CmdWrite(REG_CCR);                     //0x01, Envia comando Chip Configuration Register (CCR) 
+  temp = _bus->DataRead();                     //Leia o registrador CCR
   CLRB(temp,7);                                //Disable PLL
-  _bus->DataWrite(temp);
+  _bus->DataWrite(temp);                       //Escreve o CCR
   delayMicroseconds(100);                      // PLL lock time = 1024 T OSC clocks, if OSC=10MHz, PLL lock time = 100 us.  
 }
 
@@ -2683,12 +2419,12 @@ void RA8889::PLL_Init(void)
   PLL_ConfigClocks(SCAN_FREQ, DRAM_FREQ, CORE_FREQ, OSC_FREQ);
   //PLL_Enable();	
 
-	_bus->CmdWrite(0x01);
-	_bus->CmdWrite(0x00);
-	delay(1);
-	_bus->CmdWrite(0x80);
+  _bus->CmdWrite(0x01);
+  _bus->CmdWrite(0x00);
+  delay(1);
+  _bus->CmdWrite(0x80);
 
-  DEBUG_PRINT("PLL Initialized",0,false, true);
+  DEBUG_PRINT(F("PLL Initialized ...................................................... OK"),0,false, true);
 }
 
 
@@ -6954,7 +6690,6 @@ uint32_t RA8889::LayerStartAddr(uint8_t layer)
 {
   if (layer > Layers()-1) return 0;                             //camada/pagina não pode ser mais que permitido
   return _displaywidth * _displayheight * (_bpp / 8) * layer;   //ex. 800x480 * (16 (16bpp)/8) * 1 = 768000 = 0xbb800
-  DEBUG_PRINT("LayerStartAddr, _bpp: ",_bpp,true,true);         //Debug
 }
 
 
@@ -18818,7 +18553,7 @@ void RA8889::MemoryWrite(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
 
 
 
-/** IMPLEMENTACAO FUTURA
+/** IMPLEMENTACAO FUTURA - NO MOMENTO ATIVADO POR PADRAO
  * @brief Uso de DMA em funções que podem se utilziar deste recurso
  *
  * @param bool b indica a necessidade de uso de DMA 
@@ -18835,8 +18570,29 @@ void RA8889::MemoryWrite(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
 void RA8889::useDMA(bool b)
 {
   _usedma = b;
-}
+  if (_usedma) {
 
+    if (dma_buffer != nullptr) return;
+
+    dma_buffer  = (uint8_t*)heap_caps_malloc(DMA_BUFFER, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    if (dma_buffer == nullptr) {
+      DEBUG_PRINT("Support DMA Buffer ................................................. Fail", 0,false,true);
+      return;
+    } else {
+      DEBUG_PRINT("Support DMA Buffer ................................................... OK", 0,false,true);
+      memset(dma_buffer, 0x00, DMA_BUFFER);                                  //Preenche a memroia DMA com 0x00
+    }
+
+  } else {
+    
+    if (dma_buffer != nullptr) {
+      free(dma_buffer);
+      dma_buffer = nullptr;
+    }
+
+  }
+
+}
 
 
 /**
@@ -19584,7 +19340,6 @@ void RA8889::BacklightOn(bool on)
 {
   if (_pin_backlight == 0) return;
   on ? digitalWrite(_pin_backlight, HIGH) : digitalWrite(_pin_backlight, LOW);
-  DEBUG_PRINTD("Status Backlight", digitalRead(_pin_backlight), true, 500, true);         //Debug
 }
 
 
@@ -20224,6 +19979,16 @@ uint32_t RA8889::getPixel(uint16_t x, uint16_t y)
  * O posicionamento do pixel começa em 0,0 na atual janela ativa e o buffer é transferido para a janela.
  * Cada execução desta função inicia sempre na posição 0,0 da janela.
  * 
+ * Desempenho (Desenho de Tela cheia 800x480x2bpp):
+ *   SPI a 40MHz
+ *   - Com Wait_WriteFIFO_NotFull(), com DMA Arduino Core - 550 ms
+ *   - Sem Wait_WriteFIFO_NotFull(), com DMA Arduino Core - 452 ms
+ *   - Sem Wait_WriteFIFO_NotFull(), com DMA Nativo       - 339 ms
+ *
+ *   SPI a 60MHz:
+ *   - Com Wait_WriteFIFO_NotFull() - 550 ms
+ *   - Sem Wait_WriteFIFO_NotFull() - 452 ms
+ * 
  * @endverbatim
  *
  * @param color_buffer Ponteiro para o buffer de cores (8/16/24 bits, dependendo do COLOR_DEPTH).
@@ -20238,6 +20003,7 @@ void RA8889::WritePixels(const void* color_buffer,
                                bool auto_increment   // true = avança cursor, false = mantém posição (cursosr interno do display)
                               ) 
 {
+#if defined(SPI_ARDUINO_CORE)
   if(!auto_increment) GotoPixel_XY(0, 0);                      // Posição inicial
 
   // Determina quantos pixels cabem em um FIFO do RA8889
@@ -20270,10 +20036,18 @@ void RA8889::WritePixels(const void* color_buffer,
     ptr += bytesThisChunk;
     pixelsSent += thisChunk;
 
-    // Espera FIFO liberar antes do próximo bloco
-    Wait_WriteFIFO_NotFull();
    }
 
+#elif defined(SPI_ESP32_NATIVE)
+  if(!auto_increment) GotoPixel_XY(0, 0);                      //Posição inicial
+  uint32_t len = num_pixels * (_bpp/8);                        //Tamanho do framebuffer
+  const uint8_t* ptr = static_cast<const uint8_t*>(color_buffer); 
+  _bus->CmdWrite(REG_MRWDP);                                   // Memory Data Read/Write Port
+  _bus->LockBus();                                             //Baixa CS
+  _bus->WriteBytes(ptr, len);                                  //Envia bloco de pixels via SPI (rápido)
+  _bus->UnlockBus();                                           //Sobe CS
+  
+#endif
 }
 
 

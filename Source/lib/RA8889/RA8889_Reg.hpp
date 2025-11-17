@@ -497,6 +497,12 @@
 #define SPI_DATAREAD                           0xc0            //Read Data from SPI 
 #define SPI_STATUSREAD                         0x40            //Read Status from SPI
 
+//Sugestao mudanca de nome no lugar de SPI_, I2C_, PARALLEL_, será COM_pois isso esta tanto no SPI, I2C co mo APrallel
+#define I2C_CMDWRITE                           0x00            //Write Command for SPI
+#define I2C_DATAWRITE                          0x80            //Write Data for SPI
+#define I2C_DATAREAD                           0xc0            //Read Data from SPI 
+#define I2C_STATUSREAD                         0x40            //Read Status from SPI
+
 //FIFO
 #define RA8889_FIFO_SIZE                       0x40            //Tamanho de 64 bytes da FIFO de escrita/leitura
 

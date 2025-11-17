@@ -2,6 +2,19 @@
 #define BUS_HPP
 
 #include <Arduino.h>
+#include <Config.hpp>
+
+#if defined(SPI_ARDUINO_CORE)
+#elif defined(SPI_ESP32_NATIVE)
+  #include "driver/spi_common.h"
+#endif
+
+
+enum ParallelType {
+    PARALLEL8  = 8,  //Porta paralela de 8 bits
+    PARALLEL16 = 16  //Porta paralela de 16 bits
+};
+
 
 enum StepBytes : uint8_t {
   BYTES1 = 1,
@@ -9,6 +22,7 @@ enum StepBytes : uint8_t {
   BYTES3 = 3,
   BYTES4 = 4
 };
+
 
 class DisplayBase; // classe base para todos os displays
 
@@ -24,21 +38,28 @@ class IBus {
 
     struct SPIBusConfig_t : public IBusConfig_t {
         uint8_t spi_type   = 0;
-        uint8_t spi_host   = 0;
+        #if defined (SPI_ARDUINO_CORE)
+        uint8_t spi_host   = 0;       
+        #elif defined (SPI_ESP32_NATIVE)
+        spi_host_device_t spi_host;            //Barramento SPI, SPI1 (FSPI) SPI2 (HSPI), SPI3 (VSPI),...
+        #endif
         uint8_t pin_mosi   = 0;
         uint8_t pin_miso   = 0;
         uint8_t pin_sclk   = 0;
-        uint8_t pin_cs     = 0;        // Chip Select (SPI padrão)
+        uint8_t pin_cs     = 0;                //Chip Select (SPI padrão)
+        bool use_dma       = false;            //Utiliza DMA
+        long int dma_buffer_size = -1;         //tamanho do buffer de dma para alocar na RAM (desde que haja memoria suficiente), -1 valor padroa de 4096 bytes
     };
 
     struct I2CBusConfig_t : public IBusConfig_t {
+		uint8_t address = 0; 
         uint8_t pin_sda = 0;
         uint8_t pin_scl = 0;
         uint32_t freq   = 400000;
     };
 
     struct ParallelBusConfig_t : public IBusConfig_t {
-        uint8_t parallel_type = 0;            //type 8/16 parallel bus
+        ParallelType parallel_type;           //type 8/16 parallel bus
 		uint8_t data_pins[16]{};              //data bus 8 pin or 16 pin
         uint8_t pin_wr       = 0;             //write signal
 		uint8_t pin_rd       = 0;             //read signal
@@ -46,7 +67,7 @@ class IBus {
         uint8_t pin_cs       = 0;             //bus chip select
 		uint8_t pin_en       = 0;             //enable (/RD or/WR)
 		uint8_t pin_wait     = 0;             //sait signal
-        uint8_t pin_int     = 0xff;           //se nao utilziar nao requer preenchimento
+        uint8_t pin_int      = 0xff;          //se nao utilziar nao requer preenchimento
     };
     
     virtual void Config(const IBusConfig_t* cfg) = 0; // público: usuário pode configurar
@@ -57,9 +78,10 @@ class IBus {
 	//da classe Base DisplayBase como uma classe amiga e fazer com que os 
 	//metodos protegidos consigam ter visibilidade em todas as classes que 
 	//herdam de DisplayBase
-    virtual void Init() = 0;
+	
+    virtual uint32_t Init(void) = 0;
     virtual uint8_t RwByte(uint8_t value) = 0;
-    virtual void RwBytes(const uint8_t* data, uint32_t len) = 0;
+    virtual uint32_t RwBytes(const uint8_t* data, uint32_t len) = 0;
     virtual void CmdWrite(uint8_t cmd) = 0;
     virtual void DataWrite(uint8_t data) = 0;
     virtual void DataWrite(uint32_t data, uint8_t step) = 0;

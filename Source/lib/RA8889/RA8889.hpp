@@ -2,9 +2,15 @@
 #define RA8889_HPP
 
 #include <Arduino.h>
-#include <SPI.h>
 #include "DisplayBase.hpp"
 #include "RA8889_Reg.hpp"
+
+
+//--------------------------------------------------------------------------------
+// DMA
+//--------------------------------------------------------------------------------
+
+#define DMA_BUFFER          RA8889_FIFO_SIZE
 
 
 //--------------------------------------------------------------------------------
@@ -410,27 +416,6 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 //Ativa funcao de existencia da familia Raio RA8875/RA8876/RA8877/RA8889
 #define CHECK_RAIO_FAMILY
 
-//Antes de usar macro DEBUG_PRINT, use no Setup() a macro DEBUG_BEGIN para iniciar a comunicacao serial.
-/*
-#ifdef SERIAL_DEBUG
-  extern bool serialStarted;
-  #define DEBUG_BEGIN(baud) do { Serial.begin(baud); serialStarted = true; } while(0)
-  #define DEBUG_PRINT(msg, val, b, newline) SerialPrint(msg, val, b, newline)
-  //Serial print para valroes hexadecimal
-  #define DEBUG_PRINTH(msg, hex, b, newline) SerialPrintH(msg, hex, b, newline)
-  //Serial Print com delay
-  #define DEBUG_PRINTD(msg, val, b, delayms, newline) do { SerialPrint(msg, val, b, newline); if (delayms>0) delay(delayms); } while(0)
-  //Serial Print com ponto flutuante
-  #define DEBUG_PRINTF(msg, val, decimal, b, newline) SerialPrintF(msg, val, decimal, b, newline)
-#else
-   // Se não houver debug, macros não fazem nada
-  #define DEBUG_BEGIN(baud)
-  #define DEBUG_PRINT(msg, val, b, newline)
-  #define DEBUG_PRINTH(msg, hex, b, newline)
-  #define DEBUG_PRINTD(msg, val, b, delayms, newline)
-  #define DEBUG_PRINTF(msg, val, decimal, b, newline)
-#endif
-*/
 
 //--------------------------------------------------------------------------------
 // System
@@ -528,7 +513,6 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 //
 //--------------------------------------------------------------------------------
 
-
 #ifdef COLOR_DEPTH_8
   #if USE_GRAYSCALE
     #define RGB(r,g,b) ((uint8_t) \
@@ -568,7 +552,6 @@ memory size. For example : page_size = 800*600*2byte(16bpp) = 960000byte, maximu
 // Color
 //
 //--------------------------------------------------------------------------------
-
 
 #define  clBlack                   RGB(0,0,0)
 #define  clBlackBlue               RGB(4,7,32)
@@ -1941,7 +1924,8 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     void MemoryWrite(uint16_t x, uint16_t y, uint16_t w , uint16_t h , const void* data_buffer, bool auto_increment = true);
 
   protected:
-    uint8_t _xnreset;	                           //Chip reset pin
+    uint8_t *dma_buffer = nullptr;               //Memoria DMa alocada na area de 384 Kb Inerno para dados
+    uint8_t _xnreset;	                         //Chip reset pin
     uint16_t _displaywidth;                      //lardura do display
     uint16_t _displayheight;                     //altura do display
     uint8_t _bpp;                                //color depht 8/16/24 bit per pixel (bpp)
@@ -1949,7 +1933,7 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     uint8_t _colorfmt;                           //formato da cor RGB, RBG, GRB, GBR, ....
     bool _usedma;                                //Uso de DMA para as funções que podem se utilziar deste recurso
     uint8_t _display_spi_clk_divider;            //spi master clock divisor for setup SPI Master Clock period, Fsck = Fcore / ((divisor + 1)* 2)
-    uint8_t _dispplay_sfi_clk_divider;           //serial flash i/f clock divisor for setup Clock period, Fsck = Fcore / (divisor* 2)
+    uint8_t _display_sfi_clk_divider;            //serial flash i/f clock divisor for setup Clock period, Fsck = Fcore / (divisor* 2)
     uint8_t _pin_backlight = 0;                  //Pino para controle de luz de fundo do display 
     uint32_t _bgcolor;                           //cor de fundo 
     uint32_t _fgcolor;                           //cor de frente
@@ -2025,7 +2009,7 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
 
     void PLL_InitilizeWaitReady(void);
     void PLL_Disable(void);
-    void PLL_Enable(void);
+    uint8_t PLL_Enable(void);
     void PLL_ConfigClocks(uint8_t scanclk, uint8_t dramclk, uint8_t coreclk, uint8_t xtalclk);
     void PLL_Init(void);
     bool SDRAM_WaitReady(void);
