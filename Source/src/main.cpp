@@ -10,14 +10,20 @@
 #include <ascii_table_16x24.h>
 #include <ascii_table_32x48.h>
 #include <font8x16.h>
+
+#include <esp32-hal-psram.h>
+#include "esp_heap_caps.h"
+#include "esp_system.h" //This inclusion configures the peripherals in the ESP system.
+
 //https://www.youtube.com/watch?v=jAQiMWmSlIo 
 //Basicamente é um outro tipo de memória flash.
 
-//ESP32
-//#define  PIN_RESET  16
-//#define  PIN_CS     5
+//-----------------------------------------------------------------------------
+//
+// Pinos ESP32-S3
+//
+//-----------------------------------------------------------------------------
 
-//ESP_32
 #define  PIN_RESET      9  //Reset do RA8889
 #define  PIN_RESET_CP   0  //Reset da Tela de toque não é conectado
 #define  PIN_CS         10  
@@ -25,6 +31,9 @@
 #define  PIN_SDA        18 //I2C
 #define  PIN_SCL        17 //I2C
 #define  PIN_BLCONTROL  15 //External backlight control connected to this Arduino pin (quando nao estiver usando modulo display shield)
+#define  PIN_MOSI       11 
+#define  PIN_MISO       13
+#define  PIN_SCLK       12
 
 /*
   ==TFT Hardware SPI to ESP32  WROOM 32, 38 pin ==
@@ -49,6 +58,48 @@
   14. BL CONTROL  ->    GPIO46   
 */
 
+//-----------------------------------------------------------------------------
+//
+//Configuração do RA8889 / FT5x16
+//
+//-----------------------------------------------------------------------------
+
+Bus_SPI bus_spi;
+RA8889 gfx(PIN_CS, PIN_RESET);
+FT touch(PIN_SDA, PIN_SCL, PIN_INT, PIN_RESET_CP);
+TouchEventInfo* events;
+
+
+//-----------------------------------------------------------------------------
+//
+//Recursos do ESp32-S3 
+//
+//-----------------------------------------------------------------------------
+
+uint8_t* psdRamBuffer = nullptr;
+uint8_t *draw_buffer = nullptr;    //Memoria de alocacao na PSRAM Externa
+//uint8_t *dma_buffer = nullptr;     //Memoria DMa alocada na area de 384 Kb Inerno para dados
+
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
+
+#define TFT_WIDTH            800                                     //largura do display
+#define TFT_HEIGHT           480                                     //comprimento da tela
+#define BUFFER_PROPORTIONAL  5
+#define BYTE_PER_PIXEL       2
+#define DRAW_BUFFER          (TFT_WIDTH * TFT_HEIGHT * BYTE_PER_PIXEL)/ BUFFER_PROPORTIONAL
+
+uint8_t draw_buffer2 [DRAW_BUFFER];
+
+//-----------------------------------------------------------------------------
+//
+//
+//
+//-----------------------------------------------------------------------------
 
 void myInterrupt_cb(TouchPoint tpoint, uint8_t idtouch, uint8_t ntouch) 
 {
@@ -69,64 +120,118 @@ void myInterrupt_cb(TouchPoint tpoint, uint8_t idtouch, uint8_t ntouch)
 }
 
 
-Bus_SPI busspi;
-RA8889 gfx(PIN_CS, PIN_RESET);
-FT touch(PIN_SDA, PIN_SCL, PIN_INT, PIN_RESET_CP);
-TouchEventInfo* events;
+void teste_PintarTela()
+{
+    // Conversão correta do buffer para 16 bits (cada pixel = 2 bytes)
+    //uint16_t* buf16 = (uint16_t*) draw_buffer;
+    uint16_t* buf8 = (uint8_t*) draw_buffer;
+	
+    // Quantidade correta de pixels no buffer
+    const uint32_t draw_pixels = DRAW_BUFFER / sizeof(uint16_t);
+
+    // Preenche corretamente
+    //for(uint32_t i = 0; i < draw_pixels; i++)
+    //    buf16[i] = clPink;
+
+    //DRAW_BUFFER tem 1/5 da tela
+    uint16_t color = clPink; 
+    for (uint32_t i = 0; i < DRAW_BUFFER/2; i += 2) {
+        buf8[i]     = (uint8_t)(color & 0xFF);
+        buf8[i + 1] = (uint8_t)(color >> 8);
+    }
+
+    uint32_t t0 = millis();
+    uint8_t i = 0;
+    while i < 5
+	  // Aqui WritePixels RECEBE ponteiro + quantidade em BYTES
+      //gfx.WritePixels((void*)buf16, DRAW_BUFFER/2, true);
+	  gfx.WritePixels((void*)buf8, DRAW_BUFFER/2, true);
+	  i++;
+    }
+	
+    uint32_t t1 = millis();
+
+    Serial.print("Tempo de processamento = ");
+    Serial.print(t1 - t0);
+    Serial.println(" ms");
+}
+
+
+
+uint8_t* buf8 = (uint8_t*) draw_buffer;
+uint16_t color = clRed;
+uint32_t pixels = DRAW_BUFFER / 2;
+
+for (uint32_t i = 0; i < DRAW_BUFFER/2; i += 2) {
+    buf8[i]     = (uint8_t)(color & 0xFF);
+    buf8[i + 1] = (uint8_t)(color >> 8);
+}
+color = clBlue;
+for (uint32_t i = DRAW_BUFFER/2; i < DRAW_BUFFER; i += 2) {
+    buf8[i]     = (uint8_t)(color & 0xFF);
+    buf8[i + 1] = (uint8_t)(color >> 8);
+}
+
 
 void setup() {
 
-  DEBUG_BEGIN(115200);
+ DEBUG_BEGIN(115200);
 
-  //Para Arduino, placa de desenvolvimento shield, ER5517
-  //Somente arduino
-  pinMode(5, OUTPUT);
-  digitalWrite(5, HIGH);                       //Disable  SD 
-  pinMode(2, OUTPUT);                        
-  digitalWrite(2, HIGH);                       //Disable  RTP
-  DEBUG_PRINT("Disable SD and RTP pin", 0,false,true);  
+  DEBUG_PRINT("Support ESP32-S3 Information Start ......................................", 0,false,true);
+  esp_chip_info_t info;
+  esp_chip_info(&info);
+  Serial.printf("Chip cores: %d, Model: %d, Features: %d\n", info.cores, info.model, info.features);
+  Serial.printf("Heap Total:  %d\n", ESP.getHeapSize());
+  Serial.printf("Heap Used:   %d\n", ESP.getHeapSize() - ESP.getFreeHeap());
+  Serial.printf("Heap Free:   %d\n", ESP.getFreeHeap());
+  Serial.printf("PSRAM Total: %d\n", ESP.getPsramSize());
+  Serial.printf("PSRAM Init:  %s\n", psramInit() ? "true" : "false");
 
   IBus::SPIBusConfig_t cfg;
-  cfg.spi_type = HOST_FSPI;
-  cfg.pin_mosi = 11;
-  cfg.pin_miso = 13;
-  cfg.pin_sclk = 12;
-  cfg.pin_cs   = 10;
-  cfg.freq_write = 20000000;
-  busspi.Config(&cfg);                         // Grava a configuração
-  gfx.setBus(busspi);                          // Seta o Bus SPI
-  DEBUG_PRINT("Bus SPI configurado", 0,false,true);
-
-  //So irá funcionar se o pino do MCU tiver potencia suficiente apra manter o sinal a 3,3V
-  //Se nao funcionar ligue diretamente aos 3,3V de alimentacao o pino 14 do BL_CONTROLE
-  gfx.setBacklight(PIN_BLCONTROL);             //Controle de luz de fundo
-  gfx.BacklightOn(true);                       //Liga luz de fundo
-  DEBUG_PRINT("Backlight ON", 0, false, true);         //Debug
+  cfg.spi_host = SPI2_HOST;
+  cfg.pin_mosi = PIN_MOSI;
+  cfg.pin_miso = PIN_MISO;
+  cfg.pin_sclk = PIN_SCLK;
+  cfg.pin_cs   = PIN_CS;
+  cfg.freq_write = 40000000;                   //suporta 40MHz, mas original era 20MHz 
+  bus_spi.Config(&cfg);                        // Grava a configuração
+  gfx.setBus(bus_spi);                         // Seta o Bus SPI
 
   bool b = gfx.Begin();                        //Inicializa o display
-  DEBUG_PRINTD("Begin Sucessfull: ", b, true, 0, true);         //Debug
-  gfx.FillScreen(clWhite);                     //Limpa a tela da ultima exibição apos power off
-  gfx.DisplayOn(true);                         //esta funcao nao seria necessaria, pois init() já inicializa o display no modo grafico
-  DEBUG_PRINTD("Start Display ON", 0, false, 1000, true);         //Debug
+  if (!b) return;
   
+  gfx.FillScreen(clBlack);                     //Limpa a tela da ultima exibição apos power off
+  gfx.DisplayOn(true);                         //esta funcao nao seria necessaria, pois init() já inicializa o display no modo grafico
+  gfx.GraphicMode();
+  gfx.setWindow(0, 0, gfx.Width(), gfx.Height());
+  DEBUG_PRINT("Display RA8889 Initialized ........................................... OK", 0,false,true);
+
+  gfx.useDMA(false);
+  
+  uint32_t t0 = millis();
+  gfx.VSYNC_WaitReady();
+  uint32_t t1 = millis();
+  Serial.print("Tempo de espera VSYNC = ");
+  Serial.print(t1 - t0);
+  Serial.println(" ms");
+
   touch.setDebounceTouch(false);
   touch.setTouchArea(gfx.Width(), gfx.Height(), false);
   touch.setDisplayArea(gfx.Width(), gfx.Height());
   touch.setTransitionTime(20);
-  b = touch.Begin(FT_I2C_ADDRESS);
-  if (!b) {
-    DEBUG_PRINTD("Erro ao inicializar o touch! ", b, true, 0, true);
-  }
-  touch.EnableInterrupt(true);
-  DEBUG_PRINTD("Habilitou interrupções de hardware", 0, false, 0, true);         //Debug
-
   touch.AllowMultitouch(true);
-  touch.OnCallback(myInterrupt_cb);
+  //touch.OnCallback(myInterrupt_cb);
+  touch.EnableInterrupt(true);
   touch.CallbackEnable(true);
-  DEBUG_PRINTD("Start Touch Display", 0, false, 0, true);         //Debug
+  b = touch.Begin(FT_I2C_ADDRESS);
+  if (b) {
+    DEBUG_PRINT("Touch Driver FT5x16 Initialized ...................................... OK", 0, false, true);
+  } else {
+    DEBUG_PRINT("Touch Driver FT5x16 Initialized .................................... Fail", 0, false, true);
+  }
 
   DEBUG_PRINT("",0,false,true);
-  DEBUG_PRINT("----------------------------------------------------",0,false,true);
+  DEBUG_PRINT("Parameter Configuration Display .........................................",0,false,true);
   DEBUG_PRINT("Parameter",0,false,true);
   DEBUG_PRINT("Started Display       ", 0,false,true);
   DEBUG_PRINT("Display Width:        ", gfx.Width(),true,true);
@@ -140,12 +245,33 @@ void setup() {
   DEBUG_PRINT("SS :                  ", SS,true,true);
   DEBUG_PRINT("HSPI :                ", HSPI,true,true);
   DEBUG_PRINT("FSPI :                ", FSPI,true,true);
-  DEBUG_PRINTD("----------------------------------------------------",0,false,1000,true);
+  DEBUG_PRINTD(F("-------------------------------------------------------------------------"),0,false,1000,true);
 
-  delay(2000);
+  //dma_buffer  = (uint8_t*)heap_caps_malloc(DMA_BUFFER, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+  draw_buffer = (uint8_t*)heap_caps_malloc(DRAW_BUFFER, MALLOC_CAP_SPIRAM);
+  Serial.printf("PSRAM Used:  %d\n", ESP.getPsramSize() - ESP.getFreePsram());
+  Serial.printf("PSRAM Free:  %d\n", ESP.getFreePsram());
+
+  if (draw_buffer == nullptr) {
+    DEBUG_PRINT("Support PSRAM Buffer................................................ Fail", 0,false,true);
+    return;
+  } else {
+    DEBUG_PRINT("Support PSRAM Buffer ................................................. OK", 0,false,true);
+    memset(draw_buffer, 0x00, DRAW_BUFFER);                                  //Preenche a memroia com 0x00
+  }
+
+  Serial.println("Um teste antes enviando buffer de tela cheia de pixel Usando DMA ...");
+
+  gfx.setWindow(0, 0, gfx.Width(), gfx.Height());
+  gfx.setPixelPos(0,0);  
+  
+  teste_PintarTela();
+  
+  delay(3000);
 
   gfx.GraphicMode();
   gfx.setWindow(0,0, gfx.Width(), gfx.Height());  
+  gfx.FillScreen(clAshGray);
 }
 
 
