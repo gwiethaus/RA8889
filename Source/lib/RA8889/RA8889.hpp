@@ -1648,13 +1648,16 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     RA8889(uint8_t cs, uint8_t rst);
     void setBus(IBus& bus);
     
+    void FPS_Start();                          // zera e inicia o contador
+    void FPS_Update();                         // chama 1x por frame
+    float FPS_Get() const;                     // retorna FPS atual
+
     void HardwareReset(void);
     uint8_t SoftwareReset(void);
     void Brightness(uint16_t level);
-
+    void VSYNC_WaitReady(void);
     void StartWrite(void);
     void EndWrite(void);
-
     bool Begin(void);
     void DisplayOn(bool on);
     void setBacklight(uint8_t pin);
@@ -1958,6 +1961,10 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     eFontEnlargFactor _fntparam_width_enlarge;
     eFontEnlargFactor _fntparam_height_enlarge;
 
+    uint32_t _fps_last_time;
+    uint32_t _fps_count;
+    float _fps_value;
+
 //   _charsetresourceMap cada posicao de bits é recursos presente do CI
 //   bit    Conjunto de Fontes  Valor Hex.   Valor Dec.
 //   0      GB2312              0x00         0
@@ -2030,7 +2037,6 @@ class RA8889 : public DisplayBase {            //Herdado de DisplayBase
     void Interrupt_PWM1_Enable(bool b);
     void Interrupt_PWM0_Enable(bool b);
     uint8_t Interrupt_Status(void);
-    void VSYNC_WaitReady(void);
     void Interrupt_ClearResume_Flag(void);
     void ExtInterrupt_ClearInput_Flag(void);
     void Interrupt_ClearI2CM_Flag(void);

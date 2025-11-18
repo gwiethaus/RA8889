@@ -983,6 +983,10 @@ RA8889::RA8889(uint8_t cs, uint8_t rst)
   _usedma        = false;
   _fntparam_source_select  = eFontSource::InternalCGROM;      //Default do display
   _display_spi_clk_divider = BIT_SPI_DIV4;
+  
+  _fps_last_time = 0;
+  _fps_count     = 0;
+  _fps_value     = 0.0f;
 }
 
 
@@ -18485,7 +18489,7 @@ void RA8889::MPU16_24bpp_Mode2_MemoryWrite(uint16_t x, uint16_t y, uint16_t w, u
  */
 void RA8889::MemoryWrite(uint16_t x, uint16_t y, uint16_t w, uint16_t h,
                          const void* data_buffer,
-                         bool auto_increment = true)
+                         bool auto_increment)
 {
 
   if (!IsGraphicMode()) GraphicMode();
@@ -22327,3 +22331,107 @@ void RA8889::BTE_MemoryCopyWith_ARGB8888(uint32_t s1_addr,
   temp |= BIT_DESTINATION_COLOR_DEPTH_24BPP;
   _bus->DataWrite(temp);
 }
+
+
+//================================================================================
+//
+// API
+// Funções FPS - Frame per Seconds
+// 
+//================================================================================
+
+
+/**
+ * @brief Inicializa os FPS
+ *        FPS - Frame per Seconds (Frames por Segundos)
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ * 
+ * @code
+ * gfx.FPS_Start();
+ * 
+ * while (true)
+ * {
+ *     // desenhe seu frame aqui
+ *     gfx.WritePixels(...);
+ * 
+ *     gfx.FPS_Update();
+ * 
+ *     float fps = gfx.FPS_Get();
+ *     Serial.println(fps);
+ * }
+ * @endcode
+ *
+ * @note None
+ *
+ * @see FPS_Update()
+ * @see FPS_Get()
+ */
+ void RA8889::FPS_Start()
+ {
+   _fps_count = 0;
+   _fps_value = 0.0f;
+   _fps_last_time = millis();
+}
+
+
+/**
+ * @brief IAtualzia FPS
+ *        FPS - Frame per Seconds (Frames por Segundos)
+ *        Use dentro de loop e após a funcao que deseja avaliar
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ * 
+ * @code
+ * None 
+ * @endcode
+ *
+ * @note None
+ *
+ * @see FPS_Start()
+ * @see FPS_Get()
+ */
+void RA8889::FPS_Update()
+{
+  uint32_t now = millis();
+  _fps_count++;
+  uint32_t elapsed = now - _fps_last_time;
+  
+  if (elapsed >= 1000) {  // 1 segundo
+      _fps_value = float(_fps_count) * 1000.0f / float(elapsed);
+      _fps_last_time = now;
+      _fps_count = 0;
+  }
+}
+
+
+/**
+ * @brief Pega o valor FPS atual
+ *        FPS - Frame per Seconds (Frames por Segundos)
+ *        
+ * @verbatim
+ * None
+ * @endverbatim
+ *
+ * @param None
+ * 
+ * @code
+ * None 
+ * @endcode
+ *
+ * @note None
+ *
+ * @see FPS_Start()
+ * @see FPS_Update()
+ */
+float RA8889::FPS_Get() const
+{
+  return _fps_value;
+}
+
