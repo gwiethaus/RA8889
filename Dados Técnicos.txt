@@ -9311,6 +9311,98 @@ Experimento 2: SPI com DMA Nativo do ESP32-S3
   vez de acelerar.
 
 
+Passagem por referênncia ou por valor de ponteiro
+-------------------------------------------------
+
+  Tomamos como exemplo a função: void WritePixels(const void* data, uint32_t num, bool last);
+  
+  ✔️ Regra fundamental do C/C++
+  
+  Quando é chamado chama:
+  
+  gfx.WritePixels((void*)buf8, DRAW_BUFFER/2, true);
+  
+  está passando uma cópia do valor do ponteiro para a função.
+  
+  Ou seja:
+  
+  - O endereço é passado por valor.
+  - A função recebe um ponteiro independente.
+  - Se a função fizer ptr++ lá dentro, só a cópia é alterada, o seu buf8 externo não muda.
+  
+  ✔️ Exemplo simples para ver isso
+  
+  void func(uint8_t* p) {
+      p++;          // incrementa só a cópia
+  }
+  
+  uint8_t buffer[10];
+  uint8_t* ptr = buffer;
+  
+  func(ptr);
+  
+  // aqui ptr ainda aponta para buffer[0]
+  
+  Saída esperada: ptr continua igual, nunca muda.
+  
+  ✔️ Só mudaria se a função fosse assim:
+  
+  Recebesse ponteiro para ponteiro:
+  
+  void func(uint8_t** p) { 
+      (*p)++; 
+  }
+  
+  Ou 2) Recebesse uma referência para o ponteiro:
+  
+  void func(uint8_t*& p) {
+      p++;
+  }
+  
+  Aí sim, o ponteiro original mudaria.
+  
+  ✔️ WritePixels() não faz isso
+  
+  Se a função WritePixels(void* data, size_t len, bool last) está declarada assim:
+  
+  void WritePixels(const void* data, uint32_t num, bool last);
+  
+  Então:
+  
+  - data é cópia do ponteiro original.
+  - O driver pode fazer data = data + algo.
+  - Mas fora da função você não vê nenhuma alteração.
+  
+  ✔️ Portanto:
+  ❗ Mesmo que o ponteiro interno seja incrementado, isso NÃO afeta seu buf8 externo.
+
+
+FPS = Frames Per Second
+-----------------------
+
+  Em português: Quadros por segundo.
+  
+  É uma medida que indica quantas imagens completas (frames) o sistema 
+  consegue gerar (ou enviar ao display) a cada segundo.
+  
+  ✔️ Significado em displays (seu caso)
+  
+  No projeto RA8889/ESP32, cada vez que você faz um flush da tela com 
+  WritePixels(), isso conta como 1 frame. O FPS indica a velocidade de 
+  atualização real do display.
+  
+  Exemplo:
+  
+  - 30 FPS → 30 atualizações completas da tela por segundo.
+  - 60 FPS → muito fluido.
+  - 10 FPS → você já percebe atrasos na atualização.
+
+  ✔️ Por que FPS é importante em driver de display
+  
+  - Ajuda a medir otimização do SPI/DMA
+  - Ajuda a comparar desempenho com diferentes modos (DMA / polling)
+  - Ajuda a saber se o gargalo é no processamento ou transferência
+  - Serve para detectar se o driver caiu em um modo lento (SPI mal configurado, clocks baixos…)
 
 
 
@@ -9366,61 +9458,8 @@ https://onecompiler.com/cpp
 https://www.onlinegdb.com/#
 
 
-
-Correto fazer isso:
-
-size_t block_size = 64*1024; // tamanho do DMA
-for(size_t offset = 0; offset < 360*1024; offset += block_size) {
-    size_t bytes_to_copy = (offset + block_size <= 360*1024) ? block_size : (360*1024 - offset);
-
-    // copia do buffer grande na PSRAM para o buffer DMA
-    memcpy(dma_buffer, draw_buffer_psram + offset, bytes_to_copy);
-
-    // envia o buffer DMA para o display via SPI ou periférico
-    send_to_display(dma_buffer, bytes_to_copy);
-}
-
-O DMA nao pode exitir na PSRAM, entao pode-se alocar grandes buffer na PSRAM e trasnferir parte deste buffer para o DMA alocado na memroia interna
-
-Buffer principal do display (~360 KB) → alocado na PSRAM
-uint8_t* draw_buffer_psram = (uint8_t*)heap_caps_malloc(360*1024, MALLOC_CAP_SPIRAM);
-
-Buffer DMA (menor, ex: 32 KB ou 64 KB) → alocado na RAM interna, compatível com DMA
-uint8_t* dma_buffer = (uint8_t*)heap_caps_malloc(64*1024, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
-
-
-
 https://github.com/mrcodetastic/esp32s2-24bit-i2s-lcd-parallel
 https://docs.rs/esp32-hal/latest/esp32_hal/dma/index.html
-
-
-Calcular FPS
-------------
-
-
-[edit2] Testado em M5Fire e M5Stack classic (ambos usam um ILI9341 com resolução de 320x240)
-
-sprite.setColorDepth(16); 
-sprite.createSprite(237, 237); // não aumente o tamanho
-float fps = 0; 
-int fpscount; 
-unsigned long lastfps = millis(); 
-
-while(1) {
-uint16_t randomColor = tft.color565(random(255), random(255), random(255)); 
-sprite.fillSprite(randomColor); 
-sprite.setCursor(0, 0); 
-sprite.printf("%.2f", fps); 
-sprite.pushSprite(0, 0); 
-fpscount++; 
-unsigned long fpsdelay = millis() - lastfps; 
-if (fpsdelay >= 1000) {
-fps = float(fpscount * 1000) / float(fpsdelay); 
-lastfps = millis(); 
-fpscount = 0; 
-}
-}
-
 
 
 Links do LVGL
