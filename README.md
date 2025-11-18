@@ -286,8 +286,3 @@ Será possível fazaer o controle quando se deseja que o barramento SPI fique se
 - 🟢 Ajuste pelo usuário do tempo de transição em milisegundos entre o evento DOWN e MOVE
 - 🔴 Tratamento de gestos (gesture)
 
-## Meus Emoticon
-
-1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🅰️ 🅱️ 🔄 ➡️ 🔁 
-✅ 🟩 ⚠️ 💡 ⚙️ 🧩 📍 👉 👈 👇 👌 👍 👏 💪 👊 💬 📊 ⏰ 🔴 🟢 🟡 ⚫ 🔵 🔧 📘 🧱 🧮 📌 🧠 🚨 💯
-🔹 ⚡ ✔️ ❌ 🔍 😄 😎 😊 💯 🚫 🚀 🧭 🔒 📈 👀 🎯 🏆 🔥 ⏱️ 💾 🐯 🎛️ 📁 📲 🎯 🧰 👨‍💻 📄 📝 🔘 📜 🪶 
