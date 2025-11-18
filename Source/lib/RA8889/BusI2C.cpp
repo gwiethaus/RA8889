@@ -49,15 +49,16 @@ void Bus_I2C::Config(const IBusConfig_t* cfg)
  * @endverbatim
  * 
  */
-void Bus_I2C::Init(void) 
+uint32_t Bus_I2C::Init(void) 
 {
-  if (_i2c_init) return;
+  if (_i2c_init) return -1;
   DEBUG_PRINT("Entrou em Bus_I2C::Init", 0,false,true);
 
   Wire.begin();                                // Inicializa I2C padrão
   Wire.setClock(_cfg.freq);                    // I2C Fast Mode 400kHz (se seu display suportar)
   
   _i2c_init = true;
+  return 0;
 }
 
 
@@ -74,7 +75,7 @@ void Bus_I2C::EndWrite(void)
 
 
 //esta funcao nao existe para I2C
-void Bus_I2C::LockBus(bool force_unlock = false)
+void Bus_I2C::LockBus(bool force_unlock)
 {
   return;
 }
@@ -127,7 +128,7 @@ uint8_t Bus_I2C::RwByte(uint8_t value)
  *
  * @see Bus_SPI::RwBytes() para transferência rápida via SPI.
  */
-void Bus_I2C::RwBytes(const uint8_t* data, uint32_t len)
+uint32_t Bus_I2C::RwBytes(const uint8_t* data, uint32_t len)
 {
   // Inicia transmissão para o endereço do RA887x
   //Wire.beginTransmission(_cfg.address);
@@ -169,6 +170,8 @@ void Bus_I2C::RwBytes(const uint8_t* data, uint32_t len)
 
   // Finaliza transmissão
   //Wire.endTransmission();
+
+  return 0;
 }
 
 

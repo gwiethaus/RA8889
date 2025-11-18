@@ -19985,9 +19985,11 @@ uint32_t RA8889::getPixel(uint16_t x, uint16_t y)
  * 
  * Desempenho (Desenho de Tela cheia 800x480x2bpp):
  *   SPI a 40MHz
- *   - Com Wait_WriteFIFO_NotFull(), com DMA Arduino Core - 550 ms
- *   - Sem Wait_WriteFIFO_NotFull(), com DMA Arduino Core - 452 ms
- *   - Sem Wait_WriteFIFO_NotFull(), com DMA Nativo       - 339 ms
+ *   - Com Wait_WriteFIFO_NotFull(), com DMA Arduino Core PSRAM     - 550 ms
+ *   - Sem Wait_WriteFIFO_NotFull(), com DMA Arduino Core PSRAM     - 452 ms
+ *   - Sem Wait_WriteFIFO_NotFull(), com DMA Nativo PSRAM           - 339 ms
+ *   - Sem Wait_WriteFIFO_NotFull(), com DMA Nativo otimizado PSRAM - 173 ms
+ *   - Sem Wait_WriteFIFO_NotFull(), com DMA Nativo otimizado RAM   - 160 ms
  *
  *   SPI a 60MHz:
  *   - Com Wait_WriteFIFO_NotFull() - 550 ms
@@ -20004,7 +20006,7 @@ uint32_t RA8889::getPixel(uint16_t x, uint16_t y)
  */
 void RA8889::WritePixels(const void* color_buffer,
                                uint32_t num_pixels,
-                               bool auto_increment   // true = avança cursor, false = mantém posição (cursosr interno do display)
+                               bool auto_increment
                               ) 
 {
 #if defined(SPI_ARDUINO_CORE)
@@ -20015,7 +20017,7 @@ void RA8889::WritePixels(const void* color_buffer,
   uint8_t size_pixel = bytesPerPixel == 3 ? 4 : bytesPerPixel; //Se for 24 bpp (3 bytes/pixel), precisa arredondar para 4 para manter alinhamento SPI/DMA.
 
   uint32_t pixelsPerChunk = RA8889_FIFO_SIZE / size_pixel;     //numero de pixels que cabem no FIFO
-  uint32_t bytesPerChunk = pixelsPerChunk * bytesPerPixel;    //quantos bytes por chunck ira ocupar
+  uint32_t bytesPerChunk = pixelsPerChunk * bytesPerPixel;     //quantos bytes por chunck ira ocupar
 
   uint32_t pixelsSent = 0;
   const uint8_t* ptr = static_cast<const uint8_t*>(color_buffer); 

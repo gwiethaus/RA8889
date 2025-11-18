@@ -97,9 +97,9 @@ void Bus_Parallel::Config(const IBusConfig_t* cfg)
  * Esta função é segura para múltiplas chamadas: após a primeira inicialização,
  * chamadas subsequentes não terão efeito.
  */
-void Bus_Parallel::Init(void) 
+uint32_t Bus_Parallel::Init(void) 
 {
-  if (_parallel_init) return;
+  if (_parallel_init) return -1;
   DEBUG_PRINT("Entrou em Bus_Parallel::Init", 0,false,true);
   
   pinMode(_cfg.pin_cs, OUTPUT);
@@ -120,7 +120,7 @@ void Bus_Parallel::Init(void)
   uint8_t bits = static_cast<uint8_t>(_cfg.parallel_type);
   for (int i = 0; i < bits; i++) pinMode(_cfg.data_pins[i], _parallel_pindir);
 
-  return;
+  return 0;
 }
 
 
@@ -416,9 +416,9 @@ uint8_t Bus_Parallel::RwByte(uint8_t value)
 }
 
 
-void Bus_Parallel::RwBytes(const uint8_t* data, uint32_t len)
+uint32_t Bus_Parallel::RwBytes(const uint8_t* data, uint32_t len)
 {
-  return;
+  return 0;
 }
 
 

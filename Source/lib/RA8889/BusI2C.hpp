@@ -16,13 +16,13 @@ class Bus_I2C : public IBus {
     I2CBusConfig_t _cfg;                         //Config local específica de I2C
     bool _i2c_init = false;
 	
-    void Init() override;
+    uint32_t Init() override;
     uint8_t StartWrite(void) override;
     void EndWrite(void) override;
     void LockBus(bool force_unlock = false) override;
     void UnlockBus(void) override;    
     uint8_t RwByte(uint8_t value) override;
-    void RwBytes(const uint8_t* data, uint32_t len) override;
+    uint32_t RwBytes(const uint8_t* data, uint32_t len) override;
     void CmdWrite(uint8_t cmd) override;
     void DataWrite(uint8_t data) override;
     void DataWrite(uint32_t data, uint8_t step) override;

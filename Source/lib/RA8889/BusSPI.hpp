@@ -40,7 +40,7 @@ enum SPIHost {
   #if defined(SPI_ARDUINO_CORE)
     #define SPI_CLOCK_SPEED_MAX  80000000      //Para ESP32-S2, ESP32-S3, ESP32-C3
   #elif defined(SPI_ESP32_NATIVE)
-    #define SPI_CLOCK_SPEED_MAX  APB_CLK_FREQ  //Para ESP32-S2, ESP32-S3, ESP32-C3
+    #define SPI_CLOCK_SPEED_MAX  APB_CLK_FREQ  //Para ESP32-S2, ESP32-S3, ESP32-C3 (soc.h)
   #endif
 #elif CONFIG_IDF_TARGET_ESP32S2
   #define HAS_HSPI 0
@@ -66,6 +66,7 @@ enum SPIHost {
   #warning "SPI não implementada para esta plataforma"
 #endif
 
+#define DMA_BUFFER_SIZE    4096                  //Buffer interno do DMA tem 4Kb (Maximo permitido pelo ESP-IDF)
 
 class Bus_SPI : public IBus {
   private:
@@ -93,7 +94,7 @@ class Bus_SPI : public IBus {
     bool _lock_bus = false;                      //Permite uso por dentro do SetCS()
 
     uint32_t Find_SPI_Frequence(uint32_t requested_hz, uint8_t* div_out);
-    void createSPI(SPIHostType hostType);
+    void createSPI(SPIHost hostType);
     void SetCS(uint8_t level_cs);
     void CheckTransaction(void);
     void WaitTransfersDone(uint32_t expected_chunks);
