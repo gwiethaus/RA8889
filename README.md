@@ -256,7 +256,7 @@ Será possível fazaer o controle quando se deseja que o barramento SPI fique se
 
 # Todo
 
-🟢 finalziado 🟡 parcial 🔴 não iniciado
+🟢 finalizado 🟡 parcial 🔴 não iniciado
 
 ## Geral
 
