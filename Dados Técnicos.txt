@@ -9405,6 +9405,92 @@ FPS = Frames Per Second
   - Serve para detectar se o driver caiu em um modo lento (SPI mal configurado, clocks baixos…)
 
 
+Incremento pré-fixado e pós-fixado
+----------------------------------
+
+  Como isso funciona dentro de expressão.
+
+  Em C e C++, os operadores de incremento (++) permitem aumentar o valor de 
+  uma variável inteira em uma unidade. Mas existe uma diferença importante 
+  entre o incremento pré-fixado e o incremento pós-fixado, e essa diferença 
+  afeta diretamente o resultado quando o incremento é usado dentro de 
+  expressões, como em um cout.
+  
+  Incremento pré-fixado (++x)
+  ---------------------------
+  
+  O incremento pré-fixado incrementa primeiro, depois retorna o valor já incrementado.
+  
+  - Primeiro a variável aumenta.
+  - Depois o valor atualizado é usado na expressão.
+  
+  Exemplo:
+  
+  int x = 5;
+  cout << ++x;
+  
+  Passo a passo:
+  1. x vira 6
+  2. cout recebe 6
+  3. Saída: 6
+  
+  Incremento pós-fixado (x++)
+  ---------------------------
+  
+  O incremento pós-fixado retorna o valor atual, e só depois incrementa a variável.
+  
+  - Ele devolve o valor antigo.
+  - Só depois aumenta em 1.
+  
+  Exemplo:
+  
+  int x = 5;
+  cout << x++;
+  
+  Passo a passo:
+  1. cout recebe 5
+  2. Depois da impressão, x vira 6
+  3. Saída: 5
+  
+  Por que isso importa em expressões mais complexas como cout?
+  ------------------------------------------------------------
+  
+  cout avalia os valores no momento em que eles são enviados para o fluxo de 
+  saída. Como pré e pós-incremento devolvem valores diferentes no instante da 
+  avaliação, isso muda o que aparece na tela.
+  
+  Exemplo comparativo
+  -------------------
+  
+  int a = 10;
+  
+  cout << "Pre: " << ++a << "\n";     //primeiro incrementa a variavel e depois usa, a=11
+  cout << "Pos: " << a++ << "\n";     //primeiro usa a variavel e depois incrementa, a=10  
+  cout << "Final: " << a << "\n";      
+    
+  Explicação:
+  
+  - ++a → incrementa para 11 e imprime 11
+  - a++ → imprime 11 e só depois vira 12
+  - Valor final → 12
+  - Saída: 
+    - Pre: 11
+    - Pos: 11
+    - Final: 12
+  
+  Resumo simples
+  --------------
+  
+  --------------------------------------------------------------
+  Forma  O que retorna?              Quando incrementa?
+  --------------------------------------------------------------
+  ++x    Valor já incrementado       Antes de usar na expressão
+  x++    Valor antes de incrementar  Depois de usar na expressão
+  --------------------------------------------------------------
+
+
+
+
 
 loboris/ESP32_NEW_SPI_MASTER_EXAMPLE
 https://github.com/loboris/ESP32_NEW_SPI_MASTER_EXAMPLE
