@@ -276,6 +276,7 @@ Será possível fazaer o controle quando se deseja que o barramento SPI fique se
 - 🟢 DrawPixels() e WritePixels() para envio em massa de pixel a controladora por DMA
 - 🟢 Seleção do barramento para SPI, I2C e Parallel
 - 🟢 Controle de ativação de Barramento SPI
+- 🟢 Calculo de FPS (Frame per seconds)
 
 ## Drive FT5x16
 - 🟢 Melhoria do Driver FocalTech FT5xx6
