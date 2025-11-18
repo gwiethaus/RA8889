@@ -124,7 +124,7 @@ void teste_PintarTela()
 {
     // Conversão correta do buffer para 16 bits (cada pixel = 2 bytes)
     //uint16_t* buf16 = (uint16_t*) draw_buffer;
-    uint16_t* buf8 = (uint8_t*) draw_buffer;
+    uint8_t* buf8 = (uint8_t*) draw_buffer2;
 	
     // Quantidade correta de pixels no buffer
     const uint32_t draw_pixels = DRAW_BUFFER / sizeof(uint16_t);
@@ -134,18 +134,25 @@ void teste_PintarTela()
     //    buf16[i] = clPink;
 
     //DRAW_BUFFER tem 1/5 da tela
-    uint16_t color = clPink; 
+    uint16_t color = clYellow; 
     for (uint32_t i = 0; i < DRAW_BUFFER/2; i += 2) {
         buf8[i]     = (uint8_t)(color & 0xFF);
         buf8[i + 1] = (uint8_t)(color >> 8);
     }
+    color = clGreen;
+    for (uint32_t i = DRAW_BUFFER/2; i < DRAW_BUFFER; i += 2) {
+        buf8[i]     = (uint8_t)(color & 0xFF);
+        buf8[i + 1] = (uint8_t)(color >> 8);
+    }
+
+    gfx.setPixelPos(0,0);  
 
     uint32_t t0 = millis();
     uint8_t i = 0;
-    while i < 5
+    while (i < 5) {
 	  // Aqui WritePixels RECEBE ponteiro + quantidade em BYTES
       //gfx.WritePixels((void*)buf16, DRAW_BUFFER/2, true);
-	  gfx.WritePixels((void*)buf8, DRAW_BUFFER/2, true);
+	    gfx.WritePixels(buf8, DRAW_BUFFER/2, true);
 	  i++;
     }
 	
@@ -156,21 +163,6 @@ void teste_PintarTela()
     Serial.println(" ms");
 }
 
-
-
-uint8_t* buf8 = (uint8_t*) draw_buffer;
-uint16_t color = clRed;
-uint32_t pixels = DRAW_BUFFER / 2;
-
-for (uint32_t i = 0; i < DRAW_BUFFER/2; i += 2) {
-    buf8[i]     = (uint8_t)(color & 0xFF);
-    buf8[i + 1] = (uint8_t)(color >> 8);
-}
-color = clBlue;
-for (uint32_t i = DRAW_BUFFER/2; i < DRAW_BUFFER; i += 2) {
-    buf8[i]     = (uint8_t)(color & 0xFF);
-    buf8[i + 1] = (uint8_t)(color >> 8);
-}
 
 
 void setup() {
@@ -265,6 +257,31 @@ void setup() {
   gfx.setWindow(0, 0, gfx.Width(), gfx.Height());
   gfx.setPixelPos(0,0);  
   
+
+
+uint8_t* buf8 = (uint8_t*) draw_buffer;
+uint32_t pixels = DRAW_BUFFER / 2;
+uint16_t color = clRed;
+for (uint32_t i = 0; i < DRAW_BUFFER/2; i += 2) {
+    buf8[i]     = (uint8_t)(color & 0xFF);
+    buf8[i + 1] = (uint8_t)(color >> 8);
+}
+color = clBlue;
+for (uint32_t i = DRAW_BUFFER/2; i < DRAW_BUFFER; i += 2) {
+    buf8[i]     = (uint8_t)(color & 0xFF);
+    buf8[i + 1] = (uint8_t)(color >> 8);
+}
+
+uint32_t t00 = millis();
+gfx.WritePixels(buf8, DRAW_BUFFER/2, false);
+uint32_t t17 = millis();
+Serial.print("Tempo de processamento = ");
+Serial.print(t17 - t00);
+Serial.println(" ms");
+delay(4000);
+gfx.FillScreen(clAshGray);
+delay(2000);
+
   teste_PintarTela();
   
   delay(3000);
